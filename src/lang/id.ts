@@ -10,7 +10,9 @@ import personalisasiLangId from "@/modules/personalisasi/lang/id"
 
 const langId = {
 	Common: {
-		roles: {},
+		roles: {
+			demo: 'Demo'
+		},
 		switch_role: 'Ganti Role',
 		to_myits_portal: 'ke myITS Portal',
 		sign_out: 'Keluar',
@@ -79,6 +81,18 @@ const langId = {
 			upload_file: {
 				title: 'Upload File',
 				subtitle: 'Desain Upload File untuk aplikasi',
+			},
+			tamu: {
+				title: 'Manajemen Tamu',
+				subtitle: 'Kelola daftar tamu undangan pernikahan',
+			},
+			kategori_tamu: {
+				title: 'Kategori Tamu',
+				subtitle: 'Kelola kategori tamu undangan',
+			},
+			hubungan_tamu: {
+				title: 'Hubungan Tamu',
+				subtitle: 'Kelola hubungan tamu undangan',
 			},
 
 			personalisasi: {

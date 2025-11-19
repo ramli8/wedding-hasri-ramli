@@ -1,5 +1,4 @@
 import { dateFilter, fuzzyFilter } from '@/utils/table/table';
-import { DebouncedInput, Filter } from "@/utils/table/table_old";
 import { Box, Button, HStack, Input, InputGroup, Stack, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr } from '@chakra-ui/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
@@ -106,9 +105,9 @@ const TableScroll = ({ columns, url, name, filterColumn = true }: { columns: Col
                         </InputGroup>
                         <TableContainer>
                             <Box>
-                                <DebouncedInput
+                                <Input
                                     value={globalFilter ?? ''}
-                                    onChange={value => setGlobalFilter(String(value))}
+                                    onChange={(e) => setGlobalFilter(String(e.target.value))}
                                     className="p-2 font-lg shadow border border-block"
                                     placeholder="Search all columns..."
                                 />
@@ -146,7 +145,7 @@ const TableScroll = ({ columns, url, name, filterColumn = true }: { columns: Col
                                                                 {
                                                                     header.column.getCanFilter() && filterColumn ? (
                                                                         <Box>
-                                                                            <Filter column={header.column} table={table} />
+                                                                            {/* Filter component temporarily disabled */}
                                                                         </Box>
                                                                     ) : null
                                                                 }

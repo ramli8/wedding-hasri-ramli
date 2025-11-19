@@ -1,6 +1,5 @@
-import AccountInfoContext from "@/providers/AccountInfoProvider";
 import AppSettingContext from "@/providers/AppSettingProvider";
-import { useSignOutAction } from "@/utils/auth/SignOutAction";
+import { useSignOutAction } from "@/utils/SignOutAction";
 import {
 	Box,
 	Button,
@@ -23,7 +22,6 @@ import {
 	useDisclosure,
 	useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useTranslations } from "next-intl";
 import Head from "next/head";
 import Image from "next/image";
@@ -95,7 +93,22 @@ const PageTransition = ({
 		onOpen: onOpenGantiRole,
 		onClose: onCloseGantiRole,
 	} = useDisclosure();
-	const accountInfo = useContext(AccountInfoContext);
+	
+	// Data dummy untuk menggantikan accountInfo
+	const accountInfo = {
+		name: 'Demo User',
+		prefUsername: 'demo@example.com',
+		activeRole: 'demo',
+		profPicture: defaultProfilePicture,
+		role: [],
+		nickname: 'Demo',
+		identifier: 'demo',
+		group: ['public'],
+		origin: '',
+		unit: 'Demo Unit',
+		unitCode: 'DEMO'
+	};
+	
 	const t = useTranslations("PageLayout");
 	const commonTranslations = useTranslations("Common");
 
@@ -327,13 +340,13 @@ const PageTransition = ({
 							</Center>
 						</Box>
 						{
-							accountInfo.role && accountInfo.role.length > 1 && <>
+							accountInfo?.role && accountInfo?.role.length > 1 && <>
 								<PrimarySubtleBadge
 									display={{ base: "none", m: "flex" }}
 									gap={2}
-									cursor={accountInfo.role && accountInfo.role.length > 1 ? "pointer" : "default"}
+									cursor={accountInfo?.role && accountInfo?.role.length > 1 ? "pointer" : "default"}
 									onClick={() => {
-										accountInfo.role && accountInfo.role.length > 1
+										accountInfo?.role && accountInfo?.role.length > 1
 											? onOpenGantiRole()
 											: null;
 									}}
@@ -342,7 +355,9 @@ const PageTransition = ({
 										fontSize="16px"
 										transition="transform 0.3s ease"
 									/>
-									{accountInfo.role?.find((role: any) => role.id === accountInfo.activeRole)?.name}
+									{accountInfo?.role && accountInfo?.activeRole
+									  ? (accountInfo.role as Array<any>)?.find((role: any) => role?.id === accountInfo?.activeRole)?.name ?? ''
+									  : ''}
 								</PrimarySubtleBadge>
 							</>
 						}
@@ -362,9 +377,9 @@ const PageTransition = ({
 								overflow={"hidden"}
 							>
 								<Image
-									src={accountInfo.profPicture ?? defaultProfilePicture}
+									src={accountInfo?.profPicture ?? defaultProfilePicture}
 									alt={t("profile_picture_of", {
-										name: accountInfo.name ?? t("user"),
+										name: accountInfo?.name ?? t("user"),
 									})}
 									width={40}
 									height={40}
@@ -380,23 +395,23 @@ const PageTransition = ({
 							>
 								<Box p="1rem 0.75rem">
 									<Text fontSize="16px" fontWeight="600">
-										{accountInfo.name}
+										{accountInfo?.name ?? 'Demo User'}
 									</Text>
 									<Text fontSize="14px" fontWeight="500" color="gray" mt="6px">
-										{accountInfo.prefUsername}
+										{accountInfo?.prefUsername ?? 'demo@example.com'}
 									</Text>
-									{accountInfo.activeRole && (
+									{accountInfo?.activeRole && (
 										<Text
 											fontSize="14px"
 											fontWeight="500"
 											color="gray"
 											mt="6px"
 										>
-											{commonTranslations(`roles.${accountInfo.activeRole}`)}
+											{commonTranslations(`roles.${accountInfo?.activeRole}`) ?? 'Demo Role'}
 										</Text>
 									)}
 								</Box>
-								{accountInfo.role && accountInfo.role.length > 1 && (
+								{accountInfo?.role && accountInfo?.role.length > 1 && (
 									<MenuItem
 										icon={<UsersOutlineIconMade fontSize="18px" />}
 										onClick={onOpenGantiRole}
@@ -406,8 +421,7 @@ const PageTransition = ({
 								)}
 								<MenuItem
 									icon={<ArrowLeftOutlineIconMade fontSize="18px" />}
-									as={Link}
-									href="https://portal.its.ac.id"
+									onClick={() => window.open("https://portal.its.ac.id", "_blank")}
 								>
 									{commonTranslations("to_myits_portal")}
 								</MenuItem>
@@ -453,79 +467,26 @@ const ModalGantiRole = ({
 	onClose: () => void;
 }) => {
 	const { colorMode } = useColorMode();
-	const accountInfo = useContext(AccountInfoContext);
+	
+	// Data dummy untuk menggantikan accountInfo
+	const accountInfo = {
+		role: [],
+		activeRole: 'demo'
+	};
+	
 	const commonTranslations = useTranslations("Common");
 
 	// Role stuff
 	const toast = useToast();
-	const roles =
-		accountInfo.role?.map((role) => ({
-			value: role.id,
-			label: commonTranslations(`roles.${role.id}`),
-		})) ?? [];
-	const activeRole = roles.find((role) => role.value == accountInfo.activeRole);
+	const roles: any[] = []; // Tidak ada role karena tidak ada sistem otentikasi
+	const activeRole = null;
 	const formId = useId();
 	const [isSwitchingRole, setSwitchingRole] = useState(false);
 
 	const handleChangeRole: FormEventHandler<HTMLFormElement> = async (e) => {
 		e.preventDefault();
-
-		const formData = new FormData(e.currentTarget);
-		const newRoleId = formData.get("role") as string;
-
-		try {
-			setSwitchingRole(true);
-			localStorage.setItem("active_role", newRoleId);
-			await mutate("auth");
-
-			toast({
-				position: "top-right",
-				status: "success",
-				duration: 5000,
-				isClosable: true,
-				render: (props) => (
-					<ToastCard
-						title={commonTranslations("role_successfully_changed")}
-						description={commonTranslations("role_changed_to_x", {
-							x: commonTranslations(`roles.${newRoleId}`),
-						})}
-						onClose={props.onClose}
-						status="success"
-						icon={<CheckmarkOutlineIconMade fontSize="24px" color="white" />}
-					/>
-				),
-			});
-		} catch (e) {
-			let slug = "unknown";
-			if (axios.isAxiosError(e) && e.response?.data?.message) {
-				slug = e.response.data.message;
-			}
-
-			const messages = new Map([
-				["user_does_not_have_this_role", "Anda tidak memiliki role ini"],
-			]);
-
-			toast({
-				position: "top-right",
-				status: "error",
-				duration: 5000,
-				isClosable: true,
-				render: (props) => (
-					<ToastCard
-						title="Role gagal diganti"
-						description={
-							messages.get(slug) ?? "Terjadi kesalahan saat mengganti role"
-						}
-						onClose={props.onClose}
-						status="error"
-						icon={<CloseOutlineIconMade fontSize="24px" color="white" />}
-					/>
-				),
-			});
-		} finally {
-			setSwitchingRole(false);
-			onClose();
-		}
+		// Tidak melakukan apa-apa karena tidak ada sistem role
+		onClose();
 	};
 
 	return (
@@ -549,11 +510,11 @@ const ModalGantiRole = ({
 				<ModalBody as="form" onSubmit={handleChangeRole} id={formId}>
 					<Box w="full">
 						<DropdownSelect
-							placeholder="Pilih role"
+							placeholder="Tidak ada role yang tersedia"
 							defaultValue={activeRole}
 							name="role"
 							options={roles}
-							isDisabled={false}
+							isDisabled={true}
 							isMulti={false}
 							isClearable={false}
 						/>
@@ -564,16 +525,6 @@ const ModalGantiRole = ({
 						<DaliGhostButton onClick={onClose}>
 							{commonTranslations("cancel")}
 						</DaliGhostButton>
-					</Center>
-					<Center w={{ base: "full", s: "auto" }}>
-						<PrimaryButton
-							form={formId}
-							type="submit"
-							isLoading={isSwitchingRole}
-							loadingText={commonTranslations("switching_role")}
-						>
-							{commonTranslations("switch")}
-						</PrimaryButton>
 					</Center>
 				</ModalFooter>
 			</ModalContent>

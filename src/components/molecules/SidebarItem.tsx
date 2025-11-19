@@ -1,3 +1,5 @@
+"use client";
+
 import AppSettingContext from "@/providers/AppSettingProvider";
 import { MenuItem } from "@/types/menu-item";
 import {
@@ -13,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { easeIn, easeInOut, motion } from "framer-motion";
 import NextLink from "next/link";
-import { useRouter } from "next/router";
+import { usePathname } from "next/navigation";
 import { useContext, useEffect } from "react";
 import { IoChevronDown, IoChevronUp } from "react-icons/io5";
 import { useTranslations } from "next-intl";
@@ -28,7 +30,7 @@ const SidebarItem = ({
   menuIndex: number;
 }) => {
   const accountInfo = useContext(AccountInfoContext);
-  const router = useRouter().route;
+  const router = usePathname() || "";
   const menuTitles = router.split("/")[1];
   const { colorMode } = useColorMode();
   const { isOpen, onToggle, onOpen, onClose } = useDisclosure();
@@ -72,7 +74,7 @@ const SidebarItem = ({
       <Link
         as={NextLink}
         href={menuItem.url}
-        onClick={isNavbarOpen ? navbarToggler : ""}
+        onClick={isNavbarOpen ? navbarToggler : undefined}
       >
         <Flex
           as={motion.div}
@@ -204,7 +206,7 @@ const SubmenuItem = ({
   submenuIndex: number;
   parentIndex: number;
 }) => {
-  const router = useRouter().route;
+  const router = usePathname() || "";
   const { colorMode } = useColorMode();
   const {
     isNavbarOpen,
@@ -308,7 +310,7 @@ const SubmenuItem = ({
     <Link
       as={NextLink}
       href={submenu.url}
-      onClick={isNavbarOpen ? navbarToggler : ""}
+      onClick={isNavbarOpen ? navbarToggler : undefined}
     >
       <Flex
         as={motion.div}

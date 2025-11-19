@@ -10,7 +10,9 @@ import personalisasiLangEn from "@/modules/personalisasi/lang/en"
 
 const langEn = {
 	Common: {
-		roles: {},
+		roles: {
+			demo: 'Demo'
+		},
 		switch_role: 'Switch Role',
 		to_myits_portal: 'to myITS Portal',
 		sign_out: 'Sign Out',
@@ -80,7 +82,11 @@ const langEn = {
 				title: 'Upload File',
 				subtitle: 'Design Upload File for the application',
 			},
-			
+			tamu: {
+				title: 'Guest Management',
+				subtitle: 'Manage wedding invitation guest list',
+			},
+
 			personalisasi: {
 				title: "Personalization",
 				subtitle: 'Personalization application',

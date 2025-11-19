@@ -1,11 +1,19 @@
 import { dateFilter, fuzzyFilter } from "@/utils/table/table";
-import { DebouncedInput, Filter } from "@/utils/table/table_old";
 import {
+  Badge,
   Box,
   Button,
+  Checkbox,
   HStack,
+  IconButton,
   Input,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Select,
+  Stack,
   Table,
   TableContainer,
   Tbody,
@@ -14,10 +22,13 @@ import {
   Th,
   Thead,
   Tr,
+  VStack,
+  useColorMode,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
   ColumnFiltersState,
+  OnChangeFn,
   flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -35,16 +46,88 @@ import {
   IoChevronForward,
   IoChevronForwardCircle,
 } from "react-icons/io5";
+import { FaFilter } from "react-icons/fa";
+
+const ColumnFilter = ({ column }: { column: any }) => {
+  const columnFilterValue = (column.getFilterValue() as string[]) || [];
+  const uniqueValues = Array.from(column.getFacetedUniqueValues().keys()).sort().filter(Boolean);
+
+  // Only show filter if there are unique values
+  // if (uniqueValues.length <= 1) return null; // Removed to force show filter
+
+  return (
+    <Popover placement="bottom-start">
+      <PopoverTrigger>
+        <IconButton
+          aria-label="Filter"
+          icon={<FaFilter />}
+          size="xs"
+          variant={columnFilterValue.length > 0 ? "solid" : "ghost"}
+          colorScheme={columnFilterValue.length > 0 ? "blue" : "gray"}
+          ml={2}
+        />
+      </PopoverTrigger>
+      <PopoverContent w="200px" _focus={{ boxShadow: "none" }}>
+        <PopoverArrow />
+        <PopoverBody p={2}>
+          <VStack align="start" spacing={2}>
+            <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>
+              Filter {column.columnDef.header}
+            </Text>
+            {uniqueValues.map((value: any) => (
+              <Checkbox
+                key={value}
+                isChecked={columnFilterValue.includes(value)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  const newValue = checked
+                    ? [...columnFilterValue, value]
+                    : columnFilterValue.filter((v) => v !== value);
+                  column.setFilterValue(newValue.length ? newValue : undefined);
+                }}
+                size="sm"
+                width="full"
+              >
+                <Text fontSize="sm" noOfLines={1}>{value}</Text>
+              </Checkbox>
+            ))}
+            {columnFilterValue.length > 0 && (
+              <Text
+                fontSize="xs"
+                color="blue.500"
+                cursor="pointer"
+                onClick={() => column.setFilterValue(undefined)}
+                alignSelf="flex-end"
+                mt={2}
+              >
+                Reset Filter
+              </Text>
+            )}
+          </VStack>
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const TableAdvance = ({
   columns,
   data,
+  columnFilters: externalColumnFilters,
+  onColumnFiltersChange: externalOnColumnFiltersChange,
 }: {
   columns: ColumnDef<any, any>[];
   data: any[];
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
 }) => {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const { colorMode } = useColorMode();
+
+  // Use external state if provided, otherwise use internal state
+  const columnFilters = externalColumnFilters !== undefined ? externalColumnFilters : internalColumnFilters;
+  const setColumnFilters = externalOnColumnFiltersChange || setInternalColumnFilters;
 
   const table = useReactTable({
     data,
@@ -72,12 +155,24 @@ const TableAdvance = ({
   return (
     <>
       <TableContainer>
-        <Box>
-          <DebouncedInput
+        <Box mb={4}>
+          <Input
             value={globalFilter ?? ""}
-            onChange={(value) => setGlobalFilter(String(value))}
-            className="p-2 font-lg shadow border border-block"
-            placeholder="Search all columns..."
+            onChange={(e) => setGlobalFilter(String(e.target.value))}
+            placeholder="Cari data..."
+            size="lg"
+            borderRadius="xl"
+            bg={colorMode === 'light' ? 'white' : 'gray.800'}
+            border="2px solid"
+            borderColor={colorMode === 'light' ? 'gray.200' : 'gray.600'}
+            _hover={{
+              borderColor: colorMode === 'light' ? 'blue.400' : 'blue.300',
+            }}
+            _focus={{
+              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+              boxShadow: `0 0 0 1px ${colorMode === 'light' ? '#3182ce' : '#63b3ed'}`,
+            }}
+            transition="all 0.2s"
           />
         </Box>
         <Table variant="unstyled">
@@ -91,8 +186,7 @@ const TableAdvance = ({
                       colSpan={header.colSpan}
                       paddingBottom="16px"
                       paddingTop="0px"
-                      paddingInlineEnd="0px"
-                      paddingInlineStart="0px"
+                      paddingX="12px"
                       _first={{
                         paddingInlineStart: "24px",
                       }}
@@ -101,7 +195,7 @@ const TableAdvance = ({
                       }}
                     >
                       {header.isPlaceholder ? null : (
-                        <>
+                        <HStack spacing={0} align="center">
                           <Box
                             {...{
                               className: header.column.getCanSort()
@@ -110,7 +204,7 @@ const TableAdvance = ({
                               onClick: header.column.getToggleSortingHandler(),
                             }}
                           >
-                            <Text textAlign="center">
+                            <Text textAlign="left">
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
@@ -118,15 +212,14 @@ const TableAdvance = ({
                               {{
                                 asc: " 🔼",
                                 desc: " 🔽",
+                                // null: ""
                               }[header.column.getIsSorted() as string] ?? null}
                             </Text>
                           </Box>
                           {header.column.getCanFilter() ? (
-                            <Box>
-                              <Filter column={header.column} table={table} />
-                            </Box>
+                            <ColumnFilter column={header.column} />
                           ) : null}
-                        </>
+                        </HStack>
                       )}
                     </Th>
                   );
@@ -140,7 +233,17 @@ const TableAdvance = ({
                 <Tr key={row.id}>
                   {row.getVisibleCells().map((cell) => {
                     return (
-                      <Td key={cell.id}>
+                      <Td 
+                        key={cell.id}
+                        paddingY="16px"
+                        paddingX="12px"
+                        _first={{
+                          paddingInlineStart: "24px",
+                        }}
+                        _last={{
+                          paddingInlineEnd: "24px",
+                        }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -153,50 +256,55 @@ const TableAdvance = ({
             })}
           </Tbody>
         </Table>
-        <HStack justifyContent="space-between" marginTop="30px">
-          <HStack>
-            <Button
-              className="border rounded p-1"
-              onClick={() => table.setPageIndex(0)}
-              isDisabled={!table.getCanPreviousPage()}
-            >
-              <IoChevronBackCircle />
-            </Button>
-            <Button
-              className="border rounded p-1"
-              onClick={() => table.previousPage()}
-              isDisabled={!table.getCanPreviousPage()}
-            >
-              <IoChevronBack />
-            </Button>
-            <Button
-              className="border rounded p-1"
-              onClick={() => table.nextPage()}
-              isDisabled={!table.getCanNextPage()}
-            >
-              <IoChevronForward />
-            </Button>
-            <Button
-              className="border rounded p-1"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              isDisabled={!table.getCanNextPage()}
-            >
-              <IoChevronForwardCircle />
-            </Button>
-            <Box as="span">
+        <Stack direction={{ base: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" marginTop="30px" spacing={4}>
+          <Stack direction={{ base: 'column', sm: 'row' }} alignItems="center" spacing={4}>
+            <HStack>
+              <Button
+                className="border rounded p-1"
+                onClick={() => table.setPageIndex(0)}
+                isDisabled={!table.getCanPreviousPage()}
+              >
+                <IoChevronBackCircle />
+              </Button>
+              <Button
+                className="border rounded p-1"
+                onClick={() => table.previousPage()}
+                isDisabled={!table.getCanPreviousPage()}
+              >
+                <IoChevronBack />
+              </Button>
+              <Button
+                className="border rounded p-1"
+                onClick={() => table.nextPage()}
+                isDisabled={!table.getCanNextPage()}
+              >
+                <IoChevronForward />
+              </Button>
+              <Button
+                className="border rounded p-1"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                isDisabled={!table.getCanNextPage()}
+              >
+                <IoChevronForwardCircle />
+              </Button>
+            </HStack>
+            <Box as="span" textAlign="center">
               <Text>
                 {"Page "}
                 {table.getState().pagination.pageIndex + 1} of{" "}
                 {table.getPageCount()}
               </Text>
             </Box>
-            <Box as="span">
+          </Stack>
+
+          <Stack direction={{ base: 'column', sm: 'row' }} alignItems="center" spacing={4}>
+            <Box as="span" display="flex" alignItems="center">
               | Go to page:
               <Input
-                width="fit-content"
+                width="80px"
                 type="number"
                 defaultValue={table.getState().pagination.pageIndex + 1}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const page = e.target.value ? Number(e.target.value) - 1 : 0;
                   if (page < table.getPageCount()) {
                     table.setPageIndex(page);
@@ -204,15 +312,17 @@ const TableAdvance = ({
                 }}
                 min={1}
                 max={table.getPageCount()}
+                ml={2}
+                size="sm"
+                borderRadius="md"
               />
             </Box>
-          </HStack>
-          <HStack>
             <Select
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
                 table.setPageSize(Number(e.target.value));
               }}
+              width="auto"
             >
               {[10, 20, 30, 40, 50].map((pageSize) => (
                 <option key={pageSize} value={pageSize}>
@@ -220,8 +330,8 @@ const TableAdvance = ({
                 </option>
               ))}
             </Select>
-          </HStack>
-        </HStack>
+          </Stack>
+        </Stack>
       </TableContainer>
     </>
   );

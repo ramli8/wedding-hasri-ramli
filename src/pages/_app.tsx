@@ -8,12 +8,11 @@
 
 import { ErrorBoundary } from '@/components/pages/ErrorBoundary';
 import { AppSettingProvider } from '@/providers/AppSettingProvider';
-import { AuthProvider } from '@/providers/AuthProvider';
 import LanguageProvider from '@/providers/LanguageProvider';
 import '@/styles/globals.css';
 import "@/styles/styles.css"; // Import style file
+import "react-datepicker/dist/react-datepicker.css"; // Import react-datepicker css
 import theme from '@/theme/theme';
-import { AuthSSO } from '@/utils/auth/AuthSSO';
 import { ChakraProvider } from '@chakra-ui/react';
 import {
 	Hydrate,
@@ -67,24 +66,19 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 				<link rel="manifest" href="/site.webmanifest" />
 				<title>{process.env.NEXT_PUBLIC_APP_NAME_FULL}</title>
 			</Head>
-			<AuthProvider>
-				<AppSettingProvider>
-					<LanguageProvider>
-						<QueryClientProvider client={queryClient}>
-							<ChakraProvider theme={theme}>
-								<AuthSSO>
-									<Hydrate state={pageProps.dehydratedState}>
-										<Component key={router.route} {...pageProps} />
-									</Hydrate>
-								</AuthSSO>
-							</ChakraProvider>
-						</QueryClientProvider>
-					</LanguageProvider>
-				</AppSettingProvider>
-			</AuthProvider>
+			<AppSettingProvider>
+				<LanguageProvider>
+					<QueryClientProvider client={queryClient}>
+						<ChakraProvider theme={theme}>
+							<Hydrate state={pageProps.dehydratedState}>
+								<Component key={router.route} {...pageProps} />
+							</Hydrate>
+						</ChakraProvider>
+					</QueryClientProvider>
+				</LanguageProvider>
+			</AppSettingProvider>
 		</ErrorBoundary>
 	)
 }
 
 export { getServerSideProps } from '@/Chakra';
-

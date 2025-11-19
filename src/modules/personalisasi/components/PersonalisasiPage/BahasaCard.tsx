@@ -26,15 +26,17 @@ const BahasaCard = () => {
     const toast = useToast();
 
     const handleChangeLanguage = (newLangPref: LanguagePreference) => {
-        setLangPref(newLangPref);
-        localStorage.setItem("lang_pref", newLangPref);
-        toast({
-            position: "top-right",
-            status: "success",
-            duration: 5000,
-            isClosable: true,
-            render: (props) => <BahasaToast onClose={props.onClose} />,
-        });
+        if (setLangPref) {
+            setLangPref(newLangPref);
+            localStorage.setItem("lang_pref", newLangPref);
+            toast({
+                position: "top-right",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+                render: (props) => <BahasaToast onClose={props.onClose} />,
+            });
+        }
     };
 
     return (

@@ -39,8 +39,11 @@ const ModeTampilanCard = () => {
     const { getRootProps, getRadioProps } = useRadioGroup({
         value: colorPref,
         onChange: (newColor) => {
-            setColorPref(newColor);
-            localStorage.setItem("color_pref", newColor);
+            if (setColorPref && newColor) {
+                const validColor = newColor as ColorPreference;
+                setColorPref(validColor);
+                localStorage.setItem("color_pref", validColor);
+            }
         },
     });
     const group = getRootProps();

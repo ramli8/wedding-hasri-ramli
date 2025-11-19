@@ -6,92 +6,35 @@
  * @version 1.5.14
  **/
 
-import { MenuItem } from "@/types/menu-item";
+import { MenuItem } from '@/types/menu-item';
 
 const menuItem: Array<MenuItem> = [
   {
-    name: "beranda",
-    url: "/",
-    icon: "home",
+    name: 'tamu',
+    url: '/admin/tamu',
+    icon: 'people',
+  },
+];
+
+const menuItemMaster: Array<MenuItem> = [
+  {
+    name: 'kategori_tamu',
+    url: '/admin/kategori_tamu',
+    icon: 'folder',
   },
   {
-    name: "alert",
-    url: "/alert",
-    icon: "warning",
-  },
-  {
-    name: "badge",
-    url: "/badge",
-    icon: "voting_chip",
-  },
-  {
-    name: "button",
-    url: "/button",
-    icon: "buttons_alt",
-  },
-  {
-    name: "card",
-    url: "/card",
-    icon: "crop_landscape",
-  },
-  {
-    name: "menu",
-    url: "/menu",
-    icon: "table_rows",
-  },
-  {
-    name: "tab",
-    url: "/tab",
-    icon: "tab",
-  },
-  {
-    name: "toast",
-    url: "/toast",
-    icon: "notifications",
-  },
-  {
-    name: "checkbox",
-    url: "/checkbox",
-    icon: "check_box",
-  },
-  {
-    name: "input",
-    url: "/input",
-    icon: "edit_square",
-  },
-  {
-    name: "radio",
-    url: "/radio",
-    icon: "radio_button_checked",
-  },
-  {
-    name: "select",
-    url: "/select",
-    icon: "expand_circle_down",
-  },
-  {
-    name: "switch",
-    url: "/switch",
-    icon: "toggle_on",
-  },
-  {
-    name: "textarea",
-    url: "/textarea",
-    icon: "article",
-  },
-  {
-    name: "upload_file",
-    url: "/upload_file",
-    icon: "upload_file",
+    name: 'hubungan_tamu',
+    url: '/admin/hubungan_tamu',
+    icon: 'link',
   },
 ];
 
 const menuItemInsights: Array<MenuItem> = [
   {
-    name: "personalisasi",
-    url: "/personalisasi",
-    icon: "settings",
+    name: 'personalisasi',
+    url: '/personalisasi',
+    icon: 'settings',
   },
 ];
 
-export { menuItem, menuItemInsights };
+export { menuItem, menuItemMaster, menuItemInsights };

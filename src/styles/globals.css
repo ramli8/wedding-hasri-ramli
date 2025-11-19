@@ -266,3 +266,18 @@ body {
 .chakra-tooltip__arrow {
 	background: white !important;
 }
+
+/* SweetAlert Override */
+div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
+	background-color: #319795 !important; /* Teal 500 */
+	color: #fff !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+div:where(.swal2-container) button:where(.swal2-styled).swal2-cancel {
+	background-color: #e53e3e !important; /* Red 500 */
+	color: #fff !important;
+	border: none !important;
+	box-shadow: none !important;
+}

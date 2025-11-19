@@ -1,4 +1,4 @@
-import { AccountInfoType } from "./auth"
+import { AccountInfoType } from "./account"
 
 interface MenuItem {
 	name: string,

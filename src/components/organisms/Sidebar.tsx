@@ -1,5 +1,4 @@
-import { menuItem, menuItemInsights } from "@/data/menu";
-import AccountInfoContext from "@/providers/AccountInfoProvider";
+import { menuItem, menuItemMaster, menuItemInsights } from "@/data/menu";
 import AppSettingContext from "@/providers/AppSettingProvider";
 import {
   Box,
@@ -18,7 +17,13 @@ const Sidebar = () => {
   const { isNavbarOpen, navbarToggler } = useContext(AppSettingContext);
 
   const { colorMode } = useColorMode();
-  const accountInfo = useContext(AccountInfoContext);
+
+  // Data dummy untuk menggantikan accountInfo
+  const accountInfo = {
+    name: 'Demo User',
+    group: ['public'],
+    role: []
+  };
 
   return (
     <>
@@ -210,6 +215,52 @@ const Sidebar = () => {
                         key={"main-menu-item-" + index}
                       />
                     ))}
+                </Box>
+              </Box>
+              <Box
+                className="sidebar__group"
+                _notLast={{
+                  position: "relative",
+                  marginBottom: "40px",
+                  paddingBottom: "30px",
+                  _before: {
+                    content: '""',
+                    position: "absolute",
+                    left: "20px",
+                    right: "20px",
+                    bottom: 0,
+                    height: "1px",
+                    background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                  },
+                }}
+              >
+                <Box
+                  display={{ base: "flex", d: "box" }}
+                  className="sidebar__caption"
+                  fontSize="12px"
+                  fontWeight="500"
+                  lineHeight="1.33333333"
+                  mb="16px"
+                  justifyContent={{
+                    base: "start",
+                    m: "center",
+                    d: "flex-start",
+                  }}
+                  alignItems={{ base: "start", m: "center", d: "start" }}
+                  pl={{ base: "20px", m: "0px", d: "20px" }}
+                  color="#808191"
+                  transition=".25s"
+                >
+                  Master
+                </Box>
+                <Box className="sidebar__menu">
+                  {menuItemMaster.map((item, index) => (
+                    <SidebarItem
+                      menuItem={item}
+                      menuIndex={index}
+                      key={"master-menu-item-" + index}
+                    />
+                  ))}
                 </Box>
               </Box>
               <Box

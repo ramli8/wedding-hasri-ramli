@@ -97,42 +97,74 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
 // Fungsi untuk menangani POST request (Create new tamu)
 async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { nama, kategori, hubungan, alamat, nomor_hp, status_undangan = 'belum_dikirim', konfirmasi_kehadiran = 'belum_konfirmasi', tgl_mulai_resepsi, tgl_akhir_resepsi } = req.body as CreateTamuInput;
+    const { 
+      nama, 
+      kategori_id, 
+      hubungan_id, 
+      alamat, 
+      nomor_hp, 
+      tgl_mulai_resepsi, 
+      tgl_akhir_resepsi 
+    } = req.body as CreateTamuInput;
 
     // Validasi input
-    if (!nama || !kategori || !hubungan || !alamat || !nomor_hp) {
-      return res.status(400).json({ error: 'Nama, kategori, hubungan, alamat, dan nomor_hp wajib diisi' });
+    if (!nama || !kategori_id || !hubungan_id || !alamat || !nomor_hp) {
+      return res.status(400).json({ error: 'Nama, kategori_id, hubungan_id, alamat, dan nomor_hp wajib diisi' });
     }
 
-    // Generate QR code - bisa menggunakan library qrcode atau hanya string unik
-    const qr_code = `tamu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate 6-digit random QR code
+    const qr_code = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Insert ke database
     const { data, error } = await supabase
       .from('tamu')
       .insert([{
         nama,
-        kategori,
-        hubungan,
+        kategori_id,
+        hubungan_id,
         alamat,
         nomor_hp,
         qr_code,
-        status_undangan,
-        konfirmasi_kehadiran,
+        status_undangan: 'belum_dikirim',
+        konfirmasi_kehadiran: 'belum_konfirmasi',
         tgl_mulai_resepsi,
         tgl_akhir_resepsi
       }])
-      .select()
+      .select(`
+        *,
+        kategori_tamu:kategori_id(nama),
+        hubungan_tamu:hubungan_id(nama)
+      `)
       .single();
 
     if (error) {
-      if (error.code === '23505') { // Unique violation
-        return res.status(400).json({ error: 'Nomor HP atau QR code sudah terdaftar' });
+      console.error('Error creating tamu:', error);
+      
+      // Check for duplicate phone number error
+      if (error.code === '23505' && error.message.includes('nomor_hp')) {
+        return res.status(409).json({ 
+          error: 'Nomor HP ini sudah digunakan oleh tamu lain. Mohon gunakan nomor yang berbeda.' 
+        });
       }
-      throw error;
+      
+      // Foreign key violation
+      if (error.code === '23503') {
+        return res.status(400).json({ error: 'Data kategori atau hubungan tidak valid' });
+      }
+      
+      return res.status(500).json({ error: 'Terjadi kesalahan saat menyimpan data' });
     }
 
-    res.status(201).json(data as Tamu);
+    // Map the data to include kategori and hubungan names
+    const mappedData = {
+      ...data,
+      kategori: data.kategori_tamu?.nama || '',
+      hubungan: data.hubungan_tamu?.nama || '',
+      kategori_tamu: undefined,
+      hubungan_tamu: undefined,
+    };
+
+    res.status(201).json(mappedData as Tamu);
   } catch (error: any) {
     console.error('Error creating tamu:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -150,14 +182,41 @@ async function handlePUT(req: NextApiRequest, res: NextApiResponse) {
       .from('tamu')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        kategori_tamu:kategori_id(nama),
+        hubungan_tamu:hubungan_id(nama)
+      `)
       .single();
 
     if (error) {
-      throw error;
+      console.error('Error updating tamu:', error);
+      
+      // Check for duplicate phone number error
+      if (error.code === '23505' && error.message.includes('nomor_hp')) {
+        return res.status(409).json({ 
+          error: 'Nomor HP ini sudah digunakan oleh tamu lain. Mohon gunakan nomor yang berbeda.' 
+        });
+      }
+      
+      // Foreign key violation
+      if (error.code === '23503') {
+        return res.status(400).json({ error: 'Data kategori atau hubungan tidak valid' });
+      }
+      
+      return res.status(500).json({ error: 'Terjadi kesalahan saat mengupdate data' });
     }
 
-    res.status(200).json(data as Tamu);
+    // Map the data to include kategori and hubungan names
+    const mappedData = {
+      ...data,
+      kategori: data.kategori_tamu?.nama || '',
+      hubungan: data.hubungan_tamu?.nama || '',
+      kategori_tamu: undefined,
+      hubungan_tamu: undefined,
+    };
+
+    res.status(200).json(mappedData as Tamu);
   } catch (error: any) {
     console.error('Error updating tamu:', error);
     res.status(500).json({ error: 'Internal server error' });

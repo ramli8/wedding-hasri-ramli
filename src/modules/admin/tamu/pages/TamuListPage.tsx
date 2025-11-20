@@ -90,10 +90,11 @@ const TamuListPage: React.FC = () => {
       {/* Main Content Area */}
       <Box
         flex="1"
-        ml={{ base: "0", m: "108px", d: "280px" }}
+        ml={{ base: "0", md: "108px", lg: "280px" }}
         transition="margin-left 0.3s ease"
-        minH="10vh"
-        p={2}
+        minH="100vh"
+        p={{ base: 4, md: 6 }}
+        w={{ base: "100%", md: "auto" }}
       >
         <PageTransition pageTitle="Manajemen Tamu Undangan">
           <PageRow>

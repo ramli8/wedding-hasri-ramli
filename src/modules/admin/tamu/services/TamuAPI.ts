@@ -134,26 +134,61 @@ class TamuAPI {
   // Method untuk membuat tamu baru
   async createTamu(tamuData: CreateTamuInput): Promise<Tamu> {
     try {
-      // Generate QR code
-      const qr_code = `tamu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate 6-digit random QR code
+      const qr_code = Math.floor(100000 + Math.random() * 900000).toString();
 
       const { data, error } = await this.supabase
         .from('tamu')
         .insert([{
-          ...tamuData,
-          qr_code
+          nama: tamuData.nama,
+          kategori_id: tamuData.kategori_id,
+          hubungan_id: tamuData.hubungan_id,
+          alamat: tamuData.alamat,
+          nomor_hp: tamuData.nomor_hp,
+          qr_code,
+          status_undangan: 'belum_dikirim',
+          konfirmasi_kehadiran: 'belum_konfirmasi',
+          tgl_mulai_resepsi: tamuData.tgl_mulai_resepsi,
+          tgl_akhir_resepsi: tamuData.tgl_akhir_resepsi,
         }])
-        .select()
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
         .single();
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
-          throw new Error('Nomor HP sudah terdaftar');
+        console.error('Error creating tamu:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        
+        // Check for duplicate phone number (unique constraint violation)
+        // Check in both message and details
+        const errorText = `${error.message} ${error.details || ''}`.toLowerCase();
+        if (error.code === '23505' && errorText.includes('nomor_hp')) {
+          throw new Error('Nomor HP ini sudah digunakan oleh tamu lain. Mohon gunakan nomor yang berbeda.');
         }
+        
+        // Check for other unique violations
+        if (error.code === '23505') {
+          throw new Error('Data sudah terdaftar');
+        }
+        
         throw new Error(this.formatError(error));
       }
 
-      return data as Tamu;
+      // Map the data to include kategori and hubungan names
+      const mappedData = {
+        ...data,
+        kategori: data.kategori_tamu?.nama || '',
+        hubungan: data.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return mappedData as Tamu;
     } catch (error: any) {
       console.error('Error in createTamu:', error);
       throw new Error(error.message || 'Gagal menambahkan tamu baru');
@@ -167,14 +202,43 @@ class TamuAPI {
         .from('tamu')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
         .single();
 
       if (error) {
+        console.error('Error updating tamu:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        
+        // Check for duplicate phone number (unique constraint violation)
+        const errorText = `${error.message} ${error.details || ''}`.toLowerCase();
+        if (error.code === '23505' && errorText.includes('nomor_hp')) {
+          throw new Error('Nomor HP ini sudah digunakan oleh tamu lain. Mohon gunakan nomor yang berbeda.');
+        }
+        
+        // Check for other unique violations
+        if (error.code === '23505') {
+          throw new Error('Data sudah terdaftar');
+        }
+        
         throw new Error(this.formatError(error));
       }
 
-      return data as Tamu;
+      // Map the data to include kategori and hubungan names
+      const mappedData = {
+        ...data,
+        kategori: data.kategori_tamu?.nama || '',
+        hubungan: data.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return mappedData as Tamu;
     } catch (error: any) {
       console.error('Error in updateTamu:', error);
       throw new Error(error.message || 'Gagal memperbarui data tamu');

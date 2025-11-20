@@ -43,8 +43,11 @@ const TamuFormModal: React.FC<TamuFormModalProps> = ({
           icon: 'success',
           confirmButtonText: 'OK',
           confirmButtonColor: '#319795',
-          background: colorMode === 'light' ? '#fff' : '#1A202C', // Match Chakra gray.900
+          background: colorMode === 'light' ? '#fff' : '#1A202C',
           color: colorMode === 'light' ? '#1A202C' : '#fff',
+          customClass: {
+            container: 'swal-high-z-index'
+          }
         });
       } else {
         // Create new tamu
@@ -57,20 +60,30 @@ const TamuFormModal: React.FC<TamuFormModalProps> = ({
           confirmButtonColor: '#319795',
           background: colorMode === 'light' ? '#fff' : '#1A202C',
           color: colorMode === 'light' ? '#1A202C' : '#fff',
+          customClass: {
+            container: 'swal-high-z-index'
+          }
         });
       }
       
       onSave();
     } catch (error: any) {
       console.error('Error saving tamu:', error);
+      
+      // Check if it's a duplicate phone number error
+      const isDuplicatePhone = error.message && error.message.includes('Nomor HP');
+      
       MySwal.fire({
-        title: 'Gagal!',
+        title: isDuplicatePhone ? 'Informasi' : 'Gagal!',
         text: error.message || 'Terjadi kesalahan saat menyimpan data tamu',
-        icon: 'error',
+        icon: isDuplicatePhone ? 'info' : 'error',
         confirmButtonText: 'OK',
-        confirmButtonColor: '#e53e3e',
+        confirmButtonColor: isDuplicatePhone ? '#3182ce' : '#e53e3e',
         background: colorMode === 'light' ? '#fff' : '#1A202C',
         color: colorMode === 'light' ? '#1A202C' : '#fff',
+        customClass: {
+          container: 'swal-high-z-index'
+        }
       });
     }
   };

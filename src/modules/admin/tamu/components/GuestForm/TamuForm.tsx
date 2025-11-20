@@ -12,13 +12,19 @@ import {
   InputGroup,
   InputRightElement,
   Icon,
+  Spinner,
+  Text,
 } from '@chakra-ui/react';
 import { Tamu, CreateTamuInput, UpdateTamuInput } from '../../types/Tamu.types';
 import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import id from 'date-fns/locale/id';
 import { FaCalendarAlt, FaClock } from 'react-icons/fa';
-import 'react-datepicker/dist/react-datepicker.css'; // Import the stylesheet
+import 'react-datepicker/dist/react-datepicker.css';
+import KategoriTamuAPI from '@/modules/admin/kategori_tamu/services/KategoriTamuAPI';
+import HubunganTamuAPI from '@/modules/admin/hubungan_tamu/services/HubunganTamuAPI';
+import { KategoriTamu } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
+import { HubunganTamu } from '@/modules/admin/hubungan_tamu/types/HubunganTamu.types';
 
 // Register locale Indonesia
 registerLocale('id', id);
@@ -31,15 +37,19 @@ interface TamuFormProps {
 
 const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   const { colorMode } = useColorMode();
-  // Gunakan Partial<CreateTamuInput> untuk inisialisasi awal agar aman
+  
+  // State for categories and relationships
+  const [categories, setCategories] = useState<KategoriTamu[]>([]);
+  const [relationships, setRelationships] = useState<HubunganTamu[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  
+  // Form data state
   const [formData, setFormData] = useState<CreateTamuInput>({
     nama: '',
-    kategori: 'Tamu Hasri',
-    hubungan: 'Teman SD',
+    kategori_id: '',
+    hubungan_id: '',
     alamat: '',
     nomor_hp: '',
-    status_undangan: 'belum_dikirim',
-    konfirmasi_kehadiran: 'belum_konfirmasi',
     tgl_mulai_resepsi: undefined,
     tgl_akhir_resepsi: undefined,
   });
@@ -53,16 +63,48 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const isEdit = !!tamu;
 
+  // Fetch categories and relationships on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        const kategoriAPI = new KategoriTamuAPI();
+        const hubunganAPI = new HubunganTamuAPI();
+        
+        const [kategoriesData, relationshipsData] = await Promise.all([
+          kategoriAPI.getAll(),
+          hubunganAPI.getAll()
+        ]);
+        
+        setCategories(kategoriesData);
+        setRelationships(relationshipsData);
+        
+        // Set default values if not editing
+        if (!tamu && kategoriesData.length > 0 && relationshipsData.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            kategori_id: kategoriesData[0].id,
+            hubungan_id: relationshipsData[0].id,
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    fetchOptions();
+  }, [tamu]);
+
   useEffect(() => {
     if (tamu) {
       setFormData({
         nama: tamu.nama,
-        kategori: tamu.kategori,
-        hubungan: tamu.hubungan,
+        kategori_id: tamu.kategori_id,
+        hubungan_id: tamu.hubungan_id,
         alamat: tamu.alamat || '',
         nomor_hp: tamu.nomor_hp || '',
-        status_undangan: tamu.status_undangan,
-        konfirmasi_kehadiran: tamu.konfirmasi_kehadiran,
         tgl_mulai_resepsi: tamu.tgl_mulai_resepsi ? new Date(tamu.tgl_mulai_resepsi) : undefined,
         tgl_akhir_resepsi: tamu.tgl_akhir_resepsi ? new Date(tamu.tgl_akhir_resepsi) : undefined,
       });
@@ -84,6 +126,8 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     if (!formData.nama.trim()) newErrors.nama = 'Nama wajib diisi';
     if (!formData.nomor_hp.trim()) newErrors.nomor_hp = 'Nomor HP wajib diisi';
     if (!formData.alamat.trim()) newErrors.alamat = 'Alamat wajib diisi';
+    if (!formData.kategori_id) newErrors.kategori_id = 'Kategori wajib dipilih';
+    if (!formData.hubungan_id) newErrors.hubungan_id = 'Hubungan wajib dipilih';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -110,28 +154,30 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     setLoading(true);
     try {
       // Combine date and time
-      let finalStart = formData.tgl_mulai_resepsi;
-      let finalEnd = formData.tgl_akhir_resepsi;
+      let finalStart: Date | undefined = formData.tgl_mulai_resepsi;
+      let finalEnd: Date | undefined = formData.tgl_akhir_resepsi;
 
       if (selectedDate && startTime) {
         const start = new Date(selectedDate);
-        start.setHours(startTime.getHours(), startTime.getMinutes());
+        start.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
         finalStart = start;
       }
 
       if (selectedDate && endTime) {
         const end = new Date(selectedDate);
-        end.setHours(endTime.getHours(), endTime.getMinutes());
+        end.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
         finalEnd = end;
       }
 
-      const dataToSave: CreateTamuInput = {
-        ...formData,
+      const dataToSave: any = {
         nama: formData.nama.trim(),
+        kategori_id: formData.kategori_id,
+        hubungan_id: formData.hubungan_id,
         alamat: formData.alamat.trim(),
         nomor_hp: formData.nomor_hp.trim(),
-        tgl_mulai_resepsi: finalStart,
-        tgl_akhir_resepsi: finalEnd,
+        // Convert dates to ISO string format for proper TIMESTAMP WITH TIME ZONE storage
+        tgl_mulai_resepsi: finalStart ? finalStart.toISOString() : undefined,
+        tgl_akhir_resepsi: finalEnd ? finalEnd.toISOString() : undefined,
       };
 
       await onSave(dataToSave);
@@ -164,6 +210,15 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   ));
   CustomInput.displayName = 'CustomInput';
 
+  if (loadingOptions) {
+    return (
+      <Box textAlign="center" py={10}>
+        <Spinner size="xl" color="teal.500" />
+        <Text mt={4} color="gray.500">Memuat data...</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box as="form" onSubmit={handleSubmit}>
       <Stack spacing={5}>
@@ -185,11 +240,11 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         </FormControl>
 
         <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
-          <FormControl isRequired>
+          <FormControl isRequired isInvalid={!!errors.kategori_id}>
             <FormLabel>Kategori</FormLabel>
             <Select
-              name="kategori"
-              value={formData.kategori}
+              name="kategori_id"
+              value={formData.kategori_id}
               onChange={handleChange}
               isDisabled={loading}
               variant="filled"
@@ -198,18 +253,23 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
               _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
             >
-              <option value="Tamu Hasri">Tamu Hasri</option>
-              <option value="Tamu Ramli">Tamu Ramli</option>
-              <option value="Tamu Ayah">Tamu Ayah</option>
-              <option value="Tamu Ibu">Tamu Ibu</option>
+              <option value="">Pilih Kategori</option>
+              {categories.map((kategori) => (
+                <option key={kategori.id} value={kategori.id}>
+                  {kategori.nama}
+                </option>
+              ))}
             </Select>
+            {errors.kategori_id && (
+              <Box color="red.500" fontSize="sm" mt={1}>{errors.kategori_id}</Box>
+            )}
           </FormControl>
 
-          <FormControl isRequired>
+          <FormControl isRequired isInvalid={!!errors.hubungan_id}>
             <FormLabel>Hubungan</FormLabel>
             <Select
-              name="hubungan"
-              value={formData.hubungan}
+              name="hubungan_id"
+              value={formData.hubungan_id}
               onChange={handleChange}
               isDisabled={loading}
               variant="filled"
@@ -218,15 +278,16 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
               _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
             >
-              <option value="Teman SD">Teman SD</option>
-              <option value="Teman SMP">Teman SMP</option>
-              <option value="Teman SMA">Teman SMA</option>
-              <option value="Teman Kuliah">Teman Kuliah</option>
-              <option value="Teman Kerja">Teman Kerja</option>
-              <option value="Tetangga">Tetangga</option>
-              <option value="Saudara">Saudara</option>
-              <option value="Lainnya">Lainnya</option>
+              <option value="">Pilih Hubungan</option>
+              {relationships.map((hubungan) => (
+                <option key={hubungan.id} value={hubungan.id}>
+                  {hubungan.nama}
+                </option>
+              ))}
             </Select>
+            {errors.hubungan_id && (
+              <Box color="red.500" fontSize="sm" mt={1}>{errors.hubungan_id}</Box>
+            )}
           </FormControl>
         </Stack>
 
@@ -309,46 +370,6 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               customInput={<CustomInput placeholder="Selesai" icon={FaClock} />}
               wrapperClassName="w-full"
             />
-          </FormControl>
-        </Stack>
-
-        <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
-          <FormControl>
-            <FormLabel>Status Undangan</FormLabel>
-            <Select
-              name="status_undangan"
-              value={formData.status_undangan}
-              onChange={handleChange}
-              isDisabled={loading}
-              variant="filled"
-              size="lg"
-              borderRadius="md"
-              focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-              _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-            >
-              <option value="belum_dikirim">Belum Dikirim</option>
-              <option value="dikirim">Dikirim</option>
-              <option value="kadaluarsa">Kadaluarsa</option>
-            </Select>
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Konfirmasi Kehadiran</FormLabel>
-            <Select
-              name="konfirmasi_kehadiran"
-              value={formData.konfirmasi_kehadiran}
-              onChange={handleChange}
-              isDisabled={loading}
-              variant="filled"
-              size="lg"
-              borderRadius="md"
-              focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-              _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-            >
-              <option value="belum_konfirmasi">Belum Konfirmasi</option>
-              <option value="akan_hadir">Akan Hadir</option>
-              <option value="tidak_hadir">Tidak Hadir</option>
-            </Select>
           </FormControl>
         </Stack>
 

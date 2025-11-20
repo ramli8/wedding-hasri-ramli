@@ -1,8 +1,10 @@
 export interface Tamu {
   id: string;
   nama: string;
-  kategori: 'Tamu Hasri' | 'Tamu Ramli' | 'Tamu Ayah' | 'Tamu Ibu';
-  hubungan: 'Teman SD' | 'Teman SMP' | 'Teman SMA' | 'Teman Kuliah' | 'Teman Kerja' | 'Tetangga' | 'Saudara' | 'Lainnya';
+  kategori_id: string; // UUID reference to kategori_tamu
+  hubungan_id: string; // UUID reference to hubungan_tamu
+  kategori?: string; // Display name (populated from join)
+  hubungan?: string; // Display name (populated from join)
   alamat: string;
   nomor_hp: string;
   qr_code: string;
@@ -21,30 +23,30 @@ export interface Tamu {
 
 export interface CreateTamuInput {
   nama: string;
-  kategori: Tamu['kategori'];
-  hubungan: Tamu['hubungan'];
+  kategori_id: string; // UUID
+  hubungan_id: string; // UUID
   alamat: string;
   nomor_hp: string;
   status_undangan?: Tamu['status_undangan'];
   konfirmasi_kehadiran?: Tamu['konfirmasi_kehadiran'];
-  tgl_mulai_resepsi?: Date;
-  tgl_akhir_resepsi?: Date;
+  tgl_mulai_resepsi?: Date | string; // Accept both Date and ISO string
+  tgl_akhir_resepsi?: Date | string; // Accept both Date and ISO string
 }
 
 export interface UpdateTamuInput {
   nama?: string;
-  kategori?: Tamu['kategori'];
-  hubungan?: Tamu['hubungan'];
+  kategori_id?: string; // UUID
+  hubungan_id?: string; // UUID
   alamat?: string;
   nomor_hp?: string;
   status_undangan?: Tamu['status_undangan'];
   konfirmasi_kehadiran?: Tamu['konfirmasi_kehadiran'];
-  tgl_kirim_undangan?: Date;
-  tgl_baca_undangan?: Date;
-  tgl_mulai_resepsi?: Date;
-  tgl_akhir_resepsi?: Date;
-  check_in?: Date;
-  check_out?: Date;
+  tgl_kirim_undangan?: Date | string;
+  tgl_baca_undangan?: Date | string;
+  tgl_mulai_resepsi?: Date | string; // Accept both Date and ISO string
+  tgl_akhir_resepsi?: Date | string; // Accept both Date and ISO string
+  check_in?: Date | string;
+  check_out?: Date | string;
 }
 
 export interface TamuApiResponse {

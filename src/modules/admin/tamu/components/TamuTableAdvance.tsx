@@ -336,7 +336,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
         pos="relative"
         bg={colorMode === 'light' ? 'white' : '#222222'}
         borderRadius="24px"
-        p={6}
+        p={{ base: 4, md: 6 }}
         _before={{
           content: '""',
           pos: "absolute",
@@ -354,7 +354,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
         <Box mb={8} display="flex" flexDirection={{ base: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ base: 'start', md: 'center' }} gap={4}>
           <VStack align="start" spacing={1}>
             <Text 
-              fontSize="2xl" 
+              fontSize={{ base: "xl", md: "2xl" }}
               fontWeight="800"
               letterSpacing="-0.5px"
               color={colorMode === 'light' ? 'gray.800' : 'white'}
@@ -373,7 +373,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
               {initialTamu.length} Tamu
             </Badge>
           </VStack>
-          <PrimaryButton onClick={onAddNew} w="auto">
+          <PrimaryButton onClick={onAddNew} w={{ base: "full", md: "auto" }}>
             <HStack spacing={2} justify="center">
               <Icon viewBox="0 0 24 24" width="20px" height="20px" fill="currentColor">
                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />

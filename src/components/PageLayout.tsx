@@ -176,8 +176,8 @@ const PageTransition = ({
 				{/* Title col */}
 				<Box
 					className="page__col"
-					p={{ base: "16px 16px 28px", x: "0 64px 44px" }}
-					pt={{ base: "0", t: "48px", x: "48px" }}
+					p={{ base: "16px 16px 28px", x: "0 64px 44px 64px" }}
+					pt={{ base: "80px", m: "48px" }}
 					w="100%"
 					display={{ base: "block", md: "flex" }}
 					alignItems="center"
@@ -218,10 +218,10 @@ const PageTransition = ({
 							alignItems="center"
 							justifyContent="center"
 							mr="2px"
-							ml="-6px"
-							w="36px"
+							ml="0"
+							w="0"
 							h="36px"
-							display={page == "/" ? "none" : ["flex", "flex", "flex", "none"]}
+							display="none"
 							onClick={() => router.back()}
 						>
 							<ArrowLeftOutlineIconMade fontSize="24px" />

@@ -281,3 +281,8 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-cancel {
 	border: none !important;
 	box-shadow: none !important;
 }
+
+/* High z-index for SweetAlert to appear in front of modals */
+.swal-high-z-index {
+	z-index: 10000 !important;
+}

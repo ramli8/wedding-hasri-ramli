@@ -1,5 +1,5 @@
 import { ThemeConfig, extendTheme } from "@chakra-ui/react";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import ButtonStyles from "./Button";
 import { cardTheme } from "./Card";
 import Color from "./Color";
@@ -12,6 +12,7 @@ import Text from "./Text";
 import { tooltipTheme } from "./Tooltip";
 
 const inter = Inter({ subsets: ["latin"] });
+const playfair = Playfair_Display({ subsets: ["latin"] });
 
 const config: ThemeConfig = {
 	initialColorMode: "system",
@@ -48,7 +49,7 @@ const theme = extendTheme({
 	semanticTokens,
 	config,
 	fonts: {
-		heading: inter.style.fontFamily,
+		heading: playfair.style.fontFamily,
 		body: inter.style.fontFamily,
 	},
 	styles: {

@@ -136,7 +136,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
     
     // Count tamu for each kategori
     initialTamu.forEach((tamu) => {
-      if (counts[tamu.kategori] !== undefined) {
+      if (tamu.kategori && counts[tamu.kategori] !== undefined) {
         counts[tamu.kategori]++;
       }
     });
@@ -373,7 +373,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
               {initialTamu.length} Tamu
             </Badge>
           </VStack>
-          <PrimaryButton onClick={onAddNew} w={{ base: "full", md: "auto" }}>
+          <PrimaryButton onClick={onAddNew} w="auto">
             <HStack spacing={2} justify="center">
               <Icon viewBox="0 0 24 24" width="20px" height="20px" fill="currentColor">
                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />

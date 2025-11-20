@@ -39,7 +39,7 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
   
   if (!tamu) {
     return null;
- }
+  }
 
   const qrData = `${window.location.origin}/admin/tamu/${tamu.id}`;
   

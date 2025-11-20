@@ -54,8 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: data.id,
       nama: data.nama,
       qr_code: data.qr_code,
-      kategori: data.kategori_tamu?.nama || '',
-      hubungan: data.hubungan_tamu?.nama || '',
+      kategori: Array.isArray(data.kategori_tamu) ? data.kategori_tamu[0]?.nama : (data.kategori_tamu as any)?.nama || '',
+      hubungan: Array.isArray(data.hubungan_tamu) ? data.hubungan_tamu[0]?.nama : (data.hubungan_tamu as any)?.nama || '',
     };
 
     res.status(200).json(guestData);

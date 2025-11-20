@@ -154,8 +154,8 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     setLoading(true);
     try {
       // Combine date and time
-      let finalStart: Date | undefined = formData.tgl_mulai_resepsi;
-      let finalEnd: Date | undefined = formData.tgl_akhir_resepsi;
+      let finalStart: Date | undefined = typeof formData.tgl_mulai_resepsi === 'string' ? new Date(formData.tgl_mulai_resepsi) : formData.tgl_mulai_resepsi;
+      let finalEnd: Date | undefined = typeof formData.tgl_akhir_resepsi === 'string' ? new Date(formData.tgl_akhir_resepsi) : formData.tgl_akhir_resepsi;
 
       if (selectedDate && startTime) {
         const start = new Date(selectedDate);

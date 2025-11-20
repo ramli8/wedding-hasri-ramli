@@ -323,14 +323,27 @@ class TamuAPI {
           check_in: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
         .single();
 
       if (error) {
         throw new Error(this.formatError(error));
       }
 
-      return data as Tamu;
+      // Map the data to include kategori and hubungan names
+      const mappedData = {
+        ...data,
+        kategori: data.kategori_tamu?.nama || '',
+        hubungan: data.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return mappedData as Tamu;
     } catch (error: any) {
       console.error('Error in updateCheckIn:', error);
       throw new Error(error.message || 'Gagal memperbarui waktu check-in');
@@ -346,14 +359,27 @@ class TamuAPI {
           check_out: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
         .single();
 
       if (error) {
         throw new Error(this.formatError(error));
       }
 
-      return data as Tamu;
+      // Map the data to include kategori and hubungan names
+      const mappedData = {
+        ...data,
+        kategori: data.kategori_tamu?.nama || '',
+        hubungan: data.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return mappedData as Tamu;
     } catch (error: any) {
       console.error('Error in updateCheckOut:', error);
       throw new Error(error.message || 'Gagal memperbarui waktu check-out');
@@ -365,7 +391,11 @@ class TamuAPI {
     try {
       const { data, error } = await this.supabase
         .from('tamu')
-        .select('*')
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
         .eq('qr_code', qrCode)
         .is('deleted_at', null)
         .single();
@@ -377,10 +407,173 @@ class TamuAPI {
         throw new Error(this.formatError(error));
       }
 
-      return data as Tamu;
+      // Map the data to include kategori and hubungan names
+      const mappedData = {
+        ...data,
+        kategori: data.kategori_tamu?.nama || '',
+        hubungan: data.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return mappedData as Tamu;
     } catch (error: any) {
       console.error('Error in validateQRCode:', error);
       throw new Error(error.message || 'Gagal memvalidasi QR code');
+    }
+  }
+
+  // OPTIMIZED: Direct check-in without separate validation (faster)
+  async directCheckIn(qrCode: string): Promise<{ success: boolean; guest: Tamu | null; error?: string }> {
+    try {
+      // First, get the guest data
+      const { data: guestData, error: fetchError } = await this.supabase
+        .from('tamu')
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
+        .eq('qr_code', qrCode)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          return { success: false, guest: null, error: 'QR Code tidak valid atau tamu tidak ditemukan.' };
+        }
+        throw new Error(this.formatError(fetchError));
+      }
+
+      // Check if already checked in
+      if (guestData.check_in) {
+        const mappedGuest = {
+          ...guestData,
+          kategori: guestData.kategori_tamu?.nama || '',
+          hubungan: guestData.hubungan_tamu?.nama || '',
+          kategori_tamu: undefined,
+          hubungan_tamu: undefined,
+        };
+        return { 
+          success: false, 
+          guest: mappedGuest as Tamu, 
+          error: `Tamu ini sudah check-in pada ${new Date(guestData.check_in).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` 
+        };
+      }
+
+      // Perform check-in
+      const { data: updatedData, error: updateError } = await this.supabase
+        .from('tamu')
+        .update({ check_in: new Date().toISOString() })
+        .eq('id', guestData.id)
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
+        .single();
+
+      if (updateError) {
+        throw new Error(this.formatError(updateError));
+      }
+
+      const mappedGuest = {
+        ...updatedData,
+        kategori: updatedData.kategori_tamu?.nama || '',
+        hubungan: updatedData.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return { success: true, guest: mappedGuest as Tamu };
+    } catch (error: any) {
+      console.error('Error in directCheckIn:', error);
+      throw new Error(error.message || 'Gagal memproses check-in');
+    }
+  }
+
+  // OPTIMIZED: Direct check-out without separate validation (faster)
+  async directCheckOut(qrCode: string): Promise<{ success: boolean; guest: Tamu | null; error?: string }> {
+    try {
+      // First, get the guest data
+      const { data: guestData, error: fetchError } = await this.supabase
+        .from('tamu')
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
+        .eq('qr_code', qrCode)
+        .is('deleted_at', null)
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          return { success: false, guest: null, error: 'QR Code tidak valid atau tamu tidak ditemukan.' };
+        }
+        throw new Error(this.formatError(fetchError));
+      }
+
+      // Check if not checked in yet
+      if (!guestData.check_in) {
+        const mappedGuest = {
+          ...guestData,
+          kategori: guestData.kategori_tamu?.nama || '',
+          hubungan: guestData.hubungan_tamu?.nama || '',
+          kategori_tamu: undefined,
+          hubungan_tamu: undefined,
+        };
+        return { 
+          success: false, 
+          guest: mappedGuest as Tamu, 
+          error: 'Tamu ini belum check-in. Silakan check-in terlebih dahulu.' 
+        };
+      }
+
+      // Check if already checked out
+      if (guestData.check_out) {
+        const mappedGuest = {
+          ...guestData,
+          kategori: guestData.kategori_tamu?.nama || '',
+          hubungan: guestData.hubungan_tamu?.nama || '',
+          kategori_tamu: undefined,
+          hubungan_tamu: undefined,
+        };
+        return { 
+          success: false, 
+          guest: mappedGuest as Tamu, 
+          error: `Tamu ini sudah check-out pada ${new Date(guestData.check_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` 
+        };
+      }
+
+      // Perform check-out
+      const { data: updatedData, error: updateError } = await this.supabase
+        .from('tamu')
+        .update({ check_out: new Date().toISOString() })
+        .eq('id', guestData.id)
+        .select(`
+          *,
+          kategori_tamu:kategori_id(nama),
+          hubungan_tamu:hubungan_id(nama)
+        `)
+        .single();
+
+      if (updateError) {
+        throw new Error(this.formatError(updateError));
+      }
+
+      const mappedGuest = {
+        ...updatedData,
+        kategori: updatedData.kategori_tamu?.nama || '',
+        hubungan: updatedData.hubungan_tamu?.nama || '',
+        kategori_tamu: undefined,
+        hubungan_tamu: undefined,
+      };
+
+      return { success: true, guest: mappedGuest as Tamu };
+    } catch (error: any) {
+      console.error('Error in directCheckOut:', error);
+      throw new Error(error.message || 'Gagal memproses check-out');
     }
   }
 

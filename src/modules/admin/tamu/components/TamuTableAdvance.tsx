@@ -30,6 +30,7 @@ interface TamuTableAdvanceProps {
   onEdit: (tamu: Tamu) => void;
   onDelete: (id: string) => void;
   onAddNew: () => void;
+  onViewDetail?: (tamu: Tamu) => void;
 }
 
 const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
@@ -38,6 +39,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
   onEdit,
   onDelete,
   onAddNew,
+  onViewDetail,
 }) => {
   const { colorMode } = useColorMode();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -280,6 +282,24 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
           const tamu = info.row.original;
           return (
             <HStack spacing={1}>
+              {onViewDetail && (
+                <IconButton
+                  aria-label="Lihat detail tamu"
+                  icon={
+                    <Icon viewBox="0 0 24 24" width="18px" height="18px">
+                      <path
+                        fill="currentColor"
+                        d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"
+                      />
+                    </Icon>
+                  }
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="teal"
+                  onClick={() => onViewDetail(tamu)}
+                  borderRadius="full"
+                />
+              )}
               <IconButton
                 aria-label="Edit tamu"
                 icon={

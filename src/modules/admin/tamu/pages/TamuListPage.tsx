@@ -118,6 +118,7 @@ const TamuListPage: React.FC = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAddNew={handleAddNew}
+                onViewDetail={handleViewDetail}
               />
 
               <TamuFormModal

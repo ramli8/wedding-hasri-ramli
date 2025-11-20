@@ -2,7 +2,7 @@
  * @file index.tsx
  * @description Minimalist wedding invitation landing page
  * @module landing
- * @version 3.1.0
+ * @version 3.2.0
  **/
 
 import { Box, Button, Container, Heading, Text, useColorMode, VStack, Divider, Flex } from "@chakra-ui/react";
@@ -17,21 +17,30 @@ const LandingPage = () => {
 			<Head>
 				<title>Hasri & Ramli • Wedding Invitation</title>
 				<meta name="description" content="Welcome to Hasri & Ramli's wedding celebration" />
+				<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 			</Head>
 
-			<Flex 
-				minH="100vh" 
-				align="center" 
-				justify="center" 
-				bg={colorMode === 'light' ? 'white' : 'gray.900'}
-				direction="column"
-			>
-				<Container maxW="container.md" py={{ base: 12, md: 20 }}>
-					<VStack spacing={{ base: 12, md: 16 }} align="center">
+			<Box minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'} position="relative">
+				{/* Header */}
+				<Flex 
+					p={4} 
+					bg={colorMode === 'light' ? 'white' : 'gray.800'} 
+					boxShadow="sm" 
+					align="center" 
+					justify="center"
+					position="sticky"
+					top={0}
+					zIndex={10}
+				>
+					<Heading size="md">Hasri & Ramli</Heading>
+				</Flex>
+
+				<Container maxW="md" py={8} px={4}>
+					<VStack spacing={10} align="center">
 						{/* Hero Section - Minimalist */}
-						<VStack spacing={6} textAlign="center">
+						<VStack spacing={4} textAlign="center" pt={4}>
 							<Text
-								fontSize={{ base: "xs", md: "sm" }}
+								fontSize="xs"
 								fontWeight="500"
 								letterSpacing="0.3em"
 								textTransform="uppercase"
@@ -40,7 +49,7 @@ const LandingPage = () => {
 								The Wedding of
 							</Text>
 							<Heading
-								fontSize={{ base: "5xl", md: "7xl" }}
+								fontSize={{ base: "4xl", md: "5xl" }}
 								fontWeight="400"
 								letterSpacing="tight"
 								lineHeight="1.1"
@@ -55,13 +64,13 @@ const LandingPage = () => {
 								borderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'} 
 								borderWidth="1px"
 								opacity={0.6}
-								my={4}
+								my={2}
 							/>
 
 							<Text
-								fontSize={{ base: "md", md: "lg" }}
+								fontSize="md"
 								color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-								maxW="500px"
+								maxW="400px"
 								lineHeight="1.8"
 								fontStyle="italic"
 								fontFamily="heading"
@@ -71,25 +80,24 @@ const LandingPage = () => {
 						</VStack>
 
 						{/* CTA Section - Clean */}
-						<VStack spacing={6} w="full" maxW="320px">
+						<VStack spacing={4} w="full" maxW="400px">
 							<Link href="/cek-qrcode" passHref legacyBehavior>
 								<a style={{ width: '100%' }}>
 									<Button
 										colorScheme="teal"
 										size="lg"
 										w="full"
-										h="56px"
-										fontSize="sm"
+										h="50px"
+										fontSize="md"
 										fontWeight="500"
-										letterSpacing="wide"
 										borderRadius="full"
 										_hover={{
-											transform: "translateY(-2px)",
+											transform: "translateY(-1px)",
 											boxShadow: "lg"
 										}}
-										transition="all 0.3s"
+										transition="all 0.2s"
 									>
-										CEK QR CODE
+										Cek QR Code
 									</Button>
 								</a>
 							</Link>
@@ -98,26 +106,24 @@ const LandingPage = () => {
 								<a style={{ width: '100%' }}>
 									<Button
 										variant="ghost"
-										colorScheme="gray"
-										size="sm"
+										size="md"
 										w="full"
-										fontSize="xs"
+										fontSize="sm"
 										fontWeight="400"
-										letterSpacing="wider"
-										color={colorMode === 'light' ? 'gray.400' : 'gray.600'}
+										color={colorMode === 'light' ? 'gray.500' : 'gray.500'}
 										_hover={{
 											color: colorMode === 'light' ? 'teal.600' : 'teal.300',
 											bg: 'transparent'
 										}}
 									>
-										ADMIN LOGIN
+										Admin Login
 									</Button>
 								</a>
 							</Link>
 						</VStack>
 					</VStack>
 				</Container>
-			</Flex>
+			</Box>
 		</>
 	);
 };

@@ -13,11 +13,11 @@ import {
   Icon,
   useColorMode,
 } from '@chakra-ui/react';
-import { QrReader } from 'react-qr-reader';
-import TamuAPI from '@/modules/admin/tamu/services/TamuAPI';
-import { Tamu } from '@/modules/admin/tamu/types/Tamu.types';
 import { FaCheckCircle, FaTimesCircle, FaCamera } from 'react-icons/fa';
 import Head from 'next/head';
+import QRScanner from '@/components/QRScanner';
+import TamuAPI from '@/modules/admin/tamu/services/TamuAPI';
+import { Tamu } from '@/modules/admin/tamu/types/Tamu.types';
 
 const CheckOutPage = () => {
   const [data, setData] = useState<string | null>(null);
@@ -36,22 +36,17 @@ const CheckOutPage = () => {
     }
   }, []);
 
-  const handleScan = async (result: any, error: any) => {
-    if (!!result && isScanning) {
-      const qrCode = result?.text;
-      if (qrCode && qrCode !== data) {
-        setData(qrCode);
-        setIsScanning(false); // Stop scanning immediately
-        await processCheckOut(qrCode);
-      }
+  const handleScan = async (decodedText: string) => {
+    if (isScanning && decodedText !== data) {
+      setData(decodedText);
+      setIsScanning(false); // Stop scanning immediately
+      await processCheckOut(decodedText);
     }
+  };
 
-    if (!!error) {
-      // Only show relevant errors
-      const errorMsg = error?.message || error?.toString();
-      if (errorMsg.includes('Permission')) {
-         setError('Izin kamera ditolak. Mohon izinkan akses kamera.');
-      }
+  const handleScanError = (error: string) => {
+    if (error.includes('Permission') || error.includes('camera')) {
+      setError('Izin kamera ditolak. Mohon izinkan akses kamera.');
     }
   };
 
@@ -166,28 +161,20 @@ const CheckOutPage = () => {
             <VStack spacing={6}>
               <Box 
                 w="100%" 
-                borderRadius="2xl" 
+                maxW="600px"
+                aspectRatio={1}
+                borderRadius="xl" 
                 overflow="hidden" 
                 boxShadow="xl" 
                 bg="black" 
                 position="relative"
-                h="calc(100vh - 140px)" // Maximize height (minus header and padding)
-                sx={{
-                  '& video': {
-                    objectFit: 'cover',
-                    width: '100% !important',
-                    height: '100% !important',
-                    position: 'absolute !important',
-                    top: '0 !important',
-                    left: '0 !important',
-                  }
-                }}
+                mx="auto"
               >
-                <QrReader
-                  onResult={handleScan}
-                  constraints={{ facingMode: 'environment' }}
-                  containerStyle={{ width: '100%', height: '100%' }}
-                  videoStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                <QRScanner
+                  onScanSuccess={handleScan}
+                  onScanError={handleScanError}
+                  fps={30}
+                  qrbox={300}
                 />
                 {/* Overlay Guidelines */}
                 <Box 
@@ -195,9 +182,10 @@ const CheckOutPage = () => {
                   top="50%" 
                   left="50%" 
                   transform="translate(-50%, -50%)" 
-                  w="280px" 
-                  h="280px" 
-                  border="2px solid rgba(255,255,255,0.5)" 
+                  w="300px" 
+                  h="300px" 
+                  border="3px solid" 
+                  borderColor="white"
                   borderRadius="lg"
                   boxShadow="0 0 0 9999px rgba(0,0,0,0.5)"
                   pointerEvents="none"
@@ -205,14 +193,16 @@ const CheckOutPage = () => {
                 />
                 <Text 
                   position="absolute" 
-                  bottom="40px" 
+                  bottom="20px" 
                   left="0" 
                   right="0" 
                   textAlign="center" 
                   color="white" 
                   fontWeight="bold"
+                  fontSize="md"
                   textShadow="0 2px 4px rgba(0,0,0,0.8)"
                   zIndex={3}
+                  px={4}
                 >
                   Arahkan kamera ke QR Code
                 </Text>

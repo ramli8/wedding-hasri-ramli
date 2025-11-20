@@ -1,7 +1,7 @@
 /**
  * @file cek-qrcode.tsx
  * @description QR Code check page - lookup and download QR code by phone number
- * @version 3.1.0
+ * @version 3.2.0
  **/
 
 import { useState, useEffect, useRef } from 'react';
@@ -226,58 +226,46 @@ const CekQRCode = () => {
       <Head>
         <title>Cek QR Code • Hasri & Ramli</title>
         <meta name="description" content="Check and download your wedding invitation QR code" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
 
       {/* Hidden canvas for styled download */}
       <canvas ref={downloadCanvasRef} style={{ display: 'none' }} />
 
-      <Flex 
-        minH="100vh" 
-        align="center" 
-        justify="center" 
-        bg={colorMode === 'light' ? 'gray.50' : 'gray.900'}
-        p={4}
-      >
-        <Container maxW="md" p={0}>
+      <Box minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'} position="relative">
+        {/* Header */}
+        <Flex 
+          p={4} 
+          bg={colorMode === 'light' ? 'white' : 'gray.800'} 
+          boxShadow="sm" 
+          align="center" 
+          justify="space-between"
+          position="sticky"
+          top={0}
+          zIndex={10}
+        >
+          <Link href="/" passHref legacyBehavior>
+            <a>
+              <IconButton 
+                icon={<FaArrowLeft />} 
+                aria-label="Kembali"
+                variant="ghost" 
+                size="sm"
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              />
+            </a>
+          </Link>
+          <Heading size="md">Cek QR Code</Heading>
+          <Box w="40px" /> {/* Spacer for centering */}
+        </Flex>
+
+        <Container maxW="md" py={6} px={4}>
           <VStack spacing={6} align="stretch">
             
-            {/* Back Button */}
-            <Box>
-              <Link href="/" passHref legacyBehavior>
-                <a>
-                  <Button 
-                    leftIcon={<FaArrowLeft />} 
-                    variant="ghost" 
-                    size="sm"
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                    _hover={{ bg: 'transparent', color: 'teal.500' }}
-                  >
-                    Kembali
-                  </Button>
-                </a>
-              </Link>
-            </Box>
-
-            {/* Main Card */}
-            <Box
-              bg={colorMode === 'light' ? 'white' : 'gray.800'}
-              borderRadius="2xl"
-              boxShadow="xl"
-              p={{ base: 8, md: 10 }}
-              border="1px"
-              borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
-            >
-              <VStack spacing={8}>
-                {/* Header */}
+            {!guestData ? (
+              /* Search Form */
+              <VStack spacing={6}>
                 <VStack spacing={2} textAlign="center">
-                  <Heading
-                    fontSize="2xl"
-                    fontWeight="400"
-                    fontFamily="heading"
-                    color={colorMode === 'light' ? 'gray.800' : 'white'}
-                  >
-                    Digital Invitation
-                  </Heading>
                   <Text
                     fontSize="sm"
                     color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
@@ -286,120 +274,109 @@ const CekQRCode = () => {
                   </Text>
                 </VStack>
 
-                {!guestData ? (
-                  /* Search Form */
-                  <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-                    <VStack spacing={6}>
-                      <FormControl isRequired>
-                        <FormLabel 
-                          fontWeight="500" 
-                          fontSize="sm"
-                          color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
-                        >
-                          Nomor WhatsApp / HP
-                        </FormLabel>
-                        <Input
-                          type="tel"
-                          placeholder="08xxxxxxxxxx"
-                          value={nomorHp}
-                          onChange={(e) => setNomorHp(e.target.value)}
-                          size="lg"
-                          borderRadius="lg"
-                          focusBorderColor="teal.500"
-                          isDisabled={loading}
-                          bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
-                          border="none"
-                          _focus={{ bg: 'transparent', border: '1px solid', borderColor: 'teal.500' }}
-                        />
-                      </FormControl>
-
-                      {error && (
-                        <Alert status="error" borderRadius="md" fontSize="sm">
-                          <AlertIcon />
-                          {error}
-                        </Alert>
-                      )}
-
-                      <Button
-                        type="submit"
-                        colorScheme="teal"
-                        size="lg"
-                        w="full"
-                        h="50px"
-                        isLoading={loading}
-                        loadingText="Mencari..."
-                        borderRadius="full"
-                        fontSize="md"
-                        fontWeight="500"
-                        _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+                <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+                  <VStack spacing={4}>
+                    <FormControl isRequired>
+                      <FormLabel 
+                        fontWeight="500" 
+                        fontSize="sm"
+                        color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
                       >
-                        Cari Undangan
-                      </Button>
-                    </VStack>
-                  </form>
-                ) : (
-                  /* QR Code Display */
-                  <VStack spacing={8} w="full">
-                    <VStack spacing={1}>
-                      <Text fontSize="sm" color="teal.500" fontWeight="600" letterSpacing="wide" textTransform="uppercase">
-                        Tamu Undangan
-                      </Text>
-                      <Heading size="lg" textAlign="center" fontFamily="heading">
-                        {guestData.nama}
-                      </Heading>
-                    </VStack>
+                        Nomor WhatsApp / HP
+                      </FormLabel>
+                      <Input
+                        type="tel"
+                        placeholder="08xxxxxxxxxx"
+                        value={nomorHp}
+                        onChange={(e) => setNomorHp(e.target.value)}
+                        size="lg"
+                        borderRadius="lg"
+                        focusBorderColor="teal.500"
+                        isDisabled={loading}
+                        bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                      />
+                    </FormControl>
 
-                    <Box
-                      p={4}
-                      bg="white"
-                      borderRadius="xl"
-                      boxShadow="sm"
-                      border="1px"
-                      borderColor="gray.100"
+                    {error && (
+                      <Alert status="error" borderRadius="md" fontSize="sm">
+                        <AlertIcon />
+                        {error}
+                      </Alert>
+                    )}
+
+                    <Button
+                      type="submit"
+                      colorScheme="teal"
+                      size="lg"
+                      w="full"
+                      h="50px"
+                      isLoading={loading}
+                      loadingText="Mencari..."
+                      borderRadius="full"
+                      fontSize="md"
+                      fontWeight="500"
+                      _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
                     >
-                      <canvas ref={canvasRef} />
-                    </Box>
-
-                    <Text fontSize="2xl" fontWeight="bold" fontFamily="monospace" letterSpacing="wider">
-                      {guestData.qr_code}
-                    </Text>
-
-                    <VStack spacing={3} w="full">
-                      <Button
-                        colorScheme="teal"
-                        size="lg"
-                        w="full"
-                        h="50px"
-                        borderRadius="full"
-                        leftIcon={<FaDownload />}
-                        onClick={handleDownload}
-                        _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
-                      >
-                        Simpan Undangan
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="md"
-                        w="full"
-                        onClick={handleReset}
-                        color="gray.500"
-                        fontWeight="normal"
-                      >
-                        Cari Nomor Lain
-                      </Button>
-                    </VStack>
+                      Cari Undangan
+                    </Button>
                   </VStack>
-                )}
+                </form>
               </VStack>
-            </Box>
+            ) : (
+              /* QR Code Display */
+              <VStack spacing={6} w="full">
+                <VStack spacing={1}>
+                  <Text fontSize="sm" color="teal.500" fontWeight="600" letterSpacing="wide" textTransform="uppercase">
+                    Tamu Undangan
+                  </Text>
+                  <Heading size="lg" textAlign="center" fontFamily="heading">
+                    {guestData.nama}
+                  </Heading>
+                </VStack>
 
-            {/* Footer */}
-            <Text textAlign="center" fontSize="xs" color="gray.500">
-              Hasri & Ramli Wedding • {new Date().getFullYear()}
-            </Text>
+                <Box
+                  p={4}
+                  bg="white"
+                  borderRadius="xl"
+                  boxShadow="md"
+                  mx="auto"
+                >
+                  <canvas ref={canvasRef} />
+                </Box>
+
+                <Text fontSize="xl" fontWeight="bold" fontFamily="monospace" letterSpacing="wider">
+                  {guestData.qr_code}
+                </Text>
+
+                <VStack spacing={3} w="full">
+                  <Button
+                    colorScheme="teal"
+                    size="lg"
+                    w="full"
+                    h="50px"
+                    borderRadius="full"
+                    leftIcon={<FaDownload />}
+                    onClick={handleDownload}
+                    _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+                  >
+                    Simpan Undangan
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    w="full"
+                    onClick={handleReset}
+                    color="gray.500"
+                    fontWeight="normal"
+                  >
+                    Cari Nomor Lain
+                  </Button>
+                </VStack>
+              </VStack>
+            )}
           </VStack>
         </Container>
-      </Flex>
+      </Box>
     </>
   );
 };

@@ -34,12 +34,24 @@ const Sidebar = () => {
   const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
 
   useEffect(() => {
+    // Try to load from cache first
+    const cached = localStorage.getItem('cached_permissions');
+    if (cached) {
+      try {
+        setAllowedUrls(JSON.parse(cached));
+      } catch (e) {
+        console.error('Failed to parse cached permissions', e);
+      }
+    }
+
     const fetchPermissions = async () => {
       if (!accountInfo?.activeRole) return;
       try {
         const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
         const urls = perms.map(p => p.url_pattern);
         setAllowedUrls(urls);
+        // Cache the permissions
+        localStorage.setItem('cached_permissions', JSON.stringify(urls));
       } catch (e) {
         console.error('Failed to fetch permissions', e);
       }

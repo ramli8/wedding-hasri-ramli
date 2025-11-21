@@ -18,6 +18,7 @@ import Head from 'next/head';
 import QRScanner from '@/components/QRScanner';
 import TamuAPI from '@/modules/admin/tamu/services/TamuAPI';
 import { Tamu } from '@/modules/admin/tamu/types/Tamu.types';
+import withAuth from '@/hoc/withAuth';
 
 const CheckInPage = () => {
   const [data, setData] = useState<string | null>(null);
@@ -292,4 +293,4 @@ const CheckInPage = () => {
   );
 };
 
-export default CheckInPage;
+export default withAuth(CheckInPage);

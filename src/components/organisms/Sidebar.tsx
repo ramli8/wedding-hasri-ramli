@@ -5,24 +5,57 @@ import {
   Button,
   Center,
   Flex,
+  Icon,
+  Link,
   Text,
   useColorMode,
-  useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { useContext } from "react";
+import AccountInfoContext from "@/providers/AccountInfoProvider";
 import { CloseIconMade, MyITSLogo } from "../atoms/IconsMade";
 import SidebarItem from "../molecules/SidebarItem";
+import PermissionAPI from "@/modules/admin/permissions/services/PermissionAPI";
+import { useEffect, useState } from "react";
+
+
+
 
 const Sidebar = () => {
   const { isNavbarOpen, navbarToggler } = useContext(AppSettingContext);
 
   const { colorMode } = useColorMode();
 
-  // Data dummy untuk menggantikan accountInfo
-  const accountInfo = {
-    name: 'Demo User',
-    group: ['public'],
-    role: []
+  // Get real account info from context
+  const accountInfo = useContext(AccountInfoContext);
+
+  // Permission logic
+  const permissionAPI = new PermissionAPI();
+  const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      if (!accountInfo?.activeRole) return;
+      try {
+        const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
+        const urls = perms.map(p => p.url_pattern);
+        setAllowedUrls(urls);
+      } catch (e) {
+        console.error('Failed to fetch permissions', e);
+      }
+    };
+    fetchPermissions();
+  }, [accountInfo?.activeRole]);
+
+  const hasAccess = (url: string) => {
+    if (allowedUrls.includes('*')) return true;
+    return allowedUrls.some(pattern => {
+      if (pattern.endsWith('*')) {
+        const prefix = pattern.slice(0, -1);
+        return url.startsWith(prefix);
+      }
+      return pattern === url;
+    });
   };
 
   return (
@@ -206,8 +239,10 @@ const Sidebar = () => {
                   Menu
                 </Box>
                 <Box className="sidebar__menu">
+
                   {menuItem
                     .filter(({ isShown }) => !isShown || isShown(accountInfo))
+                    .filter(item => hasAccess(item.url))
                     .map((item, index) => (
                       <SidebarItem
                         menuItem={item}
@@ -254,7 +289,9 @@ const Sidebar = () => {
                   Master
                 </Box>
                 <Box className="sidebar__menu">
-                  {menuItemMaster.map((item, index) => (
+                  {menuItemMaster
+                    .filter(item => hasAccess(item.url))
+                    .map((item, index) => (
                     <SidebarItem
                       menuItem={item}
                       menuIndex={index}
@@ -300,7 +337,10 @@ const Sidebar = () => {
                   Insights
                 </Box>
                 <Box className="sidebar__menu">
-                  {menuItemInsights.map((item, index) => (
+
+                  {menuItemInsights
+                    .filter(item => hasAccess(item.url))
+                    .map((item, index) => (
                     <SidebarItem
                       menuItem={item}
                       menuIndex={index}

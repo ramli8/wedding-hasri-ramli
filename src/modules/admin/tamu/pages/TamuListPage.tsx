@@ -119,6 +119,12 @@ const TamuListPage: React.FC = () => {
                 onDelete={handleDelete}
                 onAddNew={handleAddNew}
                 onViewDetail={handleViewDetail}
+                onUpdateStatus={async (id, status) => {
+                  await updateTamu(id, { 
+                    status_undangan: status,
+                    tgl_kirim_undangan: new Date()
+                  });
+                }}
               />
 
               <TamuFormModal

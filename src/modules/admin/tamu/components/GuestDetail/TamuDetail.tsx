@@ -21,6 +21,7 @@ import {
   Box,
   Icon,
 } from '@chakra-ui/react';
+import QRCode from 'qrcode.react';
 import { Tamu } from '../../types/Tamu.types';
 
 interface TamuDetailProps {
@@ -203,6 +204,26 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                         : 'Belum check-out'}
                     </Text>
                   </Flex>
+                </VStack>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardHeader pb={2}>
+                <Heading size="md">QR Code</Heading>
+              </CardHeader>
+              <CardBody>
+                <VStack spacing={4} align="center">
+                  <Box p={4} bg="white" borderRadius="md" boxShadow="sm">
+                    <QRCode value={tamu.qr_code || tamu.kode_unik || 'invalid'} size={200} />
+                  </Box>
+                  <Text fontWeight="bold" fontSize="lg">{tamu.qr_code || tamu.kode_unik}</Text>
+                  <Button 
+                    size="sm" 
+                    colorScheme="blue" 
+                    onClick={() => onQRCodeClick(tamu)}
+                  >
+                    Download QR Code
+                  </Button>
                 </VStack>
               </CardBody>
             </Card>

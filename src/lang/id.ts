@@ -82,6 +82,10 @@ const langId = {
 				title: 'Upload File',
 				subtitle: 'Desain Upload File untuk aplikasi',
 			},
+			dashboard: {
+				title: 'Dashboard',
+				subtitle: 'Halaman utama admin',
+			},
 			tamu: {
 				title: 'Manajemen Tamu',
 				subtitle: 'Kelola daftar tamu undangan pernikahan',
@@ -93,6 +97,30 @@ const langId = {
 			hubungan_tamu: {
 				title: 'Hubungan Tamu',
 				subtitle: 'Kelola hubungan tamu undangan',
+			},
+			roles: {
+				title: 'Manajemen Role',
+				subtitle: 'Kelola role dan hak akses',
+			},
+			users: {
+				title: 'Manajemen User',
+				subtitle: 'Kelola pengguna dan hak akses',
+			},
+			checkin: {
+				title: 'Check-in',
+				subtitle: 'Scan QR code untuk check-in tamu',
+			},
+			checkout: {
+				title: 'Check-out',
+				subtitle: 'Scan QR code untuk check-out tamu',
+			},
+			ucapan: {
+				title: 'Manajemen Ucapan',
+				subtitle: 'Kelola ucapan dan doa dari tamu',
+			},
+			permissions: {
+				title: 'Manajemen Permissions',
+				subtitle: 'Kelola permissions untuk setiap role',
 			},
 
 			personalisasi: {

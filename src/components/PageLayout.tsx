@@ -1,4 +1,8 @@
 import AppSettingContext from "@/providers/AppSettingProvider";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import AccountInfoContext from "@/providers/AccountInfoProvider";
+import AuthAPI from "@/modules/auth/services/AuthAPI";
+import PermissionAPI from "@/modules/admin/permissions/services/PermissionAPI";
 import { useSignOutAction } from "@/utils/SignOutAction";
 import {
 	Box,
@@ -74,7 +78,41 @@ const PageTransition = ({
 	const router = useRouter();
 	const n = page.lastIndexOf("/");
 	const r = page.substring(n + 1);
-	const { signOut } = useSignOutAction();
+	
+	// Add permission fetching logic
+  const permissionAPI = new PermissionAPI();
+  const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
+  const accountInfo = useContext(AccountInfoContext); // Moved up for use in useEffect
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      if (!accountInfo?.activeRole) return;
+      try {
+        const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
+        const urls = perms.map(p => p.url_pattern);
+        setAllowedUrls(urls);
+      } catch (e) {
+        console.error('Failed to fetch permissions', e);
+      }
+    };
+    fetchPermissions();
+  }, [accountInfo?.activeRole]);
+
+  const hasAccess = (url: string) => {
+    if (allowedUrls.includes('*')) return true;
+    return allowedUrls.some(pattern => {
+      if (pattern.endsWith('*')) {
+        const prefix = pattern.slice(0, -1);
+        return url.startsWith(prefix);
+      }
+      return pattern === url;
+    });
+  };
+	// Use AuthAPI for logout
+	const authAPI = new AuthAPI();
+	const handleLogout = () => {
+		authAPI.logout();
+		router.push('/admin/login');
+	};
 
 	const { colorMode, toggleColorMode } = useColorMode();
 	useEffect(() => {
@@ -94,20 +132,7 @@ const PageTransition = ({
 		onClose: onCloseGantiRole,
 	} = useDisclosure();
 	
-	// Data dummy untuk menggantikan accountInfo
-	const accountInfo = {
-		name: 'Demo User',
-		prefUsername: 'demo@example.com',
-		activeRole: 'demo',
-		profPicture: defaultProfilePicture,
-		role: [],
-		nickname: 'Demo',
-		identifier: 'demo',
-		group: ['public'],
-		origin: '',
-		unit: 'Demo Unit',
-		unitCode: 'DEMO'
-	};
+	// Get real account info from context
 	
 	const t = useTranslations("PageLayout");
 	const commonTranslations = useTranslations("Common");
@@ -339,28 +364,6 @@ const PageTransition = ({
 								</Text>
 							</Center>
 						</Box>
-						{
-							accountInfo?.role && accountInfo?.role.length > 1 && <>
-								<PrimarySubtleBadge
-									display={{ base: "none", m: "flex" }}
-									gap={2}
-									cursor={accountInfo?.role && accountInfo?.role.length > 1 ? "pointer" : "default"}
-									onClick={() => {
-										accountInfo?.role && accountInfo?.role.length > 1
-											? onOpenGantiRole()
-											: null;
-									}}
-								>
-									<UsersOutlineIconMade
-										fontSize="16px"
-										transition="transform 0.3s ease"
-									/>
-									{accountInfo?.role && accountInfo?.activeRole
-									  ? (accountInfo.role as Array<any>)?.find((role: any) => role?.id === accountInfo?.activeRole)?.name ?? ''
-									  : ''}
-								</PrimarySubtleBadge>
-							</>
-						}
 						<Menu closeOnSelect={false}>
 							<MenuButton
 								className="header__user"
@@ -412,24 +415,21 @@ const PageTransition = ({
 									)}
 								</Box>
 								{accountInfo?.role && accountInfo?.role.length > 1 && (
-									<MenuItem
-										icon={<UsersOutlineIconMade fontSize="18px" />}
-										onClick={onOpenGantiRole}
-									>
-										{commonTranslations("switch_role")}
-									</MenuItem>
+									<>
+										<MenuDivider mx=".75rem" />
+										<MenuItem
+											icon={<UsersOutlineIconMade fontSize="18px" />}
+											onClick={onOpenGantiRole}
+										>
+											{commonTranslations("switch_role")}
+										</MenuItem>
+									</>
 								)}
-								<MenuItem
-									icon={<ArrowLeftOutlineIconMade fontSize="18px" />}
-									onClick={() => window.open("https://portal.its.ac.id", "_blank")}
-								>
-									{commonTranslations("to_myits_portal")}
-								</MenuItem>
 								<MenuDivider mx=".75rem" />
 								<MenuItem
 									icon={<LogoutOutlineIconMade fontSize="18px" />}
 									color={colorMode == "light" ? "red.500" : "redDim.500"}
-									onClick={signOut}
+									onClick={handleLogout}
 								>
 									{commonTranslations("sign_out")}
 								</MenuItem>
@@ -467,26 +467,56 @@ const ModalGantiRole = ({
 	onClose: () => void;
 }) => {
 	const { colorMode } = useColorMode();
-	
-	// Data dummy untuk menggantikan accountInfo
-	const accountInfo = {
-		role: [],
-		activeRole: 'demo'
-	};
-	
+	const accountInfo = useContext(AccountInfoContext);
 	const commonTranslations = useTranslations("Common");
+	const router = useRouter();
 
 	// Role stuff
 	const toast = useToast();
-	const roles: any[] = []; // Tidak ada role karena tidak ada sistem otentikasi
-	const activeRole = null;
+	const roles = accountInfo?.role?.map((role: any) => ({
+		label: role.name,
+		value: role.id
+	})) || [];
+	const activeRole = accountInfo?.activeRole;
 	const formId = useId();
 	const [isSwitchingRole, setSwitchingRole] = useState(false);
 
 	const handleChangeRole: FormEventHandler<HTMLFormElement> = async (e) => {
 		e.preventDefault();
-		// Tidak melakukan apa-apa karena tidak ada sistem role
-		onClose();
+		const formData = new FormData(e.currentTarget);
+		const newRoleId = formData.get('role') as string;
+		
+		if (!newRoleId || newRoleId === activeRole) {
+			onClose();
+			return;
+		}
+
+		setSwitchingRole(true);
+		
+		try {
+			// Save new active role to localStorage
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('active_role_id', newRoleId);
+			}
+			
+			toast({
+				title: 'Role berhasil diganti',
+				status: 'success',
+				duration: 2000,
+			});
+			
+			// Redirect to dashboard with full page reload
+			window.location.href = '/admin/dashboard';
+		} catch (error) {
+			toast({
+				title: 'Gagal mengganti role',
+				status: 'error',
+				duration: 3000,
+			});
+		} finally {
+			setSwitchingRole(false);
+			onClose();
+		}
 	};
 
 	return (
@@ -509,24 +539,29 @@ const ModalGantiRole = ({
 				{/* @ts-expect-error */}
 				<ModalBody as="form" onSubmit={handleChangeRole} id={formId}>
 					<Box w="full">
-						<DropdownSelect
-							placeholder="Tidak ada role yang tersedia"
-							defaultValue={activeRole}
-							name="role"
-							options={roles}
-							isDisabled={true}
-							isMulti={false}
-							isClearable={false}
-						/>
-					</Box>
+					<DropdownSelect
+						placeholder={roles.length === 0 ? "Tidak ada role yang tersedia" : "Pilih role"}
+						defaultValue={activeRole}
+						name="role"
+						options={roles}
+						isDisabled={roles.length === 0 || isSwitchingRole}
+						isMulti={false}
+						isClearable={false}
+					/>
+				</Box>
 				</ModalBody>
 				<ModalFooter display="flex" pt="24px" gap={2}>
-					<Center w={{ base: "full", s: "auto" }}>
-						<DaliGhostButton onClick={onClose}>
-							{commonTranslations("cancel")}
-						</DaliGhostButton>
-					</Center>
-				</ModalFooter>
+				<Center w={{ base: "full", s: "auto" }}>
+					<DaliGhostButton onClick={onClose}>
+						{commonTranslations("cancel")}
+					</DaliGhostButton>
+				</Center>
+				<Center w={{ base: "full", s: "auto" }}>
+					<PrimaryButton type="submit" form={formId} isLoading={isSwitchingRole}>
+						{commonTranslations("save")}
+					</PrimaryButton>
+				</Center>
+			</ModalFooter>
 			</ModalContent>
 		</Modal>
 	);

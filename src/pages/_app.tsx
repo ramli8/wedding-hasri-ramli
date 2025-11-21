@@ -8,6 +8,7 @@
 
 import { ErrorBoundary } from '@/components/pages/ErrorBoundary';
 import { AppSettingProvider } from '@/providers/AppSettingProvider';
+import { AccountInfoProvider } from '@/providers/AccountInfoProvider';
 import LanguageProvider from '@/providers/LanguageProvider';
 import '@/styles/globals.css';
 import "@/styles/styles.css"; // Import style file
@@ -67,6 +68,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 				<title>{process.env.NEXT_PUBLIC_APP_NAME_FULL}</title>
 			</Head>
 			<AppSettingProvider>
+			<AccountInfoProvider>
 				<LanguageProvider>
 					<QueryClientProvider client={queryClient}>
 						<ChakraProvider theme={theme}>
@@ -76,7 +78,8 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 						</ChakraProvider>
 					</QueryClientProvider>
 				</LanguageProvider>
-			</AppSettingProvider>
+			</AccountInfoProvider>
+		</AppSettingProvider>
 		</ErrorBoundary>
 	)
 }

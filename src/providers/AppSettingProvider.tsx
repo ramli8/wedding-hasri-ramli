@@ -72,21 +72,25 @@ export function AppSettingProvider({ children }: { children: ReactNode }) {
 	// ********** FUNCTIONS ********** //
 	// Set Browser Settings in Local Storage
 	const navbarToggler = () => {
-		if (isNavbarOpen) {
-			localStorage.setItem("is_navbar_open", "false");
-		} else {
-			localStorage.setItem("is_navbar_open", "true");
+		if (typeof window !== 'undefined') {
+			if (isNavbarOpen) {
+				localStorage.setItem("is_navbar_open", "false");
+			} else {
+				localStorage.setItem("is_navbar_open", "true");
+			}
 		}
 		toggleNavbar();
 	};
 
 	useEffect(() => {
+		if (typeof window === 'undefined') return;
 		const savedColorPref = localStorage.getItem('color_pref')
 		if (!savedColorPref) return
 		setColorPref(savedColorPref as ColorPreference)
 	}, [])
 
 	useEffect(() => {
+		if (typeof window === 'undefined') return;
 		const savedLangPref = localStorage.getItem('lang_pref')
 		if (!savedLangPref) return
 		setLangPref(savedLangPref as LanguagePreference)

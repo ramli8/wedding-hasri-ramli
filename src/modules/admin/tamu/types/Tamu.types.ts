@@ -8,6 +8,7 @@ export interface Tamu {
   alamat: string;
   nomor_hp: string;
   qr_code: string;
+  kode_unik?: string; // Alias for qr_code or separate unique code
   status_undangan: 'dikirim' | 'belum_dikirim' | 'kadaluarsa';
   konfirmasi_kehadiran: 'akan_hadir' | 'tidak_hadir' | 'belum_konfirmasi';
   tgl_kirim_undangan?: Date;

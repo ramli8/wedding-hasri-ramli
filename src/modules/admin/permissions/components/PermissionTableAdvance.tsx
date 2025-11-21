@@ -63,7 +63,12 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         accessorKey: 'roles.name',
         header: 'Role',
         cell: (info) => (
-          <Badge colorScheme="purple" variant="subtle">
+          <Badge 
+            variant="outline" 
+            colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+            borderColor={colorMode === 'light' ? 'black' : 'white'}
+            color={colorMode === 'light' ? 'black' : 'white'}
+          >
             {info.getValue()}
           </Badge>
         ),
@@ -74,7 +79,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         accessorKey: 'url_pattern',
         header: 'URL Pattern',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
             {info.getValue()}
           </Text>
         ),
@@ -85,7 +90,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         accessorKey: 'description',
         header: 'Deskripsi',
         cell: (info) => (
-          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.300'}>
+          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
             {info.getValue() || '-'}
           </Text>
         ),
@@ -98,7 +103,13 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         cell: (info) => {
           const isDeleted = info.getValue();
           return (
-            <Badge colorScheme={isDeleted ? 'red' : 'green'}>
+            <Badge 
+              variant="outline"
+              colorScheme={isDeleted ? 'gray' : 'blackAlpha'}
+              borderColor={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
+              opacity={isDeleted ? 0.5 : 1}
+            >
               {isDeleted ? 'Dihapus' : 'Aktif'}
             </Badge>
           );
@@ -129,7 +140,8 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                     }
                     size="sm"
                     variant="ghost"
-                    colorScheme="blue"
+                    color={colorMode === 'light' ? 'black' : 'white'}
+                    _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                     onClick={() => onEdit(permission)}
                     borderRadius="full"
                   />
@@ -145,7 +157,8 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                     }
                     size="sm"
                     variant="ghost"
-                    colorScheme="red"
+                    color={colorMode === 'light' ? 'black' : 'white'}
+                    _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                     onClick={() => handleDelete(permission.id)}
                     borderRadius="full"
                   />
@@ -163,7 +176,8 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                   }
                   size="sm"
                   variant="ghost"
-                  colorScheme="green"
+                  color={colorMode === 'light' ? 'black' : 'white'}
+                  _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                   onClick={() => onRestore(permission.id)}
                   borderRadius="full"
                 />
@@ -190,9 +204,11 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
     <Box>
       <Box 
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'black'}
         borderRadius="24px"
         p={6}
+        border="1px solid"
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
         _before={{
           content: '""',
           pos: "absolute",
@@ -213,7 +229,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
               fontSize="2xl" 
               fontWeight="800"
               letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'gray.800' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
             >
               Daftar Permissions
             </Text>

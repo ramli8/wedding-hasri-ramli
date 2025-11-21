@@ -57,7 +57,7 @@ const CekQRCode = () => {
           width: 200,
           margin: 1,
           color: {
-            dark: '#1A202C',
+            dark: '#000000',
             light: '#FFFFFF',
           },
         },
@@ -85,36 +85,34 @@ const CekQRCode = () => {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, 800, 1000);
 
-      // Decorative Border
-      ctx.strokeStyle = '#D1D5DB'; // Gray 300
-      ctx.lineWidth = 2;
+      // Double Border
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
       ctx.strokeRect(40, 40, 720, 920);
-
-      // Inner Border
-      ctx.strokeStyle = '#E5E7EB'; // Gray 200
+      
       ctx.lineWidth = 1;
       ctx.strokeRect(50, 50, 700, 900);
 
       // Title
-      ctx.fillStyle = '#1A202C'; // Gray 900
-      // Use a serif font if available, fallback to serif
-      ctx.font = '400 48px "Playfair Display", serif';
+      ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
+      
+      ctx.font = '400 48px "Playfair Display", serif';
       ctx.fillText('The Wedding of', 400, 140);
 
       ctx.font = '400 64px "Playfair Display", serif';
       ctx.fillText('Hasri & Ramli', 400, 220);
 
       // Divider line
-      ctx.strokeStyle = '#319795'; // Teal 500
-      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(350, 260);
       ctx.lineTo(450, 260);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
       // Guest name
-      ctx.fillStyle = '#2D3748'; // Gray 800
+      ctx.fillStyle = '#000000';
       ctx.font = '500 36px sans-serif';
       ctx.fillText('Dear,', 400, 340);
       
@@ -128,7 +126,7 @@ const CekQRCode = () => {
           width: 350,
           margin: 1,
           color: {
-            dark: '#1A202C',
+            dark: '#000000',
             light: '#FFFFFF',
           }
         }
@@ -139,12 +137,12 @@ const CekQRCode = () => {
           ctx.drawImage(img, 225, 450, 350, 350);
 
           // QR Code number
-          ctx.fillStyle = '#4A5568'; // Gray 600
+          ctx.fillStyle = '#000000';
           ctx.font = 'bold 32px monospace';
           ctx.fillText(guestData.qr_code, 400, 840);
 
           // Footer
-          ctx.fillStyle = '#718096'; // Gray 500
+          ctx.fillStyle = '#666666';
           ctx.font = 'italic 24px serif';
           ctx.fillText('Please show this QR code at the reception', 400, 900);
         };
@@ -221,6 +219,12 @@ const CekQRCode = () => {
     setError('');
   };
 
+  const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
+  const focusBorderColor = colorMode === 'light' ? 'black' : 'white';
+  const buttonBg = colorMode === 'light' ? 'black' : 'white';
+  const buttonColor = colorMode === 'light' ? 'white' : 'black';
+  const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
   return (
     <>
       <Head>
@@ -232,17 +236,17 @@ const CekQRCode = () => {
       {/* Hidden canvas for styled download */}
       <canvas ref={downloadCanvasRef} style={{ display: 'none' }} />
 
-      <Box minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'} position="relative">
+      <Box minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'} position="relative">
         {/* Header */}
         <Flex 
-          p={4} 
-          bg={colorMode === 'light' ? 'white' : 'gray.800'} 
-          boxShadow="sm" 
+          p={6} 
+          bg="transparent"
           align="center" 
           justify="space-between"
           position="sticky"
           top={0}
           zIndex={10}
+          backdropFilter="blur(8px)"
         >
           <Link href="/" passHref legacyBehavior>
             <a>
@@ -251,36 +255,39 @@ const CekQRCode = () => {
                 aria-label="Kembali"
                 variant="ghost" 
                 size="sm"
-                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: 'transparent', opacity: 0.7 }}
               />
             </a>
           </Link>
-          <Heading size="md">Cek QR Code</Heading>
-          <Box w="40px" /> {/* Spacer for centering */}
+          <Heading size="md" fontWeight="800" letterSpacing="tight">Cek QR Code</Heading>
+          <Box w="32px" /> {/* Spacer for centering */}
         </Flex>
 
-        <Container maxW="md" py={6} px={4}>
-          <VStack spacing={6} align="stretch">
+        <Container maxW="sm" py={10} px={6}>
+          <VStack spacing={8} align="stretch">
             
             {!guestData ? (
               /* Search Form */
-              <VStack spacing={6}>
+              <VStack spacing={8}>
                 <VStack spacing={2} textAlign="center">
                   <Text
                     fontSize="sm"
-                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    color="gray.500"
                   >
                     Masukkan nomor HP untuk akses QR Code
                   </Text>
                 </VStack>
 
                 <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-                  <VStack spacing={4}>
+                  <VStack spacing={6}>
                     <FormControl isRequired>
                       <FormLabel 
                         fontWeight="500" 
-                        fontSize="sm"
-                        color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
+                        fontSize="xs"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        letterSpacing="wide"
                       >
                         Nomor WhatsApp / HP
                       </FormLabel>
@@ -289,33 +296,37 @@ const CekQRCode = () => {
                         placeholder="08xxxxxxxxxx"
                         value={nomorHp}
                         onChange={(e) => setNomorHp(e.target.value)}
-                        size="lg"
-                        borderRadius="lg"
-                        focusBorderColor="teal.500"
-                        isDisabled={loading}
-                        bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                        height="48px"
+                        bg="transparent"
+                        border="1px solid"
+                        borderColor={borderColor}
+                        _hover={{ borderColor: 'gray.400' }}
+                        _focus={{ borderColor: focusBorderColor, boxShadow: 'none' }}
+                        borderRadius="md"
+                        fontSize="sm"
                       />
                     </FormControl>
 
                     {error && (
-                      <Alert status="error" borderRadius="md" fontSize="sm">
-                        <AlertIcon />
+                      <Alert status="error" variant="subtle" bg="red.50" color="red.900" borderRadius="md" fontSize="sm">
+                        <AlertIcon color="red.500" />
                         {error}
                       </Alert>
                     )}
 
                     <Button
                       type="submit"
-                      colorScheme="teal"
-                      size="lg"
-                      w="full"
-                      h="50px"
+                      width="full"
+                      height="48px"
+                      bg={buttonBg}
+                      color={buttonColor}
+                      _hover={{ bg: buttonHoverBg }}
+                      _active={{ bg: buttonHoverBg }}
                       isLoading={loading}
                       loadingText="Mencari..."
-                      borderRadius="full"
-                      fontSize="md"
-                      fontWeight="500"
-                      _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+                      borderRadius="md"
+                      fontSize="sm"
+                      fontWeight="600"
                     >
                       Cari Undangan
                     </Button>
@@ -324,21 +335,22 @@ const CekQRCode = () => {
               </VStack>
             ) : (
               /* QR Code Display */
-              <VStack spacing={6} w="full">
-                <VStack spacing={1}>
-                  <Text fontSize="sm" color="teal.500" fontWeight="600" letterSpacing="wide" textTransform="uppercase">
+              <VStack spacing={8} w="full">
+                <VStack spacing={2}>
+                  <Text fontSize="xs" color="gray.500" fontWeight="600" letterSpacing="widest" textTransform="uppercase">
                     Tamu Undangan
                   </Text>
-                  <Heading size="lg" textAlign="center" fontFamily="heading">
+                  <Heading size="lg" textAlign="center" fontWeight="800" letterSpacing="tight">
                     {guestData.nama}
                   </Heading>
                 </VStack>
 
                 <Box
-                  p={4}
+                  p={6}
                   bg="white"
-                  borderRadius="xl"
-                  boxShadow="md"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  borderRadius="lg"
                   mx="auto"
                 >
                   <canvas ref={canvasRef} />
@@ -350,14 +362,17 @@ const CekQRCode = () => {
 
                 <VStack spacing={3} w="full">
                   <Button
-                    colorScheme="teal"
-                    size="lg"
-                    w="full"
-                    h="50px"
-                    borderRadius="full"
+                    width="full"
+                    height="48px"
+                    bg={buttonBg}
+                    color={buttonColor}
+                    _hover={{ bg: buttonHoverBg }}
+                    _active={{ bg: buttonHoverBg }}
                     leftIcon={<FaDownload />}
                     onClick={handleDownload}
-                    _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+                    borderRadius="md"
+                    fontSize="sm"
+                    fontWeight="600"
                   >
                     Simpan Undangan
                   </Button>
@@ -368,6 +383,8 @@ const CekQRCode = () => {
                     onClick={handleReset}
                     color="gray.500"
                     fontWeight="normal"
+                    fontSize="sm"
+                    _hover={{ bg: 'transparent', color: colorMode === 'light' ? 'black' : 'white' }}
                   >
                     Cari Nomor Lain
                   </Button>

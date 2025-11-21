@@ -291,11 +291,12 @@ const PageTransition = ({
 						w={{ base: "100%", m: "unset" }}
 						m={{ base: "0 -32px 0 -32px", t: "0px 0 0 auto" }}
 						borderBottom={{ base: "1px solid", m: "none" }}
-						borderColor={colorMode == "light" ? "#e4e4e4" : "#292929"}
+						borderColor={colorMode == "light" ? "gray.200" : "gray.800"}
 						background={{
-							base: colorMode === "light" ? "white" : "#141414",
+							base: colorMode === "light" ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)",
 							m: "unset",
 						}}
+						backdropFilter="blur(10px)"
 						transition="top 0.3s"
 					>
 						<Button
@@ -321,7 +322,7 @@ const PageTransition = ({
 								height: "2px",
 								margin: "3px auto",
 								borderRadius: "1px",
-								background: colorMode == "light" ? "#1b1d21" : "#ffffff",
+								background: colorMode == "light" ? "black" : "white",
 							}}
 							_after={{
 								content: '""',
@@ -333,7 +334,7 @@ const PageTransition = ({
 								left: "0px",
 								margin: "3px auto",
 								borderRadius: "1px",
-								background: colorMode == "light" ? "#1b1d21" : "#ffffff",
+								background: colorMode == "light" ? "black" : "white",
 							}}
 						></Button>
 						<Box

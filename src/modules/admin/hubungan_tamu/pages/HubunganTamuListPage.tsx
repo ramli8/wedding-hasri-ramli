@@ -137,7 +137,7 @@ const HubunganTamuListPage: React.FC = () => {
   const { colorMode } = useColorMode();
 
   return (
-    <Flex minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'}>
+    <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
       <Sidebar />
       <Box
         flex="1"

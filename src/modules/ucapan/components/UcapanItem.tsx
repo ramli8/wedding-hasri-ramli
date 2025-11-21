@@ -68,28 +68,16 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
     setIsSubmitting(true);
 
     // Determine the correct parent ID
-    // If this ucapan is already a reply (has parent_id), use that parent_id
-    // Otherwise, use this ucapan's id as the parent
     const parentIdToUse = ucapan.parent_id || ucapan.id;
 
     try {
-      console.log('Replying to parent ucapan:', parentIdToUse, 'current ucapan:', ucapan.id, 'with data:', {
+      await api.replyToUcapan(parentIdToUse, {
         nama: replyerName || 'Tamu',
         pesan: replyText.trim(),
         user_id: isAdminMode ? (adminUserId || undefined) : undefined,
         tamu_id: !isAdminMode ? (guestId || undefined) : undefined,
         is_admin: isAdminMode,
       });
-
-      const result = await api.replyToUcapan(parentIdToUse, {
-        nama: replyerName || 'Tamu',
-        pesan: replyText.trim(),
-        user_id: isAdminMode ? (adminUserId || undefined) : undefined,
-        tamu_id: !isAdminMode ? (guestId || undefined) : undefined,
-        is_admin: isAdminMode,
-      });
-
-      console.log('Reply result:', result);
 
       toast({
         title: 'Balasan berhasil dikirim',
@@ -101,18 +89,10 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
       setShowReplyForm(false);
       
       // Force immediate refresh
-      console.log('Calling onReplySuccess to refresh data...');
       if (onReplySuccess) {
         await onReplySuccess();
-        console.log('Data refresh completed');
       }
     } catch (error: any) {
-      console.error('Error submitting reply:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      });
       toast({
         title: 'Gagal mengirim balasan',
         description: error.message,
@@ -124,27 +104,42 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
     }
   };
 
+  const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
+  const focusBorderColor = colorMode === 'light' ? 'black' : 'white';
+  const buttonBg = colorMode === 'light' ? 'black' : 'white';
+  const buttonColor = colorMode === 'light' ? 'white' : 'black';
+  const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
   return (
     <Box>
       <Box
         p={4}
-        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        bg="transparent"
         borderRadius="md"
         ml={isReply ? 8 : 0}
-        boxShadow="sm"
         border="1px solid"
-        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+        borderColor={borderColor}
       >
-        <VStack align="start" spacing={2}>
+        <VStack align="start" spacing={3}>
           <HStack justify="space-between" w="full" align="start">
             <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-              <Text fontWeight="bold" fontSize="md">
+              <Text fontWeight="700" fontSize="sm">
                 {ucapan.nama}
               </Text>
               {ucapan.is_admin && (
-                <Badge colorScheme="purple" fontSize="xs">
+                <Box 
+                  as="span" 
+                  fontSize="10px" 
+                  fontWeight="bold" 
+                  px={1.5} 
+                  py={0.5} 
+                  border="1px solid" 
+                  borderColor={colorMode === 'light' ? 'black' : 'white'}
+                  borderRadius="sm"
+                  textTransform="uppercase"
+                >
                   Admin
-                </Badge>
+                </Box>
               )}
               <Text fontSize="xs" color="gray.500">
                 {formatDate(ucapan.created_at)}
@@ -152,7 +147,7 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
             </Box>
           </HStack>
           <HStack justify="space-between" w="full" align="start">
-            <Text fontSize="sm" whiteSpace="pre-wrap" flex="1">
+            <Text fontSize="sm" whiteSpace="pre-wrap" flex="1" color={colorMode === 'light' ? 'gray.700' : 'gray.300'}>
               {ucapan.pesan}
             </Text>
             {canReply && isLastInThread && (
@@ -166,13 +161,14 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
                     />
                   </Icon>
                 }
-                size="sm"
+                size="xs"
                 variant="ghost"
-                colorScheme="teal"
+                color="gray.500"
                 onClick={handleReplyClick}
                 isActive={showReplyForm}
                 _hover={{
-                  bg: colorMode === 'light' ? 'teal.50' : 'teal.900',
+                  color: colorMode === 'light' ? 'black' : 'white',
+                  bg: 'transparent',
                 }}
               />
             )}
@@ -183,16 +179,16 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
       {/* Inline Reply Form */}
       {showReplyForm && canReply && (
         <Box
-          mt={2}
+          mt={3}
           ml={8}
           p={4}
-          bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+          bg="transparent"
           borderRadius="md"
-          borderLeft="4px solid"
-          borderColor="teal.500"
+          border="1px solid"
+          borderColor={borderColor}
         >
           <VStack spacing={3} align="stretch">
-            <Text fontSize="sm" fontWeight="600" color="gray.600">
+            <Text fontSize="xs" fontWeight="600" color="gray.500" textTransform="uppercase">
               Balas sebagai {replyerName}
             </Text>
             <Textarea
@@ -203,18 +199,27 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
               disabled={isSubmitting}
               fontSize="sm"
               borderRadius="md"
+              bg="transparent"
+              border="1px solid"
+              borderColor={borderColor}
               _focus={{
-                borderColor: 'teal.500',
-                boxShadow: '0 0 0 1px var(--chakra-colors-teal-500)',
+                borderColor: focusBorderColor,
+                boxShadow: 'none',
               }}
             />
             <HStack spacing={2}>
               <Button
                 size="sm"
-                colorScheme="teal"
+                bg={buttonBg}
+                color={buttonColor}
+                _hover={{ bg: buttonHoverBg }}
+                _active={{ bg: buttonHoverBg }}
                 onClick={handleSubmitReply}
                 isLoading={isSubmitting}
                 loadingText="Mengirim..."
+                borderRadius="md"
+                fontSize="xs"
+                fontWeight="600"
               >
                 Kirim Balasan
               </Button>
@@ -223,6 +228,10 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
                 variant="ghost"
                 onClick={handleReplyClick}
                 disabled={isSubmitting}
+                fontSize="xs"
+                fontWeight="500"
+                color="gray.500"
+                _hover={{ color: colorMode === 'light' ? 'black' : 'white', bg: 'transparent' }}
               >
                 Batal
               </Button>

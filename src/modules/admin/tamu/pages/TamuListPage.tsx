@@ -83,7 +83,7 @@ const TamuListPage: React.FC = () => {
   };
 
   return (
-    <Flex minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'}>
+    <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
       {/* Sidebar */}
       <Sidebar />
 

@@ -77,85 +77,85 @@ const LoginPage = () => {
     }
   };
 
+  const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
+  const focusBorderColor = colorMode === 'light' ? 'black' : 'white';
+  const buttonBg = colorMode === 'light' ? 'black' : 'white';
+  const buttonColor = colorMode === 'light' ? 'white' : 'black';
+  const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
   return (
     <Flex
       minH="100vh"
       align="center"
       justify="center"
-      bg={colorMode === 'light' ? 'gray.50' : 'gray.900'}
+      bg={colorMode === 'light' ? 'white' : 'black'}
     >
-      <Container maxW="md">
-        <Box
-          bg={colorMode === 'light' ? 'white' : 'gray.800'}
-          p={8}
-          borderRadius="2xl"
-          boxShadow="xl"
-        >
-          <VStack spacing={6} align="stretch">
-            <Box textAlign="center">
-              <Heading size="xl" mb={2} fontFamily="heading">
-                Admin Panel
-              </Heading>
-              <Text color="gray.500" fontSize="sm">
-                Masuk untuk mengelola undangan
-              </Text>
-            </Box>
-
-            <form onSubmit={handleSubmit}>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Username</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement>
-                      <Icon as={FiUser} color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Masukkan username"
-                      bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
-                      border="none"
-                    />
-                  </InputGroup>
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Password</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement>
-                      <Icon as={FiLock} color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Masukkan password"
-                      bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
-                      border="none"
-                    />
-                  </InputGroup>
-                </FormControl>
-
-                <Button
-                  type="submit"
-                  colorScheme="teal"
-                  width="full"
-                  size="lg"
-                  isLoading={loading}
-                  borderRadius="full"
-                  mt={4}
-                >
-                  Masuk
-                </Button>
-              </VStack>
-            </form>
-
-            <Text textAlign="center" fontSize="xs" color="gray.500" mt={4}>
-              Default: username <b>admin</b>, password <b>admin123</b>
+      <Container maxW="sm">
+        <VStack spacing={8} align="stretch">
+          <Box textAlign="center">
+            <Heading size="lg" mb={2} fontWeight="800" letterSpacing="tight">
+              Admin Panel
+            </Heading>
+            <Text color="gray.500" fontSize="sm">
+              Masuk untuk melanjutkan
             </Text>
-          </VStack>
-        </Box>
+          </Box>
+
+          <form onSubmit={handleSubmit}>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="500" color="gray.500">Username</FormLabel>
+                <Input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  bg="transparent"
+                  border="1px solid"
+                  borderColor={borderColor}
+                  _hover={{ borderColor: 'gray.400' }}
+                  _focus={{ borderColor: focusBorderColor, boxShadow: 'none' }}
+                  borderRadius="md"
+                  height="48px"
+                  fontSize="sm"
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="500" color="gray.500">Password</FormLabel>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  bg="transparent"
+                  border="1px solid"
+                  borderColor={borderColor}
+                  _hover={{ borderColor: 'gray.400' }}
+                  _focus={{ borderColor: focusBorderColor, boxShadow: 'none' }}
+                  borderRadius="md"
+                  height="48px"
+                  fontSize="sm"
+                />
+              </FormControl>
+
+              <Button
+                type="submit"
+                width="full"
+                height="48px"
+                bg={buttonBg}
+                color={buttonColor}
+                _hover={{ bg: buttonHoverBg }}
+                _active={{ bg: buttonHoverBg }}
+                isLoading={loading}
+                borderRadius="md"
+                fontSize="sm"
+                fontWeight="600"
+                mt={4}
+              >
+                Masuk
+              </Button>
+            </VStack>
+          </form>
+        </VStack>
       </Container>
     </Flex>
   );

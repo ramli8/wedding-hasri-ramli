@@ -49,6 +49,7 @@ import {
 import { FaFilter } from "react-icons/fa";
 
 const ColumnFilter = ({ column }: { column: any }) => {
+  const { colorMode } = useColorMode();
   const columnFilterValue = (column.getFilterValue() as string[]) || [];
   const uniqueValues = Array.from(column.getFacetedUniqueValues().keys()).sort().filter(Boolean);
 
@@ -63,12 +64,14 @@ const ColumnFilter = ({ column }: { column: any }) => {
           icon={<FaFilter />}
           size="xs"
           variant={columnFilterValue.length > 0 ? "solid" : "ghost"}
-          colorScheme={columnFilterValue.length > 0 ? "blue" : "gray"}
+          colorScheme={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha') : "gray"}
+          bg={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'black' : 'white') : undefined}
+          color={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'white' : 'black') : undefined}
           ml={2}
         />
       </PopoverTrigger>
-      <PopoverContent w="200px" _focus={{ boxShadow: "none" }}>
-        <PopoverArrow />
+      <PopoverContent w="200px" _focus={{ boxShadow: "none" }} bg={colorMode === 'light' ? 'white' : 'black'} borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}>
+        <PopoverArrow bg={colorMode === 'light' ? 'white' : 'black'} />
         <PopoverBody p={2}>
           <VStack align="start" spacing={2}>
             <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>
@@ -87,6 +90,8 @@ const ColumnFilter = ({ column }: { column: any }) => {
                 }}
                 size="sm"
                 width="full"
+                colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+                iconColor={colorMode === 'light' ? 'white' : 'black'}
               >
                 <Text fontSize="sm" noOfLines={1}>{value}</Text>
               </Checkbox>
@@ -94,11 +99,12 @@ const ColumnFilter = ({ column }: { column: any }) => {
             {columnFilterValue.length > 0 && (
               <Text
                 fontSize="xs"
-                color="blue.500"
+                color={colorMode === 'light' ? 'black' : 'white'}
                 cursor="pointer"
                 onClick={() => column.setFilterValue(undefined)}
                 alignSelf="flex-end"
                 mt={2}
+                _hover={{ textDecoration: 'underline' }}
               >
                 Reset Filter
               </Text>
@@ -171,13 +177,13 @@ const TableAdvance = ({
             borderRadius="xl"
             bg={colorMode === 'light' ? 'white' : 'gray.800'}
             border="2px solid"
-            borderColor={colorMode === 'light' ? 'gray.200' : 'gray.600'}
+            borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
             _hover={{
-              borderColor: colorMode === 'light' ? 'blue.400' : 'blue.300',
+              borderColor: colorMode === 'light' ? 'black' : 'white',
             }}
             _focus={{
-              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
-              boxShadow: `0 0 0 1px ${colorMode === 'light' ? '#3182ce' : '#63b3ed'}`,
+              borderColor: colorMode === 'light' ? 'black' : 'white',
+              boxShadow: `0 0 0 1px ${colorMode === 'light' ? 'black' : 'white'}`,
             }}
             transition="all 0.2s"
           />
@@ -211,7 +217,7 @@ const TableAdvance = ({
                               onClick: header.column.getToggleSortingHandler(),
                             }}
                           >
-                            <Text textAlign="left">
+                            <Text textAlign="left" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} fontSize="xs" textTransform="uppercase" letterSpacing="wider">
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
@@ -237,13 +243,15 @@ const TableAdvance = ({
           <Tbody>
             {table.getRowModel().rows.map((row) => {
               return (
-                <Tr key={row.id}>
+                <Tr key={row.id} _hover={{ bg: colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50' }}>
                   {row.getVisibleCells().map((cell) => {
                     return (
                       <Td 
                         key={cell.id}
                         paddingY="16px"
                         paddingX="12px"
+                        borderBottom="1px solid"
+                        borderColor={colorMode === 'light' ? 'gray.100' : 'gray.800'}
                         _first={{
                           paddingInlineStart: "24px",
                         }}
@@ -267,28 +275,44 @@ const TableAdvance = ({
           <Stack direction={{ base: 'column', sm: 'row' }} alignItems="center" spacing={4}>
             <HStack>
               <Button
-                className="border rounded p-1"
+                size="sm"
+                variant="outline"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.800' }}
                 onClick={() => table.setPageIndex(0)}
                 isDisabled={!table.getCanPreviousPage()}
               >
                 <IoChevronBackCircle />
               </Button>
               <Button
-                className="border rounded p-1"
+                size="sm"
+                variant="outline"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.800' }}
                 onClick={() => table.previousPage()}
                 isDisabled={!table.getCanPreviousPage()}
               >
                 <IoChevronBack />
               </Button>
               <Button
-                className="border rounded p-1"
+                size="sm"
+                variant="outline"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.800' }}
                 onClick={() => table.nextPage()}
                 isDisabled={!table.getCanNextPage()}
               >
                 <IoChevronForward />
               </Button>
               <Button
-                className="border rounded p-1"
+                size="sm"
+                variant="outline"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.800' }}
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 isDisabled={!table.getCanNextPage()}
               >
@@ -296,7 +320,7 @@ const TableAdvance = ({
               </Button>
             </HStack>
             <Box as="span" textAlign="center">
-              <Text>
+              <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
                 {"Page "}
                 {table.getState().pagination.pageIndex + 1} of{" "}
                 {table.getPageCount()}

@@ -45,8 +45,8 @@ const UcapanForm: React.FC<UcapanFormProps> = ({
   // Only show alert if neither guest nor admin
   if (!canSubmit) {
     return (
-      <Alert status="info" borderRadius="lg">
-        <AlertIcon />
+      <Alert status="info" variant="subtle" bg="gray.100" color="gray.800" borderRadius="md">
+        <AlertIcon color="gray.500" />
         <Text fontSize="sm">
           Ucapan hanya dapat dikirim oleh tamu yang memiliki undangan. 
           Silakan akses halaman ini melalui link undangan Anda.
@@ -103,20 +103,27 @@ const UcapanForm: React.FC<UcapanFormProps> = ({
     }
   };
 
+  const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
+  const focusBorderColor = colorMode === 'light' ? 'black' : 'white';
+  const buttonBg = colorMode === 'light' ? 'black' : 'white';
+  const buttonColor = colorMode === 'light' ? 'white' : 'black';
+  const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
   return (
     <Box
       as="form"
       onSubmit={handleSubmit}
       p={6}
-      bg={colorMode === 'light' ? 'white' : 'gray.800'}
-      borderRadius="xl"
-      boxShadow="lg"
+      bg="transparent"
+      borderRadius="lg"
       border="1px solid"
-      borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+      borderColor={borderColor}
     >
       <VStack spacing={4} align="stretch">
         <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="600">Dari: {senderName}</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="600" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+            Dari: {senderName}
+          </FormLabel>
         </FormControl>
 
         <FormControl isRequired>
@@ -127,22 +134,31 @@ const UcapanForm: React.FC<UcapanFormProps> = ({
             rows={4}
             disabled={isSubmitting}
             fontSize="sm"
-            borderRadius="lg"
+            borderRadius="md"
+            bg="transparent"
+            border="1px solid"
+            borderColor={borderColor}
+            _hover={{ borderColor: 'gray.400' }}
             _focus={{
-              borderColor: 'teal.500',
-              boxShadow: '0 0 0 1px var(--chakra-colors-teal-500)',
+              borderColor: focusBorderColor,
+              boxShadow: 'none',
             }}
           />
         </FormControl>
 
         <Button
           type="submit"
-          colorScheme="teal"
+          bg={buttonBg}
+          color={buttonColor}
+          _hover={{ bg: buttonHoverBg }}
+          _active={{ bg: buttonHoverBg }}
           isLoading={isSubmitting}
           loadingText="Mengirim..."
           w="full"
-          borderRadius="lg"
+          borderRadius="md"
           size="md"
+          fontSize="sm"
+          fontWeight="600"
         >
           Kirim Ucapan
         </Button>

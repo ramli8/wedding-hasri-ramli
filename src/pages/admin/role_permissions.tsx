@@ -82,7 +82,7 @@ const RolePermissionsPage = () => {
         <title>Manajemen Permissions • {process.env.NEXT_PUBLIC_APP_NAME_FULL}</title>
       </Head>
 
-      <Flex minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'}>
+      <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
         <Sidebar />
         <Box
           flex="1"

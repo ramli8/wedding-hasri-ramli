@@ -118,38 +118,46 @@ const CheckOutPage = () => {
     setIsScanning(true);
   };
 
+  const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
+  const bg = colorMode === 'light' ? 'white' : 'black';
+  const buttonBg = colorMode === 'light' ? 'black' : 'white';
+  const buttonColor = colorMode === 'light' ? 'white' : 'black';
+  const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
   return (
     <>
       <Head>
         <title>Scan QR Check-out - Admin</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
-      <Box minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'} position="relative">
+      <Box minH="100vh" bg={bg} position="relative">
         {/* Header */}
         <Flex 
-          p={4} 
-          bg={colorMode === 'light' ? 'white' : 'gray.800'} 
-          boxShadow="sm" 
+          p={6} 
+          bg="transparent"
           align="center" 
           justify="center"
           position="sticky"
           top={0}
           zIndex={10}
+          backdropFilter="blur(8px)"
+          borderBottom="1px solid"
+          borderColor={borderColor}
         >
-          <Heading size="md">Scan Check-out</Heading>
+          <Heading size="md" fontWeight="800" letterSpacing="tight">Scan Check-out</Heading>
         </Flex>
 
-        <Container maxW="md" py={6} px={4}>
+        <Container maxW="md" py={8} px={6}>
           {!isSecure && (
-            <Box bg="orange.100" p={4} borderRadius="md" mb={6} borderLeft="4px solid" borderColor="orange.500">
-              <Heading size="sm" color="orange.800" mb={2}>Koneksi Tidak Aman</Heading>
-              <Text fontSize="sm" color="orange.800">
+            <Box bg="transparent" p={4} borderRadius="md" mb={6} border="1px solid" borderColor="black">
+              <Heading size="sm" mb={2}>Koneksi Tidak Aman</Heading>
+              <Text fontSize="sm">
                 Browser memblokir akses kamera karena Anda tidak menggunakan HTTPS.
               </Text>
-              <Text fontSize="sm" color="orange.800" mt={2} fontWeight="bold">
+              <Text fontSize="sm" mt={2} fontWeight="bold">
                 Solusi (Chrome Android):
               </Text>
-              <VStack align="start" pl={4} mt={1} spacing={0} fontSize="xs" color="orange.800">
+              <VStack align="start" pl={4} mt={1} spacing={0} fontSize="xs">
                 <Text>1. Buka chrome://flags/#unsafely-treat-insecure-origin-as-secure</Text>
                 <Text>2. Aktifkan (Enabled)</Text>
                 <Text>3. Masukkan URL ini: {typeof window !== 'undefined' ? window.location.origin : ''}</Text>
@@ -159,17 +167,18 @@ const CheckOutPage = () => {
           )}
 
           {isScanning ? (
-            <VStack spacing={6}>
+            <VStack spacing={8}>
               <Box 
                 w="100%" 
                 maxW="600px"
                 aspectRatio={1}
-                borderRadius="xl" 
+                borderRadius="lg" 
                 overflow="hidden" 
-                boxShadow="xl" 
                 bg="black" 
                 position="relative"
                 mx="auto"
+                border="1px solid"
+                borderColor={borderColor}
               >
                 <QRScanner
                   onScanSuccess={handleScan}
@@ -183,106 +192,122 @@ const CheckOutPage = () => {
                   top="50%" 
                   left="50%" 
                   transform="translate(-50%, -50%)" 
-                  w="300px" 
-                  h="300px" 
-                  border="3px solid" 
+                  w="280px" 
+                  h="280px" 
+                  border="2px solid" 
                   borderColor="white"
-                  borderRadius="lg"
-                  boxShadow="0 0 0 9999px rgba(0,0,0,0.5)"
+                  borderRadius="md"
+                  boxShadow="0 0 0 9999px rgba(0,0,0,0.7)"
                   pointerEvents="none"
                   zIndex={2}
                 />
                 <Text 
                   position="absolute" 
-                  bottom="20px" 
+                  bottom="30px" 
                   left="0" 
                   right="0" 
                   textAlign="center" 
                   color="white" 
-                  fontWeight="bold"
-                  fontSize="md"
-                  textShadow="0 2px 4px rgba(0,0,0,0.8)"
+                  fontWeight="600"
+                  fontSize="sm"
+                  letterSpacing="wide"
+                  textTransform="uppercase"
                   zIndex={3}
                   px={4}
                 >
                   Arahkan kamera ke QR Code
                 </Text>
               </Box>
-              <Text color="gray.500" fontSize="sm">Pastikan QR Code terlihat jelas dan cukup cahaya</Text>
+              <Text color="gray.500" fontSize="xs" textTransform="uppercase" letterSpacing="widest">
+                Pastikan QR Code terlihat jelas
+              </Text>
             </VStack>
           ) : (
-            <VStack spacing={6} align="stretch">
+            <VStack spacing={8} align="stretch">
               {loading ? (
-                <Flex direction="column" align="center" justify="center" py={10}>
-                  <Spinner size="xl" color="teal.500" thickness="4px" mb={4} />
-                  <Text>Memproses data...</Text>
+                <Flex direction="column" align="center" justify="center" py={12}>
+                  <Spinner size="xl" color={colorMode === 'light' ? 'black' : 'white'} thickness="2px" mb={6} />
+                  <Text fontSize="sm" fontWeight="600" letterSpacing="wide" textTransform="uppercase">Memproses data...</Text>
                 </Flex>
               ) : scannedGuest ? (
                 <Box 
-                  bg={colorMode === 'light' ? 'white' : 'gray.800'} 
-                  p={6} 
-                  borderRadius="2xl" 
-                  boxShadow="lg" 
+                  bg="transparent" 
+                  p={8} 
+                  borderRadius="lg" 
                   textAlign="center"
-                  borderTop="8px solid"
-                  borderColor={error ? 'orange.400' : 'green.400'}
+                  border="1px solid"
+                  borderColor={borderColor}
                 >
                   <Icon 
-                    as={error ? FaCheckCircle : FaCheckCircle} 
-                    w={16} 
-                    h={16} 
-                    color={error ? 'orange.400' : 'green.400'} 
-                    mb={4} 
+                    as={error ? FaTimesCircle : FaCheckCircle} 
+                    w={12} 
+                    h={12} 
+                    color={colorMode === 'light' ? 'black' : 'white'} 
+                    mb={6} 
                   />
                   
-                  <Heading size="lg" mb={2}>
-                    {error ? 'Sudah Check-out' : 'Check-out Berhasil!'}
+                  <Heading size="lg" mb={2} fontWeight="800" letterSpacing="tight">
+                    {error ? 'Gagal Check-out' : 'Check-out Berhasil'}
                   </Heading>
                   
                   {error && (
-                    <Text color="orange.500" fontWeight="bold" mb={4}>
+                    <Text color="gray.500" fontWeight="500" mb={6} fontSize="sm">
                       {error}
                     </Text>
                   )}
 
-                  <VStack spacing={3} bg={colorMode === 'light' ? 'gray.50' : 'gray.700'} p={4} borderRadius="xl" mb={6}>
+                  <VStack spacing={4} p={6} border="1px solid" borderColor={borderColor} borderRadius="md" mb={8}>
                     <Box>
-                      <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">Nama Tamu</Text>
-                      <Text fontSize="xl" fontWeight="bold">{scannedGuest.nama}</Text>
+                      <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="widest" mb={1}>Nama Tamu</Text>
+                      <Text fontSize="2xl" fontWeight="800">{scannedGuest.nama}</Text>
                     </Box>
                     
-                    <Flex w="100%" justify="space-between">
-                      <Box textAlign="center" flex={1}>
-                        <Text fontSize="xs" color="gray.500" textTransform="uppercase">Kategori</Text>
-                        <Badge colorScheme="blue" mt={1}>{scannedGuest.kategori}</Badge>
+                    <Flex w="100%" justify="space-between" gap={4}>
+                      <Box textAlign="center" flex={1} p={2} border="1px solid" borderColor={borderColor} borderRadius="sm">
+                        <Text fontSize="10px" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>Kategori</Text>
+                        <Text fontSize="sm" fontWeight="600">{scannedGuest.kategori}</Text>
                       </Box>
-                      <Box textAlign="center" flex={1}>
-                        <Text fontSize="xs" color="gray.500" textTransform="uppercase">Hubungan</Text>
-                        <Badge colorScheme="purple" mt={1}>{scannedGuest.hubungan}</Badge>
+                      <Box textAlign="center" flex={1} p={2} border="1px solid" borderColor={borderColor} borderRadius="sm">
+                        <Text fontSize="10px" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>Hubungan</Text>
+                        <Text fontSize="sm" fontWeight="600">{scannedGuest.hubungan}</Text>
                       </Box>
                     </Flex>
                   </VStack>
 
                   <Button 
-                    variant="outline"
-                    colorScheme="gray"
+                    bg={buttonBg}
+                    color={buttonColor}
                     size="lg" 
                     w="full" 
                     onClick={resetScan}
                     leftIcon={<FaCamera />}
                     h="50px"
-                    fontSize="md"
-                    _hover={{ bg: 'gray.100' }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    borderRadius="md"
+                    _hover={{ bg: buttonHoverBg }}
+                    _active={{ bg: buttonHoverBg }}
                   >
                     Scan Tamu Berikutnya
                   </Button>
                 </Box>
               ) : (
-                <Box textAlign="center" py={10}>
-                  <Icon as={FaTimesCircle} w={16} h={16} color="red.500" mb={4} />
-                  <Heading size="md" mb={2}>Gagal Membaca QR</Heading>
-                  <Text color="gray.500" mb={6}>{error}</Text>
-                  <Button colorScheme="blue" onClick={resetScan}>Coba Lagi</Button>
+                <Box textAlign="center" py={12}>
+                  <Icon as={FaTimesCircle} w={12} h={12} color={colorMode === 'light' ? 'black' : 'white'} mb={6} />
+                  <Heading size="md" mb={2} fontWeight="800">Gagal Membaca QR</Heading>
+                  <Text color="gray.500" mb={8} fontSize="sm">{error}</Text>
+                  <Button 
+                    bg={buttonBg}
+                    color={buttonColor}
+                    onClick={resetScan}
+                    size="lg"
+                    fontSize="sm"
+                    fontWeight="600"
+                    borderRadius="md"
+                    _hover={{ bg: buttonHoverBg }}
+                  >
+                    Coba Lagi
+                  </Button>
                 </Box>
               )}
             </VStack>

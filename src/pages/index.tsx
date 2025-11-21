@@ -86,6 +86,10 @@ const LandingPage = () => {
 		setRefreshUcapan(prev => prev + 1);
 	};
 
+	const buttonBg = colorMode === 'light' ? 'black' : 'white';
+	const buttonColor = colorMode === 'light' ? 'white' : 'black';
+	const buttonHoverBg = colorMode === 'light' ? 'gray.800' : 'gray.200';
+
 	return (
 		<>
 			<Head>
@@ -94,59 +98,50 @@ const LandingPage = () => {
 				<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 			</Head>
 
-			<Box minH="100vh" bg={colorMode === 'light' ? 'gray.50' : 'gray.900'} position="relative">
+			<Box minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'} position="relative">
 				{/* Header */}
 				<Flex 
-					p={4} 
-					bg={colorMode === 'light' ? 'white' : 'gray.800'} 
-					boxShadow="sm" 
+					p={6} 
+					bg="transparent"
 					align="center" 
 					justify="center"
 					position="sticky"
 					top={0}
 					zIndex={10}
+					backdropFilter="blur(8px)"
 				>
-					<Heading size="md">Hasri & Ramli</Heading>
+					<Heading size="md" fontWeight="800" letterSpacing="tight">Hasri & Ramli</Heading>
 				</Flex>
 
-				<Container maxW="md" py={8} px={4}>
-					<VStack spacing={10} align="center">
+				<Container maxW="md" py={12} px={6}>
+					<VStack spacing={12} align="center">
 						{/* Hero Section - Minimalist */}
-						<VStack spacing={4} textAlign="center" pt={4}>
+						<VStack spacing={6} textAlign="center" pt={4}>
 							<Text
 								fontSize="xs"
-								fontWeight="500"
-								letterSpacing="0.3em"
+								fontWeight="600"
+								letterSpacing="widest"
 								textTransform="uppercase"
-								color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+								color="gray.500"
 							>
 								The Wedding of
 							</Text>
 							<Heading
-								fontSize={{ base: "4xl", md: "5xl" }}
-								fontWeight="400"
-								letterSpacing="tight"
-								lineHeight="1.1"
-								color={colorMode === 'light' ? 'gray.800' : 'white'}
-								fontFamily="heading"
+								fontSize={{ base: "5xl", md: "6xl" }}
+								fontWeight="800"
+								letterSpacing="tighter"
+								lineHeight="0.9"
+								color={colorMode === 'light' ? 'black' : 'white'}
 							>
-								Hasri & Ramli
+								Hasri<br/>& Ramli
 							</Heading>
 							
-							<Divider 
-								w="60px" 
-								borderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'} 
-								borderWidth="1px"
-								opacity={0.6}
-								my={2}
-							/>
-
 							{guest && (
-								<VStack spacing={1} mt={2} mb={2}>
-									<Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
-										Kepada Yth. Bapak/Ibu/Saudara/i
+								<VStack spacing={2} mt={4} mb={4}>
+									<Text fontSize="xs" color="gray.500" letterSpacing="wide" textTransform="uppercase">
+										Kepada Yth.
 									</Text>
-									<Text fontSize="xl" fontWeight="bold" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+									<Text fontSize="xl" fontWeight="bold" color={colorMode === 'light' ? 'black' : 'white'}>
 										{guest.nama}
 									</Text>
 								</VStack>
@@ -154,32 +149,29 @@ const LandingPage = () => {
 
 							<Text
 								fontSize="md"
-								color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+								color="gray.500"
 								maxW="400px"
-								lineHeight="1.8"
-								fontStyle="italic"
-								fontFamily="heading"
+								lineHeight="1.6"
+								fontWeight="400"
 							>
-								"We invite you to celebrate our special day"
+								We invite you to celebrate our special day.
 							</Text>
 						</VStack>
 
 						{/* CTA Section - Clean */}
-						<VStack spacing={4} w="full" maxW="400px">
+						<VStack spacing={4} w="full" maxW="320px">
 							<Link href="/cek-qrcode" passHref legacyBehavior>
 								<a style={{ width: '100%' }}>
 									<Button
-										colorScheme="teal"
-										size="lg"
-										w="full"
-										h="50px"
-										fontSize="md"
-										fontWeight="500"
-										borderRadius="full"
-										_hover={{
-											transform: "translateY(-1px)",
-											boxShadow: "lg"
-										}}
+										width="full"
+										height="50px"
+										bg={buttonBg}
+										color={buttonColor}
+										_hover={{ bg: buttonHoverBg }}
+										_active={{ bg: buttonHoverBg }}
+										fontSize="sm"
+										fontWeight="600"
+										borderRadius="md"
 										transition="all 0.2s"
 									>
 										Cek QR Code
@@ -194,10 +186,10 @@ const LandingPage = () => {
 										size="md"
 										w="full"
 										fontSize="sm"
-										fontWeight="400"
-										color={colorMode === 'light' ? 'gray.500' : 'gray.500'}
+										fontWeight="500"
+										color="gray.500"
 										_hover={{
-											color: colorMode === 'light' ? 'teal.600' : 'teal.300',
+											color: colorMode === 'light' ? 'black' : 'white',
 											bg: 'transparent'
 										}}
 									>
@@ -209,16 +201,18 @@ const LandingPage = () => {
 					</VStack>
 				</Container>
 
-				<Divider />
+				<Container maxW="md" px={6}>
+					<Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'} />
+				</Container>
 
 				{/* Ucapan Section */}
-				<Container maxW="md" py={8} px={4}>
-					<VStack spacing={6} align="stretch">
-						<VStack spacing={2} textAlign="center">
-							<Heading size="lg" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+				<Container maxW="md" py={12} px={6}>
+					<VStack spacing={8} align="stretch">
+						<VStack spacing={2} textAlign="center" mb={4}>
+							<Heading size="lg" fontWeight="800" letterSpacing="tight" color={colorMode === 'light' ? 'black' : 'white'}>
 								Ucapan & Doa
 							</Heading>
-							<Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
+							<Text fontSize="sm" color="gray.500">
 								Berikan ucapan dan doa terbaik untuk kami
 							</Text>
 						</VStack>
@@ -233,7 +227,9 @@ const LandingPage = () => {
 						/>
 					)}
 
-						<Divider />
+						<Box py={2}>
+							<Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'} />
+						</Box>
 
 						<UcapanList 
 						refreshTrigger={refreshUcapan} 

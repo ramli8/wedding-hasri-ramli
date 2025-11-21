@@ -86,12 +86,9 @@ const Sidebar = () => {
         display="flex"
         h="100vh"
         padding={{ base: "116px 0 0px", m: "140px 0 0px" }}
-        bg={colorMode == "light" ? "#fff" : "#141414"}
-        borderRight={
-          colorMode == "light"
-            ? "1px solid #e4e4e4"
-            : "1px solid rgba(228, 228, 228, 0.1)"
-        }
+        bg={colorMode == "light" ? "white" : "black"}
+        borderRight="1px solid"
+        borderColor={colorMode == "light" ? "gray.200" : "gray.800"}
         transform={{
           base: isNavbarOpen ? "translateX(0%)" : "translateX(-100%)",
           m: "unset",
@@ -111,10 +108,11 @@ const Sidebar = () => {
           borderBottom={{
             base:
               colorMode == "light"
-                ? "1px solid #e4e4e4"
-                : "1px solid rgba(228, 228, 228, 0.1)",
+                ? "1px solid"
+                : "1px solid",
             m: "unset",
           }}
+          borderColor={colorMode == "light" ? "gray.200" : "gray.800"}
         >
           <Flex
             justifyContent="center"

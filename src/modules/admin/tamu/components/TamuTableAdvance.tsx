@@ -102,8 +102,10 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
 
     return (
       <Badge 
-        colorScheme={colorScheme} 
-        variant="subtle" 
+        variant="outline"
+        colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+        borderColor={colorMode === 'light' ? 'black' : 'white'}
+        color={colorMode === 'light' ? 'black' : 'white'}
         px={3} 
         py={1} 
         borderRadius="full"
@@ -209,8 +211,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
             <Avatar 
               name={info.getValue()} 
               size="sm" 
-              bg={colorMode === 'light' ? 'teal.500' : 'teal.200'}
-              color="white"
+              bg={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'white' : 'black'}
             />
             <VStack align="start" spacing={0}>
               <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'gray.800' : 'white'}>
@@ -234,7 +236,14 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
           if (value === 'Tamu Ibu') colorScheme = 'orange';
           
           return (
-            <Badge colorScheme={colorScheme} borderRadius="full" px={2}>
+            <Badge 
+              variant="outline"
+              colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+              borderColor={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
+              borderRadius="full" 
+              px={2}
+            >
               {value}
             </Badge>
           );
@@ -322,7 +331,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                   }
                   size="sm"
                   variant="ghost"
-                  colorScheme="teal"
+                  color={colorMode === 'light' ? 'black' : 'white'}
+                  _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                   onClick={() => onViewDetail(tamu)}
                   borderRadius="full"
                 />
@@ -339,7 +349,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                 }
                 size="sm"
                 variant="ghost"
-                colorScheme="blue"
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => onEdit(tamu)}
                 borderRadius="full"
               />
@@ -355,7 +366,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                 }
                 size="sm"
                 variant="ghost"
-                colorScheme="red"
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => handleDelete(tamu.id)}
                 borderRadius="full"
               />
@@ -381,9 +393,11 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
     <Box>
       <Box 
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'black'}
         borderRadius="24px"
         p={{ base: 4, md: 6 }}
+        border="1px solid"
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
         _before={{
           content: '""',
           pos: "absolute",
@@ -409,8 +423,10 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
               Daftar Tamu
             </Text>
             <Badge 
-              colorScheme="blue" 
-              variant="subtle" 
+              variant="outline"
+              colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+              borderColor={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
               borderRadius="full" 
               px={3} 
               py={1}
@@ -423,7 +439,9 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
           <HStack spacing={3}>
             {Object.keys(rowSelection).length > 0 && (
               <Button
-                colorScheme="green"
+                variant="outline"
+                borderColor={colorMode === 'light' ? 'black' : 'white'}
+                color={colorMode === 'light' ? 'black' : 'white'}
                 leftIcon={<Icon as={() => <svg viewBox="0 0 24 24" width="20px" height="20px" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M8.53 7.33C8.37 7.33 8.1 7.39 7.87 7.64C7.65 7.9 7.03 8.48 7.03 9.66C7.03 10.84 7.89 11.99 8.01 12.15C8.13 12.31 9.68 14.68 12.03 15.7C12.59 15.94 13.03 16.09 13.38 16.2C13.97 16.39 14.5 16.36 14.93 16.3C15.4 16.23 16.38 15.71 16.59 15.12C16.79 14.53 16.79 14.03 16.73 13.93C16.67 13.83 16.51 13.77 16.27 13.65C16.03 13.53 14.85 12.95 14.63 12.84C14.41 12.73 14.25 12.68 14.09 12.92C13.93 13.16 13.47 13.7 13.33 13.88C13.19 14.06 13.05 14.08 12.81 13.96C12.57 13.84 11.8 13.59 10.88 12.77C10.17 12.14 9.69 11.36 9.55 11.12C9.41 10.88 9.54 10.75 9.66 10.63C9.77 10.52 9.9 10.35 10.02 10.21C10.14 10.07 10.18 9.97 10.26 9.81C10.34 9.65 10.3 9.51 10.24 9.39C10.18 9.27 9.7 8.09 9.5 7.61C9.3 7.14 9.1 7.2 8.94 7.2H8.53Z" /></svg>} />}
                 onClick={() => setShowBatchSender(true)}
                 h="48px"
@@ -431,10 +449,9 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                 borderRadius="xl"
                 fontSize="sm"
                 fontWeight="bold"
-                boxShadow="md"
                 _hover={{
+                  bg: colorMode === 'light' ? 'gray.100' : 'gray.800',
                   transform: 'translateY(-2px)',
-                  boxShadow: 'lg',
                 }}
                 _active={{
                   transform: 'translateY(0)',
@@ -479,14 +496,13 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                     py={3}
                     borderRadius="xl"
                     border="2px solid"
-                    borderColor={isActive ? 'teal.500' : (colorMode === 'light' ? 'gray.200' : 'gray.600')}
-                    bg={isActive ? (colorMode === 'light' ? 'teal.50' : 'teal.900') : (colorMode === 'light' ? 'white' : 'gray.700')}
+                    borderColor={isActive ? (colorMode === 'light' ? 'black' : 'white') : (colorMode === 'light' ? 'gray.200' : 'gray.600')}
+                    bg={isActive ? (colorMode === 'light' ? 'black' : 'white') : 'transparent'}
                     cursor="pointer"
                     transition="all 0.2s"
                     _hover={{
-                      borderColor: 'teal.400',
+                      borderColor: colorMode === 'light' ? 'black' : 'white',
                       transform: 'translateY(-2px)',
-                      boxShadow: colorMode === 'light' ? 'md' : 'dark-lg',
                     }}
                     _active={{
                       transform: 'translateY(0)',
@@ -496,16 +512,20 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                       <Text
                         fontSize="sm"
                         fontWeight={isActive ? '700' : '600'}
-                        color={isActive ? 'teal.600' : (colorMode === 'light' ? 'gray.700' : 'gray.200')}
+                        color={isActive ? (colorMode === 'light' ? 'white' : 'black') : (colorMode === 'light' ? 'gray.700' : 'gray.200')}
                       >
                         {category}
                       </Text>
                       <Badge
-                        colorScheme={isActive ? 'teal' : 'gray'}
+                        variant={isActive ? 'solid' : 'outline'}
+                        colorScheme={isActive ? (colorMode === 'light' ? 'whiteAlpha' : 'blackAlpha') : 'gray'}
                         borderRadius="full"
                         px={2}
                         fontSize="xs"
                         fontWeight="bold"
+                        bg={isActive ? (colorMode === 'light' ? 'white' : 'black') : 'transparent'}
+                        color={isActive ? (colorMode === 'light' ? 'black' : 'white') : (colorMode === 'light' ? 'gray.700' : 'gray.200')}
+                        borderColor={isActive ? 'transparent' : (colorMode === 'light' ? 'gray.300' : 'gray.600')}
                       >
                         {count}
                       </Badge>

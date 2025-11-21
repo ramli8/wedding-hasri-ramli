@@ -74,7 +74,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         accessorKey: 'name',
         header: 'Nama Role',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
             {info.getValue()}
           </Text>
         ),
@@ -85,7 +85,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         accessorKey: 'description',
         header: 'Deskripsi',
         cell: (info) => (
-          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.300'}>
+          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
             {info.getValue() || '-'}
           </Text>
         ),
@@ -98,7 +98,12 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         cell: (info) => {
           const isDeleted = info.getValue();
           return (
-            <Badge colorScheme={isDeleted ? 'red' : 'green'}>
+            <Badge 
+              variant="outline"
+              colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+              borderColor={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
+            >
               {isDeleted ? 'Dihapus' : 'Aktif'}
             </Badge>
           );
@@ -129,7 +134,8 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     }
                     size="sm"
                     variant="ghost"
-                    colorScheme="purple"
+                    color={colorMode === 'light' ? 'black' : 'white'}
+                    _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                     onClick={() => onManagePermissions?.(role)}
                     borderRadius="full"
                     title="Kelola Permissions"
@@ -146,7 +152,8 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     }
                     size="sm"
                     variant="ghost"
-                    colorScheme="blue"
+                    color={colorMode === 'light' ? 'black' : 'white'}
+                    _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                     onClick={() => onEdit(role)}
                     borderRadius="full"
                   />
@@ -162,7 +169,8 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     }
                     size="sm"
                     variant="ghost"
-                    colorScheme="red"
+                    color={colorMode === 'light' ? 'black' : 'white'}
+                    _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                     onClick={() => handleDelete(role.id)}
                     borderRadius="full"
                   />
@@ -181,7 +189,8 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                   }
                   size="sm"
                   variant="ghost"
-                  colorScheme="green"
+                  color={colorMode === 'light' ? 'black' : 'white'}
+                  _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                   onClick={() => onRestore(role.id)}
                   borderRadius="full"
                 />
@@ -208,9 +217,11 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
     <Box>
       <Box 
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'black'}
         borderRadius="24px"
         p={6}
+        border="1px solid"
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
         _before={{
           content: '""',
           pos: "absolute",
@@ -231,7 +242,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
               fontSize="2xl" 
               fontWeight="800"
               letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'gray.800' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
             >
               Daftar Role
             </Text>

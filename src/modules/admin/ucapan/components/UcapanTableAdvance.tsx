@@ -87,7 +87,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         accessorKey: 'nama',
         header: 'Nama',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
             {info.getValue()}
           </Text>
         ),
@@ -98,7 +98,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         accessorKey: 'pesan',
         header: 'Pesan',
         cell: (info) => (
-          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.300'} noOfLines={2}>
+          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} noOfLines={2}>
             {info.getValue()}
           </Text>
         ),
@@ -123,7 +123,13 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
           const ucapan = info.row.original;
           const hasReply = ucapan.replies && ucapan.replies.length > 0;
           return (
-            <Badge colorScheme={hasReply ? 'green' : 'yellow'} fontSize="xs">
+            <Badge 
+              variant="outline"
+              colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+              borderColor={colorMode === 'light' ? 'black' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
+              fontSize="xs"
+            >
               {hasReply ? 'Sudah Dibalas' : 'Belum Dibalas'}
             </Badge>
           );
@@ -140,8 +146,9 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
             <HStack spacing={1}>
               <Button
                 size="xs"
-                colorScheme="blue"
+                color={colorMode === 'light' ? 'black' : 'white'}
                 variant="ghost"
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => handleCopyMagicLink(ucapan)}
               >
                 Copy Link
@@ -158,7 +165,8 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
                 }
                 size="sm"
                 variant="ghost"
-                colorScheme="red"
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => handleDelete(ucapan.id)}
                 borderRadius="full"
               />
@@ -184,9 +192,11 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
     <Box>
       <Box 
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'black'}
         borderRadius="24px"
         p={6}
+        border="1px solid"
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
         _before={{
           content: '""',
           pos: "absolute",
@@ -207,7 +217,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
               fontSize="2xl" 
               fontWeight="800"
               letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'gray.800' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
             >
               Daftar Ucapan
             </Text>

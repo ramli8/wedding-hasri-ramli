@@ -83,8 +83,11 @@ const SidebarItem = ({
           _hover={{
             color:
               menuItem.url.replace(/\//g, "") == menuTitles
-                ? "#fff"
-                : `${colorPref}.500`,
+                ? colorMode == "light" ? "white" : "black"
+                : colorMode == "light" ? "black" : "white",
+            bg: menuItem.url.replace(/\//g, "") == menuTitles
+                ? colorMode == "light" ? "black" : "white"
+                : colorMode == "light" ? "gray.100" : "gray.800",
           }}
           alignItems="center"
           h="54px"
@@ -95,13 +98,15 @@ const SidebarItem = ({
           fontSize="14px"
           fontWeight="600"
           color={
-            menuItem.url.replace(/\//g, "") == menuTitles ? "#fff" : "#808191"
+            menuItem.url.replace(/\//g, "") == menuTitles 
+              ? colorMode == "light" ? "white" : "black"
+              : "gray.500"
           }
           bg={
             menuItem.url.replace(/\//g, "") == menuTitles
               ? colorMode == "light"
-                ? `${colorPref}.500`
-                : `${colorPref}Dim.500`
+                ? "black"
+                : "white"
               : "transparent"
           }
         >
@@ -136,12 +141,12 @@ const SidebarItem = ({
             ml="10px"
             p="0 3px"
             borderRadius="12px"
-            bg={colorMode == "light" ? "#ffdd00" : "#ffa033"}
+            bg={colorMode == "light" ? "black" : "white"}
             textAlign="center"
             fontSize="12px"
             lineHeight="24px"
             fontWeight="500"
-            color="white"
+            color={colorMode == "light" ? "white" : "black"}
           >
             {menuItem.notif}
           </Box>
@@ -317,7 +322,8 @@ const SubmenuItem = ({
         className="sidebar__item"
         data-group="sidebar--item"
         _hover={{
-          color: isActive ? "#fff" : `${colorPref}.500`,
+          color: isActive ? (colorMode == "light" ? "white" : "black") : (colorMode == "light" ? "black" : "white"),
+          bg: isActive ? (colorMode == "light" ? "black" : "white") : (colorMode == "light" ? "gray.100" : "gray.800"),
         }}
         pos="relative"
         alignItems="center"
@@ -327,12 +333,12 @@ const SubmenuItem = ({
         borderRadius="12px"
         fontSize="14px"
         fontWeight="600"
-        color={isActive ? "#fff" : "#808191"}
+        color={isActive ? (colorMode == "light" ? "white" : "black") : "gray.500"}
         bg={
           isActive
             ? colorMode == "light"
-              ? `${colorPref}.500`
-              : `${colorPref}Dim.500`
+              ? "black"
+              : "white"
             : "transparent"
         }
         overflow="hidden"
@@ -347,7 +353,7 @@ const SubmenuItem = ({
             width: "12px",
             borderRadius: "50%",
             backgroundColor: "transparent",
-            border: "2px solid #fff",
+            border: `2px solid ${colorMode == "light" ? "white" : "black"}`,
           }}
           variants={markerVariants}
           animate={
@@ -391,12 +397,12 @@ const SubmenuItem = ({
           ml="10px"
           p="0 3px"
           borderRadius="12px"
-          bg={colorMode == "light" ? "#ffdd00" : "#ffa033"}
+          bg={colorMode == "light" ? "black" : "white"}
           textAlign="center"
           fontSize="12px"
           lineHeight="24px"
           fontWeight="500"
-          color="white"
+          color={colorMode == "light" ? "white" : "black"}
         >
           {submenu.notif}
         </Box>

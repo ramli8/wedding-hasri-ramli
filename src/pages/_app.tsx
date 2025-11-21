@@ -73,7 +73,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 					<QueryClientProvider client={queryClient}>
 						<ChakraProvider theme={theme}>
 							<Hydrate state={pageProps.dehydratedState}>
-								<Component key={router.route} {...pageProps} />
+								<Component {...pageProps} />
 							</Hydrate>
 						</ChakraProvider>
 					</QueryClientProvider>

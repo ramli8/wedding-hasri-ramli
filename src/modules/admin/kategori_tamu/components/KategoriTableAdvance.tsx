@@ -61,7 +61,7 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
         accessorKey: 'nama',
         header: 'Nama Kategori',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
             {info.getValue()}
           </Text>
         ),
@@ -87,7 +87,8 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
                 }
                 size="sm"
                 variant="ghost"
-                colorScheme="blue"
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => onEdit(kategori)}
                 borderRadius="full"
               />
@@ -103,7 +104,8 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
                 }
                 size="sm"
                 variant="ghost"
-                colorScheme="red"
+                color={colorMode === 'light' ? 'black' : 'white'}
+                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                 onClick={() => handleDelete(kategori.id)}
                 borderRadius="full"
               />
@@ -129,9 +131,11 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
     <Box>
       <Box 
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'black'}
         borderRadius="24px"
         p={6}
+        border="1px solid"
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
         _before={{
           content: '""',
           pos: "absolute",
@@ -152,7 +156,7 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
               fontSize="2xl" 
               fontWeight="800"
               letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'gray.800' : 'white'}
+              color={colorMode === 'light' ? 'black' : 'white'}
             >
               Daftar Kategori Tamu
             </Text>

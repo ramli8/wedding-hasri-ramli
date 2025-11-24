@@ -1,0 +1,77 @@
+
+/* SweetAlert2 Modern Theme */
+.swal-modern-popup {
+  border-radius: 24px !important;
+  padding: 2rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.swal-modern-title {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.swal-modern-confirm-button {
+  background-color: #3182ce !important; /* blue.500 */
+  color: white !important;
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 4px 6px -1px rgba(49, 130, 206, 0.3) !important;
+  transition: all 0.2s !important;
+  margin: 0 8px !important;
+}
+
+.swal-modern-confirm-button:hover {
+  background-color: #2b6cb0 !important; /* blue.600 */
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 8px -1px rgba(49, 130, 206, 0.4) !important;
+}
+
+.swal-modern-danger-button {
+  background-color: #e53e3e !important; /* red.500 */
+  color: white !important;
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 4px 6px -1px rgba(229, 62, 62, 0.3) !important;
+  transition: all 0.2s !important;
+  margin: 0 8px !important;
+}
+
+.swal-modern-danger-button:hover {
+  background-color: #c53030 !important; /* red.600 */
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 8px -1px rgba(229, 62, 62, 0.4) !important;
+}
+
+.swal-modern-cancel-button {
+  background-color: transparent !important;
+  color: #718096 !important; /* gray.500 */
+  border: 1px solid #e2e8f0 !important; /* gray.200 */
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s !important;
+  margin: 0 8px !important;
+}
+
+.swal-modern-cancel-button:hover {
+  background-color: #f7fafc !important; /* gray.50 */
+  color: #4a5568 !important; /* gray.700 */
+}
+
+.dark .swal-modern-cancel-button {
+  color: #a0aec0 !important; /* gray.400 */
+  border-color: #4a5568 !important; /* gray.700 */
+}
+
+.dark .swal-modern-cancel-button:hover {
+  background-color: #2d3748 !important; /* gray.800 */
+  color: #cbd5e0 !important; /* gray.300 */
+}

@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { easeIn, easeInOut, motion } from "framer-motion";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import { useContext, useEffect } from "react";
 import { IoChevronDown, IoChevronUp } from "react-icons/io5";
 import { useTranslations } from "next-intl";
@@ -30,7 +30,8 @@ const SidebarItem = ({
   menuIndex: number;
 }) => {
   const accountInfo = useContext(AccountInfoContext);
-  const router = usePathname() || "";
+  const { pathname } = useRouter();
+  const router = pathname || "";
   const menuTitles = router.split("/")[1];
   const { colorMode } = useColorMode();
   const { isOpen, onToggle, onOpen, onClose } = useDisclosure();
@@ -68,6 +69,10 @@ const SidebarItem = ({
   }, [router]);
   const t = useTranslations("Common.modules");
   const { colorPref } = useContext(AppSettingContext);
+  
+  // Check if this menu item is active
+  const isActive = router === menuItem.url || 
+    (router.startsWith(menuItem.url) && router.charAt(menuItem.url.length) === "/");
 
   return (
     <>
@@ -81,34 +86,37 @@ const SidebarItem = ({
           className="sidebar__item"
           data-group="sidebar--item"
           _hover={{
-            color:
-              menuItem.url.replace(/\//g, "") == menuTitles
-                ? colorMode == "light" ? "white" : "black"
-                : colorMode == "light" ? "black" : "white",
-            bg: menuItem.url.replace(/\//g, "") == menuTitles
-                ? colorMode == "light" ? "black" : "white"
-                : colorMode == "light" ? "gray.100" : "gray.800",
+            color: isActive
+                ? colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`
+                : colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`,
+            bg: isActive
+                ? colorMode == "light" ? `${colorPref}.100` : `${colorPref}Dim.800`
+                : colorMode == "light" ? `${colorPref}.50` : `${colorPref}Dim.900`,
           }}
           alignItems="center"
-          h="54px"
-          my="1px"
+          h="48px"
+          my="2px"
           pos="relative"
-          p="0 20px"
-          borderRadius="12px"
-          fontSize="14px"
-          fontWeight="600"
+          px="16px"
+          borderRadius="10px"
+          fontSize="15px"
           color={
-            menuItem.url.replace(/\//g, "") == menuTitles 
-              ? colorMode == "light" ? "white" : "black"
-              : "gray.500"
+            isActive 
+              ? colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`
+              : colorMode == "light" ? "gray.600" : "gray.500"
           }
           bg={
-            menuItem.url.replace(/\//g, "") == menuTitles
+            isActive
               ? colorMode == "light"
-                ? "black"
-                : "white"
+                ? `${colorPref}.100`
+                : `${colorPref}Dim.800`
               : "transparent"
           }
+          fontWeight={
+            isActive ? "600" : "500"
+          }
+          transition="all 0.2s"
+          cursor="pointer"
         >
           <Flex
             className="sidebar__icon"
@@ -121,8 +129,9 @@ const SidebarItem = ({
           >
             <MaterialIcon
               name={menuItem.icon}
-              fill={menuItem.url.replace(/\//g, "") == menuTitles ? 1 : 0}
+              fill={isActive ? 1 : 0}
               weight={600}
+              variant="rounded"
             />
           </Flex>
           <Box
@@ -133,22 +142,6 @@ const SidebarItem = ({
             <Text noOfLines={2} title={t(`${menuItem.name}.title`)}>
               {t(`${menuItem.name}.title`)}
             </Text>
-          </Box>
-          <Box
-            className="sidebar__counter"
-            flexShrink="0"
-            minW="24px"
-            ml="10px"
-            p="0 3px"
-            borderRadius="12px"
-            bg={colorMode == "light" ? "black" : "white"}
-            textAlign="center"
-            fontSize="12px"
-            lineHeight="24px"
-            fontWeight="500"
-            color={colorMode == "light" ? "white" : "black"}
-          >
-            {menuItem.notif}
           </Box>
           {menuItem?.submenu && menuItem?.submenu.length > 0 ? (
             <Flex whiteSpace="nowrap" ml="auto">
@@ -211,7 +204,8 @@ const SubmenuItem = ({
   submenuIndex: number;
   parentIndex: number;
 }) => {
-  const router = usePathname() || "";
+  const { pathname } = useRouter();
+  const router = pathname || "";
   const { colorMode } = useColorMode();
   const {
     isNavbarOpen,
@@ -322,26 +316,35 @@ const SubmenuItem = ({
         className="sidebar__item"
         data-group="sidebar--item"
         _hover={{
-          color: isActive ? (colorMode == "light" ? "white" : "black") : (colorMode == "light" ? "black" : "white"),
-          bg: isActive ? (colorMode == "light" ? "black" : "white") : (colorMode == "light" ? "gray.100" : "gray.800"),
+          color: isActive 
+            ? (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`)
+            : (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`),
+          bg: isActive 
+            ? (colorMode == "light" ? `${colorPref}.100` : `${colorPref}Dim.800`) 
+            : (colorMode == "light" ? `${colorPref}.50` : `${colorPref}Dim.900`),
         }}
         pos="relative"
         alignItems="center"
-        h="54px"
-        my="4px"
-        p="0 20px"
-        borderRadius="12px"
-        fontSize="14px"
-        fontWeight="600"
-        color={isActive ? (colorMode == "light" ? "white" : "black") : "gray.500"}
+        h="48px"
+        my="2px"
+        px="16px"
+        borderRadius="10px"
+        fontSize="15px"
+        color={isActive 
+          ? (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`)
+          : (colorMode == "light" ? "gray.600" : "gray.500")
+        }
         bg={
           isActive
             ? colorMode == "light"
-              ? "black"
-              : "white"
+              ? `${colorPref}.100`
+              : `${colorPref}Dim.800`
             : "transparent"
         }
+        fontWeight={isActive ? "600" : "500"}
         overflow="hidden"
+        transition="all 0.2s"
+        cursor="pointer"
       >
         <motion.div
           style={{
@@ -353,7 +356,7 @@ const SubmenuItem = ({
             width: "12px",
             borderRadius: "50%",
             backgroundColor: "transparent",
-            border: `2px solid ${colorMode == "light" ? "white" : "black"}`,
+            border: `2px solid ${colorMode == "light" ? `var(--chakra-colors-${colorPref}-600)` : `var(--chakra-colors-${colorPref}Dim-600)`}`,
           }}
           variants={markerVariants}
           animate={
@@ -389,22 +392,6 @@ const SubmenuItem = ({
           <Text noOfLines={2} title={t(`${submenu.name}.title`)}>
             {t(`${submenu.name}.title`)}
           </Text>
-        </Box>
-        <Box
-          className="sidebar__counter"
-          flexShrink="0"
-          minW="24px"
-          ml="10px"
-          p="0 3px"
-          borderRadius="12px"
-          bg={colorMode == "light" ? "black" : "white"}
-          textAlign="center"
-          fontSize="12px"
-          lineHeight="24px"
-          fontWeight="500"
-          color={colorMode == "light" ? "white" : "black"}
-        >
-          {submenu.notif}
         </Box>
       </Flex>
     </Link>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import {
   Box,
   IconButton,
@@ -7,22 +7,34 @@ import {
   Icon,
   useColorMode,
   VStack,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Button,
+  Flex,
+  Badge,
+  Input,
+  InputGroup,
+  InputLeftElement,
 } from '@chakra-ui/react';
+import { FaSearch } from 'react-icons/fa';
 import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
 import { HubunganTamu } from '../types/HubunganTamu.types';
 import TableAdvance from '@/components/organisms/TableAdvance';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import AppSettingContext from '@/providers/AppSettingProvider';
+import { showConfirmationAlert } from '@/utils/sweetalert';
 
 interface HubunganTableAdvanceProps {
   initialData?: HubunganTamu[];
   loading?: boolean;
   onEdit: (hubungan: HubunganTamu) => void;
   onDelete: (id: string) => void;
+  onRestore: (id: string) => void;
   onAddNew: () => void;
+  headerAction?: React.ReactNode;
 }
 
 const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
@@ -30,29 +42,26 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
   loading = false,
   onEdit,
   onDelete,
+  onRestore,
   onAddNew,
+  headerAction,
 }) => {
   const { colorMode } = useColorMode();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const { colorPref } = useContext(AppSettingContext);
 
-  const handleDelete = (id: string) => {
-    MySwal.fire({
-      title: 'Hapus Hubungan?',
-      text: "Data hubungan yang dihapus tidak dapat dikembalikan!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Hapus!',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      background: colorMode === 'light' ? '#fff' : '#1A202C',
-      color: colorMode === 'light' ? '#1A202C' : '#fff',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onDelete(id);
-      }
-    });
+  const handleDelete = async (id: string) => {
+    const result = await showConfirmationAlert(
+      'Konfirmasi Hapus Data?',
+      'Data yang dihapus akan di-soft delete!',
+      'Ya, Hapus!',
+      colorMode,
+      true
+    );
+
+    if (result.isConfirmed) {
+      onDelete(id);
+    }
   };
 
   const columns = useMemo<ColumnDef<HubunganTamu, any>[]>(
@@ -61,11 +70,56 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
         accessorKey: 'nama',
         header: 'Nama Hubungan',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
+          <Badge 
+            px={3}
+            py={1}
+            borderRadius="full"
+            fontSize="xs"
+            fontWeight="600"
+            textTransform="none"
+            bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+            color={colorMode === 'light' ? 'blue.700' : 'blue.200'}
+            border="1px solid"
+            borderColor={colorMode === 'light' ? 'blue.200' : 'blue.700'}
+          >
             {info.getValue()}
-          </Text>
+          </Badge>
         ),
         enableSorting: true,
+        enableColumnFilter: false,
+      },
+      {
+        accessorKey: 'deleted_at',
+        header: 'Status',
+        cell: (info) => {
+          const isDeleted = info.getValue();
+          return (
+            <Badge 
+              px={3}
+              py={1}
+              borderRadius="full"
+              fontSize="xs"
+              fontWeight="600"
+              textTransform="none"
+              bg={isDeleted 
+                ? (colorMode === 'light' ? 'gray.100' : 'gray.700')
+                : (colorMode === 'light' ? 'green.50' : 'green.900')
+              }
+              color={isDeleted
+                ? (colorMode === 'light' ? 'gray.600' : 'gray.400')
+                : (colorMode === 'light' ? 'green.700' : 'green.200')
+              }
+              border="1px solid"
+              borderColor={isDeleted
+                ? (colorMode === 'light' ? 'gray.300' : 'gray.600')
+                : (colorMode === 'light' ? 'green.200' : 'green.700')
+              }
+            >
+              {isDeleted ? 'Dihapus' : 'Aktif'}
+            </Badge>
+          );
+        },
+        enableSorting: false,
         enableColumnFilter: false,
       },
       {
@@ -73,43 +127,86 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
         header: 'Aksi',
         cell: (info) => {
           const hubungan = info.row.original;
+          const isDeleted = hubungan.deleted_at;
+          
           return (
-            <HStack spacing={1}>
-              <IconButton
-                aria-label="Edit hubungan"
-                icon={
-                  <Icon viewBox="0 0 24 24" width="18px" height="18px">
-                    <path
-                      fill="currentColor"
-                      d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
-                    />
-                  </Icon>
-                }
+            <Menu>
+              <MenuButton
+                as={Button}
                 size="sm"
-                variant="ghost"
-                color={colorMode === 'light' ? 'black' : 'white'}
-                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-                onClick={() => onEdit(hubungan)}
-                borderRadius="full"
-              />
-              <IconButton
-                aria-label="Hapus hubungan"
-                icon={
-                  <Icon viewBox="0 0 24 24" width="18px" height="18px">
-                    <path
-                      fill="currentColor"
-                      d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                    />
-                  </Icon>
-                }
-                size="sm"
-                variant="ghost"
-                color={colorMode === 'light' ? 'black' : 'white'}
-                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-                onClick={() => handleDelete(hubungan.id)}
-                borderRadius="full"
-              />
-            </HStack>
+                variant="outline"
+                rightIcon={<MaterialIcon name="expand_more" size={16} variant="rounded" />}
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                fontWeight="500"
+                fontSize="sm"
+                _hover={{ 
+                  bg: colorMode === 'light' ? 'gray.50' : 'gray.700',
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+                _active={{
+                  bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+                borderRadius="8px"
+                px={3}
+                h="32px"
+              >
+                Aksi
+              </MenuButton>
+              <MenuList
+                borderRadius="10px"
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                boxShadow="lg"
+                py={1}
+              >
+                {!isDeleted ? (
+                  <>
+                    <MenuItem
+                      icon={<MaterialIcon name="edit" size={18} variant="rounded" />}
+                      onClick={() => onEdit(hubungan)}
+                      fontSize="sm"
+                      borderRadius="6px"
+                      mx={1}
+                      _hover={{
+                        bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                      }}
+                    >
+                      Edit
+                    </MenuItem>
+                    <MenuItem
+                      icon={<MaterialIcon name="delete" size={18} variant="rounded" />}
+                      onClick={() => handleDelete(hubungan.id)}
+                      fontSize="sm"
+                      color={colorMode === 'light' ? 'red.600' : 'red.400'}
+                      borderRadius="6px"
+                      mx={1}
+                      _hover={{
+                        bg: colorMode === 'light' ? 'red.50' : 'red.900',
+                      }}
+                    >
+                      Hapus
+                    </MenuItem>
+                  </>
+                ) : (
+                  <MenuItem
+                    icon={<MaterialIcon name="restore_from_trash" size={18} variant="rounded" />}
+                    onClick={() => onRestore(hubungan.id)}
+                    fontSize="sm"
+                    color={colorMode === 'light' ? 'green.600' : 'green.400'}
+                    borderRadius="6px"
+                    mx={1}
+                    _hover={{
+                      bg: colorMode === 'light' ? 'green.50' : 'green.900',
+                    }}
+                  >
+                    Pulihkan
+                  </MenuItem>
+                )}
+              </MenuList>
+            </Menu>
           );
         },
         enableSorting: false,
@@ -136,6 +233,8 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
         p={6}
         border="1px solid"
         borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
+        borderLeft="4px solid"
+        borderLeftColor={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`}
         _before={{
           content: '""',
           pos: "absolute",
@@ -150,35 +249,56 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
           borderRadius: "24px",
         }}
       >
-        <Box mb={8} display="flex" flexDirection={{ base: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ base: 'start', md: 'center' }} gap={4}>
-          <VStack align="start" spacing={1}>
-            <Text 
-              fontSize="2xl" 
-              fontWeight="800"
-              letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'black' : 'white'}
-            >
-              Daftar Hubungan Tamu
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Total Data: {initialData.length}
-            </Text>
-          </VStack>
-          <PrimaryButton onClick={onAddNew} w="auto">
-            <HStack spacing={2} justify="center">
-              <Icon viewBox="0 0 24 24" width="20px" height="20px" fill="currentColor">
-                <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
-              </Icon>
-              <Text>Tambah Hubungan</Text>
-            </HStack>
-          </PrimaryButton>
-        </Box>
+        <Flex 
+          mb={6} 
+          justify="space-between" 
+          align="center"
+          direction={{ base: 'column', md: 'row' }}
+          gap={3}
+        >
+          {headerAction && (
+            <Box flexShrink={0} w={{ base: 'full', md: 'auto' }}>
+              {headerAction}
+            </Box>
+          )}
+
+          {/* Search Input on Right */}
+          <InputGroup size="md" maxW={{ base: 'full', md: '350px' }} w={{ base: 'full', md: 'auto' }}>
+            <InputLeftElement pointerEvents="none">
+              <Icon as={FaSearch} color="gray.400" />
+            </InputLeftElement>
+            <Input
+              value={columnFilters.find(f => f.id === 'global')?.value as string ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value;
+                setColumnFilters(value ? [{ id: 'global', value }] : []);
+              }}
+              placeholder="Cari data..."
+              borderRadius="10px"
+              bg={colorMode === 'light' ? 'white' : 'gray.800'}
+              border="1px solid"
+              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+              _hover={{
+                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+              }}
+              _focus={{
+                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+                outline: 'none',
+              }}
+              fontSize="sm"
+              fontWeight="500"
+              transition="all 0.25s"
+              h="40px"
+            />
+          </InputGroup>
+        </Flex>
 
         <TableAdvance 
           columns={columns} 
           data={initialData}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
+          hideSearch
         />
       </Box>
     </Box>

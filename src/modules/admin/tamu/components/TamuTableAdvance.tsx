@@ -34,8 +34,10 @@ interface TamuTableAdvanceProps {
   onDelete: (id: string) => void;
   onAddNew: () => void;
   onViewDetail?: (tamu: Tamu) => void;
+  onQRCodeClick?: (tamu: Tamu) => void;
   onUpdateStatus?: (id: string, status: 'dikirim') => Promise<void>;
 }
+
 
 const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
   initialTamu = [],
@@ -44,6 +46,7 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
   onDelete,
   onAddNew,
   onViewDetail,
+  onQRCodeClick,
   onUpdateStatus,
 }) => {
   const { colorMode } = useColorMode();
@@ -334,6 +337,25 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                   color={colorMode === 'light' ? 'black' : 'white'}
                   _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
                   onClick={() => onViewDetail(tamu)}
+                  borderRadius="full"
+                />
+              )}
+              {onQRCodeClick && (
+                <IconButton
+                  aria-label="Lihat QR Code"
+                  icon={
+                    <Icon viewBox="0 0 24 24" width="18px" height="18px">
+                      <path
+                        fill="currentColor"
+                        d="M3,11H5V13H3V11M11,5H13V9H11V5M9,11H13V15H11V13H9V11M15,11H17V13H19V11H21V13H19V15H21V19H19V21H17V19H13V21H11V17H15V15H17V13H15V11M19,19V15H17V19H19M15,3H21V9H15V3M17,5V7H19V5H17M3,3H9V9H3V3M5,5V7H7V5H5M3,15H9V21H3V15M5,17V19H7V17H5Z"
+                      />
+                    </Icon>
+                  }
+                  size="sm"
+                  variant="ghost"
+                  color={colorMode === 'light' ? 'black' : 'white'}
+                  _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
+                  onClick={() => onQRCodeClick(tamu)}
                   borderRadius="full"
                 />
               )}

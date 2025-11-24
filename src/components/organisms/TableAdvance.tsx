@@ -7,6 +7,9 @@ import {
   HStack,
   IconButton,
   Input,
+  InputGroup,
+  InputLeftElement,
+  Icon,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -39,14 +42,15 @@ import {
   getSortedRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import AppSettingContext from "@/providers/AppSettingProvider";
 import {
   IoChevronBack,
   IoChevronBackCircle,
   IoChevronForward,
   IoChevronForwardCircle,
 } from "react-icons/io5";
-import { FaFilter } from "react-icons/fa";
+import { FaFilter, FaSearch } from "react-icons/fa";
 
 const ColumnFilter = ({ column }: { column: any }) => {
   const { colorMode } = useColorMode();
@@ -123,6 +127,7 @@ const TableAdvance = ({
   onColumnFiltersChange: externalOnColumnFiltersChange,
   rowSelection,
   onRowSelectionChange,
+  hideSearch,
 }: {
   columns: ColumnDef<any, any>[];
   data: any[];
@@ -130,10 +135,13 @@ const TableAdvance = ({
   onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
+  hideSearch?: boolean;
 }) => {
   const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const { colorMode } = useColorMode();
+
+  const { colorPref } = useContext(AppSettingContext);
 
   // Use external state if provided, otherwise use internal state
   const columnFilters = externalColumnFilters !== undefined ? externalColumnFilters : internalColumnFilters;
@@ -168,26 +176,34 @@ const TableAdvance = ({
   return (
     <>
       <TableContainer>
-        <Box mb={4}>
-          <Input
-            value={globalFilter ?? ""}
-            onChange={(e) => setGlobalFilter(String(e.target.value))}
-            placeholder="Cari data..."
-            size="lg"
-            borderRadius="xl"
-            bg={colorMode === 'light' ? 'white' : 'gray.800'}
-            border="2px solid"
-            borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-            _hover={{
-              borderColor: colorMode === 'light' ? 'black' : 'white',
-            }}
-            _focus={{
-              borderColor: colorMode === 'light' ? 'black' : 'white',
-              boxShadow: `0 0 0 1px ${colorMode === 'light' ? 'black' : 'white'}`,
-            }}
-            transition="all 0.2s"
-          />
+        {!hideSearch && (
+        <Box mb={6}>
+          <InputGroup size="md" maxW={{ base: 'full', md: '350px' }} ml={{ base: 0, md: 'auto' }}>
+            <InputLeftElement pointerEvents="none">
+              <Icon as={FaSearch} color="gray.400" />
+            </InputLeftElement>
+            <Input
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(String(e.target.value))}
+              placeholder="Cari data..."
+              borderRadius="lg"
+              bg={colorMode === 'light' ? 'white' : 'gray.800'}
+              border="1px solid"
+              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+              _hover={{
+                borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}Dim.500`,
+              }}
+              _focus={{
+                borderColor: colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.400`,
+                boxShadow: `0 0 0 1px var(--chakra-colors-${colorPref}-500)`,
+              }}
+              fontSize="sm"
+              transition="all 0.2s"
+              h="40px"
+            />
+          </InputGroup>
         </Box>
+        )}
         <Table variant="unstyled">
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -217,7 +233,7 @@ const TableAdvance = ({
                               onClick: header.column.getToggleSortingHandler(),
                             }}
                           >
-                            <Text textAlign="left" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} fontSize="xs" textTransform="uppercase" letterSpacing="wider">
+                            <Text textAlign="left" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider">
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()

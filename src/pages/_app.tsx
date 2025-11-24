@@ -13,6 +13,7 @@ import LanguageProvider from '@/providers/LanguageProvider';
 import '@/styles/globals.css';
 import "@/styles/styles.css"; // Import style file
 import "react-datepicker/dist/react-datepicker.css"; // Import react-datepicker css
+import '@/styles/sweetalert.css';
 import theme from '@/theme/theme';
 import { ChakraProvider } from '@chakra-ui/react';
 import {
@@ -39,8 +40,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 
 	const [queryClient] = useState(() => new QueryClient())
 
+	const getLayout = Component.getLayout ?? ((page) => page)
+	
 	if (router.pathname === '/404' || router.pathname === '/500') {
-		const getLayout = Component.getLayout ?? ((page) => page)
 		return getLayout(<Component {...pageProps} />)
 	}
 
@@ -73,7 +75,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 					<QueryClientProvider client={queryClient}>
 						<ChakraProvider theme={theme}>
 							<Hydrate state={pageProps.dehydratedState}>
-								<Component {...pageProps} />
+								{getLayout(<Component {...pageProps} />)}
 							</Hydrate>
 						</ChakraProvider>
 					</QueryClientProvider>

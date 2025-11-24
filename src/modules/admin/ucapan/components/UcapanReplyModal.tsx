@@ -11,7 +11,7 @@ import {
   VStack,
   Text,
   Box,
-  useToast,
+  useColorMode,
   FormControl,
   FormLabel,
 } from '@chakra-ui/react';
@@ -19,6 +19,7 @@ import { useState, useContext } from 'react';
 import { Ucapan } from '../types/Ucapan.types';
 import UcapanAPI from '../services/UcapanAPI';
 import AccountInfoContext from '@/providers/AccountInfoProvider';
+import { showSuccessAlert, showErrorAlert, showAlert } from '@/utils/sweetalert';
 
 interface UcapanReplyModalProps {
   isOpen: boolean;
@@ -35,16 +36,17 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
 }) => {
   const [reply, setReply] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const toast = useToast();
+  const { colorMode } = useColorMode();
   const api = new UcapanAPI();
   const accountInfo = useContext(AccountInfoContext);
 
   const handleSubmit = async () => {
     if (!ucapan || !reply.trim()) {
-      toast({
+      showAlert({
         title: 'Pesan balasan tidak boleh kosong',
-        status: 'warning',
-        duration: 3000,
+        icon: 'warning',
+        colorMode,
+        showConfirmButton: true,
       });
       return;
     }
@@ -59,23 +61,14 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
         is_admin: true,
       });
 
-      toast({
-        title: 'Balasan berhasil dikirim',
-        status: 'success',
-        duration: 3000,
-      });
+      showSuccessAlert('Balasan berhasil dikirim', colorMode);
 
       setReply('');
       onClose();
       
       if (onSuccess) onSuccess();
     } catch (error: any) {
-      toast({
-        title: 'Gagal mengirim balasan',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-      });
+      showErrorAlert('Gagal mengirim balasan', error.message, colorMode);
     } finally {
       setIsSubmitting(false);
     }

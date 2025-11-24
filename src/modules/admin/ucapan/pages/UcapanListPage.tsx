@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useToast, VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
+import { VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
 import Head from 'next/head';
-import Sidebar from '@/components/organisms/Sidebar';
-import PageTransition from '@/components/PageLayout';
-import PageRow from '@/components/atoms/PageRow';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import UcapanAPI from '../services/UcapanAPI';
 import { UcapanWithReplies } from '../types/Ucapan.types';
 import UcapanTableAdvance from '../components/UcapanTableAdvance';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import UserProfileActions from '@/components/molecules/UserProfileActions';
 
-const UcapanListPage = () => {
+const UcapanListPage: NextPageWithLayout = () => {
   const [ucapanList, setUcapanList] = useState<UcapanWithReplies[]>([]);
   const [loading, setLoading] = useState(true);
 
   const api = new UcapanAPI();
-  const toast = useToast();
   const { colorMode } = useColorMode();
 
   const fetchData = async () => {
@@ -23,12 +23,7 @@ const UcapanListPage = () => {
       const data = await api.getUcapan();
       setUcapanList(data);
     } catch (error: any) {
-      toast({
-        title: 'Gagal memuat data',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-      });
+      showErrorAlert('Gagal memuat data ucapan', error.message, colorMode);
     } finally {
       setLoading(false);
     }
@@ -41,49 +36,58 @@ const UcapanListPage = () => {
   const handleDeleteUcapan = async (id: string) => {
     try {
       await api.deleteUcapan(id);
-      toast({ title: 'Ucapan berhasil dihapus', status: 'success', duration: 3000 });
+      showSuccessAlert('Ucapan berhasil dihapus', colorMode);
       fetchData();
     } catch (error: any) {
-      toast({ title: 'Gagal menghapus ucapan', description: error.message, status: 'error', duration: 3000 });
+      showErrorAlert('Gagal menghapus ucapan', error.message, colorMode);
     }
   };
 
   return (
-    <>
-      <Head>
-        <title>Manajemen Ucapan • {process.env.NEXT_PUBLIC_APP_NAME_FULL}</title>
-      </Head>
-
-      <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
-        <Sidebar />
-        <Box
-          flex="1"
-          ml={{ base: "0", m: "108px", d: "280px" }}
-          transition="margin-left 0.3s ease"
-          minH="100vh"
-          p={2}
+    <ContainerQuery>
+      <VStack spacing={6} align="stretch" py={8}>
+        {/* Header Section */}
+        <Flex
+          justify="space-between"
+          align={{ base: 'center', md: 'center' }}
+          direction={{ base: 'row', md: 'row' }}
+          gap={{ base: 2, md: 4 }}
+          wrap={{ base: 'nowrap', md: 'nowrap' }}
         >
-          <PageTransition pageTitle="Manajemen Ucapan">
-            <PageRow>
-              <ContainerQuery>
-                <Text color={colorMode === 'light' ? 'gray.600' : 'gray.300'} mb={6}>
-                  Kelola ucapan dari tamu. Gunakan "Copy Link" untuk mendapatkan magic link dan balas langsung di halaman utama.
-                </Text>
-                <VStack spacing={8} align="stretch">
-                  <UcapanTableAdvance
-                    initialData={ucapanList}
-                    loading={loading}
-                    onReply={() => {}} // Not used anymore
-                    onDelete={handleDeleteUcapan}
-                    onRefresh={fetchData}
-                  />
-                </VStack>
-              </ContainerQuery>
-            </PageRow>
-          </PageTransition>
-        </Box>
-      </Flex>
-    </>
+          <VStack align="start" spacing={1} flex={1} minW={0}>
+            <Text
+              fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+              fontWeight="700"
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              noOfLines={1}
+            >
+              Manajemen Ucapan
+            </Text>
+            <Text
+              fontSize={{ base: 'xs', sm: 'sm' }}
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              noOfLines={2}
+            >
+              Kelola ucapan dari tamu. Gunakan "Copy Link" untuk mendapatkan magic link dan balas langsung di halaman utama.
+            </Text>
+          </VStack>
+          
+          {/* User Profile & Actions */}
+          <Box flexShrink={0}>
+            <UserProfileActions />
+          </Box>
+        </Flex>
+
+        {/* Content */}
+        <UcapanTableAdvance
+          initialData={ucapanList}
+          loading={loading}
+          onReply={() => {}} // Not used anymore
+          onDelete={handleDeleteUcapan}
+          onRefresh={fetchData}
+        />
+      </VStack>
+    </ContainerQuery>
   );
 };
 

@@ -8,21 +8,22 @@ import {
   ModalBody,
   ModalCloseButton,
   Button,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
   Flex,
-  Heading,
   Text,
   Box,
+  VStack,
   HStack,
-  IconButton,
-  useToast,
-  Icon
+  Icon,
+  Divider,
+  useColorMode,
+  useClipboard,
 } from '@chakra-ui/react';
 import QRCode from 'qrcode.react';
 import { Tamu } from '../../types/Tamu.types';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 interface QRCodeGeneratorProps {
   isOpen: boolean;
@@ -35,154 +36,143 @@ const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
   onClose, 
   tamu 
 }) => {
-  const toast = useToast();
+  const { colorMode } = useColorMode();
+  
+  // Hooks must be called before any conditional returns
+  const invitationUrl = typeof window !== 'undefined' && tamu
+    ? `${window.location.origin}/?to=${tamu.id}` 
+    : `http://localhost:3000/?to=${tamu?.id || ''}`;
+  
+  const { hasCopied, onCopy } = useClipboard(invitationUrl);
   
   if (!tamu) {
     return null;
   }
 
-  const qrData = `${window.location.origin}/admin/tamu/${tamu.id}`;
-  
-  const handleDownloadQR = () => {
-    // Find the wrapper element that contains the QR code
-    const wrapper = document.getElementById(`qr-code-${tamu.id}`);
-    if (wrapper) {
-      // Get the actual QR code SVG element inside the wrapper
-      const qrCodeElement = wrapper.querySelector('canvas, svg');
-      if (qrCodeElement) {
-        let elementData;
-        if (qrCodeElement.tagName.toLowerCase() === 'svg') {
-          elementData = new XMLSerializer().serializeToString(qrCodeElement);
-        } else {
-          // For canvas, we might need to handle differently
-          const canvas = qrCodeElement as HTMLCanvasElement;
-          const dataURL = canvas.toDataURL('image/png');
-
-          // Create a temporary link to download the image
-          const link = document.createElement('a');
-          link.download = `qr-code-${tamu.nama}.png`;
-          link.href = dataURL;
-          link.click();
-
-          toast({
-            title: 'QR Code berhasil diunduh',
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-          });
-          return;
-        }
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-
-          const link = document.createElement('a');
-          link.download = `qr-code-${tamu.nama}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-
-          toast({
-            title: 'QR Code berhasil diunduh',
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-          });
-        };
-
-        img.src = 'data:image/svg+xml;base64,' + btoa(elementData);
-      }
-    }
-  };
-
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(qrData);
-    toast({
-      title: 'Link berhasil disalin',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
+    onCopy();
+    MySwal.fire({
+      title: 'Berhasil!',
+      text: 'Link undangan berhasil disalin',
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false,
+      background: colorMode === 'light' ? '#fff' : '#1A202C',
+      color: colorMode === 'light' ? '#1A202C' : '#fff',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>QR Code untuk {tamu.nama}</ModalHeader>
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: 'full', md: 'lg' }} isCentered>
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent 
+        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        borderRadius={{ base: 0, md: 'xl' }}
+        mx={{ base: 0, md: 4 }}
+      >
+        <ModalHeader 
+          fontSize={{ base: 'lg', md: 'xl' }}
+          fontWeight="600"
+          pb={2}
+          borderBottom="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+        >
+          QR Code Undangan
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
-          <Card>
-            <CardHeader>
-              <Heading size="md">Kartu QR Code</Heading>
-            </CardHeader>
-            <CardBody>
-              <Flex direction="column" align="center" textAlign="center">
-                <Box
-                  id={`qr-code-${tamu.id}`}
-                  bg="white"
-                  p={4}
-                  borderRadius="md"
-                  boxShadow="md"
-                  mb={4}
+        
+        <ModalBody py={8}>
+          <VStack spacing={6} align="stretch">
+            {/* QR Code Display */}
+            <Flex direction="column" align="center">
+              <Box
+                id={`qr-code-${tamu.id}`}
+                bg="white"
+                p={6}
+                borderRadius="lg"
+                boxShadow="sm"
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.600'}
+              >
+                <QRCode
+                  value={tamu.qr_code}
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                />
+              </Box>
+              
+              <VStack spacing={2} mt={4} align="center">
+                <Text 
+                  fontWeight="600" 
+                  fontSize="lg"
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
                 >
-                  <QRCode
-                    value={tamu.qr_code}
-                    size={256}
-                    level="H"
-                    includeMargin={true}
-                  />
-                </Box>
-                <Text fontWeight="bold" fontSize="lg">{tamu.nama}</Text>
-                <Text color="gray.600" fontSize="sm">ID: {tamu.id}</Text>
-                <Text color="gray.500" mt={2}>{qrData}</Text>
-              </Flex>
-            </CardBody>
-            <CardFooter>
-              <HStack spacing={4}>
-                <Button
-                  colorScheme="teal"
-                  variant="outline"
-                  onClick={handleDownloadQR}
-                  leftIcon={
-                    <Icon viewBox="0 0 24 24" width="20px" height="20px">
-                      <path
-                        fill="currentColor"
-                        d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"
-                      />
-                    </Icon>
-                  }
+                  {tamu.nama}
+                </Text>
+                <Text 
+                  fontSize="sm" 
+                  color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                  fontFamily="mono"
                 >
-                  Unduh QR Code
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  variant="outline"
-                  onClick={handleCopyLink}
-                  leftIcon={
-                    <Icon viewBox="0 0 24 24" width="20px" height="20px">
-                      <path
-                        fill="currentColor"
-                        d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                      />
-                    </Icon>
-                  }
-                >
-                  Salin Link
-                </Button>
-              </HStack>
-            </CardFooter>
-          </Card>
+                  {tamu.qr_code}
+                </Text>
+              </VStack>
+            </Flex>
+
+            <Divider />
+
+            {/* Invitation URL */}
+            <VStack spacing={3} align="stretch">
+              <Text 
+                fontSize="sm" 
+                fontWeight="600"
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+              >
+                Link Undangan
+              </Text>
+              <Box
+                p={3}
+                bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                borderRadius="md"
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.600'}
+                fontSize="sm"
+                fontFamily="mono"
+                wordBreak="break-all"
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+              >
+                {invitationUrl}
+              </Box>
+            </VStack>
+          </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button colorScheme="teal" mr={3} onClick={onClose}>
-            Tutup
-          </Button>
+
+        <ModalFooter 
+          borderTop="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+          pt={4}
+        >
+          <HStack spacing={3} width="full" justify="flex-end">
+            <Button
+              colorScheme="blue"
+              onClick={handleCopyLink}
+              size="md"
+              leftIcon={
+                <Icon viewBox="0 0 24 24" width="18px" height="18px">
+                  <path
+                    fill="currentColor"
+                    d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                  />
+                </Icon>
+              }
+            >
+              {hasCopied ? 'Tersalin!' : 'Salin Link'}
+            </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -5,12 +5,11 @@ import {
   Alert,
   AlertIcon,
   Flex,
-  useColorMode
+  useColorMode,
+  VStack
 } from '@chakra-ui/react';
-import Sidebar from '@/components/organisms/Sidebar';
-import PageTransition from '@/components/PageLayout';
-import PlainCard from '@/components/organisms/Cards/Card';
-import PageRow from '@/components/atoms/PageRow';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import { Tamu, TamuFilter } from '../types/Tamu.types';
 import TamuTableAdvance from '../components/TamuTableAdvance';
@@ -19,8 +18,9 @@ import TamuDetail from '../components/GuestDetail';
 import { TamuFormModal } from '../components/GuestForm';
 import { useTamu } from '../utils/hooks/useTamu';
 import TamuStatistics from '../components/TamuStatistics';
+import UserProfileActions from '@/components/molecules/UserProfileActions';
 
-const TamuListPage: React.FC = () => {
+const TamuListPage: NextPageWithLayout = () => {
   const {
     tamu: tamuList,
     loading,
@@ -83,75 +83,87 @@ const TamuListPage: React.FC = () => {
   };
 
   return (
-    <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
-      {/* Sidebar */}
-      <Sidebar />
+    <ContainerQuery>
+      <VStack spacing={6} align="stretch" py={8}>
+        {/* Header Section */}
+        <Flex
+          justify="space-between"
+          align={{ base: 'center', md: 'center' }}
+          direction={{ base: 'row', md: 'row' }}
+          gap={{ base: 2, md: 4 }}
+          wrap={{ base: 'nowrap', md: 'nowrap' }}
+        >
+          <VStack align="start" spacing={1} flex={1} minW={0}>
+            <Text
+              fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+              fontWeight="700"
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              noOfLines={1}
+            >
+              Manajemen Tamu Undangan
+            </Text>
+            <Text
+              fontSize={{ base: 'xs', sm: 'sm' }}
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              noOfLines={1}
+            >
+              Kelola daftar tamu undangan pernikahan Anda
+            </Text>
+          </VStack>
+          
+          {/* User Profile & Actions */}
+          <Box flexShrink={0}>
+            <UserProfileActions />
+          </Box>
+        </Flex>
 
-      {/* Main Content Area */}
-      <Box
-        flex="1"
-        ml={{ base: "0", md: "108px", lg: "280px" }}
-        transition="margin-left 0.3s ease"
-        minH="100vh"
-        p={{ base: 4, md: 6 }}
-        w={{ base: "100%", md: "auto" }}
-      >
-        <PageTransition pageTitle="Manajemen Tamu Undangan">
-          <PageRow>
-            <ContainerQuery>
-              <Text color={colorMode === 'light' ? 'gray.600' : 'gray.400'} mb={6}>
-                Kelola daftar tamu undangan pernikahan Anda
-              </Text>
+        {error && (
+          <Alert status="error" borderRadius="md" boxShadow="sm">
+            <AlertIcon />
+            {error}
+          </Alert>
+        )}
 
-              {error && (
-                <Alert status="error" borderRadius="md" boxShadow="sm" mb={4}>
-                  <AlertIcon />
-                  {error}
-                </Alert>
-              )}
+        <TamuStatistics data={tamuList} />
 
-              <TamuStatistics data={tamuList} />
+        <TamuTableAdvance
+          initialTamu={tamuList}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAddNew={handleAddNew}
+          onViewDetail={handleViewDetail}
+          onQRCodeClick={handleQRCodeClick}
+          onUpdateStatus={async (id, status) => {
+            await updateTamu(id, { 
+              status_undangan: status,
+              tgl_kirim_undangan: new Date()
+            });
+          }}
+        />
 
-              <TamuTableAdvance
-                initialTamu={tamuList}
-                loading={loading}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onAddNew={handleAddNew}
-                onViewDetail={handleViewDetail}
-                onUpdateStatus={async (id, status) => {
-                  await updateTamu(id, { 
-                    status_undangan: status,
-                    tgl_kirim_undangan: new Date()
-                  });
-                }}
-              />
+        <TamuFormModal
+          isOpen={showFormModal}
+          onClose={() => setShowFormModal(false)}
+          tamu={selectedTamu || undefined}
+          onSave={handleSaveSuccess}
+        />
 
-              <TamuFormModal
-                isOpen={showFormModal}
-                onClose={() => setShowFormModal(false)}
-                tamu={selectedTamu || undefined}
-                onSave={handleSaveSuccess}
-              />
+        <QRCodeGenerator
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          tamu={selectedTamu || undefined}
+        />
 
-              <QRCodeGenerator
-                isOpen={showQRModal}
-                onClose={() => setShowQRModal(false)}
-                tamu={selectedTamu || undefined}
-              />
-
-              <TamuDetail
-                isOpen={showDetailModal}
-                onClose={() => setShowDetailModal(false)}
-                tamu={selectedTamu || undefined}
-                onEdit={handleViewDetail}
-                onQRCodeClick={handleQRCodeClick}
-              />
-            </ContainerQuery>
-          </PageRow>
-        </PageTransition>
-      </Box>
-    </Flex>
+        <TamuDetail
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          tamu={selectedTamu || undefined}
+          onEdit={handleViewDetail}
+          onQRCodeClick={handleQRCodeClick}
+        />
+      </VStack>
+    </ContainerQuery>
   );
 };
 

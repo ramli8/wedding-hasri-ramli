@@ -411,7 +411,7 @@ const PageTransition = ({
 											color="gray"
 											mt="6px"
 										>
-											{commonTranslations(`roles.${accountInfo?.activeRole}`) ?? 'Demo Role'}
+											{accountInfo?.role?.find((r: any) => r.id === accountInfo?.activeRole)?.name ?? 'Role'}
 										</Text>
 									)}
 								</Box>

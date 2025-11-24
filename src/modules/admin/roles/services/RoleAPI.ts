@@ -4,6 +4,7 @@ export interface Role {
   id: string;
   name: string;
   description: string;
+  is_default?: boolean;
   created_at: string;
   deleted_at?: string | null;
 }
@@ -11,11 +12,13 @@ export interface Role {
 export interface CreateRoleInput {
   name: string;
   description: string;
+  is_default?: boolean;
 }
 
 export interface UpdateRoleInput {
   name?: string;
   description?: string;
+  is_default?: boolean;
 }
 
 class RoleAPI {
@@ -68,6 +71,22 @@ class RoleAPI {
       .single();
 
     if (error) throw error;
+    return data as Role;
+  }
+
+  async getDefaultRole() {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('is_default', true)
+      .is('deleted_at', null)
+      .single();
+
+    if (error) {
+      // If no default role found, return null instead of throwing
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
     return data as Role;
   }
 

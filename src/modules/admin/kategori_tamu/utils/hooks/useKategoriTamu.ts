@@ -74,11 +74,27 @@ export const useKategoriTamu = () => {
     try {
       setLoading(true);
       await api.delete(id);
-      setKategoriTamu(prev => prev.filter(item => item.id !== id));
+      setKategoriTamu(prev => prev.map(item => item.id === id ? { ...item, deleted_at: new Date() } : item));
       setError(null);
     } catch (err: any) {
       console.error('Error deleting kategori tamu:', err);
       setError(err.message || 'Gagal menghapus kategori tamu');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const restoreKategoriTamu = async (id: string) => {
+    if (!api) throw new Error('API belum siap');
+    try {
+      setLoading(true);
+      await api.restore(id);
+      setKategoriTamu(prev => prev.map(item => item.id === id ? { ...item, deleted_at: undefined } : item));
+      setError(null);
+    } catch (err: any) {
+      console.error('Error restoring kategori tamu:', err);
+      setError(err.message || 'Gagal memulihkan kategori tamu');
       throw err;
     } finally {
       setLoading(false);
@@ -98,6 +114,7 @@ export const useKategoriTamu = () => {
     fetchKategoriTamu,
     createKategoriTamu,
     updateKategoriTamu,
-    deleteKategoriTamu
+    deleteKategoriTamu,
+    restoreKategoriTamu
   };
 };

@@ -12,17 +12,17 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  ModalFooter,
   ModalCloseButton,
   useColorMode,
   VStack,
   HStack,
+  Text,
+  Badge,
 } from '@chakra-ui/react';
 import { KategoriTamu, CreateKategoriTamuInput, UpdateKategoriTamuInput } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
-import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
 interface KategoriFormModalProps {
   isOpen: boolean;
@@ -58,64 +58,125 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
     try {
       await onSave({ nama: formData.nama.trim() });
       
-      MySwal.fire({
-        icon: 'success',
-        title: isEdit ? 'Kategori Diperbarui!' : 'Kategori Ditambahkan!',
-        text: `Kategori "${formData.nama}" berhasil ${isEdit ? 'diperbarui' : 'ditambahkan'}`,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#319795',
-        background: colorMode === 'light' ? '#fff' : '#1A202C',
-        color: colorMode === 'light' ? '#1A202C' : '#fff',
-      });
+      showSuccessAlert(
+        isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
+        colorMode
+      );
       
       onClose();
     } catch (error: any) {
-      MySwal.fire({
-        icon: 'error',
-        title: 'Gagal!',
-        text: error.message || 'Terjadi kesalahan',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#E53E3E',
-        background: colorMode === 'light' ? '#fff' : '#1A202C',
-        color: colorMode === 'light' ? '#1A202C' : '#fff',
-      });
+      showErrorAlert(
+        'Gagal menyimpan',
+        error.message || 'Terjadi kesalahan',
+        colorMode
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
       <ModalOverlay />
-      <ModalContent bg={colorMode === 'light' ? 'white' : 'gray.800'}>
-        <ModalHeader>{isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</ModalHeader>
+      <ModalContent 
+        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        borderRadius={{ base: 0, md: '16px' }}
+        mx={{ base: 0, md: 4 }}
+      >
+        <ModalHeader
+          fontSize={{ base: 'lg', md: 'xl' }}
+          fontWeight="600"
+          pb={3}
+          borderBottom="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+        >
+          <HStack spacing={3}>
+            <Text>{isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</Text>
+            {isEdit && (
+              <Badge 
+                colorScheme="blue" 
+                variant="subtle"
+                fontSize="10px" 
+                px={2} 
+                py={0.5} 
+                borderRadius="full"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                fontWeight="700"
+                bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                color={colorMode === 'light' ? 'blue.600' : 'blue.200'}
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'blue.100' : 'blue.800'}
+              >
+                Edit Mode
+              </Badge>
+            )}
+          </HStack>
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={6}>
-          <Box as="form" onSubmit={handleSubmit}>
-            <VStack spacing={4}>
+        <ModalBody py={6}>
+          <Box as="form" id="kategori-form" onSubmit={handleSubmit}>
+            <VStack spacing={5} align="stretch">
               <FormControl isRequired>
-                <FormLabel>Nama Kategori</FormLabel>
+                <FormLabel
+                  fontSize="sm" 
+                  fontWeight="600"
+                  mb={2}
+                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                >
+                  Nama Kategori
+                </FormLabel>
                 <Input
                   value={formData.nama}
                   onChange={(e) => setFormData({ nama: e.target.value })}
                   placeholder="Contoh: Tamu Hasri"
-                  size="lg"
+                  size="md"
                   borderRadius="md"
-                  focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
+                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                  _hover={{
+                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                  }}
+                  _focus={{
+                    borderColor: 'blue.500',
+                    boxShadow: '0 0 0 1px #3182ce',
+                  }}
+                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
                 />
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Masukkan nama kategori tamu (misal: VIP, Keluarga, Teman)
+                </Text>
               </FormControl>
-
-              <HStack spacing={3} width="full" justify="flex-end">
-                <PrimaryOutlineButton onClick={onClose} isDisabled={loading}>
-                  Batal
-                </PrimaryOutlineButton>
-                <PrimaryButton type="submit" isLoading={loading}>
-                  {isEdit ? 'Perbarui' : 'Simpan'}
-                </PrimaryButton>
-              </HStack>
             </VStack>
           </Box>
         </ModalBody>
+
+        <ModalFooter
+          borderTop="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+          pt={4}
+        >
+          <HStack spacing={3} width="full" justify="flex-end">
+            <Button 
+              variant="ghost" 
+              onClick={onClose} 
+              isDisabled={loading}
+              minW="120px"
+              h="40px"
+              borderRadius="10px"
+              fontSize="14px"
+            >
+              Batal
+            </Button>
+            <PrimaryButton 
+              type="submit" 
+              form="kategori-form"
+              isLoading={loading}
+              loadingText="Menyimpan..."
+            >
+              {isEdit ? 'Perbarui' : 'Simpan'}
+            </PrimaryButton>
+          </HStack>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

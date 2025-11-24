@@ -14,10 +14,16 @@ import {
   Select,
   Textarea,
   VStack,
-  useToast,
+  useColorMode,
+  Text,
+  Box,
+  HStack,
+  Badge,
 } from '@chakra-ui/react';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import PermissionAPI, { RolePermission } from '../../permissions/services/PermissionAPI';
 import RoleAPI, { Role } from '../../roles/services/RoleAPI';
+import { showSuccessAlert, showErrorAlert, showAlert } from '@/utils/sweetalert';
 
 interface PermissionFormModalProps {
   isOpen: boolean;
@@ -41,7 +47,7 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
 
   const permissionAPI = new PermissionAPI();
   const roleAPI = new RoleAPI();
-  const toast = useToast();
+  const { colorMode } = useColorMode();
   const availableUrls = permissionAPI.getAvailableUrls();
 
   useEffect(() => {
@@ -73,11 +79,12 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
 
   const handleSubmit = async () => {
     if (!roleId || !urlPattern) {
-      toast({
+      showAlert({
         title: 'Error',
-        description: 'Role dan URL Pattern harus diisi',
-        status: 'error',
-        duration: 3000,
+        text: 'Role dan URL Pattern harus diisi',
+        icon: 'error',
+        colorMode,
+        showConfirmButton: true,
       });
       return;
     }
@@ -90,44 +97,92 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
           url_pattern: urlPattern,
           description,
         });
-        toast({ title: 'Permission berhasil diupdate', status: 'success', duration: 3000 });
+        showSuccessAlert('Data berhasil diperbarui', colorMode);
       } else {
         await permissionAPI.createPermission({
           role_id: roleId,
           url_pattern: urlPattern,
           description,
         });
-        toast({ title: 'Permission berhasil dibuat', status: 'success', duration: 3000 });
+        showSuccessAlert('Data berhasil ditambahkan', colorMode);
       }
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast({
-        title: 'Gagal menyimpan permission',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-      });
+      showErrorAlert('Gagal menyimpan', error.message, colorMode);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: 'full', md: 'xl' }} isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>{initialData ? 'Edit Permission' : 'Tambah Permission Baru'}</ModalHeader>
+      <ModalContent
+        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        borderRadius={{ base: 0, md: '16px' }}
+        mx={{ base: 0, md: 4 }}
+      >
+        <ModalHeader
+          fontSize={{ base: 'lg', md: 'xl' }}
+          fontWeight="600"
+          pb={3}
+          borderBottom="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+        >
+          <HStack spacing={3}>
+            <Text>{initialData ? 'Edit Permission' : 'Tambah Permission Baru'}</Text>
+            {initialData && (
+              <Badge 
+                colorScheme="blue" 
+                variant="subtle"
+                fontSize="10px" 
+                px={2} 
+                py={0.5} 
+                borderRadius="full"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                fontWeight="700"
+                bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                color={colorMode === 'light' ? 'blue.600' : 'blue.200'}
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'blue.100' : 'blue.800'}
+              >
+                Edit Mode
+              </Badge>
+            )}
+          </HStack>
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={6}>
-          <VStack spacing={4}>
+        
+        <ModalBody py={6}>
+          <VStack spacing={5} align="stretch">
+            {/* Role Selection */}
             <FormControl isRequired>
-              <FormLabel>Role</FormLabel>
+              <FormLabel 
+                fontSize="sm" 
+                fontWeight="600"
+                mb={2}
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+              >
+                Role
+              </FormLabel>
               <Select
                 placeholder="Pilih Role"
                 value={roleId}
                 onChange={(e) => setRoleId(e.target.value)}
                 isDisabled={loading}
+                size="md"
+                borderRadius="md"
+                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                _hover={{
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+                _focus={{
+                  borderColor: 'blue.500',
+                  boxShadow: '0 0 0 1px #3182ce',
+                }}
+                bg={colorMode === 'light' ? 'white' : 'gray.700'}
               >
                 {roles.map((role) => (
                   <option key={role.id} value={role.id}>
@@ -135,52 +190,130 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                   </option>
                 ))}
               </Select>
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Pilih role yang akan diberikan akses
+              </Text>
             </FormControl>
 
+            {/* URL Pattern Selection */}
             <FormControl isRequired>
-              <FormLabel>URL Pattern</FormLabel>
-              <Select
-                placeholder="Pilih atau ketik URL manual di bawah"
-                value={availableUrls.some(u => u.url === urlPattern) ? urlPattern : ''}
-                onChange={(e) => setUrlPattern(e.target.value)}
+              <FormLabel 
+                fontSize="sm" 
+                fontWeight="600"
                 mb={2}
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
               >
-                {availableUrls.map((item) => (
-                  <option key={item.url} value={item.url}>
-                    {item.label} ({item.url})
-                  </option>
-                ))}
-              </Select>
-              <Input
-                placeholder="Atau ketik URL pattern manual (contoh: /admin/custom)"
-                value={urlPattern}
-                onChange={(e) => setUrlPattern(e.target.value)}
-              />
+                URL Pattern
+              </FormLabel>
+              <VStack spacing={2} align="stretch">
+                <Select
+                  placeholder="Pilih dari daftar URL yang tersedia"
+                  value={availableUrls.some(u => u.url === urlPattern) ? urlPattern : ''}
+                  onChange={(e) => setUrlPattern(e.target.value)}
+                  size="md"
+                  borderRadius="md"
+                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                  _hover={{
+                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                  }}
+                  _focus={{
+                    borderColor: 'blue.500',
+                    boxShadow: '0 0 0 1px #3182ce',
+                  }}
+                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                >
+                  {availableUrls.map((item) => (
+                    <option key={item.url} value={item.url}>
+                      {item.label} ({item.url})
+                    </option>
+                  ))}
+                </Select>
+                
+                <Box position="relative">
+                  <Input
+                    placeholder="Atau ketik URL pattern manual (contoh: /admin/custom)"
+                    value={urlPattern}
+                    onChange={(e) => setUrlPattern(e.target.value)}
+                    size="md"
+                    borderRadius="md"
+                    borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                    _hover={{
+                      borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                    }}
+                    _focus={{
+                      borderColor: 'blue.500',
+                      boxShadow: '0 0 0 1px #3182ce',
+                    }}
+                    bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                    fontFamily="mono"
+                    fontSize="sm"
+                  />
+                </Box>
+              </VStack>
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Pilih dari dropdown atau ketik manual
+              </Text>
             </FormControl>
 
+            {/* Description */}
             <FormControl>
-              <FormLabel>Deskripsi</FormLabel>
+              <FormLabel 
+                fontSize="sm" 
+                fontWeight="600"
+                mb={2}
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+              >
+                Deskripsi
+              </FormLabel>
               <Textarea
-                placeholder="Deskripsi permission..."
+                placeholder="Deskripsi permission (opsional)..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                resize="vertical"
+                borderRadius="md"
+                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                _hover={{
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+                _focus={{
+                  borderColor: 'blue.500',
+                  boxShadow: '0 0 0 1px #3182ce',
+                }}
+                bg={colorMode === 'light' ? 'white' : 'gray.700'}
               />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Tambahkan catatan atau penjelasan tentang permission ini
+              </Text>
             </FormControl>
           </VStack>
         </ModalBody>
 
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={onClose}>
-            Batal
-          </Button>
-          <Button
-            colorScheme="teal"
-            onClick={handleSubmit}
-            isLoading={saving}
-            loadingText="Menyimpan..."
-          >
-            Simpan
-          </Button>
+        <ModalFooter
+          borderTop="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+          pt={4}
+        >
+          <HStack spacing={3} width="full" justify="flex-end">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              isDisabled={saving}
+              minW="120px"
+              h="40px"
+              borderRadius="10px"
+              fontSize="14px"
+            >
+              Batal
+            </Button>
+            <PrimaryButton
+              onClick={handleSubmit}
+              isLoading={saving}
+              loadingText="Menyimpan..."
+            >
+              {initialData ? 'Perbarui' : 'Simpan'}
+            </PrimaryButton>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>

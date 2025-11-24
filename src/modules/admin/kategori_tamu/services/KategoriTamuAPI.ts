@@ -111,6 +111,22 @@ class KategoriTamuAPI {
       throw new Error(error.message || 'Gagal menghapus kategori tamu');
     }
   }
+  async restore(id: string): Promise<KategoriTamu> {
+    try {
+      const { data, error } = await this.supabase
+        .from('kategori_tamu')
+        .update({ deleted_at: null })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as KategoriTamu;
+    } catch (error: any) {
+      console.error('Error in restore:', error);
+      throw new Error(error.message || 'Gagal memulihkan kategori tamu');
+    }
+  }
 }
 
 export default KategoriTamuAPI;

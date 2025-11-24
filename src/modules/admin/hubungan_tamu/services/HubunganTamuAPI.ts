@@ -24,14 +24,13 @@ class HubunganTamuAPI {
       const { data, error } = await this.supabase
         .from('hubungan_tamu')
         .select('*')
-        .is('deleted_at', null)
         .order('nama', { ascending: true });
 
       if (error) throw error;
       return data as HubunganTamu[];
     } catch (error: any) {
       console.error('Error in getAll:', error);
-      throw new Error(error.message || 'Gagal mengambil data hubungan tamu');
+      throw new Error(error.message || 'Gagal mengambil data');
     }
   }
 
@@ -52,7 +51,7 @@ class HubunganTamuAPI {
       return data as HubunganTamu;
     } catch (error: any) {
       console.error('Error in getById:', error);
-      throw new Error(error.message || 'Gagal mengambil data hubungan tamu');
+      throw new Error(error.message || 'Gagal mengambil data');
     }
   }
 
@@ -109,6 +108,23 @@ class HubunganTamuAPI {
     } catch (error: any) {
       console.error('Error in delete:', error);
       throw new Error(error.message || 'Gagal menghapus hubungan tamu');
+    }
+  }
+
+  async restore(id: string): Promise<HubunganTamu> {
+    try {
+      const { data, error } = await this.supabase
+        .from('hubungan_tamu')
+        .update({ deleted_at: null })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as HubunganTamu;
+    } catch (error: any) {
+      console.error('Error in restore:', error);
+      throw new Error(error.message || 'Gagal memulihkan hubungan tamu');
     }
   }
 }

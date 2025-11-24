@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useToast, VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
+import { VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
 import {
   Modal,
   ModalOverlay,
@@ -16,14 +16,15 @@ import {
   Button,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-import Sidebar from '@/components/organisms/Sidebar';
-import PageTransition from '@/components/PageLayout';
-import PageRow from '@/components/atoms/PageRow';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import UserAPI, { User, Role } from '../services/UserAPI';
 import UserTableAdvance from '../components/UserTableAdvance';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import UserProfileActions from '@/components/molecules/UserProfileActions';
 
-const UserListPage = () => {
+const UserListPage: NextPageWithLayout = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,6 @@ const UserListPage = () => {
   });
 
   const api = new UserAPI();
-  const toast = useToast();
   const { colorMode } = useColorMode();
 
   const fetchData = async () => {
@@ -47,12 +47,7 @@ const UserListPage = () => {
       setUsers(usersData);
       setRoles(rolesData);
     } catch (error: any) {
-      toast({
-        title: 'Gagal memuat data',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-      });
+      showErrorAlert('Gagal memuat data user', error.message, colorMode);
     } finally {
       setLoading(false);
     }
@@ -93,85 +88,91 @@ const UserListPage = () => {
           password_hash: formData.password || undefined,
           role_ids: formData.role_ids,
         });
-        toast({ title: 'User berhasil diupdate', status: 'success', duration: 3000 });
+        showSuccessAlert('User berhasil diupdate', colorMode);
       } else {
-        await api.createUser({
+        // Create new user
+        const newUser = await api.createUser({
           username: formData.username,
           name: formData.name,
-          password_hash: formData.password,
+          password_hash: formData.password || 'default123',
           role_ids: formData.role_ids,
         });
-        toast({ title: 'User berhasil dibuat', status: 'success', duration: 3000 });
+        showSuccessAlert('User berhasil dibuat', colorMode);
       }
       handleCloseModal();
       fetchData();
     } catch (error: any) {
-      toast({
-        title: editingUser ? 'Gagal update user' : 'Gagal membuat user',
-        description: error.message,
-        status: 'error',
-        duration: 3000,
-      });
+      showErrorAlert(
+        editingUser ? 'Gagal update user' : 'Gagal membuat user',
+        error.message,
+        colorMode
+      );
     }
   };
 
   const handleDeleteUser = async (id: string) => {
     try {
       await api.deleteUser(id);
-      toast({ title: 'User berhasil dihapus', status: 'success', duration: 3000 });
+      showSuccessAlert('User berhasil dihapus', colorMode);
       fetchData();
     } catch (error: any) {
-      toast({ title: 'Gagal menghapus user', description: error.message, status: 'error', duration: 3000 });
+      showErrorAlert('Gagal menghapus user', error.message, colorMode);
     }
   };
 
   const handleCopyMagicLink = (user: User) => {
-    const magicLink = `${window.location.origin}/?admin=${user.id}`;
+    const magicLink = `${window.location.origin}/admin/login?magic=${user.id}`;
     navigator.clipboard.writeText(magicLink);
-    toast({
-      title: 'Magic link berhasil disalin',
-      description: `Link admin untuk ${user.name} - bisa balas semua ucapan`,
-      status: 'success',
-      duration: 2000,
-    });
+    showSuccessAlert('Magic link berhasil disalin', colorMode);
   };
 
   return (
     <>
-      <Head>
-        <title>Manajemen User • {process.env.NEXT_PUBLIC_APP_NAME_FULL}</title>
-      </Head>
+      <ContainerQuery>
+        <VStack spacing={6} align="stretch" py={8}>
+          {/* Header Section */}
+          <Flex
+            justify="space-between"
+            align={{ base: 'center', md: 'center' }}
+            direction={{ base: 'row', md: 'row' }}
+            gap={{ base: 2, md: 4 }}
+            wrap={{ base: 'nowrap', md: 'nowrap' }}
+          >
+            <VStack align="start" spacing={1} flex={1} minW={0}>
+              <Text
+                fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+                fontWeight="700"
+                color={colorMode === 'light' ? 'gray.900' : 'white'}
+                noOfLines={1}
+              >
+                Manajemen User
+              </Text>
+              <Text
+                fontSize={{ base: 'xs', sm: 'sm' }}
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                noOfLines={1}
+              >
+                Kelola pengguna dan hak akses
+              </Text>
+            </VStack>
+            
+            {/* User Profile & Actions */}
+            <Box flexShrink={0}>
+              <UserProfileActions />
+            </Box>
+          </Flex>
 
-      <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
-        <Sidebar />
-        <Box
-          flex="1"
-          ml={{ base: "0", m: "108px", d: "280px" }}
-          transition="margin-left 0.3s ease"
-          minH="100vh"
-          p={2}
-        >
-          <PageTransition pageTitle="Manajemen User">
-            <PageRow>
-              <ContainerQuery>
-                <Text color={colorMode === 'light' ? 'gray.600' : 'gray.300'} mb={6}>
-                  Kelola pengguna dan hak akses
-                </Text>
-                <VStack spacing={8} align="stretch">
-                  <UserTableAdvance
-                    initialData={users}
-                    loading={loading}
-                    onEdit={handleOpenModal}
-                    onDelete={handleDeleteUser}
-                    onAddNew={() => handleOpenModal()}
-                    onCopyMagicLink={handleCopyMagicLink}
-                  />
-                </VStack>
-              </ContainerQuery>
-            </PageRow>
-          </PageTransition>
-        </Box>
-      </Flex>
+          {/* Content */}
+          <UserTableAdvance
+            initialData={users}
+            loading={loading}
+            onEdit={handleOpenModal}
+            onDelete={handleDeleteUser}
+            onAddNew={() => handleOpenModal()}
+            onCopyMagicLink={handleCopyMagicLink}
+          />
+        </VStack>
+      </ContainerQuery>
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
         <ModalOverlay />

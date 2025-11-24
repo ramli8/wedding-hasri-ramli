@@ -34,19 +34,33 @@ export function AccountInfoProvider({ children }: { children: ReactNode }) {
         // Fetch actual role IDs from database
         const { data: rolesData, error } = await supabase
           .from('roles')
-          .select('id, name')
+          .select('id, name, is_default')
           .in('name', session.roles);
 
         if (error) throw error;
 
         // Get active role ID from localStorage
         const activeRoleId = localStorage.getItem('active_role_id');
+        
+        // Determine which role to use
+        let selectedRoleId = activeRoleId;
+        
+        // If no active role in localStorage, use default role
+        if (!selectedRoleId && rolesData && rolesData.length > 0) {
+          const defaultRole = rolesData.find(r => r.is_default);
+          selectedRoleId = defaultRole?.id || rolesData[0]?.id || '';
+          
+          // Save default role to localStorage for next time
+          if (selectedRoleId) {
+            localStorage.setItem('active_role_id', selectedRoleId);
+          }
+        }
 
         // Transform AuthUser to AccountInfo format
         const info: AccountInfo = {
           name: session.name,
           prefUsername: session.username,
-          activeRole: activeRoleId || rolesData?.[0]?.id || '',
+          activeRole: selectedRoleId || '',
           role: rolesData || [],
           nickname: session.name.split(' ')[0],
           identifier: session.username,

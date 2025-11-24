@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS roles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR(50) NOT NULL UNIQUE,
   description TEXT,
+  is_default BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE
@@ -107,6 +108,32 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 CREATE UNIQUE INDEX idx_role_permissions_unique_active 
 ON role_permissions (role_id, url_pattern) 
 WHERE deleted_at IS NULL;
+
+-- Create function to ensure only one default role
+CREATE OR REPLACE FUNCTION ensure_single_default_role()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If setting this role as default
+  IF NEW.is_default = true THEN
+    -- Unset all other roles as default
+    UPDATE roles 
+    SET is_default = false 
+    WHERE id != NEW.id AND is_default = true;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to enforce single default role
+DROP TRIGGER IF EXISTS trigger_ensure_single_default_role ON roles;
+CREATE TRIGGER trigger_ensure_single_default_role
+  BEFORE INSERT OR UPDATE ON roles
+  FOR EACH ROW
+  EXECUTE FUNCTION ensure_single_default_role();
+
+-- Add comment for documentation
+COMMENT ON COLUMN roles.is_default IS 'Indicates if this is the default role. Only one role can be default at a time.';
 
 -- ============================================
 -- 4. CREATE UCAPAN TABLE
@@ -157,11 +184,11 @@ ON CONFLICT (nama) DO NOTHING;
 -- 6. INSERT DUMMY DATA - ROLES & USERS
 -- ============================================
 
--- Insert default roles
-INSERT INTO roles (name, description) VALUES
-  ('Super Admin', 'Full access to all features'),
-  ('Admin', 'Can manage guests and comments'),
-  ('Editor', 'Can edit content')
+-- Insert default roles (Super Admin is set as default)
+INSERT INTO roles (name, description, is_default) VALUES
+  ('Super Admin', 'Full access to all features', true),
+  ('Admin', 'Can manage guests and comments', false),
+  ('Editor', 'Can edit content', false)
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert default user (password: admin123 - dummy hash, should be bcrypt in production)
@@ -514,23 +541,3 @@ INSERT INTO tamu (
 -- - Ready for use!
 -- ============================================
 
--- ============================================
--- MIGRATION: Fix Admin Dashboard Permission
--- ============================================
-
--- Add permission for Admin role to access /admin/dashboard
-
-DO $$
-DECLARE
-    admin_role_id UUID;
-BEGIN
-    -- Get the role ID for 'Admin'
-    SELECT id INTO admin_role_id FROM roles WHERE name = 'Admin';
-
-    -- Insert permission if it doesn't exist
-    IF admin_role_id IS NOT NULL THEN
-        INSERT INTO role_permissions (role_id, url_pattern, description)
-        VALUES (admin_role_id, '/admin/dashboard', 'Access to Admin Dashboard')
-        ON CONFLICT (role_id, url_pattern) WHERE deleted_at IS NULL DO NOTHING;
-    END IF;
-END $$;

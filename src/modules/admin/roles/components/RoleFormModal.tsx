@@ -12,51 +12,59 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  ModalFooter,
   ModalCloseButton,
   useColorMode,
-  ModalFooter,
-  Text,
-  Badge,
   VStack,
   HStack,
+  Text,
+  Badge,
+  Textarea,
+  Switch,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
-import { HubunganTamu, CreateHubunganTamuInput, UpdateHubunganTamuInput } from '@/modules/admin/hubungan_tamu/types/HubunganTamu.types';
+import { Role, CreateRoleInput, UpdateRoleInput } from '@/modules/admin/roles/services/RoleAPI';
 import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
-interface HubunganFormModalProps {
+interface RoleFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  hubungan?: HubunganTamu;
-  onSave: (data: CreateHubunganTamuInput | UpdateHubunganTamuInput) => Promise<void>;
+  role?: Role;
+  onSave: (data: CreateRoleInput | UpdateRoleInput) => Promise<void>;
 }
 
-const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
+const RoleFormModal: React.FC<RoleFormModalProps> = ({
   isOpen,
   onClose,
-  hubungan,
+  role,
   onSave,
 }) => {
   const { colorMode } = useColorMode();
-  const [formData, setFormData] = useState<CreateHubunganTamuInput>({ nama: '' });
+  const [formData, setFormData] = useState<CreateRoleInput>({ name: '', description: '', is_default: false });
   const [loading, setLoading] = useState(false);
-  const isEdit = !!hubungan;
+  const isEdit = !!role;
 
   useEffect(() => {
-    if (hubungan) {
-      setFormData({ nama: hubungan.nama });
+    if (role) {
+      setFormData({ name: role.name, description: role.description || '', is_default: role.is_default || false });
     } else {
-      setFormData({ nama: '' });
+      setFormData({ name: '', description: '', is_default: false });
     }
-  }, [hubungan, isOpen]);
+  }, [role, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nama.trim()) return;
+    if (!formData.name.trim()) return;
 
     setLoading(true);
     try {
-      await onSave({ nama: formData.nama.trim() });
+      await onSave({ 
+        name: formData.name.trim(),
+        description: formData.description?.trim() || '',
+        is_default: formData.is_default
+      });
       
       showSuccessAlert(
         isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
@@ -77,7 +85,7 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
-      <ModalOverlay />
+      <ModalOverlay backdropFilter="blur(5px)" />
       <ModalContent 
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
         borderRadius={{ base: 0, md: '16px' }}
@@ -91,7 +99,7 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
           borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
         >
           <HStack spacing={3}>
-            <Text>{isEdit ? 'Edit Hubungan' : 'Tambah Hubungan'}</Text>
+            <Text>{isEdit ? 'Edit Role' : 'Tambah Role'}</Text>
             {isEdit && (
               <Badge 
                 colorScheme="blue" 
@@ -115,7 +123,7 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody py={6}>
-          <Box as="form" id="hubungan-form" onSubmit={handleSubmit}>
+          <Box as="form" id="role-form" onSubmit={handleSubmit}>
             <VStack spacing={5} align="stretch">
               <FormControl isRequired>
                 <FormLabel
@@ -124,12 +132,12 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
                   mb={2}
                   color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
                 >
-                  Nama Hubungan
+                  Nama Role
                 </FormLabel>
                 <Input
-                  value={formData.nama}
-                  onChange={(e) => setFormData({ nama: e.target.value })}
-                  placeholder="Contoh: Teman SD"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Contoh: Admin"
                   size="md"
                   borderRadius="md"
                   borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
@@ -142,10 +150,68 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
                   }}
                   bg={colorMode === 'light' ? 'white' : 'gray.700'}
                 />
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  Masukkan nama hubungan tamu (misal: Keluarga, Teman Kerja)
-                </Text>
               </FormControl>
+
+              <FormControl>
+                <FormLabel
+                  fontSize="sm" 
+                  fontWeight="600"
+                  mb={2}
+                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                >
+                  Deskripsi
+                </FormLabel>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Deskripsi role..."
+                  size="md"
+                  borderRadius="md"
+                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                  _hover={{
+                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                  }}
+                  _focus={{
+                    borderColor: 'blue.500',
+                    boxShadow: '0 0 0 1px #3182ce',
+                  }}
+                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                  rows={3}
+                />
+              </FormControl>
+
+              <FormControl display="flex" alignItems="center">
+                <FormLabel
+                  htmlFor="is-default"
+                  mb="0"
+                  fontSize="sm"
+                  fontWeight="600"
+                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                >
+                  Set sebagai Default Role
+                </FormLabel>
+                <Switch
+                  id="is-default"
+                  isChecked={formData.is_default}
+                  onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
+                  colorScheme="blue"
+                />
+              </FormControl>
+
+              {formData.is_default && (
+                <Alert
+                  status="info"
+                  borderRadius="md"
+                  fontSize="sm"
+                  bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                  color={colorMode === 'light' ? 'blue.800' : 'blue.200'}
+                >
+                  <AlertIcon />
+                  <Text fontSize="xs">
+                    Role ini akan digunakan sebagai default untuk user yang belum memiliki role spesifik.
+                  </Text>
+                </Alert>
+              )}
             </VStack>
           </Box>
         </ModalBody>
@@ -169,7 +235,7 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
             </Button>
             <PrimaryButton 
               type="submit" 
-              form="hubungan-form"
+              form="role-form"
               isLoading={loading}
               loadingText="Menyimpan..."
             >
@@ -182,4 +248,4 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
   );
 };
 
-export default HubunganFormModal;
+export default RoleFormModal;

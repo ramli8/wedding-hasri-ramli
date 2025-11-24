@@ -29,7 +29,7 @@ export const useHubunganTamu = () => {
       setError(null);
     } catch (err: any) {
       console.error('Error fetching hubungan tamu:', err);
-      setError(err.message || 'Gagal memuat data hubungan tamu');
+      setError(err.message || 'Gagal memuat data');
     } finally {
       setLoading(false);
     }
@@ -74,11 +74,27 @@ export const useHubunganTamu = () => {
     try {
       setLoading(true);
       await api.delete(id);
-      setHubunganTamu(prev => prev.filter(item => item.id !== id));
+      setHubunganTamu(prev => prev.map(item => item.id === id ? { ...item, deleted_at: new Date() } : item));
       setError(null);
     } catch (err: any) {
       console.error('Error deleting hubungan tamu:', err);
       setError(err.message || 'Gagal menghapus hubungan tamu');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const restoreHubunganTamu = async (id: string) => {
+    if (!api) throw new Error('API belum siap');
+    try {
+      setLoading(true);
+      await api.restore(id);
+      setHubunganTamu(prev => prev.map(item => item.id === id ? { ...item, deleted_at: undefined } : item));
+      setError(null);
+    } catch (err: any) {
+      console.error('Error restoring hubungan tamu:', err);
+      setError(err.message || 'Gagal memulihkan hubungan tamu');
       throw err;
     } finally {
       setLoading(false);
@@ -98,6 +114,7 @@ export const useHubunganTamu = () => {
     fetchHubunganTamu,
     createHubunganTamu,
     updateHubunganTamu,
-    deleteHubunganTamu
+    deleteHubunganTamu,
+    restoreHubunganTamu
   };
 };

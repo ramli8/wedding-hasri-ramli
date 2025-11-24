@@ -32,6 +32,7 @@ const Sidebar = () => {
   // Permission logic
   const permissionAPI = new PermissionAPI();
   const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   useEffect(() => {
     // Try to load from cache first
@@ -39,36 +40,74 @@ const Sidebar = () => {
     if (cached) {
       try {
         setAllowedUrls(JSON.parse(cached));
+        setIsLoadingPermissions(false);
       } catch (e) {
         console.error('Failed to parse cached permissions', e);
       }
     }
 
     const fetchPermissions = async () => {
-      if (!accountInfo?.activeRole) return;
       try {
-        const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
-        const urls = perms.map(p => p.url_pattern);
+        let urls: string[] = [];
+        
+        // Try to get permissions from user's active role
+        if (accountInfo?.activeRole) {
+          const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
+          urls = perms.map(p => p.url_pattern);
+        }
+        
+        // If no permissions found, try to get default role permissions
+        if (urls.length === 0) {
+          const RoleAPI = (await import('@/modules/admin/roles/services/RoleAPI')).default;
+          const roleAPI = new RoleAPI();
+          const defaultRole = await roleAPI.getDefaultRole();
+          
+          if (defaultRole) {
+            const perms = await permissionAPI.getRolePermissions(defaultRole.id);
+            urls = perms.map(p => p.url_pattern);
+          }
+        }
+        
         setAllowedUrls(urls);
+        setIsLoadingPermissions(false);
         // Cache the permissions
-        localStorage.setItem('cached_permissions', JSON.stringify(urls));
+        if (urls.length > 0) {
+          localStorage.setItem('cached_permissions', JSON.stringify(urls));
+        }
       } catch (e) {
         console.error('Failed to fetch permissions', e);
+        setIsLoadingPermissions(false);
       }
     };
     fetchPermissions();
   }, [accountInfo?.activeRole]);
 
   const hasAccess = (url: string) => {
+    // If still loading permissions, allow access temporarily
+    if (isLoadingPermissions) return true;
+    
+    // If no permissions after loading, deny access
+    if (allowedUrls.length === 0) return false;
+    
+    // Check for wildcard (full access)
     if (allowedUrls.includes('*')) return true;
+    
+    // Check for exact match or pattern match
     return allowedUrls.some(pattern => {
+      // Exact match
+      if (pattern === url) return true;
+      
+      // Wildcard pattern (e.g., /admin/*)
       if (pattern.endsWith('*')) {
         const prefix = pattern.slice(0, -1);
         return url.startsWith(prefix);
       }
-      return pattern === url;
+      
+      return false;
     });
   };
+
+
 
   return (
     <>
@@ -212,153 +251,176 @@ const Sidebar = () => {
             transition="width .25s"
           >
             <Box className="sidebar__list" mb="20px">
-              <Box
-                className="sidebar__group"
-                _notLast={{
-                  position: "relative",
-                  marginBottom: "40px",
-                  paddingBottom: "30px",
-                  _before: {
-                    content: '""',
-                    position: "absolute",
-                    left: "20px",
-                    right: "20px",
-                    bottom: 0,
-                    height: "1px",
-                    background: colorMode == "light" ? "#f0f3f6" : "#292929",
-                  },
-                }}
-              >
-                <Box
-                  display={{ base: "flex", d: "box" }}
-                  className="sidebar__caption"
-                  fontSize="12px"
-                  fontWeight="500"
-                  lineHeight="1.33333333"
-                  mb="16px"
-                  justifyContent={{
-                    base: "start",
-                    m: "center",
-                    d: "flex-start",
-                  }}
-                  alignItems={{ base: "start", m: "center", d: "start" }}
-                  pl={{ base: "20px", m: "0px", d: "20px" }}
-                  color="#808191"
-                  transition=".25s"
-                >
-                  Menu
-                </Box>
-                <Box className="sidebar__menu">
+              {/* Menu Section */}
+              {(() => {
+                const filteredMenuItems = menuItem
+                  .filter(({ isShown }) => !isShown || isShown(accountInfo))
+                  .filter(item => hasAccess(item.url));
+                
+                if (filteredMenuItems.length === 0) return null;
+                
+                return (
+                  <Box
+                    className="sidebar__group"
+                    _notLast={{
+                      position: "relative",
+                      marginBottom: "40px",
+                      paddingBottom: "30px",
+                      _before: {
+                        content: '""',
+                        position: "absolute",
+                        left: "20px",
+                        right: "20px",
+                        bottom: 0,
+                        height: "1px",
+                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                      },
+                    }}
+                  >
+                    <Box
+                      display={{ base: "flex", d: "box" }}
+                      className="sidebar__caption"
+                      fontSize="12px"
+                      fontWeight="500"
+                      lineHeight="1.33333333"
+                      mb="16px"
+                      justifyContent={{
+                        base: "start",
+                        m: "center",
+                        d: "flex-start",
+                      }}
+                      alignItems={{ base: "start", m: "center", d: "start" }}
+                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      color="#808191"
+                      transition=".25s"
+                    >
+                      Menu
+                    </Box>
+                    <Box className="sidebar__menu">
+                      {filteredMenuItems.map((item, index) => (
+                        <SidebarItem
+                          menuItem={item}
+                          menuIndex={index}
+                          key={"main-menu-item-" + index}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })()}
+              {/* Master Section */}
+              {(() => {
+                const filteredMasterItems = menuItemMaster
+                  .filter(item => hasAccess(item.url));
+                
+                if (filteredMasterItems.length === 0) return null;
+                
+                return (
+                  <Box
+                    className="sidebar__group"
+                    _notLast={{
+                      position: "relative",
+                      marginBottom: "40px",
+                      paddingBottom: "30px",
+                      _before: {
+                        content: '""',
+                        position: "absolute",
+                        left: "20px",
+                        right: "20px",
+                        bottom: 0,
+                        height: "1px",
+                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                      },
+                    }}
+                  >
+                    <Box
+                      display={{ base: "flex", d: "box" }}
+                      className="sidebar__caption"
+                      fontSize="12px"
+                      fontWeight="500"
+                      lineHeight="1.33333333"
+                      mb="16px"
+                      justifyContent={{
+                        base: "start",
+                        m: "center",
+                        d: "flex-start",
+                      }}
+                      alignItems={{ base: "start", m: "center", d: "start" }}
+                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      color="#808191"
+                      transition=".25s"
+                    >
+                      Master
+                    </Box>
+                    <Box className="sidebar__menu">
+                      {filteredMasterItems.map((item, index) => (
+                        <SidebarItem
+                          menuItem={item}
+                          menuIndex={index}
+                          key={"master-menu-item-" + index}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })()}
+              {/* Insights Section */}
+              {(() => {
+                const filteredInsightsItems = menuItemInsights
+                  .filter(item => hasAccess(item.url));
+                
+                if (filteredInsightsItems.length === 0) return null;
+                
+                return (
+                  <Box
+                    className="sidebar__group"
+                    _notLast={{
+                      position: "relative",
+                      marginBottom: "40px",
+                      paddingBottom: "30px",
+                      _before: {
+                        content: '""',
+                        position: "absolute",
+                        left: "20px",
+                        right: "20px",
+                        bottom: 0,
+                        height: "1px",
+                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                      },
+                    }}
+                  >
+                    <Box
+                      display={{ base: "flex", d: "box" }}
+                      className="sidebar__caption"
+                      fontSize="12px"
+                      fontWeight="500"
+                      lineHeight="1.33333333"
+                      mb="16px"
+                      justifyContent={{
+                        base: "start",
+                        m: "center",
+                        d: "flex-start",
+                      }}
+                      alignItems={{ base: "start", m: "center", d: "start" }}
+                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      color="#808191"
+                      transition=".25s"
+                    >
+                      Insights
+                    </Box>
+                    <Box className="sidebar__menu">
 
-                  {menuItem
-                    .filter(({ isShown }) => !isShown || isShown(accountInfo))
-                    .filter(item => hasAccess(item.url))
-                    .map((item, index) => (
-                      <SidebarItem
-                        menuItem={item}
-                        menuIndex={index}
-                        key={"main-menu-item-" + index}
-                      />
-                    ))}
-                </Box>
-              </Box>
-              <Box
-                className="sidebar__group"
-                _notLast={{
-                  position: "relative",
-                  marginBottom: "40px",
-                  paddingBottom: "30px",
-                  _before: {
-                    content: '""',
-                    position: "absolute",
-                    left: "20px",
-                    right: "20px",
-                    bottom: 0,
-                    height: "1px",
-                    background: colorMode == "light" ? "#f0f3f6" : "#292929",
-                  },
-                }}
-              >
-                <Box
-                  display={{ base: "flex", d: "box" }}
-                  className="sidebar__caption"
-                  fontSize="12px"
-                  fontWeight="500"
-                  lineHeight="1.33333333"
-                  mb="16px"
-                  justifyContent={{
-                    base: "start",
-                    m: "center",
-                    d: "flex-start",
-                  }}
-                  alignItems={{ base: "start", m: "center", d: "start" }}
-                  pl={{ base: "20px", m: "0px", d: "20px" }}
-                  color="#808191"
-                  transition=".25s"
-                >
-                  Master
-                </Box>
-                <Box className="sidebar__menu">
-                  {menuItemMaster
-                    .filter(item => hasAccess(item.url))
-                    .map((item, index) => (
-                    <SidebarItem
-                      menuItem={item}
-                      menuIndex={index}
-                      key={"master-menu-item-" + index}
-                    />
-                  ))}
-                </Box>
-              </Box>
-              <Box
-                className="sidebar__group"
-                _notLast={{
-                  position: "relative",
-                  marginBottom: "40px",
-                  paddingBottom: "30px",
-                  _before: {
-                    content: '""',
-                    position: "absolute",
-                    left: "20px",
-                    right: "20px",
-                    bottom: 0,
-                    height: "1px",
-                    background: colorMode == "light" ? "#f0f3f6" : "#292929",
-                  },
-                }}
-              >
-                <Box
-                  display={{ base: "flex", d: "box" }}
-                  className="sidebar__caption"
-                  fontSize="12px"
-                  fontWeight="500"
-                  lineHeight="1.33333333"
-                  mb="16px"
-                  justifyContent={{
-                    base: "start",
-                    m: "center",
-                    d: "flex-start",
-                  }}
-                  alignItems={{ base: "start", m: "center", d: "start" }}
-                  pl={{ base: "20px", m: "0px", d: "20px" }}
-                  color="#808191"
-                  transition=".25s"
-                >
-                  Insights
-                </Box>
-                <Box className="sidebar__menu">
-
-                  {menuItemInsights
-                    .filter(item => hasAccess(item.url))
-                    .map((item, index) => (
-                    <SidebarItem
-                      menuItem={item}
-                      menuIndex={index}
-                      key={"main-menu-item-" + index}
-                    />
-                  ))}
-                </Box>
-              </Box>
+                      {filteredInsightsItems.map((item, index) => (
+                        <SidebarItem
+                          menuItem={item}
+                          menuIndex={index}
+                          key={"insights-menu-item-" + index}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })()}
             </Box>
           </Box>
         </Box>

@@ -1,42 +1,64 @@
-import { Box, Heading, Flex } from "@chakra-ui/react";
-import Sidebar from "@/components/organisms/Sidebar";
-import PageTransition from "@/components/PageLayout";
-import PageRow from "@/components/atoms/PageRow";
+import { Box, Heading, VStack, Flex, Text, useColorMode, HStack } from "@chakra-ui/react";
 import ContainerQuery from "@/components/atoms/ContainerQuery";
 import withAuth from "@/hoc/withAuth";
+import AdminLayout from "@/components/layouts/AdminLayout";
 import AccountInfoContext from "@/providers/AccountInfoProvider";
-import AppSettingContext from "@/providers/AppSettingProvider";
 import { useContext } from "react";
+import { NextPageWithLayout } from "@/pages/_app";
+import UserProfileActions from "@/components/molecules/UserProfileActions";
 
-const DashboardPage = () => {
+const DashboardPage: NextPageWithLayout = () => {
   const accountInfo = useContext(AccountInfoContext);
-  const { isNavbarOpen } = useContext(AppSettingContext);
+  const { colorMode } = useColorMode();
   
   // Find the role name based on the active role ID
-  const activeRoleName = accountInfo?.role?.find(r => r.id === accountInfo?.activeRole)?.name || 'User';
+  const activeRoleName = accountInfo?.role?.find(r => r.id === accountInfo?.activeRole)?.name || 'No Role';
 
   return (
-    <Flex>
-      <Sidebar />
-      <Box 
-        w="full" 
-        flex="1" 
-        p={8}
-        ml={{ base: 0, m: isNavbarOpen ? "300px" : "108px", d: "280px" }}
-        transition="margin-left .25s"
-      >
-        <PageTransition pageTitle="Dashboard">
-          <PageRow>
-            <ContainerQuery>
-              <Heading size="lg" mb={4}>
-                Hai selamat datang role Anda adalah {activeRoleName}
-              </Heading>
-            </ContainerQuery>
-          </PageRow>
-        </PageTransition>
-      </Box>
-    </Flex>
+    <ContainerQuery>
+      <VStack spacing={6} align="stretch" py={8}>
+        {/* Header Section */}
+        <Flex
+          justify="space-between"
+          align={{ base: 'center', md: 'center' }}
+          direction={{ base: 'row', md: 'row' }}
+          gap={{ base: 2, md: 4 }}
+          wrap={{ base: 'nowrap', md: 'nowrap' }}
+        >
+          <VStack align="start" spacing={1} flex={1} minW={0}>
+            <Text
+              fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+              fontWeight="700"
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              noOfLines={1}
+            >
+              Dashboard
+            </Text>
+            <HStack spacing={2}>
+              <Text
+                fontSize={{ base: 'xs', sm: 'sm' }}
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                noOfLines={1}
+              >
+                Hai selamat datang, role Anda adalah {activeRoleName}
+              </Text>
+            </HStack>
+          </VStack>
+          
+          {/* User Profile & Actions */}
+          <Box flexShrink={0}>
+            <UserProfileActions />
+          </Box>
+        </Flex>
+      </VStack>
+    </ContainerQuery>
   );
 };
 
-export default withAuth(DashboardPage);
+const ProtectedDashboardPage = withAuth(DashboardPage);
+
+(ProtectedDashboardPage as any).getLayout = function getLayout(page: React.ReactElement) {
+  return <AdminLayout>{page}</AdminLayout>;
+};
+
+export default ProtectedDashboardPage;

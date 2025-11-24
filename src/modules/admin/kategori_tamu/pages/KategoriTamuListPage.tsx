@@ -7,6 +7,9 @@ import {
   Flex,
   useColorMode,
   Text,
+  HStack,
+  Button,
+  Badge,
 } from '@chakra-ui/react';
 import { KategoriTamu } from '../types/KategoriTamu.types';
 import KategoriTableAdvance from '../components/KategoriTableAdvance';
@@ -14,33 +17,36 @@ import KategoriFormModal from '../components/KategoriFormModal';
 import { useKategoriTamu } from '../utils/hooks/useKategoriTamu';
 import Head from 'next/head';
 import { useTranslations } from 'next-intl';
-import Sidebar from '@/components/organisms/Sidebar';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { NextPageWithLayout } from '@/pages/_app';
 import PageTransition from '@/components/PageLayout';
 import PlainCard from '@/components/organisms/Cards/Card';
 import PageRow from '@/components/atoms/PageRow';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import UserProfileActions from '@/components/molecules/UserProfileActions';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
-const KategoriTamuPage: React.FC = () => {
-  const {
-    kategoriTamu,
-    loading,
-    error,
+const KategoriTamuListPage: NextPageWithLayout = () => {
+  const { colorMode } = useColorMode();
+  const { 
+    kategoriTamu, 
+    loading, 
+    error, 
+    deleteKategoriTamu, 
+    fetchKategoriTamu, 
+    restoreKategoriTamu,
     createKategoriTamu,
-    updateKategoriTamu,
-    deleteKategoriTamu,
-    fetchKategoriTamu,
+    updateKategoriTamu
   } = useKategoriTamu();
-
+  
+  // State for modal and selected item
   const [selectedKategori, setSelectedKategori] = useState<KategoriTamu | null>(null);
   const [showFormModal, setShowFormModal] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  const { colorMode } = useColorMode();
-  const commonTranslations = useTranslations('Common');
-  const MySwal = withReactContent(Swal);
-
+  // Handler functions for actions
   const handleAddNew = () => {
     setSelectedKategori(null);
     setIsEditing(false);
@@ -56,27 +62,11 @@ const KategoriTamuPage: React.FC = () => {
   const handleDelete = (id: string) => {
     deleteKategoriTamu(id)
       .then(() => {
-        MySwal.fire({
-          title: 'Berhasil!',
-          text: 'Data kategori berhasil dihapus',
-          icon: 'success',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#319795',
-          background: colorMode === 'light' ? '#fff' : '#1A202C',
-          color: colorMode === 'light' ? '#1A202C' : '#fff',
-        });
+        showSuccessAlert('Data berhasil dihapus', colorMode);
       })
       .catch((err) => {
         console.error('Failed to delete kategori:', err);
-        MySwal.fire({
-          title: 'Gagal!',
-          text: 'Terjadi kesalahan saat menghapus data kategori',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#e53e3e',
-          background: colorMode === 'light' ? '#fff' : '#1A202C',
-          color: colorMode === 'light' ? '#1A202C' : '#fff',
-        });
+        showErrorAlert('Gagal menghapus', err.message, colorMode);
       });
   };
 
@@ -87,77 +77,191 @@ const KategoriTamuPage: React.FC = () => {
     });
   };
 
+  const handleRestore = (id: string) => {
+    restoreKategoriTamu(id)
+      .then(() => {
+        showSuccessAlert('Data berhasil dipulihkan', colorMode);
+      })
+      .catch((err) => {
+        console.error('Failed to restore kategori:', err);
+        showErrorAlert('Gagal memulihkan', err.message, colorMode);
+      });
+  };
+  
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+
+  const filteredData = kategoriTamu.filter(item => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'active') return !item.deleted_at;
+    return !!item.deleted_at;
+  });
+
+  const counts = {
+    all: kategoriTamu.length,
+    active: kategoriTamu.filter(i => !i.deleted_at).length,
+    inactive: kategoriTamu.filter(i => i.deleted_at).length,
+  };
+
   return (
     <>
-      <Head>
-        <title>
-          {commonTranslations('modules.kategori_tamu.title') +
-            ' • ' +
-            process.env.NEXT_PUBLIC_APP_NAME_FULL}
-        </title>
-      </Head>
-
-      <VStack spacing={8} align="stretch">
-        {error && (
-          <Alert
-            status="error"
-            borderRadius="md"
-            boxShadow="sm"
-            bg={colorMode === 'light' ? 'red.50' : 'red.900'}
-            color={colorMode === 'light' ? 'red.800' : 'red.100'}
+      <ContainerQuery>
+        <VStack spacing={6} align="stretch" py={8}>
+          {/* Header Section */}
+          <Flex
+            justify="space-between"
+            align={{ base: 'center', md: 'center' }}
+            direction={{ base: 'row', md: 'row' }}
+            gap={{ base: 2, md: 4 }}
+            wrap={{ base: 'nowrap', md: 'nowrap' }}
           >
-            <AlertIcon color={colorMode === 'light' ? 'red.500' : 'red.200'} />
-            {error}
-          </Alert>
-        )}
+            <VStack align="start" spacing={1} flex={1} minW={0}>
+              <Text
+                fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+                fontWeight="700"
+                color={colorMode === 'light' ? 'gray.900' : 'white'}
+                noOfLines={1}
+              >
+                Manajemen Kategori Tamu
+              </Text>
+              <HStack spacing={2}>
+                <Text
+                  fontSize={{ base: 'xs', sm: 'sm' }}
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  noOfLines={1}
+                >
+                  Kelola daftar kategori tamu undangan pernikahan Anda
+                </Text>
+              </HStack>
+            </VStack>
+            
+            {/* User Profile & Actions */}
+            <Box flexShrink={0}>
+              <UserProfileActions />
+            </Box>
+          </Flex>
 
+        {/* Filter Buttons */}
+        <HStack spacing={2} pb={2}>
+          <Button
+            size="sm"
+            variant="ghost"
+            borderRadius="10px"
+            bg={filterStatus === 'all'
+              ? colorMode === 'light' ? 'gray.100' : 'gray.700'
+              : 'transparent'}
+            color={filterStatus === 'all'
+              ? colorMode === 'light' ? 'gray.800' : 'gray.100'
+              : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            fontWeight={filterStatus === 'all' ? '600' : '500'}
+            onClick={() => setFilterStatus('all')}
+            _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.700' }}
+          >
+            Semua
+            <Badge ml={2} borderRadius="full" fontSize="xs" px={2}
+              bg={filterStatus === 'all'
+                ? colorMode === 'light' ? 'gray.200' : 'gray.600'
+                : colorMode === 'light' ? 'gray.100' : 'gray.700'}
+              color={filterStatus === 'all'
+                ? colorMode === 'light' ? 'gray.700' : 'gray.200'
+                : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            >
+              {counts.all}
+            </Badge>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            borderRadius="10px"
+            bg={filterStatus === 'active'
+              ? colorMode === 'light' ? 'green.50' : 'green.900'
+              : 'transparent'}
+            color={filterStatus === 'active'
+              ? colorMode === 'light' ? 'green.700' : 'green.200'
+              : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            fontWeight={filterStatus === 'active' ? '600' : '500'}
+            onClick={() => setFilterStatus('active')}
+            _hover={{ bg: colorMode === 'light' ? 'green.50' : 'green.900' }}
+          >
+            Aktif
+            <Badge ml={2} borderRadius="full" fontSize="xs" px={2}
+              bg={filterStatus === 'active'
+                ? colorMode === 'light' ? 'green.100' : 'green.800'
+                : colorMode === 'light' ? 'gray.100' : 'gray.700'}
+              color={filterStatus === 'active'
+                ? colorMode === 'light' ? 'green.700' : 'green.200'
+                : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            >
+              {counts.active}
+            </Badge>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            borderRadius="10px"
+            bg={filterStatus === 'inactive'
+              ? colorMode === 'light' ? 'red.50' : 'red.900'
+              : 'transparent'}
+            color={filterStatus === 'inactive'
+              ? colorMode === 'light' ? 'red.700' : 'red.200'
+              : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            fontWeight={filterStatus === 'inactive' ? '600' : '500'}
+            onClick={() => setFilterStatus('inactive')}
+            _hover={{ bg: colorMode === 'light' ? 'red.50' : 'red.900' }}
+          >
+            Tidak Aktif
+            <Badge ml={2} borderRadius="full" fontSize="xs" px={2}
+              bg={filterStatus === 'inactive'
+                ? colorMode === 'light' ? 'red.100' : 'red.800'
+                : colorMode === 'light' ? 'gray.100' : 'gray.700'}
+              color={filterStatus === 'inactive'
+                ? colorMode === 'light' ? 'red.700' : 'red.200'
+                : colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            >
+              {counts.inactive}
+            </Badge>
+          </Button>
+        </HStack>
+
+        {/* Table */}
         <KategoriTableAdvance
-          initialData={kategoriTamu}
+          initialData={filteredData}
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onRestore={handleRestore}
           onAddNew={handleAddNew}
+          headerAction={
+            <PrimaryButton onClick={handleAddNew} w="auto">
+              <HStack spacing={2}>
+                <MaterialIcon name="add" size={20} variant="rounded" />
+                <Text>Tambah</Text>
+              </HStack>
+            </PrimaryButton>
+          }
         />
-      </VStack>
+        </VStack>
+      </ContainerQuery>
+
 
       <KategoriFormModal
         isOpen={showFormModal}
         onClose={() => setShowFormModal(false)}
         kategori={selectedKategori || undefined}
-        onSave={() => {
-          handleSaveSuccess();
-          return Promise.resolve();
+        onSave={async (data) => {
+          try {
+            if (selectedKategori) {
+              await updateKategoriTamu(selectedKategori.id, data);
+            } else {
+              await createKategoriTamu(data as any);
+            }
+            handleSaveSuccess();
+          } catch (error) {
+            console.error('Failed to save kategori:', error);
+            throw error;
+          }
         }}
       />
     </>
-  );
-};
-
-const KategoriTamuListPage: React.FC = () => {
-  const { colorMode } = useColorMode();
-
-  return (
-    <Flex minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'}>
-      <Sidebar />
-      <Box
-        flex="1"
-        ml={{ base: "0", m: "108px", d: "280px" }}
-        transition="margin-left 0.3s ease"
-        minH="100vh"
-        p={2}
-      >
-        <PageTransition pageTitle="Manajemen Kategori Tamu">
-          <PageRow>
-            <ContainerQuery>
-              <Text color={colorMode === 'light' ? 'gray.600' : 'gray.300'} mb={6}>
-                Kelola daftar kategori tamu undangan pernikahan Anda
-              </Text>
-              <KategoriTamuPage />
-            </ContainerQuery>
-          </PageRow>
-        </PageTransition>
-      </Box>
-    </Flex>
   );
 };
 

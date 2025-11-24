@@ -9,7 +9,6 @@ import {
   VStack,
   Badge,
   Button,
-  useToast,
 } from '@chakra-ui/react';
 import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
 import TableAdvance from '@/components/organisms/TableAdvance';
@@ -17,6 +16,7 @@ import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { UcapanWithReplies } from '../types/Ucapan.types';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { showSuccessAlert } from '@/utils/sweetalert';
 
 const MySwal = withReactContent(Swal);
 
@@ -37,7 +37,6 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
 }) => {
   const { colorMode } = useColorMode();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const toast = useToast();
 
   const handleDelete = (id: string) => {
     MySwal.fire({
@@ -62,12 +61,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
   const handleCopyMagicLink = (ucapan: UcapanWithReplies) => {
     const magicLink = `${window.location.origin}/?reply=${ucapan.id}`;
     navigator.clipboard.writeText(magicLink);
-    toast({
-      title: 'Magic link berhasil disalin',
-      description: `Link untuk membalas ucapan dari ${ucapan.nama}`,
-      status: 'success',
-      duration: 2000,
-    });
+    showSuccessAlert('Magic link berhasil disalin', colorMode);
   };
 
   const formatDate = (dateString: string) => {

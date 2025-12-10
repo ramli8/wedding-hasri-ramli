@@ -14,9 +14,13 @@ import {
   Icon,
   Spinner,
   Text,
+  Button,
 } from '@chakra-ui/react';
 import { Tamu, CreateTamuInput, UpdateTamuInput } from '../../types/Tamu.types';
-import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
+import {
+  PrimaryButton,
+  PrimaryOutlineButton,
+} from '@/components/atoms/Buttons/PrimaryButton';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import id from 'date-fns/locale/id';
 import { FaCalendarAlt, FaClock } from 'react-icons/fa';
@@ -37,12 +41,12 @@ interface TamuFormProps {
 
 const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   const { colorMode } = useColorMode();
-  
+
   // State for categories and relationships
   const [categories, setCategories] = useState<KategoriTamu[]>([]);
   const [relationships, setRelationships] = useState<HubunganTamu[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
-  
+
   // Form data state
   const [formData, setFormData] = useState<CreateTamuInput>({
     nama: '',
@@ -70,18 +74,22 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         setLoadingOptions(true);
         const kategoriAPI = new KategoriTamuAPI();
         const hubunganAPI = new HubunganTamuAPI();
-        
+
         const [kategoriesData, relationshipsData] = await Promise.all([
           kategoriAPI.getAll(),
-          hubunganAPI.getAll()
+          hubunganAPI.getAll(),
         ]);
-        
+
         setCategories(kategoriesData);
         setRelationships(relationshipsData);
-        
+
         // Set default values if not editing
-        if (!tamu && kategoriesData.length > 0 && relationshipsData.length > 0) {
-          setFormData(prev => ({
+        if (
+          !tamu &&
+          kategoriesData.length > 0 &&
+          relationshipsData.length > 0
+        ) {
+          setFormData((prev) => ({
             ...prev,
             kategori_id: kategoriesData[0].id,
             hubungan_id: relationshipsData[0].id,
@@ -105,8 +113,12 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         hubungan_id: tamu.hubungan_id,
         alamat: tamu.alamat || '',
         nomor_hp: tamu.nomor_hp || '',
-        tgl_mulai_resepsi: tamu.tgl_mulai_resepsi ? new Date(tamu.tgl_mulai_resepsi) : undefined,
-        tgl_akhir_resepsi: tamu.tgl_akhir_resepsi ? new Date(tamu.tgl_akhir_resepsi) : undefined,
+        tgl_mulai_resepsi: tamu.tgl_mulai_resepsi
+          ? new Date(tamu.tgl_mulai_resepsi)
+          : undefined,
+        tgl_akhir_resepsi: tamu.tgl_akhir_resepsi
+          ? new Date(tamu.tgl_akhir_resepsi)
+          : undefined,
       });
 
       // Set initial date/time states
@@ -128,13 +140,15 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     if (!formData.alamat.trim()) newErrors.alamat = 'Alamat wajib diisi';
     if (!formData.kategori_id) newErrors.kategori_id = 'Kategori wajib dipilih';
     if (!formData.hubungan_id) newErrors.hubungan_id = 'Hubungan wajib dipilih';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -154,8 +168,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     setLoading(true);
     try {
       // Combine date and time
-      let finalStart: Date | undefined = typeof formData.tgl_mulai_resepsi === 'string' ? new Date(formData.tgl_mulai_resepsi) : formData.tgl_mulai_resepsi;
-      let finalEnd: Date | undefined = typeof formData.tgl_akhir_resepsi === 'string' ? new Date(formData.tgl_akhir_resepsi) : formData.tgl_akhir_resepsi;
+      let finalStart: Date | undefined =
+        typeof formData.tgl_mulai_resepsi === 'string'
+          ? new Date(formData.tgl_mulai_resepsi)
+          : formData.tgl_mulai_resepsi;
+      let finalEnd: Date | undefined =
+        typeof formData.tgl_akhir_resepsi === 'string'
+          ? new Date(formData.tgl_akhir_resepsi)
+          : formData.tgl_akhir_resepsi;
 
       if (selectedDate && startTime) {
         const start = new Date(selectedDate);
@@ -189,32 +209,35 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   };
 
   // Custom Input Component for DatePicker
-  const CustomInput = forwardRef(({ value, onClick, placeholder, icon }: any, ref: any) => (
-    <InputGroup onClick={onClick}>
-      <Input
-        ref={ref}
-        value={value}
-        placeholder={placeholder}
-        readOnly
-        variant="filled"
-        size="lg"
-        borderRadius="md"
-        focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-        _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-        cursor="pointer"
-      />
-      <InputRightElement pointerEvents="none" h="full" mr={2}>
-        <Icon as={icon} color="gray.500" />
-      </InputRightElement>
-    </InputGroup>
-  ));
+  const CustomInput = forwardRef(
+    ({ value, onClick, placeholder, icon }: any, ref: any) => (
+      <InputGroup onClick={onClick}>
+        <Input
+          ref={ref}
+          value={value}
+          readOnly
+          variant="filled"
+          size="lg"
+          borderRadius="12px"
+          focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
+          _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
+          cursor="pointer"
+        />
+        <InputRightElement pointerEvents="none" h="full" mr={2}>
+          <Icon as={icon} color="gray.500" />
+        </InputRightElement>
+      </InputGroup>
+    )
+  );
   CustomInput.displayName = 'CustomInput';
 
   if (loadingOptions) {
     return (
       <Box textAlign="center" py={10}>
         <Spinner size="xl" color="teal.500" />
-        <Text mt={4} color="gray.500">Memuat data...</Text>
+        <Text mt={4} color="gray.500">
+          Memuat data...
+        </Text>
       </Box>
     );
   }
@@ -228,14 +251,15 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             name="nama"
             value={formData.nama}
             onChange={handleChange}
-            placeholder="Nama lengkap tamu"
             isDisabled={loading}
             size="lg"
-            borderRadius="md"
+            borderRadius="12px"
             focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
           />
           {errors.nama && (
-            <Box color="red.500" fontSize="sm" mt={1}>{errors.nama}</Box>
+            <Box color="red.500" fontSize="sm" mt={1}>
+              {errors.nama}
+            </Box>
           )}
         </FormControl>
 
@@ -249,9 +273,11 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               isDisabled={loading}
               variant="filled"
               size="lg"
-              borderRadius="md"
+              borderRadius="12px"
               focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-              _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+              }}
             >
               <option value="">Pilih Kategori</option>
               {categories.map((kategori) => (
@@ -261,7 +287,9 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               ))}
             </Select>
             {errors.kategori_id && (
-              <Box color="red.500" fontSize="sm" mt={1}>{errors.kategori_id}</Box>
+              <Box color="red.500" fontSize="sm" mt={1}>
+                {errors.kategori_id}
+              </Box>
             )}
           </FormControl>
 
@@ -274,9 +302,11 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               isDisabled={loading}
               variant="filled"
               size="lg"
-              borderRadius="md"
+              borderRadius="12px"
               focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-              _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+              }}
             >
               <option value="">Pilih Hubungan</option>
               {relationships.map((hubungan) => (
@@ -286,7 +316,9 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               ))}
             </Select>
             {errors.hubungan_id && (
-              <Box color="red.500" fontSize="sm" mt={1}>{errors.hubungan_id}</Box>
+              <Box color="red.500" fontSize="sm" mt={1}>
+                {errors.hubungan_id}
+              </Box>
             )}
           </FormControl>
         </Stack>
@@ -297,15 +329,17 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             name="alamat"
             value={formData.alamat}
             onChange={handleChange}
-            placeholder="Alamat lengkap tamu"
             isDisabled={loading}
             rows={3}
             resize="none"
-            borderRadius="md"
+            size="lg"
+            borderRadius="12px"
             focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
           />
           {errors.alamat && (
-            <Box color="red.500" fontSize="sm" mt={1}>{errors.alamat}</Box>
+            <Box color="red.500" fontSize="sm" mt={1}>
+              {errors.alamat}
+            </Box>
           )}
         </FormControl>
 
@@ -316,18 +350,23 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             type="tel"
             value={formData.nomor_hp}
             onChange={handleChange}
-            placeholder="Nomor HP tamu"
             isDisabled={loading}
             size="lg"
-            borderRadius="md"
+            borderRadius="12px"
             focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
           />
           {errors.nomor_hp && (
-            <Box color="red.500" fontSize="sm" mt={1}>{errors.nomor_hp}</Box>
+            <Box color="red.500" fontSize="sm" mt={1}>
+              {errors.nomor_hp}
+            </Box>
           )}
         </FormControl>
 
-        <Stack direction={{ base: 'column', md: 'row' }} spacing={4} align="flex-start">
+        <Stack
+          direction={{ base: 'column', md: 'row' }}
+          spacing={4}
+          align="flex-start"
+        >
           <FormControl flex={2}>
             <FormLabel>Tanggal Resepsi</FormLabel>
             <DatePicker
@@ -335,7 +374,9 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               onChange={(date: Date) => setSelectedDate(date)}
               dateFormat="dd MMMM yyyy"
               locale="id"
-              customInput={<CustomInput placeholder="Pilih Tanggal" icon={FaCalendarAlt} />}
+              customInput={
+                <CustomInput placeholder="Pilih Tanggal" icon={FaCalendarAlt} />
+              }
               wrapperClassName="w-full"
             />
           </FormControl>
@@ -373,11 +414,32 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
         </Stack>
 
-        <Stack direction={{ base: 'column-reverse', md: 'row' }} spacing={4} justify="flex-end">
-          <PrimaryOutlineButton onClick={onCancel} isDisabled={loading} w="150px">
+        <Stack
+          direction={{ base: 'column-reverse', md: 'row' }}
+          spacing={4}
+          justify="flex-end"
+          pt={4}
+          borderTop="1px solid"
+          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+        >
+          <Button
+            onClick={onCancel}
+            isDisabled={loading}
+            minW="120px"
+            h="48px"
+            borderRadius="12px"
+            fontSize="14px"
+            variant="outline"
+          >
             Batal
-          </PrimaryOutlineButton>
-          <PrimaryButton type="submit" isLoading={loading} w="150px">
+          </Button>
+          <PrimaryButton
+            type="submit"
+            isLoading={loading}
+            minW="120px"
+            h="48px"
+            borderRadius="12px"
+          >
             {isEdit ? 'Perbarui' : 'Simpan'}
           </PrimaryButton>
         </Stack>

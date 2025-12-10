@@ -1,5 +1,5 @@
-import { menuItem, menuItemMaster, menuItemInsights } from "@/data/menu";
-import AppSettingContext from "@/providers/AppSettingProvider";
+import { menuItem, menuItemMaster, menuItemInsights } from '@/data/menu';
+import AppSettingContext from '@/providers/AppSettingProvider';
 import {
   Box,
   Button,
@@ -10,16 +10,13 @@ import {
   Text,
   useColorMode,
   useDisclosure,
-} from "@chakra-ui/react";
-import { useContext } from "react";
-import AccountInfoContext from "@/providers/AccountInfoProvider";
-import { CloseIconMade, MyITSLogo } from "../atoms/IconsMade";
-import SidebarItem from "../molecules/SidebarItem";
-import PermissionAPI from "@/modules/admin/permissions/services/PermissionAPI";
-import { useEffect, useState } from "react";
-
-
-
+} from '@chakra-ui/react';
+import { useContext } from 'react';
+import AccountInfoContext from '@/providers/AccountInfoProvider';
+import { CloseIconMade, MyITSLogo } from '../atoms/IconsMade';
+import SidebarItem from '../molecules/SidebarItem';
+import PermissionAPI from '@/modules/admin/permissions/services/PermissionAPI';
+import { useEffect, useState } from 'react';
 
 const Sidebar = () => {
   const { isNavbarOpen, navbarToggler } = useContext(AppSettingContext);
@@ -30,11 +27,12 @@ const Sidebar = () => {
   const accountInfo = useContext(AccountInfoContext);
 
   // Permission logic
-  const permissionAPI = new PermissionAPI();
   const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   useEffect(() => {
+    const permissionAPI = new PermissionAPI();
+
     // Try to load from cache first
     const cached = localStorage.getItem('cached_permissions');
     if (cached) {
@@ -49,25 +47,31 @@ const Sidebar = () => {
     const fetchPermissions = async () => {
       try {
         let urls: string[] = [];
-        
+
         // Try to get permissions from user's active role
         if (accountInfo?.activeRole) {
-          const perms = await permissionAPI.getRolePermissions(accountInfo.activeRole);
-          urls = perms.map(p => p.url_pattern);
+          const perms = await permissionAPI.getRolePermissions(
+            accountInfo.activeRole
+          );
+          urls = perms.map((p) => p.url_pattern);
         }
-        
+
         // If no permissions found, try to get default role permissions
         if (urls.length === 0) {
-          const RoleAPI = (await import('@/modules/admin/roles/services/RoleAPI')).default;
+          const RoleAPI = (
+            await import('@/modules/admin/roles/services/RoleAPI')
+          ).default;
           const roleAPI = new RoleAPI();
           const defaultRole = await roleAPI.getDefaultRole();
-          
+
           if (defaultRole) {
-            const perms = await permissionAPI.getRolePermissions(defaultRole.id);
-            urls = perms.map(p => p.url_pattern);
+            const perms = await permissionAPI.getRolePermissions(
+              defaultRole.id
+            );
+            urls = perms.map((p) => p.url_pattern);
           }
         }
-        
+
         setAllowedUrls(urls);
         setIsLoadingPermissions(false);
         // Cache the permissions
@@ -85,52 +89,50 @@ const Sidebar = () => {
   const hasAccess = (url: string) => {
     // If still loading permissions, allow access temporarily
     if (isLoadingPermissions) return true;
-    
+
     // If no permissions after loading, deny access
     if (allowedUrls.length === 0) return false;
-    
+
     // Check for wildcard (full access)
     if (allowedUrls.includes('*')) return true;
-    
+
     // Check for exact match or pattern match
-    return allowedUrls.some(pattern => {
+    return allowedUrls.some((pattern) => {
       // Exact match
       if (pattern === url) return true;
-      
+
       // Wildcard pattern (e.g., /admin/*)
       if (pattern.endsWith('*')) {
         const prefix = pattern.slice(0, -1);
         return url.startsWith(prefix);
       }
-      
+
       return false;
     });
   };
-
-
 
   return (
     <>
       <Flex
         className="sidebar"
-        w={{ base: "300px", m: isNavbarOpen ? "300px" : "108px", d: "280px" }}
+        w={{ base: '300px', m: isNavbarOpen ? '300px' : '108px', d: '280px' }}
         minW={{
-          base: "300px",
-          m: isNavbarOpen ? "300px" : "108px",
-          d: "280px",
+          base: '300px',
+          m: isNavbarOpen ? '300px' : '108px',
+          d: '280px',
         }}
         pos="fixed"
         flexShrink="0"
-        zIndex="20"
+        zIndex="999" // Increased zIndex to ensure it stays on top of the mobile header (zIndex 100)
         display="flex"
         h="100vh"
-        padding={{ base: "116px 0 0px", m: "140px 0 0px" }}
-        bg={colorMode == "light" ? "white" : "black"}
+        padding={{ base: '96px 0 0px', m: '140px 0 0px' }} // Adjusted padding for mobile to account for compact header
+        bg={colorMode == 'light' ? 'gray.50' : '#222222'}
         borderRight="1px solid"
-        borderColor={colorMode == "light" ? "gray.200" : "gray.800"}
+        borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
         transform={{
-          base: isNavbarOpen ? "translateX(0%)" : "translateX(-100%)",
-          m: "unset",
+          base: isNavbarOpen ? 'translateX(0%)' : 'translateX(-100%)',
+          m: 'unset',
         }}
         transition="transform .25s, width .25s"
       >
@@ -143,40 +145,37 @@ const Sidebar = () => {
           display="flex"
           justifyContent="center"
           alignContent="center"
-          h={{ base: "96px", m: "140px" }}
+          h={{ base: '96px', m: '140px' }}
           borderBottom={{
-            base:
-              colorMode == "light"
-                ? "1px solid"
-                : "1px solid",
-            m: "unset",
+            base: colorMode == 'light' ? '1px solid' : '1px solid',
+            m: 'unset',
           }}
-          borderColor={colorMode == "light" ? "gray.200" : "gray.800"}
+          borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
         >
           <Flex
             justifyContent="center"
             alignItems="center"
             bg="none"
             mt="5px"
-            visibility={{ base: "visible", m: "hidden", d: "visible" }}
+            visibility={{ base: 'visible', m: 'hidden', d: 'visible' }}
           >
             <Button
               className="sidebar__close"
-              display={{ base: "inline-block", m: "none" }}
-              top="1px"
-              mr="0px"
-              pos="relative"
+              display={{ base: 'inline-block', m: 'none' }}
+              top="50%"
+              transform="translateY(-50%)"
+              right="24px"
+              pos="absolute"
               fontSize="0"
-              ml="-60px"
               onClick={navbarToggler}
               bg="none"
               _hover={{
-                background: "none",
+                background: 'none',
               }}
             >
               <CloseIconMade
                 fontSize="16px"
-                color={colorMode == "light" ? "#141414" : "#fff"}
+                color={colorMode == 'light' ? '#141414' : '#fff'}
               ></CloseIconMade>
             </Button>
           </Flex>
@@ -185,19 +184,19 @@ const Sidebar = () => {
             alignItems="center"
             maxW="184px"
             mt="8px"
-            visibility={{ base: "visible" }}
+            visibility={{ base: 'visible' }}
           >
             <Box>
               <Center>
                 <MyITSLogo
-                  w={{ base: "68px", d: "86px" }}
+                  w={{ base: '68px', d: '86px' }}
                   h="auto"
-                  color={colorMode === "light" ? "#013880" : "white"}
+                  color={colorMode === 'light' ? '#013880' : 'white'}
                 />
               </Center>
               <Center>
                 <Text
-                  fontSize={{ base: "13px", d: "16px" }}
+                  fontSize={{ base: '13px', d: '16px' }}
                   fontWeight={600}
                   textAlign="center"
                   lineHeight={1.2}
@@ -205,7 +204,7 @@ const Sidebar = () => {
                   whiteSpace="nowrap"
                   overflow="hidden"
                   textOverflow="ellipsis"
-                  maxW={{ base: "96px", d: "full" }}
+                  maxW={{ base: '96px', d: 'full' }}
                   title={process.env.NEXT_PUBLIC_APP_NAME}
                 >
                   {process.env.NEXT_PUBLIC_APP_NAME}
@@ -220,22 +219,22 @@ const Sidebar = () => {
           padding="0 20px 30px"
           overflowY="auto"
           sx={{
-            "::-webkit-scrollbar": {
-              width: "20px",
-              height: "20px",
-              backgroundColor: "transparent",
+            '::-webkit-scrollbar': {
+              width: '20px',
+              height: '20px',
+              backgroundColor: 'transparent',
             },
-            "::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
+            '::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
             },
-            "::-webkit-scrollbar-thumb": {
-              backgroundColor: colorMode == "light" ? "#dadada" : "#313131",
-              borderRadius: "20px",
-              border: "6px solid transparent",
-              backgroundClip: "content-box",
+            '::-webkit-scrollbar-thumb': {
+              backgroundColor: colorMode == 'light' ? '#dadada' : '#313131',
+              borderRadius: '20px',
+              border: '6px solid transparent',
+              backgroundClip: 'content-box',
             },
-            "::-webkit-scrollbar-thumb:hover": {
-              backgroundColor: colorMode == "light" ? "#b3b3b3" : "#393939",
+            '::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: colorMode == 'light' ? '#b3b3b3' : '#393939',
             },
           }}
           overflowX="hidden"
@@ -243,9 +242,9 @@ const Sidebar = () => {
           <Box
             className="sidebar__inner"
             width={{
-              base: "256px",
-              m: isNavbarOpen ? "256px" : "64px",
-              d: "240px",
+              base: '256px',
+              m: isNavbarOpen ? '256px' : '64px',
+              d: '240px',
             }}
             overflow="hidden"
             transition="width .25s"
@@ -255,42 +254,43 @@ const Sidebar = () => {
               {(() => {
                 const filteredMenuItems = menuItem
                   .filter(({ isShown }) => !isShown || isShown(accountInfo))
-                  .filter(item => hasAccess(item.url));
-                
+                  .filter((item) => hasAccess(item.url));
+
                 if (filteredMenuItems.length === 0) return null;
-                
+
                 return (
                   <Box
                     className="sidebar__group"
                     _notLast={{
-                      position: "relative",
-                      marginBottom: "40px",
-                      paddingBottom: "30px",
+                      position: 'relative',
+                      marginBottom: '40px',
+                      paddingBottom: '30px',
                       _before: {
                         content: '""',
-                        position: "absolute",
-                        left: "20px",
-                        right: "20px",
+                        position: 'absolute',
+                        left: '20px',
+                        right: '20px',
                         bottom: 0,
-                        height: "1px",
-                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                        height: '1px',
+                        background:
+                          colorMode == 'light' ? '#e8eaee' : '#2a2a2a',
                       },
                     }}
                   >
                     <Box
-                      display={{ base: "flex", d: "box" }}
+                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
                       justifyContent={{
-                        base: "start",
-                        m: "center",
-                        d: "flex-start",
+                        base: 'start',
+                        m: 'center',
+                        d: 'flex-start',
                       }}
-                      alignItems={{ base: "start", m: "center", d: "start" }}
-                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
+                      pl={{ base: '20px', m: '0px', d: '20px' }}
                       color="#808191"
                       transition=".25s"
                     >
@@ -301,7 +301,7 @@ const Sidebar = () => {
                         <SidebarItem
                           menuItem={item}
                           menuIndex={index}
-                          key={"main-menu-item-" + index}
+                          key={'main-menu-item-' + index}
                         />
                       ))}
                     </Box>
@@ -310,43 +310,45 @@ const Sidebar = () => {
               })()}
               {/* Master Section */}
               {(() => {
-                const filteredMasterItems = menuItemMaster
-                  .filter(item => hasAccess(item.url));
-                
+                const filteredMasterItems = menuItemMaster.filter((item) =>
+                  hasAccess(item.url)
+                );
+
                 if (filteredMasterItems.length === 0) return null;
-                
+
                 return (
                   <Box
                     className="sidebar__group"
                     _notLast={{
-                      position: "relative",
-                      marginBottom: "40px",
-                      paddingBottom: "30px",
+                      position: 'relative',
+                      marginBottom: '40px',
+                      paddingBottom: '30px',
                       _before: {
                         content: '""',
-                        position: "absolute",
-                        left: "20px",
-                        right: "20px",
+                        position: 'absolute',
+                        left: '20px',
+                        right: '20px',
                         bottom: 0,
-                        height: "1px",
-                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                        height: '1px',
+                        background:
+                          colorMode == 'light' ? '#e8eaee' : '#2a2a2a',
                       },
                     }}
                   >
                     <Box
-                      display={{ base: "flex", d: "box" }}
+                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
                       justifyContent={{
-                        base: "start",
-                        m: "center",
-                        d: "flex-start",
+                        base: 'start',
+                        m: 'center',
+                        d: 'flex-start',
                       }}
-                      alignItems={{ base: "start", m: "center", d: "start" }}
-                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
+                      pl={{ base: '20px', m: '0px', d: '20px' }}
                       color="#808191"
                       transition=".25s"
                     >
@@ -357,7 +359,7 @@ const Sidebar = () => {
                         <SidebarItem
                           menuItem={item}
                           menuIndex={index}
-                          key={"master-menu-item-" + index}
+                          key={'master-menu-item-' + index}
                         />
                       ))}
                     </Box>
@@ -366,55 +368,56 @@ const Sidebar = () => {
               })()}
               {/* Insights Section */}
               {(() => {
-                const filteredInsightsItems = menuItemInsights
-                  .filter(item => hasAccess(item.url));
-                
+                const filteredInsightsItems = menuItemInsights.filter((item) =>
+                  hasAccess(item.url)
+                );
+
                 if (filteredInsightsItems.length === 0) return null;
-                
+
                 return (
                   <Box
                     className="sidebar__group"
                     _notLast={{
-                      position: "relative",
-                      marginBottom: "40px",
-                      paddingBottom: "30px",
+                      position: 'relative',
+                      marginBottom: '40px',
+                      paddingBottom: '30px',
                       _before: {
                         content: '""',
-                        position: "absolute",
-                        left: "20px",
-                        right: "20px",
+                        position: 'absolute',
+                        left: '20px',
+                        right: '20px',
                         bottom: 0,
-                        height: "1px",
-                        background: colorMode == "light" ? "#f0f3f6" : "#292929",
+                        height: '1px',
+                        background:
+                          colorMode == 'light' ? '#e8eaee' : '#2a2a2a',
                       },
                     }}
                   >
                     <Box
-                      display={{ base: "flex", d: "box" }}
+                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
                       justifyContent={{
-                        base: "start",
-                        m: "center",
-                        d: "flex-start",
+                        base: 'start',
+                        m: 'center',
+                        d: 'flex-start',
                       }}
-                      alignItems={{ base: "start", m: "center", d: "start" }}
-                      pl={{ base: "20px", m: "0px", d: "20px" }}
+                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
+                      pl={{ base: '20px', m: '0px', d: '20px' }}
                       color="#808191"
                       transition=".25s"
                     >
                       Insights
                     </Box>
                     <Box className="sidebar__menu">
-
                       {filteredInsightsItems.map((item, index) => (
                         <SidebarItem
                           menuItem={item}
                           menuIndex={index}
-                          key={"insights-menu-item-" + index}
+                          key={'insights-menu-item-' + index}
                         />
                       ))}
                     </Box>
@@ -426,7 +429,7 @@ const Sidebar = () => {
         </Box>
       </Flex>
       <Box
-        display={{ base: isNavbarOpen ? "flex" : "none", m: "none" }}
+        display={{ base: isNavbarOpen ? 'flex' : 'none', m: 'none' }}
         pos="absolute"
         h="full"
         w="100%"

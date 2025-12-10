@@ -20,15 +20,24 @@ import {
   VStack,
   HStack,
 } from '@chakra-ui/react';
-import { HubunganTamu, CreateHubunganTamuInput, UpdateHubunganTamuInput } from '@/modules/admin/hubungan_tamu/types/HubunganTamu.types';
-import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
+import {
+  HubunganTamu,
+  CreateHubunganTamuInput,
+  UpdateHubunganTamuInput,
+} from '@/modules/admin/hubungan_tamu/types/HubunganTamu.types';
+import {
+  PrimaryButton,
+  PrimaryOutlineButton,
+} from '@/components/atoms/Buttons/PrimaryButton';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
 interface HubunganFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   hubungan?: HubunganTamu;
-  onSave: (data: CreateHubunganTamuInput | UpdateHubunganTamuInput) => Promise<void>;
+  onSave: (
+    data: CreateHubunganTamuInput | UpdateHubunganTamuInput
+  ) => Promise<void>;
 }
 
 const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
@@ -38,9 +47,13 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
   onSave,
 }) => {
   const { colorMode } = useColorMode();
-  const [formData, setFormData] = useState<CreateHubunganTamuInput>({ nama: '' });
+  const [formData, setFormData] = useState<CreateHubunganTamuInput>({
+    nama: '',
+  });
   const [loading, setLoading] = useState(false);
   const isEdit = !!hubungan;
+
+  const initialRef = React.useRef(null);
 
   useEffect(() => {
     if (hubungan) {
@@ -57,12 +70,12 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
     setLoading(true);
     try {
       await onSave({ nama: formData.nama.trim() });
-      
+
       showSuccessAlert(
         isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
         colorMode
       );
-      
+
       onClose();
     } catch (error: any) {
       showErrorAlert(
@@ -76,104 +89,108 @@ const HubunganFormModal: React.FC<HubunganFormModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
-      <ModalOverlay />
-      <ModalContent 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      isCentered
+      initialFocusRef={isEdit ? undefined : initialRef}
+    >
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+      <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
-        borderRadius={{ base: 0, md: '16px' }}
-        mx={{ base: 0, md: 4 }}
+        borderRadius="24px"
+        mx={4}
+        boxShadow="xl"
+        p={2}
       >
-        <ModalHeader
-          fontSize={{ base: 'lg', md: 'xl' }}
-          fontWeight="600"
-          pb={3}
-          borderBottom="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-        >
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
           <HStack spacing={3}>
             <Text>{isEdit ? 'Edit Hubungan' : 'Tambah Hubungan'}</Text>
             {isEdit && (
-              <Badge 
-                colorScheme="blue" 
+              <Badge
+                colorScheme="orange"
                 variant="subtle"
-                fontSize="10px" 
-                px={2} 
-                py={0.5} 
+                fontSize="10px"
+                px={2}
+                py={0.5}
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
-                fontWeight="700"
-                bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
-                color={colorMode === 'light' ? 'blue.600' : 'blue.200'}
-                border="1px solid"
-                borderColor={colorMode === 'light' ? 'blue.100' : 'blue.800'}
+                fontWeight="800"
               >
                 Edit Mode
               </Badge>
             )}
           </HStack>
         </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody py={6}>
+        <ModalCloseButton top={6} right={6} />
+        <ModalBody py={4} px={6}>
           <Box as="form" id="hubungan-form" onSubmit={handleSubmit}>
-            <VStack spacing={5} align="stretch">
+            <VStack spacing={6}>
               <FormControl isRequired>
                 <FormLabel
-                  fontSize="sm" 
+                  fontSize="sm"
                   fontWeight="600"
-                  mb={2}
-                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  mb={3}
                 >
                   Nama Hubungan
                 </FormLabel>
                 <Input
+                  ref={initialRef}
                   value={formData.nama}
                   onChange={(e) => setFormData({ nama: e.target.value })}
-                  placeholder="Contoh: Teman SD"
-                  size="md"
-                  borderRadius="md"
-                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
+                  size="lg"
+                  variant="filled"
+                  bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
+                  borderRadius="16px"
+                  fontSize="md"
+                  fontWeight="500"
                   _hover={{
-                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                    bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
                   }}
                   _focus={{
-                    borderColor: 'blue.500',
-                    boxShadow: '0 0 0 1px #3182ce',
+                    bg: colorMode === 'light' ? 'white' : 'gray.800',
+                    borderColor:
+                      colorMode === 'light' ? 'blue.500' : 'blue.300',
+                    boxShadow: 'none',
                   }}
-                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
                 />
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  Masukkan nama hubungan tamu (misal: Keluarga, Teman Kerja)
-                </Text>
               </FormControl>
             </VStack>
           </Box>
         </ModalBody>
 
-        <ModalFooter
-          borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-          pt={4}
-        >
+        <ModalFooter pb={6} px={6} pt={4}>
           <HStack spacing={3} width="full" justify="flex-end">
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
+            <Button
+              variant="ghost"
+              onClick={onClose}
               isDisabled={loading}
-              minW="120px"
-              h="40px"
-              borderRadius="10px"
-              fontSize="14px"
+              h="50px"
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
             >
               Batal
             </Button>
-            <PrimaryButton 
-              type="submit" 
+            <PrimaryButton
+              type="submit"
               form="hubungan-form"
               isLoading={loading}
-              loadingText="Menyimpan..."
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
             >
-              {isEdit ? 'Perbarui' : 'Simpan'}
+              {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
             </PrimaryButton>
           </HStack>
         </ModalFooter>

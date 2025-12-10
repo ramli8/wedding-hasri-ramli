@@ -12,15 +12,11 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Button,
+  Tooltip,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
 import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
-import { Role } from '../services/RoleAPI';
+import { Role } from '../types/Role.types';
 import TableAdvance from '@/components/organisms/TableAdvance';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import AppSettingContext from '@/providers/AppSettingProvider';
@@ -74,7 +70,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
           const role = info.row.original;
           return (
             <HStack spacing={2}>
-              <Badge 
+              <Badge
                 px={3}
                 py={1}
                 borderRadius="full"
@@ -99,7 +95,9 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                   bg={colorMode === 'light' ? 'green.50' : 'green.900'}
                   color={colorMode === 'light' ? 'green.700' : 'green.200'}
                   border="1px solid"
-                  borderColor={colorMode === 'light' ? 'green.200' : 'green.700'}
+                  borderColor={
+                    colorMode === 'light' ? 'green.200' : 'green.700'
+                  }
                 >
                   Default
                 </Badge>
@@ -114,7 +112,10 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         accessorKey: 'description',
         header: 'Deskripsi',
         cell: (info) => (
-          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
+          <Text
+            fontSize="sm"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+          >
             {info.getValue() || '-'}
           </Text>
         ),
@@ -127,25 +128,40 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         cell: (info) => {
           const isDeleted = info.getValue();
           return (
-            <Badge 
+            <Badge
               px={3}
               py={1}
               borderRadius="full"
               fontSize="xs"
               fontWeight="600"
               textTransform="none"
-              bg={isDeleted 
-                ? (colorMode === 'light' ? 'gray.100' : 'gray.700')
-                : (colorMode === 'light' ? 'green.50' : 'green.900')
+              bg={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.100'
+                    : 'gray.700'
+                  : colorMode === 'light'
+                  ? 'green.50'
+                  : 'green.900'
               }
-              color={isDeleted
-                ? (colorMode === 'light' ? 'gray.600' : 'gray.400')
-                : (colorMode === 'light' ? 'green.700' : 'green.200')
+              color={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.600'
+                    : 'gray.400'
+                  : colorMode === 'light'
+                  ? 'green.700'
+                  : 'green.200'
               }
               border="1px solid"
-              borderColor={isDeleted
-                ? (colorMode === 'light' ? 'gray.300' : 'gray.600')
-                : (colorMode === 'light' ? 'green.200' : 'green.700')
+              borderColor={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.300'
+                    : 'gray.600'
+                  : colorMode === 'light'
+                  ? 'green.200'
+                  : 'green.700'
               }
             >
               {isDeleted ? 'Dihapus' : 'Aktif'}
@@ -161,97 +177,67 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         cell: (info) => {
           const role = info.row.original;
           const isDeleted = role.deleted_at;
-          
+
           return (
-            <Menu>
-              <MenuButton
-                as={Button}
-                size="sm"
-                variant="outline"
-                rightIcon={<MaterialIcon name="expand_more" size={16} variant="rounded" />}
-                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
-                bg={colorMode === 'light' ? 'white' : 'gray.800'}
-                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                fontWeight="500"
-                fontSize="sm"
-                _hover={{ 
-                  bg: colorMode === 'light' ? 'gray.50' : 'gray.700',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                _active={{
-                  bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                borderRadius="8px"
-                px={3}
-                h="32px"
-              >
-                Aksi
-              </MenuButton>
-              <MenuList
-                borderRadius="10px"
-                border="1px solid"
-                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-                boxShadow="lg"
-                py={1}
-              >
-                {!isDeleted ? (
-                  <>
-                    <MenuItem
-                      icon={<MaterialIcon name="edit" size={18} variant="rounded" />}
+            <HStack spacing={1} justify="flex-end">
+              {!isDeleted ? (
+                <>
+                  <Tooltip label="Edit" placement="top" hasArrow>
+                    <IconButton
+                      aria-label="Edit"
+                      icon={<MaterialIcon name="edit" size={18} />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="blue"
                       onClick={() => onEdit(role)}
-                      fontSize="sm"
-                      borderRadius="6px"
-                      mx={1}
                       _hover={{
-                        bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                        bg: colorMode === 'light' ? 'blue.50' : 'blue.900',
                       }}
-                    >
-                      Edit
-                    </MenuItem>
-                    <MenuItem
-                      icon={<MaterialIcon name="security" size={18} variant="rounded" />}
+                    />
+                  </Tooltip>
+                  <Tooltip label="Permissions" placement="top" hasArrow>
+                    <IconButton
+                      aria-label="Permissions"
+                      icon={<MaterialIcon name="security" size={18} />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="purple"
                       onClick={() => onManagePermissions?.(role)}
-                      fontSize="sm"
-                      borderRadius="6px"
-                      mx={1}
                       _hover={{
-                        bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                        bg: colorMode === 'light' ? 'purple.50' : 'purple.900',
                       }}
-                    >
-                      Permissions
-                    </MenuItem>
-                    <MenuItem
-                      icon={<MaterialIcon name="delete" size={18} variant="rounded" />}
+                    />
+                  </Tooltip>
+                  <Tooltip label="Hapus" placement="top" hasArrow>
+                    <IconButton
+                      aria-label="Hapus"
+                      icon={<MaterialIcon name="delete" size={18} />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
                       onClick={() => handleDelete(role.id)}
-                      fontSize="sm"
-                      color={colorMode === 'light' ? 'red.600' : 'red.400'}
-                      borderRadius="6px"
-                      mx={1}
                       _hover={{
                         bg: colorMode === 'light' ? 'red.50' : 'red.900',
                       }}
-                    >
-                      Hapus
-                    </MenuItem>
-                  </>
-                ) : (
-                  <MenuItem
-                    icon={<MaterialIcon name="restore_from_trash" size={18} variant="rounded" />}
+                    />
+                  </Tooltip>
+                </>
+              ) : (
+                <Tooltip label="Restore" placement="top" hasArrow>
+                  <IconButton
+                    aria-label="Restore"
+                    icon={<MaterialIcon name="restore_from_trash" size={18} />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="green"
                     onClick={() => onRestore(role.id)}
-                    fontSize="sm"
-                    color={colorMode === 'light' ? 'green.600' : 'green.400'}
-                    borderRadius="6px"
-                    mx={1}
                     _hover={{
                       bg: colorMode === 'light' ? 'green.50' : 'green.900',
                     }}
-                  >
-                    Pulihkan
-                  </MenuItem>
-                )}
-              </MenuList>
-            </Menu>
+                  />
+                </Tooltip>
+              )}
+            </HStack>
           );
         },
         enableSorting: false,
@@ -271,76 +257,73 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
 
   return (
     <Box>
-      <Box 
+      <Box
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : 'black'}
+        bg={colorMode === 'light' ? 'white' : '#222222'}
         borderRadius="24px"
-        p={6}
-        border="1px solid"
-        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
-        borderLeft="4px solid"
-        borderLeftColor={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`}
+        p="32px"
         _before={{
           content: '""',
-          pos: "absolute",
-          top: "43px",
-          left: "32px",
-          right: "32px",
-          bottom: "-43px",
-          zIndex: "-1",
-          background: colorMode == "light" ? "#e3e6ec" : "#000",
-          opacity: colorMode == "light" ? "0.91" : "0.51",
-          filter: "blur(86.985px)",
-          borderRadius: "24px",
+          pos: 'absolute',
+          top: '43px',
+          left: '32px',
+          right: '32px',
+          bottom: '-43px',
+          zIndex: '-1',
+          background: colorMode == 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode == 'light' ? '0.91' : '0.51',
+          filter: 'blur(86.985px)',
+          borderRadius: '24px',
         }}
       >
-        <Flex 
-          mb={6} 
-          justify="space-between" 
+        <Flex
+          mb={6}
+          justify="space-between"
           align="center"
           direction={{ base: 'column', md: 'row' }}
           gap={3}
         >
           {/* Add Button on Left */}
           {headerAction && (
-            <Box flexShrink={0} w={{ base: 'full', md: 'auto' }}>
-              {headerAction}
+            <Box
+              flexShrink={0}
+              w={{ base: 'full', md: 'auto' }}
+              display="flex"
+              justifyContent="flex-start"
+            >
+              <Box w="fit-content">{headerAction}</Box>
             </Box>
           )}
-          
+
           {/* Search Input on Right */}
-          <InputGroup size="md" maxW={{ base: 'full', md: '350px' }} w={{ base: 'full', md: 'auto' }}>
-            <InputLeftElement pointerEvents="none">
-              <Icon as={FaSearch} color="gray.400" />
+          <InputGroup
+            size="md"
+            maxW={{ base: 'full', md: '400px' }}
+            w={{ base: 'full', md: 'auto' }}
+          >
+            <InputLeftElement h="40px">
+              <Icon as={FaSearch} color="gray.400" boxSize={4} />
             </InputLeftElement>
             <Input
-              value={columnFilters.find(f => f.id === 'global')?.value as string ?? ""}
+              value={
+                (columnFilters.find((f) => f.id === 'global')
+                  ?.value as string) ?? ''
+              }
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
                 setColumnFilters(value ? [{ id: 'global', value }] : []);
               }}
-              placeholder="Cari data..."
-              borderRadius="10px"
-              bg={colorMode === 'light' ? 'white' : 'gray.800'}
-              border="1px solid"
-              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-              _hover={{
-                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
-              }}
-              _focus={{
-                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
-                outline: 'none',
-              }}
+              h="40px"
+              borderRadius="12px"
+              focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
               fontSize="sm"
               fontWeight="500"
-              transition="all 0.25s"
-              h="40px"
             />
           </InputGroup>
         </Flex>
-        
-        <TableAdvance 
-          columns={columns} 
+
+        <TableAdvance
+          columns={columns}
           data={initialData}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}

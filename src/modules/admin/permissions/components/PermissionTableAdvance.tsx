@@ -57,7 +57,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         accessorKey: 'roles.name',
         header: 'Role',
         cell: (info) => (
-          <Badge 
+          <Badge
             px={3}
             py={1}
             borderRadius="full"
@@ -89,13 +89,14 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
             borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200'}
             transition="all 0.2s"
             _hover={{
-              borderColor: colorMode === 'light' ? 'gray.300' : 'whiteAlpha.400',
+              borderColor:
+                colorMode === 'light' ? 'gray.300' : 'whiteAlpha.400',
               bg: colorMode === 'light' ? 'white' : 'whiteAlpha.200',
             }}
           >
-            <Text 
-              fontFamily="mono" 
-              fontSize="xs" 
+            <Text
+              fontFamily="mono"
+              fontSize="xs"
               fontWeight="500"
               color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
               letterSpacing="tight"
@@ -111,8 +112,8 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         accessorKey: 'description',
         header: 'Deskripsi',
         cell: (info) => (
-          <Text 
-            fontSize="sm" 
+          <Text
+            fontSize="sm"
             color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
             noOfLines={2}
           >
@@ -132,25 +133,40 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         cell: (info) => {
           const isDeleted = info.getValue();
           return (
-            <Badge 
+            <Badge
               px={3}
               py={1}
               borderRadius="full"
               fontSize="xs"
               fontWeight="600"
               textTransform="none"
-              bg={isDeleted 
-                ? (colorMode === 'light' ? 'gray.100' : 'gray.700')
-                : (colorMode === 'light' ? 'green.50' : 'green.900')
+              bg={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.100'
+                    : 'gray.700'
+                  : colorMode === 'light'
+                  ? 'green.50'
+                  : 'green.900'
               }
-              color={isDeleted
-                ? (colorMode === 'light' ? 'gray.600' : 'gray.400')
-                : (colorMode === 'light' ? 'green.700' : 'green.200')
+              color={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.600'
+                    : 'gray.400'
+                  : colorMode === 'light'
+                  ? 'green.700'
+                  : 'green.200'
               }
               border="1px solid"
-              borderColor={isDeleted
-                ? (colorMode === 'light' ? 'gray.300' : 'gray.600')
-                : (colorMode === 'light' ? 'green.200' : 'green.700')
+              borderColor={
+                isDeleted
+                  ? colorMode === 'light'
+                    ? 'gray.300'
+                    : 'gray.600'
+                  : colorMode === 'light'
+                  ? 'green.200'
+                  : 'green.700'
               }
             >
               {isDeleted ? 'Dihapus' : 'Aktif'}
@@ -166,20 +182,26 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         cell: (info) => {
           const permission = info.row.original;
           const isDeleted = permission.deleted_at;
-          
+
           return (
             <Menu>
               <MenuButton
                 as={Button}
                 size="sm"
                 variant="outline"
-                rightIcon={<MaterialIcon name="expand_more" size={16} variant="rounded" />}
+                rightIcon={
+                  <MaterialIcon
+                    name="expand_more"
+                    size={16}
+                    variant="rounded"
+                  />
+                }
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
                 bg={colorMode === 'light' ? 'white' : 'gray.800'}
                 borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
                 fontWeight="500"
                 fontSize="sm"
-                _hover={{ 
+                _hover={{
                   bg: colorMode === 'light' ? 'gray.50' : 'gray.700',
                   borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
                 }}
@@ -203,7 +225,9 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                 {!isDeleted ? (
                   <>
                     <MenuItem
-                      icon={<MaterialIcon name="edit" size={18} variant="rounded" />}
+                      icon={
+                        <MaterialIcon name="edit" size={18} variant="rounded" />
+                      }
                       onClick={() => onEdit(permission)}
                       fontSize="sm"
                       borderRadius="6px"
@@ -215,7 +239,13 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                       Edit
                     </MenuItem>
                     <MenuItem
-                      icon={<MaterialIcon name="delete" size={18} variant="rounded" />}
+                      icon={
+                        <MaterialIcon
+                          name="delete"
+                          size={18}
+                          variant="rounded"
+                        />
+                      }
                       onClick={() => onDelete(permission.id)}
                       fontSize="sm"
                       color={colorMode === 'light' ? 'red.600' : 'red.400'}
@@ -230,7 +260,13 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
                   </>
                 ) : (
                   <MenuItem
-                    icon={<MaterialIcon name="restore_from_trash" size={18} variant="rounded" />}
+                    icon={
+                      <MaterialIcon
+                        name="restore_from_trash"
+                        size={18}
+                        variant="rounded"
+                      />
+                    }
                     onClick={() => onRestore(permission.id)}
                     fontSize="sm"
                     color={colorMode === 'light' ? 'green.600' : 'green.400'}
@@ -264,50 +300,58 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
 
   return (
     <Box>
-      <Box 
+      <Box
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : 'black'}
+        bg={colorMode === 'light' ? 'white' : '#222222'}
         borderRadius="24px"
-        p={6}
-        border="1px solid"
-        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
-        borderLeft="4px solid"
-        borderLeftColor={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`}
+        p="32px"
         _before={{
           content: '""',
-          pos: "absolute",
-          top: "43px",
-          left: "32px",
-          right: "32px",
-          bottom: "-43px",
-          zIndex: "-1",
-          background: colorMode == "light" ? "#e3e6ec" : "#000",
-          opacity: colorMode == "light" ? "0.91" : "0.51",
-          filter: "blur(86.985px)",
-          borderRadius: "24px",
+          pos: 'absolute',
+          top: '43px',
+          left: '32px',
+          right: '32px',
+          bottom: '-43px',
+          zIndex: '-1',
+          background: colorMode == 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode == 'light' ? '0.91' : '0.51',
+          filter: 'blur(86.985px)',
+          borderRadius: '24px',
         }}
       >
-        <Flex 
-          mb={6} 
-          justify="space-between" 
+        <Flex
+          mb={6}
+          justify="space-between"
           align="center"
           direction={{ base: 'column', md: 'row' }}
           gap={3}
         >
           {/* Add Button on Left */}
           {headerAction && (
-            <Box flexShrink={0} w={{ base: 'full', md: 'auto' }}>
-              {headerAction}
+            <Box
+              flexShrink={0}
+              w={{ base: 'full', md: 'auto' }}
+              display="flex"
+              justifyContent="flex-start"
+            >
+              <Box w="fit-content">{headerAction}</Box>
             </Box>
           )}
-          
+
           {/* Search Input on Right */}
-          <InputGroup size="md" maxW={{ base: 'full', md: '350px' }} w={{ base: 'full', md: 'auto' }}>
+          <InputGroup
+            size="md"
+            maxW={{ base: 'full', md: '350px' }}
+            w={{ base: 'full', md: 'auto' }}
+          >
             <InputLeftElement pointerEvents="none">
               <Icon as={FaSearch} color="gray.400" />
             </InputLeftElement>
             <Input
-              value={columnFilters.find(f => f.id === 'global')?.value as string ?? ""}
+              value={
+                (columnFilters.find((f) => f.id === 'global')
+                  ?.value as string) ?? ''
+              }
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
                 setColumnFilters(value ? [{ id: 'global', value }] : []);
@@ -318,10 +362,16 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
               border="1px solid"
               borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
               _hover={{
-                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.600`
+                    : `${colorPref}Dim.600`,
               }}
               _focus={{
-                borderColor: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.600`
+                    : `${colorPref}Dim.600`,
                 outline: 'none',
               }}
               fontSize="sm"
@@ -331,9 +381,9 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
             />
           </InputGroup>
         </Flex>
-        
-        <TableAdvance 
-          columns={columns} 
+
+        <TableAdvance
+          columns={columns}
           data={initialData}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}

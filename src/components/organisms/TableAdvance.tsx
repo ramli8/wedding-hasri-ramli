@@ -1,4 +1,4 @@
-import { dateFilter, fuzzyFilter } from "@/utils/table/table";
+import { dateFilter, fuzzyFilter } from '@/utils/table/table';
 import {
   Badge,
   Box,
@@ -27,7 +27,7 @@ import {
   Tr,
   VStack,
   useColorMode,
-} from "@chakra-ui/react";
+} from '@chakra-ui/react';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -40,22 +40,24 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable
-} from "@tanstack/react-table";
-import { useState, useContext } from "react";
-import AppSettingContext from "@/providers/AppSettingProvider";
+  useReactTable,
+} from '@tanstack/react-table';
+import { useState, useContext } from 'react';
+import AppSettingContext from '@/providers/AppSettingProvider';
 import {
   IoChevronBack,
   IoChevronBackCircle,
   IoChevronForward,
   IoChevronForwardCircle,
-} from "react-icons/io5";
-import { FaFilter, FaSearch } from "react-icons/fa";
+} from 'react-icons/io5';
+import { FaFilter, FaSearch } from 'react-icons/fa';
 
 const ColumnFilter = ({ column }: { column: any }) => {
   const { colorMode } = useColorMode();
   const columnFilterValue = (column.getFilterValue() as string[]) || [];
-  const uniqueValues = Array.from(column.getFacetedUniqueValues().keys()).sort().filter(Boolean);
+  const uniqueValues = Array.from(column.getFacetedUniqueValues().keys())
+    .sort()
+    .filter(Boolean);
 
   // Only show filter if there are unique values
   // if (uniqueValues.length <= 1) return null; // Removed to force show filter
@@ -67,14 +69,37 @@ const ColumnFilter = ({ column }: { column: any }) => {
           aria-label="Filter"
           icon={<FaFilter />}
           size="xs"
-          variant={columnFilterValue.length > 0 ? "solid" : "ghost"}
-          colorScheme={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha') : "gray"}
-          bg={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'black' : 'white') : undefined}
-          color={columnFilterValue.length > 0 ? (colorMode === 'light' ? 'white' : 'black') : undefined}
+          variant={columnFilterValue.length > 0 ? 'solid' : 'ghost'}
+          colorScheme={
+            columnFilterValue.length > 0
+              ? colorMode === 'light'
+                ? 'blackAlpha'
+                : 'whiteAlpha'
+              : 'gray'
+          }
+          bg={
+            columnFilterValue.length > 0
+              ? colorMode === 'light'
+                ? 'black'
+                : 'white'
+              : undefined
+          }
+          color={
+            columnFilterValue.length > 0
+              ? colorMode === 'light'
+                ? 'white'
+                : 'black'
+              : undefined
+          }
           ml={2}
         />
       </PopoverTrigger>
-      <PopoverContent w="200px" _focus={{ boxShadow: "none" }} bg={colorMode === 'light' ? 'white' : 'black'} borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}>
+      <PopoverContent
+        w="200px"
+        _focus={{ boxShadow: 'none' }}
+        bg={colorMode === 'light' ? 'white' : 'black'}
+        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
+      >
         <PopoverArrow bg={colorMode === 'light' ? 'white' : 'black'} />
         <PopoverBody p={2}>
           <VStack align="start" spacing={2}>
@@ -94,10 +119,14 @@ const ColumnFilter = ({ column }: { column: any }) => {
                 }}
                 size="sm"
                 width="full"
-                colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
+                colorScheme={
+                  colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'
+                }
                 iconColor={colorMode === 'light' ? 'white' : 'black'}
               >
-                <Text fontSize="sm" noOfLines={1}>{value}</Text>
+                <Text fontSize="sm" noOfLines={1}>
+                  {value}
+                </Text>
               </Checkbox>
             ))}
             {columnFilterValue.length > 0 && (
@@ -128,6 +157,8 @@ const TableAdvance = ({
   rowSelection,
   onRowSelectionChange,
   hideSearch,
+  globalFilter: externalGlobalFilter,
+  onGlobalFilterChange: externalOnGlobalFilterChange,
 }: {
   columns: ColumnDef<any, any>[];
   data: any[];
@@ -136,23 +167,37 @@ const TableAdvance = ({
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   hideSearch?: boolean;
+  globalFilter?: string;
+  onGlobalFilterChange?: OnChangeFn<string>;
 }) => {
-  const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [internalColumnFilters, setInternalColumnFilters] =
+    useState<ColumnFiltersState>([]);
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState('');
   const { colorMode } = useColorMode();
 
   const { colorPref } = useContext(AppSettingContext);
 
   // Use external state if provided, otherwise use internal state
-  const columnFilters = externalColumnFilters !== undefined ? externalColumnFilters : internalColumnFilters;
-  const setColumnFilters = externalOnColumnFiltersChange || setInternalColumnFilters;
+  const columnFilters =
+    externalColumnFilters !== undefined
+      ? externalColumnFilters
+      : internalColumnFilters;
+  const setColumnFilters =
+    externalOnColumnFiltersChange || setInternalColumnFilters;
+
+  const globalFilter =
+    externalGlobalFilter !== undefined
+      ? externalGlobalFilter
+      : internalGlobalFilter;
+  const setGlobalFilter =
+    externalOnGlobalFilterChange || setInternalGlobalFilter;
 
   const table = useReactTable({
     data,
     columns,
     filterFns: {
       fuzzy: fuzzyFilter,
-      date: dateFilter
+      date: dateFilter,
     },
     state: {
       columnFilters,
@@ -177,32 +222,42 @@ const TableAdvance = ({
     <>
       <TableContainer>
         {!hideSearch && (
-        <Box mb={6}>
-          <InputGroup size="md" maxW={{ base: 'full', md: '350px' }} ml={{ base: 0, md: 'auto' }}>
-            <InputLeftElement pointerEvents="none">
-              <Icon as={FaSearch} color="gray.400" />
-            </InputLeftElement>
-            <Input
-              value={globalFilter ?? ""}
-              onChange={(e) => setGlobalFilter(String(e.target.value))}
-              placeholder="Cari data..."
-              borderRadius="lg"
-              bg={colorMode === 'light' ? 'white' : 'gray.800'}
-              border="1px solid"
-              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-              _hover={{
-                borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}Dim.500`,
-              }}
-              _focus={{
-                borderColor: colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.400`,
-                boxShadow: `0 0 0 1px var(--chakra-colors-${colorPref}-500)`,
-              }}
-              fontSize="sm"
-              transition="all 0.2s"
-              h="40px"
-            />
-          </InputGroup>
-        </Box>
+          <Box mb={6}>
+            <InputGroup
+              size="md"
+              maxW={{ base: 'full', md: '350px' }}
+              ml={{ base: 0, md: 'auto' }}
+            >
+              <InputLeftElement pointerEvents="none">
+                <Icon as={FaSearch} color="gray.400" />
+              </InputLeftElement>
+              <Input
+                value={globalFilter ?? ''}
+                onChange={(e) => setGlobalFilter(String(e.target.value))}
+                placeholder="Cari data..."
+                borderRadius="lg"
+                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                border="1px solid"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                _hover={{
+                  borderColor:
+                    colorMode === 'light'
+                      ? `${colorPref}.400`
+                      : `${colorPref}Dim.500`,
+                }}
+                _focus={{
+                  borderColor:
+                    colorMode === 'light'
+                      ? `${colorPref}.500`
+                      : `${colorPref}Dim.400`,
+                  boxShadow: `0 0 0 1px var(--chakra-colors-${colorPref}-500)`,
+                }}
+                fontSize="sm"
+                transition="all 0.2s"
+                h="40px"
+              />
+            </InputGroup>
+          </Box>
         )}
         <Table variant="unstyled">
           <Thead>
@@ -217,10 +272,10 @@ const TableAdvance = ({
                       paddingTop="0px"
                       paddingX="12px"
                       _first={{
-                        paddingInlineStart: "24px",
+                        paddingInlineStart: '24px',
                       }}
                       _last={{
-                        paddingInlineEnd: "24px",
+                        paddingInlineEnd: '24px',
                       }}
                     >
                       {header.isPlaceholder ? null : (
@@ -228,19 +283,28 @@ const TableAdvance = ({
                           <Box
                             {...{
                               className: header.column.getCanSort()
-                                ? "cursor-pointer select-none"
-                                : "",
+                                ? 'cursor-pointer select-none'
+                                : '',
                               onClick: header.column.getToggleSortingHandler(),
                             }}
                           >
-                            <Text textAlign="left" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider">
+                            <Text
+                              textAlign="left"
+                              color={
+                                colorMode === 'light' ? 'gray.600' : 'gray.400'
+                              }
+                              fontSize="xs"
+                              fontWeight="600"
+                              textTransform="uppercase"
+                              letterSpacing="wider"
+                            >
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
                               {{
-                                asc: " 🔼",
-                                desc: " 🔽",
+                                asc: ' 🔼',
+                                desc: ' 🔽',
                                 // null: ""
                               }[header.column.getIsSorted() as string] ?? null}
                             </Text>
@@ -259,20 +323,27 @@ const TableAdvance = ({
           <Tbody>
             {table.getRowModel().rows.map((row) => {
               return (
-                <Tr key={row.id} _hover={{ bg: colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50' }}>
+                <Tr
+                  key={row.id}
+                  _hover={{
+                    bg: colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50',
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => {
                     return (
-                      <Td 
+                      <Td
                         key={cell.id}
                         paddingY="16px"
                         paddingX="12px"
                         borderBottom="1px solid"
-                        borderColor={colorMode === 'light' ? 'gray.100' : 'gray.800'}
+                        borderColor={
+                          colorMode === 'light' ? 'gray.100' : 'gray.800'
+                        }
                         _first={{
-                          paddingInlineStart: "24px",
+                          paddingInlineStart: '24px',
                         }}
                         _last={{
-                          paddingInlineEnd: "24px",
+                          paddingInlineEnd: '24px',
                         }}
                       >
                         {flexRender(
@@ -287,8 +358,18 @@ const TableAdvance = ({
             })}
           </Tbody>
         </Table>
-        <Stack direction={{ base: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" marginTop="30px" spacing={4}>
-          <Stack direction={{ base: 'column', sm: 'row' }} alignItems="center" spacing={4}>
+        <Stack
+          direction={{ base: 'column', md: 'row' }}
+          justifyContent="space-between"
+          alignItems="center"
+          marginTop="30px"
+          spacing={4}
+        >
+          <Stack
+            direction={{ base: 'column', sm: 'row' }}
+            alignItems="center"
+            spacing={4}
+          >
             <HStack>
               <Button
                 size="sm"
@@ -336,15 +417,22 @@ const TableAdvance = ({
               </Button>
             </HStack>
             <Box as="span" textAlign="center">
-              <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
-                {"Page "}
-                {table.getState().pagination.pageIndex + 1} of{" "}
+              <Text
+                fontSize="sm"
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              >
+                {'Page '}
+                {table.getState().pagination.pageIndex + 1} of{' '}
                 {table.getPageCount()}
               </Text>
             </Box>
           </Stack>
 
-          <Stack direction={{ base: 'column', sm: 'row' }} alignItems="center" spacing={4}>
+          <Stack
+            direction={{ base: 'column', sm: 'row' }}
+            alignItems="center"
+            spacing={4}
+          >
             <Box as="span" display="flex" alignItems="center">
               | Go to page:
               <Input

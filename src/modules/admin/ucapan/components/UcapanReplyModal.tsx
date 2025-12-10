@@ -19,7 +19,11 @@ import { useState, useContext } from 'react';
 import { Ucapan } from '../types/Ucapan.types';
 import UcapanAPI from '../services/UcapanAPI';
 import AccountInfoContext from '@/providers/AccountInfoProvider';
-import { showSuccessAlert, showErrorAlert, showAlert } from '@/utils/sweetalert';
+import {
+  showSuccessAlert,
+  showErrorAlert,
+  showAlert,
+} from '@/utils/sweetalert';
 
 interface UcapanReplyModalProps {
   isOpen: boolean;
@@ -65,7 +69,7 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
 
       setReply('');
       onClose();
-      
+
       if (onSuccess) onSuccess();
     } catch (error: any) {
       showErrorAlert('Gagal mengirim balasan', error.message, colorMode);
@@ -98,16 +102,26 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
               <Textarea
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
-                placeholder="Tulis balasan Anda..."
                 rows={4}
                 disabled={isSubmitting}
+                size="lg"
+                borderRadius="12px"
               />
             </FormControl>
           </VStack>
         </ModalBody>
 
         <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={onClose} disabled={isSubmitting}>
+          <Button
+            variant="ghost"
+            mr={3}
+            onClick={onClose}
+            disabled={isSubmitting}
+            minW="120px"
+            h="48px"
+            borderRadius="12px"
+            fontSize="14px"
+          >
             Batal
           </Button>
           <Button
@@ -115,6 +129,10 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
             onClick={handleSubmit}
             isLoading={isSubmitting}
             loadingText="Mengirim..."
+            minW="120px"
+            h="48px"
+            borderRadius="12px"
+            fontSize="14px"
           >
             Kirim Balasan
           </Button>

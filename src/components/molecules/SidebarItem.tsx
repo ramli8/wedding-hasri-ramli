@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import AppSettingContext from "@/providers/AppSettingProvider";
-import { MenuItem } from "@/types/menu-item";
+import AppSettingContext from '@/providers/AppSettingProvider';
+import { MenuItem } from '@/types/menu-item';
 import {
   Box,
   Button,
@@ -12,15 +12,15 @@ import {
   Text,
   useColorMode,
   useDisclosure,
-} from "@chakra-ui/react";
-import { easeIn, easeInOut, motion } from "framer-motion";
-import NextLink from "next/link";
-import { useRouter } from "next/router";
-import { useContext, useEffect } from "react";
-import { IoChevronDown, IoChevronUp } from "react-icons/io5";
-import { useTranslations } from "next-intl";
-import AccountInfoContext from "@/providers/AccountInfoProvider";
-import { MaterialIcon } from "../atoms/MaterialIcon";
+} from '@chakra-ui/react';
+import { easeIn, easeInOut, motion } from 'framer-motion';
+import NextLink from 'next/link';
+import { useRouter } from 'next/router';
+import { useContext, useEffect } from 'react';
+import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
+import { useTranslations } from 'next-intl';
+import AccountInfoContext from '@/providers/AccountInfoProvider';
+import { MaterialIcon } from '../atoms/MaterialIcon';
 
 const SidebarItem = ({
   menuItem,
@@ -31,8 +31,8 @@ const SidebarItem = ({
 }) => {
   const accountInfo = useContext(AccountInfoContext);
   const { pathname } = useRouter();
-  const router = pathname || "";
-  const menuTitles = router.split("/")[1];
+  const router = pathname || '';
+  const menuTitles = router.split('/')[1];
   const { colorMode } = useColorMode();
   const { isOpen, onToggle, onOpen, onClose } = useDisclosure();
   const {
@@ -61,18 +61,20 @@ const SidebarItem = ({
   }, [router, markerActive]);
 
   useEffect(() => {
-    if ("/" + menuTitles == menuItem.url) {
+    if ('/' + menuTitles == menuItem.url) {
       onOpen();
     } else {
       // onClose();
     }
   }, [router]);
-  const t = useTranslations("Common.modules");
+  const t = useTranslations('Common.modules');
   const { colorPref } = useContext(AppSettingContext);
-  
+
   // Check if this menu item is active
-  const isActive = router === menuItem.url || 
-    (router.startsWith(menuItem.url) && router.charAt(menuItem.url.length) === "/");
+  const isActive =
+    router === menuItem.url ||
+    (router.startsWith(menuItem.url) &&
+      router.charAt(menuItem.url.length) === '/');
 
   return (
     <>
@@ -87,34 +89,44 @@ const SidebarItem = ({
           data-group="sidebar--item"
           _hover={{
             color: isActive
-                ? colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`
-                : colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`,
+              ? colorMode == 'light'
+                ? `${colorPref}.700`
+                : `${colorPref}Dim.200`
+              : colorMode == 'light'
+              ? `${colorPref}.700`
+              : `${colorPref}Dim.200`,
             bg: isActive
-                ? colorMode == "light" ? `${colorPref}.100` : `${colorPref}Dim.800`
-                : colorMode == "light" ? `${colorPref}.50` : `${colorPref}Dim.900`,
+              ? colorMode == 'light'
+                ? `${colorPref}.100`
+                : `${colorPref}Dim.800`
+              : colorMode == 'light'
+              ? `${colorPref}.50`
+              : `${colorPref}Dim.900`,
           }}
           alignItems="center"
-          h="48px"
-          my="2px"
+          h="44px"
+          my="4px"
           pos="relative"
-          px="16px"
-          borderRadius="10px"
-          fontSize="15px"
+          px="12px"
+          borderRadius="12px"
+          fontSize="14px"
           color={
-            isActive 
-              ? colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`
-              : colorMode == "light" ? "gray.600" : "gray.500"
+            isActive
+              ? colorMode == 'light'
+                ? `${colorPref}.700`
+                : `${colorPref}Dim.200`
+              : colorMode == 'light'
+              ? 'gray.600'
+              : 'gray.500'
           }
           bg={
             isActive
-              ? colorMode == "light"
+              ? colorMode == 'light'
                 ? `${colorPref}.100`
                 : `${colorPref}Dim.800`
-              : "transparent"
+              : 'transparent'
           }
-          fontWeight={
-            isActive ? "600" : "500"
-          }
+          fontWeight={isActive ? '600' : '500'}
           transition="all 0.2s"
           cursor="pointer"
         >
@@ -122,20 +134,21 @@ const SidebarItem = ({
             className="sidebar__icon"
             justifyContent="center"
             alignItems="center"
-            w="24px"
-            h="24px"
-            mr="16px"
+            w="20px"
+            h="20px"
+            mr="12px"
             data-group="sidebar--item"
           >
             <MaterialIcon
               name={menuItem.icon}
               fill={isActive ? 1 : 0}
-              weight={600}
+              weight={500}
               variant="rounded"
+              size={20}
             />
           </Flex>
           <Box
-            display={{ base: "block", m: "none", d: "block" }}
+            display={{ base: 'block', m: 'none', d: 'block' }}
             mr="auto"
             w="full"
           >
@@ -161,10 +174,10 @@ const SidebarItem = ({
                 color="inherit"
                 transition="color 0s"
                 _hover={{
-                  backgroundColor: "none",
+                  backgroundColor: 'none',
                 }}
                 _active={{
-                  backgroundColor: "none",
+                  backgroundColor: 'none',
                 }}
               >
                 {isOpen ? <IoChevronUp fontWeight="bold" /> : <IoChevronDown />}
@@ -205,7 +218,7 @@ const SubmenuItem = ({
   parentIndex: number;
 }) => {
   const { pathname } = useRouter();
-  const router = pathname || "";
+  const router = pathname || '';
   const { colorMode } = useColorMode();
   const {
     isNavbarOpen,
@@ -225,7 +238,7 @@ const SubmenuItem = ({
       setMarkerActive(submenuIndex);
       setParentTemp(parentActive);
       setParentActive(parentIndex);
-    } else if (router == "/" + submenu.url.split("/")[1]) {
+    } else if (router == '/' + submenu.url.split('/')[1]) {
       setParentTemp(parentActive);
       setParentActive(parentIndex);
       if (parentIndex > parentActive) {
@@ -240,31 +253,31 @@ const SubmenuItem = ({
 
   const markerVariants = {
     in: {
-      height: "12px",
-      width: "12px",
+      height: '12px',
+      width: '12px',
       opacity: 1,
       transition: {
         duration: 0.26,
         delay: 0.215,
-        ease: "easeOut",
+        ease: 'easeOut',
         opacity: { duration: 0 },
       },
-      top: "21px",
+      top: '14px',
     },
     out: {
-      height: "12px",
-      width: "12px",
+      height: '12px',
+      width: '12px',
       opacity: 0,
       transition: {
         duration: 0,
       },
-      top: "21px",
+      top: '14px',
     },
     outTop: {
-      height: "22px",
-      width: "12px",
+      height: '22px',
+      width: '12px',
       opacity: 0,
-      top: "-34px",
+      top: '-34px',
       transition: {
         duration: 0.26,
         ease: [0.755, 0.08, 0.325, 0.96],
@@ -272,10 +285,10 @@ const SubmenuItem = ({
       },
     },
     outBot: {
-      height: "22px",
-      width: "12px",
+      height: '22px',
+      width: '12px',
       opacity: 0,
-      top: "34px",
+      top: '34px',
       transition: {
         duration: 0.26,
         ease: [0.755, 0.08, 0.325, 0.96],
@@ -283,27 +296,27 @@ const SubmenuItem = ({
       },
     },
     offTop: {
-      height: "22px",
-      width: "12px",
+      height: '22px',
+      width: '12px',
       opacity: 0,
       transition: { duration: 0.2, ease: easeIn },
-      top: "64px",
+      top: '64px',
     },
 
     offBot: {
-      height: "22px",
-      width: "12px",
+      height: '22px',
+      width: '12px',
       opacity: 0,
       transition: { duration: 0.2, ease: easeIn },
-      top: "-34px",
+      top: '-34px',
     },
   };
-  const t = useTranslations("Common.modules");
+  const t = useTranslations('Common.modules');
   const { colorPref } = useContext(AppSettingContext);
   const isActive =
     submenu.url === router ||
     (router.startsWith(submenu.url) &&
-      router.charAt(submenu.url.length) === "/");
+      router.charAt(submenu.url.length) === '/');
 
   return (
     <Link
@@ -316,76 +329,93 @@ const SubmenuItem = ({
         className="sidebar__item"
         data-group="sidebar--item"
         _hover={{
-          color: isActive 
-            ? (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`)
-            : (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`),
-          bg: isActive 
-            ? (colorMode == "light" ? `${colorPref}.100` : `${colorPref}Dim.800`) 
-            : (colorMode == "light" ? `${colorPref}.50` : `${colorPref}Dim.900`),
+          color: isActive
+            ? colorMode == 'light'
+              ? `${colorPref}.700`
+              : `${colorPref}Dim.200`
+            : colorMode == 'light'
+            ? `${colorPref}.700`
+            : `${colorPref}Dim.200`,
+          bg: isActive
+            ? colorMode == 'light'
+              ? `${colorPref}.100`
+              : `${colorPref}Dim.800`
+            : colorMode == 'light'
+            ? `${colorPref}.50`
+            : `${colorPref}Dim.900`,
         }}
         pos="relative"
         alignItems="center"
-        h="48px"
+        h="40px"
         my="2px"
-        px="16px"
-        borderRadius="10px"
-        fontSize="15px"
-        color={isActive 
-          ? (colorMode == "light" ? `${colorPref}.700` : `${colorPref}Dim.200`)
-          : (colorMode == "light" ? "gray.600" : "gray.500")
+        px="12px"
+        borderRadius="12px"
+        fontSize="14px"
+        color={
+          isActive
+            ? colorMode == 'light'
+              ? `${colorPref}.700`
+              : `${colorPref}Dim.200`
+            : colorMode == 'light'
+            ? 'gray.600'
+            : 'gray.500'
         }
         bg={
           isActive
-            ? colorMode == "light"
+            ? colorMode == 'light'
               ? `${colorPref}.100`
               : `${colorPref}Dim.800`
-            : "transparent"
+            : 'transparent'
         }
-        fontWeight={isActive ? "600" : "500"}
+        fontWeight={isActive ? '600' : '500'}
         overflow="hidden"
         transition="all 0.2s"
         cursor="pointer"
       >
         <motion.div
           style={{
-            opacity: "0",
-            position: "absolute",
-            left: "27px",
-            top: "0px",
-            height: "12px",
-            width: "12px",
-            borderRadius: "50%",
-            backgroundColor: "transparent",
-            border: `2px solid ${colorMode == "light" ? `var(--chakra-colors-${colorPref}-600)` : `var(--chakra-colors-${colorPref}Dim-600)`}`,
+            opacity: '0',
+            position: 'absolute',
+            left: '16px',
+            top: '0px',
+            height: '12px',
+            width: '12px',
+            borderRadius: '50%',
+            backgroundColor: 'transparent',
+            border: `2px solid ${
+              colorMode == 'light'
+                ? `var(--chakra-colors-${colorPref}-600)`
+                : `var(--chakra-colors-${colorPref}Dim-600)`
+            }`,
           }}
           variants={markerVariants}
           animate={
             parentActive == parentIndex
               ? markerActive == submenuIndex
-                ? "in"
+                ? 'in'
                 : markerTemp == submenuIndex
                 ? markerActive > submenuIndex
-                  ? "outTop"
-                  : "outBot"
+                  ? 'outTop'
+                  : 'outBot'
                 : markerActive > submenuIndex
-                ? "offTop"
-                : "offBot"
+                ? 'offTop'
+                : 'offBot'
               : parentActive > parentIndex
-              ? "offTop"
-              : "offBot"
+              ? 'offTop'
+              : 'offBot'
           }
         ></motion.div>
         <Flex
           className="sidebar__icon"
           justifyContent="center"
           alignItems="center"
-          w="24px"
-          h="24px"
-          mr="22px"
+          w="20px"
+          h="20px"
+          mr="12px"
           data-group="sidebar--item"
         ></Flex>
         <Box
-          display={{ base: "block", m: "none", d: "block" }}
+          display={{ base: 'block', m: 'none', d: 'block' }}
           mr="auto"
           w="full"
         >

@@ -1,49 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  Checkbox,
-  CheckboxGroup,
-  Stack,
-  Button,
-} from '@chakra-ui/react';
-import Head from 'next/head';
-import AdminLayout from '@/components/layouts/AdminLayout';
 import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
+import PageRow from '@/components/atoms/PageRow';
 import UserAPI, { User, Role } from '../services/UserAPI';
 import UserTableAdvance from '../components/UserTableAdvance';
+import UserFormModal from '../components/UserFormModal';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
+import { Badge, Button, HStack } from '@chakra-ui/react';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import FilterTabs from '@/components/molecules/FilterTabs';
 
 const UserListPage: NextPageWithLayout = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    password: '',
-    role_ids: [] as string[],
-  });
+  const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const api = new UserAPI();
+  const api = React.useMemo(() => new UserAPI(), []);
   const { colorMode } = useColorMode();
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const [usersData, rolesData] = await Promise.all([api.getUsers(), api.getRoles()]);
+      const [usersData, rolesData] = await Promise.all([
+        api.getUsers(),
+        api.getRoles(),
+      ]);
       setUsers(usersData);
       setRoles(rolesData);
     } catch (error: any) {
@@ -51,36 +38,46 @@ const UserListPage: NextPageWithLayout = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, colorMode]);
+
+  // const [filterRole, setFilterRole] = useState<string>('all'); // Deprecated for Status Filter
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  // Calculate counts (Simulated since no soft delete on users yet)
+  const counts = React.useMemo(() => {
+    return {
+      all: users.length,
+      active: users.length, // Assuming all fetched are active
+      inactive: 0, // Placeholder
+    };
+  }, [users]);
+
+  const filteredUsers = React.useMemo(() => {
+    // If filterStatus is 'active', show all users (since we don't have deleted users yet)
+    // If 'inactive', show none
+    if (filterStatus === 'inactive') return [];
+    return users;
+  }, [users, filterStatus]);
 
   const handleOpenModal = (user?: User) => {
-    if (user) {
-      setEditingUser(user);
-      setFormData({
-        username: user.username,
-        name: user.name,
-        password: '',
-        role_ids: user.roles?.map((r) => r.id) || [],
-      });
-    } else {
-      setEditingUser(null);
-      setFormData({ username: '', name: '', password: '', role_ids: [] });
-    }
+    setEditingUser(user || undefined);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingUser(null);
-    setFormData({ username: '', name: '', password: '', role_ids: [] });
+    setEditingUser(undefined);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData: any) => {
     try {
+      setIsSubmitting(true);
       if (editingUser) {
         await api.updateUser(editingUser.id, {
           username: formData.username,
@@ -91,7 +88,7 @@ const UserListPage: NextPageWithLayout = () => {
         showSuccessAlert('User berhasil diupdate', colorMode);
       } else {
         // Create new user
-        const newUser = await api.createUser({
+        await api.createUser({
           username: formData.username,
           name: formData.name,
           password_hash: formData.password || 'default123',
@@ -107,6 +104,8 @@ const UserListPage: NextPageWithLayout = () => {
         error.message,
         colorMode
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -121,111 +120,87 @@ const UserListPage: NextPageWithLayout = () => {
   };
 
   const handleCopyMagicLink = (user: User) => {
-    const magicLink = `${window.location.origin}/admin/login?magic=${user.id}`;
+    const magicLink = `${window.location.origin}/?admin=${user.id}`;
     navigator.clipboard.writeText(magicLink);
     showSuccessAlert('Magic link berhasil disalin', colorMode);
   };
 
   return (
     <>
-      <ContainerQuery>
-        <VStack spacing={6} align="stretch" py={8}>
-          {/* Header Section */}
-          <Flex
-            justify="space-between"
-            align={{ base: 'center', md: 'center' }}
-            direction={{ base: 'row', md: 'row' }}
-            gap={{ base: 2, md: 4 }}
-            wrap={{ base: 'nowrap', md: 'nowrap' }}
-          >
-            <VStack align="start" spacing={1} flex={1} minW={0}>
-              <Text
-                fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-                fontWeight="700"
-                color={colorMode === 'light' ? 'gray.900' : 'white'}
-                noOfLines={1}
+      <Box p={4}>
+        <PageRow>
+          <ContainerQuery>
+            <VStack spacing={6} align="stretch">
+              {/* Header Section */}
+              <Flex
+                justify="space-between"
+                align={{ base: 'center', md: 'center' }}
+                direction={{ base: 'row', md: 'row' }}
+                gap={{ base: 2, md: 4 }}
+                wrap={{ base: 'nowrap', md: 'nowrap' }}
               >
-                Manajemen User
-              </Text>
-              <Text
-                fontSize={{ base: 'xs', sm: 'sm' }}
-                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                noOfLines={1}
-              >
-                Kelola pengguna dan hak akses
-              </Text>
-            </VStack>
-            
-            {/* User Profile & Actions */}
-            <Box flexShrink={0}>
-              <UserProfileActions />
-            </Box>
-          </Flex>
+                <VStack align="start" spacing={1} flex={1} minW={0}>
+                  <Text
+                    fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    noOfLines={1}
+                  >
+                    Manajemen User
+                  </Text>
+                  <HStack spacing={2}>
+                    <Text
+                      fontSize={{ base: 'xs', sm: 'sm' }}
+                      color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                      noOfLines={1}
+                    >
+                      Kelola pengguna dan hak akses
+                    </Text>
+                  </HStack>
+                </VStack>
 
-          {/* Content */}
-          <UserTableAdvance
-            initialData={users}
-            loading={loading}
-            onEdit={handleOpenModal}
-            onDelete={handleDeleteUser}
-            onAddNew={() => handleOpenModal()}
-            onCopyMagicLink={handleCopyMagicLink}
-          />
-        </VStack>
-      </ContainerQuery>
+                {/* User Profile & Actions */}
+                <Box flexShrink={0} display={{ base: 'none', md: 'block' }}>
+                  <UserProfileActions />
+                </Box>
+              </Flex>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>{editingUser ? 'Edit User' : 'Tambah User Baru'}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Nama Lengkap</FormLabel>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Username</FormLabel>
-                <Input
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                />
-              </FormControl>
-              <FormControl isRequired={!editingUser}>
-                <FormLabel>Password{editingUser && ' (kosongkan jika tidak diubah)'}</FormLabel>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={editingUser ? 'Kosongkan jika tidak diubah' : ''}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Roles</FormLabel>
-                <CheckboxGroup
-                  value={formData.role_ids}
-                  onChange={(vals) => setFormData({ ...formData, role_ids: vals as string[] })}
-                >
-                  <Stack direction="column">
-                    {roles.map((role) => (
-                      <Checkbox key={role.id} value={role.id}>
-                        {role.name}
-                      </Checkbox>
-                    ))}
-                  </Stack>
-                </CheckboxGroup>
-              </FormControl>
-              <Button colorScheme="teal" w="full" onClick={handleSubmit}>
-                {editingUser ? 'Update' : 'Simpan'}
-              </Button>
+              {/* Filters Toolbar */}
+              <FilterTabs
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                counts={counts}
+              />
+
+              {/* Content */}
+              <UserTableAdvance
+                initialData={filteredUsers}
+                loading={loading}
+                onEdit={handleOpenModal}
+                onDelete={handleDeleteUser}
+                onCopyMagicLink={handleCopyMagicLink}
+                headerAction={
+                  <PrimaryButton onClick={() => handleOpenModal()} w="auto">
+                    <HStack spacing={2} justify="center">
+                      <MaterialIcon name="add" size={20} />
+                      <Text>Tambah</Text>
+                    </HStack>
+                  </PrimaryButton>
+                }
+              />
             </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </ContainerQuery>
+        </PageRow>
+      </Box>
+
+      <UserFormModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        user={editingUser}
+        roles={roles}
+        isLoading={isSubmitting}
+      />
     </>
   );
 };

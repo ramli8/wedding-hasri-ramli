@@ -20,7 +20,11 @@ import {
   Text,
   Badge,
 } from '@chakra-ui/react';
-import { KategoriTamu, CreateKategoriTamuInput, UpdateKategoriTamuInput } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
+import {
+  KategoriTamu,
+  CreateKategoriTamuInput,
+  UpdateKategoriTamuInput,
+} from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
@@ -28,7 +32,9 @@ interface KategoriFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   kategori?: KategoriTamu;
-  onSave: (data: CreateKategoriTamuInput | UpdateKategoriTamuInput) => Promise<void>;
+  onSave: (
+    data: CreateKategoriTamuInput | UpdateKategoriTamuInput
+  ) => Promise<void>;
 }
 
 const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
@@ -38,7 +44,9 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
   onSave,
 }) => {
   const { colorMode } = useColorMode();
-  const [formData, setFormData] = useState<CreateKategoriTamuInput>({ nama: '' });
+  const [formData, setFormData] = useState<CreateKategoriTamuInput>({
+    nama: '',
+  });
   const [loading, setLoading] = useState(false);
   const isEdit = !!kategori;
 
@@ -57,12 +65,12 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
     setLoading(true);
     try {
       await onSave({ nama: formData.nama.trim() });
-      
+
       showSuccessAlert(
         isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
         colorMode
       );
-      
+
       onClose();
     } catch (error: any) {
       showErrorAlert(
@@ -78,7 +86,7 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
       <ModalOverlay />
-      <ModalContent 
+      <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
         borderRadius={{ base: 0, md: '16px' }}
         mx={{ base: 0, md: 4 }}
@@ -93,12 +101,12 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
           <HStack spacing={3}>
             <Text>{isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</Text>
             {isEdit && (
-              <Badge 
-                colorScheme="blue" 
+              <Badge
+                colorScheme="blue"
                 variant="subtle"
-                fontSize="10px" 
-                px={2} 
-                py={0.5} 
+                fontSize="10px"
+                px={2}
+                py={0.5}
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
@@ -119,7 +127,7 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
             <VStack spacing={5} align="stretch">
               <FormControl isRequired>
                 <FormLabel
-                  fontSize="sm" 
+                  fontSize="sm"
                   fontWeight="600"
                   mb={2}
                   color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -129,22 +137,12 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
                 <Input
                   value={formData.nama}
                   onChange={(e) => setFormData({ nama: e.target.value })}
-                  placeholder="Contoh: Tamu Hasri"
-                  size="md"
-                  borderRadius="md"
-                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                  _hover={{
-                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                  }}
-                  _focus={{
-                    borderColor: 'blue.500',
-                    boxShadow: '0 0 0 1px #3182ce',
-                  }}
-                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                  size="lg"
+                  borderRadius="12px"
+                  focusBorderColor={
+                    colorMode === 'light' ? 'blue.500' : 'blue.300'
+                  }
                 />
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  Masukkan nama kategori tamu (misal: VIP, Keluarga, Teman)
-                </Text>
               </FormControl>
             </VStack>
           </Box>
@@ -156,22 +154,24 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
           pt={4}
         >
           <HStack spacing={3} width="full" justify="flex-end">
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
+            <Button
+              variant="ghost"
+              onClick={onClose}
               isDisabled={loading}
               minW="120px"
-              h="40px"
-              borderRadius="10px"
+              h="48px"
+              borderRadius="12px"
               fontSize="14px"
             >
               Batal
             </Button>
-            <PrimaryButton 
-              type="submit" 
+            <PrimaryButton
+              type="submit"
               form="kategori-form"
               isLoading={loading}
-              loadingText="Menyimpan..."
+              minW="120px"
+              h="48px"
+              borderRadius="12px"
             >
               {isEdit ? 'Perbarui' : 'Simpan'}
             </PrimaryButton>

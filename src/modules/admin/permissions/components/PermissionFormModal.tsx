@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -21,9 +21,16 @@ import {
   Badge,
 } from '@chakra-ui/react';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import PermissionAPI, { RolePermission } from '../../permissions/services/PermissionAPI';
-import RoleAPI, { Role } from '../../roles/services/RoleAPI';
-import { showSuccessAlert, showErrorAlert, showAlert } from '@/utils/sweetalert';
+import PermissionAPI, {
+  RolePermission,
+} from '../../permissions/services/PermissionAPI';
+import RoleAPI from '../../roles/services/RoleAPI';
+import { Role } from '../../roles/types/Role.types';
+import {
+  showSuccessAlert,
+  showErrorAlert,
+  showAlert,
+} from '@/utils/sweetalert';
 
 interface PermissionFormModalProps {
   isOpen: boolean;
@@ -46,9 +53,21 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   const permissionAPI = new PermissionAPI();
-  const roleAPI = new RoleAPI();
+  const [roleAPI] = useState(() => new RoleAPI());
   const { colorMode } = useColorMode();
   const availableUrls = permissionAPI.getAvailableUrls();
+
+  const fetchRoles = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await roleAPI.getRoles();
+      setRoles(data);
+    } catch (error) {
+      console.error('Failed to fetch roles', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [roleAPI]);
 
   useEffect(() => {
     if (isOpen) {
@@ -63,19 +82,7 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
         setDescription('');
       }
     }
-  }, [isOpen, initialData]);
-
-  const fetchRoles = async () => {
-    try {
-      setLoading(true);
-      const data = await roleAPI.getRoles();
-      setRoles(data);
-    } catch (error) {
-      console.error('Failed to fetch roles', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, initialData, fetchRoles]);
 
   const handleSubmit = async () => {
     if (!roleId || !urlPattern) {
@@ -116,7 +123,12 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: 'full', md: 'xl' }} isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: 'full', md: 'xl' }}
+      isCentered
+    >
       <ModalOverlay />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
@@ -131,14 +143,16 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
           borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
         >
           <HStack spacing={3}>
-            <Text>{initialData ? 'Edit Permission' : 'Tambah Permission Baru'}</Text>
+            <Text>
+              {initialData ? 'Edit Permission' : 'Tambah Permission Baru'}
+            </Text>
             {initialData && (
-              <Badge 
-                colorScheme="blue" 
+              <Badge
+                colorScheme="blue"
                 variant="subtle"
-                fontSize="10px" 
-                px={2} 
-                py={0.5} 
+                fontSize="10px"
+                px={2}
+                py={0.5}
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
@@ -154,13 +168,13 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
           </HStack>
         </ModalHeader>
         <ModalCloseButton />
-        
+
         <ModalBody py={6}>
           <VStack spacing={5} align="stretch">
             {/* Role Selection */}
             <FormControl isRequired>
-              <FormLabel 
-                fontSize="sm" 
+              <FormLabel
+                fontSize="sm"
                 fontWeight="600"
                 mb={2}
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -168,21 +182,14 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                 Role
               </FormLabel>
               <Select
-                placeholder="Pilih Role"
                 value={roleId}
                 onChange={(e) => setRoleId(e.target.value)}
                 isDisabled={loading}
-                size="md"
-                borderRadius="md"
-                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                _hover={{
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                _focus={{
-                  borderColor: 'blue.500',
-                  boxShadow: '0 0 0 1px #3182ce',
-                }}
-                bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                size="lg"
+                borderRadius="12px"
+                focusBorderColor={
+                  colorMode === 'light' ? 'blue.500' : 'blue.300'
+                }
               >
                 {roles.map((role) => (
                   <option key={role.id} value={role.id}>
@@ -190,15 +197,12 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                   </option>
                 ))}
               </Select>
-              <Text fontSize="xs" color="gray.500" mt={1}>
-                Pilih role yang akan diberikan akses
-              </Text>
             </FormControl>
 
             {/* URL Pattern Selection */}
             <FormControl isRequired>
-              <FormLabel 
-                fontSize="sm" 
+              <FormLabel
+                fontSize="sm"
                 fontWeight="600"
                 mb={2}
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -208,19 +212,17 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
               <VStack spacing={2} align="stretch">
                 <Select
                   placeholder="Pilih dari daftar URL yang tersedia"
-                  value={availableUrls.some(u => u.url === urlPattern) ? urlPattern : ''}
+                  value={
+                    availableUrls.some((u) => u.url === urlPattern)
+                      ? urlPattern
+                      : ''
+                  }
                   onChange={(e) => setUrlPattern(e.target.value)}
-                  size="md"
-                  borderRadius="md"
-                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                  _hover={{
-                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                  }}
-                  _focus={{
-                    borderColor: 'blue.500',
-                    boxShadow: '0 0 0 1px #3182ce',
-                  }}
-                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                  size="lg"
+                  borderRadius="12px"
+                  focusBorderColor={
+                    colorMode === 'light' ? 'blue.500' : 'blue.300'
+                  }
                 >
                   {availableUrls.map((item) => (
                     <option key={item.url} value={item.url}>
@@ -228,37 +230,27 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                     </option>
                   ))}
                 </Select>
-                
+
                 <Box position="relative">
                   <Input
-                    placeholder="Atau ketik URL pattern manual (contoh: /admin/custom)"
                     value={urlPattern}
                     onChange={(e) => setUrlPattern(e.target.value)}
-                    size="md"
-                    borderRadius="md"
-                    borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                    _hover={{
-                      borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                    }}
-                    _focus={{
-                      borderColor: 'blue.500',
-                      boxShadow: '0 0 0 1px #3182ce',
-                    }}
-                    bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                    size="lg"
+                    borderRadius="12px"
+                    focusBorderColor={
+                      colorMode === 'light' ? 'blue.500' : 'blue.300'
+                    }
                     fontFamily="mono"
                     fontSize="sm"
                   />
                 </Box>
               </VStack>
-              <Text fontSize="xs" color="gray.500" mt={1}>
-                Pilih dari dropdown atau ketik manual
-              </Text>
             </FormControl>
 
             {/* Description */}
             <FormControl>
-              <FormLabel 
-                fontSize="sm" 
+              <FormLabel
+                fontSize="sm"
                 fontWeight="600"
                 mb={2}
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -266,25 +258,16 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                 Deskripsi
               </FormLabel>
               <Textarea
-                placeholder="Deskripsi permission (opsional)..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 resize="vertical"
-                borderRadius="md"
-                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                _hover={{
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                _focus={{
-                  borderColor: 'blue.500',
-                  boxShadow: '0 0 0 1px #3182ce',
-                }}
-                bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                size="lg"
+                borderRadius="12px"
+                focusBorderColor={
+                  colorMode === 'light' ? 'blue.500' : 'blue.300'
+                }
               />
-              <Text fontSize="xs" color="gray.500" mt={1}>
-                Tambahkan catatan atau penjelasan tentang permission ini
-              </Text>
             </FormControl>
           </VStack>
         </ModalBody>
@@ -300,8 +283,8 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
               onClick={onClose}
               isDisabled={saving}
               minW="120px"
-              h="40px"
-              borderRadius="10px"
+              h="48px"
+              borderRadius="12px"
               fontSize="14px"
             >
               Batal
@@ -309,7 +292,9 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
             <PrimaryButton
               onClick={handleSubmit}
               isLoading={saving}
-              loadingText="Menyimpan..."
+              minW="120px"
+              h="48px"
+              borderRadius="12px"
             >
               {initialData ? 'Perbarui' : 'Simpan'}
             </PrimaryButton>

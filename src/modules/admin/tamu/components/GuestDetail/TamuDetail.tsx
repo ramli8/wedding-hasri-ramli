@@ -8,20 +8,17 @@ import {
   ModalBody,
   ModalCloseButton,
   Button,
-  Card,
-  CardHeader,
-  CardBody,
-  Flex,
   Heading,
   Text,
   Badge,
   HStack,
   VStack,
   Box,
-  Icon,
   Grid,
-  GridItem,
-  Stack,
+  useColorModeValue,
+  Divider,
+  Avatar,
+  Icon,
 } from '@chakra-ui/react';
 import { Tamu } from '../../types/Tamu.types';
 
@@ -38,179 +35,257 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
   onClose,
   tamu,
   onEdit,
-  onQRCodeClick,
 }) => {
+  // Hooks must be called unconditionally at the top level
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const labelColor = useColorModeValue('gray.500', 'gray.400');
+  const valueColor = useColorModeValue('gray.900', 'white');
+  const sectionBg = useColorModeValue('gray.50', 'gray.800');
+  const avatarBg = useColorModeValue('gray.900', 'white');
+  const avatarColor = useColorModeValue('white', 'gray.900');
+  const subTextColor = useColorModeValue('gray.500', 'gray.400');
+  const modalBg = useColorModeValue('white', 'gray.900');
+
   if (!tamu) {
     return null;
   }
 
   const renderStatusBadge = (status: string) => {
+    let colorScheme = 'gray';
+    let label = status;
+
     switch (status) {
       case 'akan_hadir':
-        return <Badge colorScheme="green">Akan Hadir</Badge>;
+        colorScheme = 'green';
+        label = 'Akan Hadir';
+        break;
       case 'tidak_hadir':
-        return <Badge colorScheme="red">Tidak Hadir</Badge>;
+        colorScheme = 'red';
+        label = 'Tidak Hadir';
+        break;
       case 'belum_konfirmasi':
-        return <Badge colorScheme="yellow">Belum Konfirmasi</Badge>;
+        colorScheme = 'yellow';
+        label = 'Belum Konfirmasi';
+        break;
       case 'dikirim':
-        return <Badge colorScheme="blue">Dikirim</Badge>;
+        colorScheme = 'blue';
+        label = 'Dikirim';
+        break;
       case 'belum_dikirim':
-        return <Badge colorScheme="gray">Belum Dikirim</Badge>;
+        colorScheme = 'gray';
+        label = 'Belum Dikirim';
+        break;
       case 'kadaluarsa':
-        return <Badge colorScheme="orange">Kadaluarsa</Badge>;
-      default:
-        return <Badge colorScheme="gray">{status}</Badge>;
+        colorScheme = 'orange';
+        label = 'Kadaluarsa';
+        break;
     }
+
+    return (
+      <Badge
+        colorScheme={colorScheme}
+        variant="subtle"
+        px={2}
+        py={0.5}
+        borderRadius="full"
+        textTransform="capitalize"
+      >
+        {label}
+      </Badge>
+    );
   };
 
-  const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <Grid templateColumns={{ base: '1fr', md: '180px 1fr' }} gap={2} alignItems="center">
-      <GridItem>
-        <Text fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>{label}:</Text>
-      </GridItem>
-      <GridItem>
-        <Text fontSize={{ base: 'sm', md: 'md' }} wordBreak="break-word">{value}</Text>
-      </GridItem>
-    </Grid>
+  const InfoItem = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: React.ReactNode;
+  }) => (
+    <Box>
+      <Text
+        fontSize="xs"
+        fontWeight="600"
+        color={labelColor}
+        textTransform="uppercase"
+        letterSpacing="wider"
+        mb={1}
+      >
+        {label}
+      </Text>
+      <Text
+        fontSize="sm"
+        fontWeight="500"
+        color={valueColor}
+        lineHeight="short"
+      >
+        {value}
+      </Text>
+    </Box>
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: 'full', md: '2xl' }} scrollBehavior="inside">
-      <ModalOverlay />
-      <ModalContent mx={{ base: 0, md: 4 }}>
-        <ModalHeader fontSize={{ base: 'lg', md: 'xl' }}>Detail Tamu: {tamu.nama}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={6}>
-          <VStack spacing={{ base: 4, md: 6 }} align="stretch">
-            {/* Informasi Dasar */}
-            <Card>
-              <CardHeader pb={2}>
-                <Heading size={{ base: 'sm', md: 'md' }}>Informasi Dasar</Heading>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  <InfoRow label="Nama" value={tamu.nama} />
-                  <InfoRow 
-                    label="Kategori" 
-                    value={<Badge colorScheme="teal">{tamu.kategori}</Badge>} 
-                  />
-                  <InfoRow label="Hubungan" value={tamu.hubungan} />
-                  <InfoRow label="Alamat" value={tamu.alamat} />
-                  <InfoRow 
-                    label="No. HP" 
-                    value={
-                      <HStack spacing={2}>
-                        <Icon viewBox="0 0 24 24" width="16px" height="16px">
-                          <path
-                            fill="currentColor"
-                            d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"
-                          />
-                        </Icon>
-                        <Text>{tamu.nomor_hp}</Text>
-                      </HStack>
-                    } 
-                  />
-                </VStack>
-              </CardBody>
-            </Card>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="xl"
+      scrollBehavior="inside"
+      isCentered
+    >
+      <ModalOverlay backdropFilter="blur(5px)" />
+      <ModalContent borderRadius="xl" overflow="hidden" bg={modalBg}>
+        {/* Modern Header with Background */}
+        <Box
+          bg={sectionBg}
+          px={6}
+          py={8}
+          borderBottom="1px solid"
+          borderColor={borderColor}
+          position="relative"
+        >
+          <ModalCloseButton position="absolute" top={4} right={4} />
+          <HStack spacing={5} align="center">
+            <Avatar
+              size="lg"
+              name={tamu.nama}
+              bg={avatarBg}
+              color={avatarColor}
+              boxShadow="md"
+            />
+            <Box>
+              <Heading size="md" mb={1} letterSpacing="-0.5px">
+                {tamu.nama}
+              </Heading>
+              <HStack spacing={2} wrap="wrap">
+                <Badge
+                  colorScheme="purple"
+                  variant="solid"
+                  px={2}
+                  borderRadius="full"
+                  fontSize="xs"
+                >
+                  {tamu.kategori}
+                </Badge>
+                <Text fontSize="sm" color={subTextColor} fontWeight="500">
+                  • {tamu.hubungan}
+                </Text>
+              </HStack>
+            </Box>
+          </HStack>
+        </Box>
 
-            {/* Status */}
-            <Card>
-              <CardHeader pb={2}>
-                <Heading size={{ base: 'sm', md: 'md' }}>Status</Heading>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  <InfoRow 
-                    label="Status Undangan" 
-                    value={renderStatusBadge(tamu.status_undangan)} 
-                  />
-                  <InfoRow 
-                    label="Konfirmasi Kehadiran" 
-                    value={renderStatusBadge(tamu.konfirmasi_kehadiran)} 
-                  />
-                  <InfoRow 
-                    label="Tgl Kirim Undangan" 
-                    value={
-                      tamu.tgl_kirim_undangan
-                        ? new Date(tamu.tgl_kirim_undangan).toLocaleDateString('id-ID')
-                        : 'Belum dikirim'
-                    } 
-                  />
-                  <InfoRow 
-                    label="Tgl Baca Undangan" 
-                    value={
-                      tamu.tgl_baca_undangan
-                        ? new Date(tamu.tgl_baca_undangan).toLocaleDateString('id-ID')
-                        : 'Belum dibaca'
-                    } 
-                  />
-                </VStack>
-              </CardBody>
-            </Card>
+        <ModalBody p={0}>
+          <VStack
+            divider={<Divider borderColor={borderColor} />}
+            spacing={0}
+            align="stretch"
+          >
+            {/* Contact Info */}
+            <Box p={6}>
+              <Grid
+                templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
+                gap={6}
+              >
+                <InfoItem label="Nomor HP" value={tamu.nomor_hp || '-'} />
+                <InfoItem label="Alamat" value={tamu.alamat || '-'} />
+              </Grid>
+            </Box>
 
-            {/* Waktu Acara & Kehadiran */}
-            <Card>
-              <CardHeader pb={2}>
-                <Heading size={{ base: 'sm', md: 'md' }}>Waktu Acara & Kehadiran</Heading>
-              </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  <InfoRow 
-                    label="Mulai Resepsi" 
-                    value={
-                      tamu.tgl_mulai_resepsi
-                        ? new Date(tamu.tgl_mulai_resepsi).toLocaleString('id-ID', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                            hour12: false
-                          })
-                        : 'Belum diatur'
-                    } 
-                  />
-                  <InfoRow 
-                    label="Akhir Resepsi" 
-                    value={
-                      tamu.tgl_akhir_resepsi
-                        ? new Date(tamu.tgl_akhir_resepsi).toLocaleString('id-ID', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                            hour12: false
-                          })
-                        : 'Belum diatur'
-                    } 
-                  />
-                  <InfoRow 
-                    label="Check-in" 
-                    value={
-                      tamu.check_in
-                        ? new Date(tamu.check_in).toLocaleString('id-ID', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                            hour12: false
-                          })
-                        : 'Belum check-in'
-                    } 
-                  />
-                  <InfoRow 
-                    label="Check-out" 
-                    value={
-                      tamu.check_out
-                        ? new Date(tamu.check_out).toLocaleString('id-ID', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                            hour12: false
-                          })
-                        : 'Belum check-out'
-                    } 
-                  />
-                </VStack>
-              </CardBody>
-            </Card>
+            {/* Status Section */}
+            <Box p={6} bg={sectionBg}>
+              <Text fontSize="sm" fontWeight="bold" mb={4} color={valueColor}>
+                Status & Undangan
+              </Text>
+              <Grid
+                templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
+                gap={6}
+              >
+                <InfoItem
+                  label="Status Undangan"
+                  value={renderStatusBadge(tamu.status_undangan)}
+                />
+                <InfoItem
+                  label="Konfirmasi"
+                  value={renderStatusBadge(tamu.konfirmasi_kehadiran)}
+                />
+                <InfoItem
+                  label="Dikirim Pada"
+                  value={
+                    tamu.tgl_kirim_undangan
+                      ? new Date(tamu.tgl_kirim_undangan).toLocaleDateString(
+                          'id-ID',
+                          { day: 'numeric', month: 'long', year: 'numeric' }
+                        )
+                      : '-'
+                  }
+                />
+                <InfoItem
+                  label="Dibaca Pada"
+                  value={
+                    tamu.tgl_baca_undangan
+                      ? new Date(tamu.tgl_baca_undangan).toLocaleDateString(
+                          'id-ID',
+                          { day: 'numeric', month: 'long', year: 'numeric' }
+                        )
+                      : '-'
+                  }
+                />
+              </Grid>
+            </Box>
+
+            {/* Event Info */}
+            <Box p={6}>
+              <Text fontSize="sm" fontWeight="bold" mb={4} color={valueColor}>
+                Kehadiran Event
+              </Text>
+              <Grid
+                templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
+                gap={6}
+              >
+                <InfoItem
+                  label="Check-in"
+                  value={
+                    tamu.check_in
+                      ? new Date(tamu.check_in).toLocaleString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '-'
+                  }
+                />
+                <InfoItem
+                  label="Check-out"
+                  value={
+                    tamu.check_out
+                      ? new Date(tamu.check_out).toLocaleString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '-'
+                  }
+                />
+              </Grid>
+            </Box>
           </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="outline" onClick={onClose} width={{ base: 'full', md: 'auto' }}>
+
+        <ModalFooter
+          bg={sectionBg}
+          borderTop="1px solid"
+          borderColor={borderColor}
+          py={3}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            w="full"
+            color="gray.500"
+          >
             Tutup
           </Button>
         </ModalFooter>

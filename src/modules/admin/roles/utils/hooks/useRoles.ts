@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import RoleAPI, { Role, CreateRoleInput, UpdateRoleInput } from '../../services/RoleAPI';
+import RoleAPI from '../../services/RoleAPI';
+import { Role, CreateRoleInput, UpdateRoleInput } from '../../types/Role.types';
 
 export const useRoles = () => {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -29,7 +30,7 @@ export const useRoles = () => {
     try {
       setLoading(true);
       const newRole = await api.createRole(input);
-      setRoles(prev => [newRole, ...prev]);
+      setRoles((prev) => [newRole, ...prev]);
       setError(null);
       return newRole;
     } catch (err: any) {
@@ -45,7 +46,9 @@ export const useRoles = () => {
     try {
       setLoading(true);
       const updatedRole = await api.updateRole(id, input);
-      setRoles(prev => prev.map(item => item.id === id ? updatedRole : item));
+      setRoles((prev) =>
+        prev.map((item) => (item.id === id ? updatedRole : item))
+      );
       setError(null);
       return updatedRole;
     } catch (err: any) {
@@ -62,7 +65,13 @@ export const useRoles = () => {
       setLoading(true);
       const deletedRole = await api.deleteRole(id);
       // Update local state to reflect soft delete
-      setRoles(prev => prev.map(item => item.id === id ? { ...item, deleted_at: deletedRole.deleted_at } : item));
+      setRoles((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? { ...item, deleted_at: deletedRole.deleted_at }
+            : item
+        )
+      );
       setError(null);
     } catch (err: any) {
       console.error('Error deleting role:', err);
@@ -78,7 +87,11 @@ export const useRoles = () => {
       setLoading(true);
       const restoredRole = await api.restoreRole(id);
       // Update local state to reflect restore
-      setRoles(prev => prev.map(item => item.id === id ? { ...item, deleted_at: null } : item));
+      setRoles((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, deleted_at: null } : item
+        )
+      );
       setError(null);
     } catch (err: any) {
       console.error('Error restoring role:', err);

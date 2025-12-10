@@ -7,8 +7,9 @@ import {
   Icon,
   useColorMode,
   VStack,
+  Avatar,
   Badge,
-  Button,
+  Tooltip,
 } from '@chakra-ui/react';
 import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
 import TableAdvance from '@/components/organisms/TableAdvance';
@@ -17,6 +18,22 @@ import { UcapanWithReplies } from '../types/Ucapan.types';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { showSuccessAlert } from '@/utils/sweetalert';
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import AppSettingContext from '@/providers/AppSettingProvider';
+import { showConfirmationAlert } from '@/utils/sweetalert';
+import { useContext } from 'react';
+import {
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Flex,
+  // Menu, // Removed as per instruction
+  // MenuButton, // Removed as per instruction
+  // MenuList, // Removed as per instruction
+  // MenuItem, // Removed as per instruction
+  // Avatar, // Moved to top import
+  useColorModeValue,
+} from '@chakra-ui/react';
 
 const MySwal = withReactContent(Swal);
 
@@ -26,6 +43,7 @@ interface UcapanTableAdvanceProps {
   onReply: (ucapan: UcapanWithReplies) => void;
   onDelete: (id: string) => void;
   onRefresh: () => void;
+  headerAction?: React.ReactNode;
 }
 
 const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
@@ -34,34 +52,33 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
   onReply,
   onDelete,
   onRefresh,
+  headerAction,
 }) => {
   const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
 
-  const handleDelete = (id: string) => {
-    MySwal.fire({
-      title: 'Hapus Ucapan?',
-      text: "Ucapan yang dihapus tidak dapat dikembalikan!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Hapus!',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      background: colorMode === 'light' ? '#fff' : '#1A202C',
-      color: colorMode === 'light' ? '#1A202C' : '#fff',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onDelete(id);
-      }
-    });
-  };
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const boxBg = useColorModeValue('white', 'gray.900');
+  const leftBorderColor = useColorModeValue(
+    `${colorPref}.500`,
+    `${colorPref}Dim.500`
+  );
+  const tableBorderColor = useColorModeValue('gray.200', 'gray.800');
 
-  const handleCopyMagicLink = (ucapan: UcapanWithReplies) => {
-    const magicLink = `${window.location.origin}/?reply=${ucapan.id}`;
-    navigator.clipboard.writeText(magicLink);
-    showSuccessAlert('Magic link berhasil disalin', colorMode);
+  const handleDelete = async (id: string) => {
+    const result = await showConfirmationAlert(
+      'Konfirmasi Hapus Data?',
+      'Data yang dihapus akan di-soft delete!',
+      'Ya, Hapus!',
+      colorMode,
+      true
+    );
+
+    if (result.isConfirmed) {
+      onDelete(id);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -81,9 +98,21 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         accessorKey: 'nama',
         header: 'Nama',
         cell: (info) => (
-          <Text fontWeight="600" fontSize="sm" color={colorMode === 'light' ? 'black' : 'white'}>
-            {info.getValue()}
-          </Text>
+          <HStack spacing={3}>
+            <Avatar
+              name={info.getValue()}
+              size="sm"
+              bg={colorMode === 'light' ? 'gray.900' : 'white'}
+              color={colorMode === 'light' ? 'white' : 'gray.900'}
+            />
+            <Text
+              fontWeight="600"
+              fontSize="sm"
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+            >
+              {info.getValue()}
+            </Text>
+          </HStack>
         ),
         enableSorting: true,
         enableColumnFilter: false,
@@ -92,7 +121,11 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         accessorKey: 'pesan',
         header: 'Pesan',
         cell: (info) => (
-          <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} noOfLines={2}>
+          <Text
+            fontSize="sm"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            noOfLines={2}
+          >
             {info.getValue()}
           </Text>
         ),
@@ -117,11 +150,11 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
           const ucapan = info.row.original;
           const hasReply = ucapan.replies && ucapan.replies.length > 0;
           return (
-            <Badge 
+            <Badge
               variant="outline"
               colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
-              borderColor={colorMode === 'light' ? 'black' : 'white'}
-              color={colorMode === 'light' ? 'black' : 'white'}
+              borderColor={colorMode === 'light' ? 'gray.900' : 'white'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
               fontSize="xs"
             >
               {hasReply ? 'Sudah Dibalas' : 'Belum Dibalas'}
@@ -137,33 +170,33 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         cell: (info) => {
           const ucapan = info.row.original;
           return (
-            <HStack spacing={1}>
-              <Button
-                size="xs"
-                color={colorMode === 'light' ? 'black' : 'white'}
-                variant="ghost"
-                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-                onClick={() => handleCopyMagicLink(ucapan)}
-              >
-                Copy Link
-              </Button>
-              <IconButton
-                aria-label="Hapus ucapan"
-                icon={
-                  <Icon viewBox="0 0 24 24" width="18px" height="18px">
-                    <path
-                      fill="currentColor"
-                      d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                    />
-                  </Icon>
-                }
-                size="sm"
-                variant="ghost"
-                color={colorMode === 'light' ? 'black' : 'white'}
-                _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
-                onClick={() => handleDelete(ucapan.id)}
-                borderRadius="full"
-              />
+            <HStack spacing={1} justify="flex-end">
+              <Tooltip label="Balas" placement="top" hasArrow>
+                <IconButton
+                  aria-label="Balas"
+                  icon={<MaterialIcon name="reply" size={18} />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="blue"
+                  onClick={() => onReply(ucapan)}
+                  _hover={{
+                    bg: colorMode === 'light' ? 'blue.50' : 'blue.900',
+                  }}
+                />
+              </Tooltip>
+              <Tooltip label="Hapus" placement="top" hasArrow>
+                <IconButton
+                  aria-label="Hapus"
+                  icon={<MaterialIcon name="delete" size={18} />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="red"
+                  onClick={() => handleDelete(ucapan.id)}
+                  _hover={{
+                    bg: colorMode === 'light' ? 'red.50' : 'red.900',
+                  }}
+                />
+              </Tooltip>
             </HStack>
           );
         },
@@ -171,7 +204,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         enableColumnFilter: false,
       },
     ],
-    [colorMode, onReply, onDelete]
+    [colorMode, onReply, onDelete, handleDelete]
   );
 
   if (loading) {
@@ -184,56 +217,77 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
 
   return (
     <Box>
-      <Box 
-        pos="relative"
-        bg={colorMode === 'light' ? 'white' : 'black'}
+      <Box
+        bg={boxBg}
         borderRadius="24px"
         p={6}
         border="1px solid"
-        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.800'}
+        borderColor={tableBorderColor}
         _before={{
           content: '""',
-          pos: "absolute",
-          top: "43px",
-          left: "32px",
-          right: "32px",
-          bottom: "-43px",
-          zIndex: "-1",
-          background: colorMode == "light" ? "#e3e6ec" : "#000",
-          opacity: colorMode == "light" ? "0.91" : "0.51",
-          filter: "blur(86.985px)",
-          borderRadius: "24px",
+          pos: 'absolute',
+          top: '43px',
+          left: '32px',
+          right: '32px',
+          bottom: '-43px',
+          zIndex: '-1',
+          background: colorMode == 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode == 'light' ? '0.91' : '0.51',
+          filter: 'blur(86.985px)',
+          borderRadius: '24px',
         }}
+        pos="relative"
+        boxShadow="none"
       >
-        <Box mb={8} display="flex" flexDirection={{ base: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ base: 'start', md: 'center' }} gap={4}>
-          <VStack align="start" spacing={1}>
-            <Text 
-              fontSize="2xl" 
-              fontWeight="800"
-              letterSpacing="-0.5px"
-              color={colorMode === 'light' ? 'black' : 'white'}
+        {/* Table Header / Toolbar */}
+        <Flex
+          mb={6}
+          justify="space-between"
+          align="center"
+          direction={{ base: 'column', md: 'row' }}
+          gap={3}
+        >
+          {/* Header Action on Left */}
+          {headerAction && (
+            <Box
+              flexShrink={0}
+              w={{ base: 'full', md: 'auto' }}
+              display="flex"
+              justifyContent="flex-start"
             >
-              Daftar Ucapan
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Total Data: {initialData.length}
-            </Text>
-          </VStack>
-          <PrimaryButton onClick={onRefresh} w="auto">
-            <HStack spacing={2} justify="center">
-              <Icon viewBox="0 0 24 24" width="20px" height="20px" fill="currentColor">
-                <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
-              </Icon>
-              <Text>Refresh</Text>
-            </HStack>
-          </PrimaryButton>
-        </Box>
+              <Box w="fit-content">{headerAction}</Box>
+            </Box>
+          )}
 
-        <TableAdvance 
-          columns={columns} 
+          <InputGroup
+            size="md"
+            w={{ base: 'full', md: 'auto' }}
+            maxW={{ base: 'full', md: '400px' }}
+          >
+            <InputLeftElement h="40px">
+              <MaterialIcon name="search" size={18} color="gray.400" />
+            </InputLeftElement>
+            <Input
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              h="40px"
+              borderRadius="12px"
+              focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+              fontSize="sm"
+              fontWeight="500"
+              size="lg"
+            />
+          </InputGroup>
+        </Flex>
+
+        <TableAdvance
+          columns={columns}
           data={initialData}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          hideSearch={true}
         />
       </Box>
     </Box>

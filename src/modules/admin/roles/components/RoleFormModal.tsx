@@ -24,8 +24,15 @@ import {
   Alert,
   AlertIcon,
 } from '@chakra-ui/react';
-import { Role, CreateRoleInput, UpdateRoleInput } from '@/modules/admin/roles/services/RoleAPI';
-import { PrimaryButton, PrimaryOutlineButton } from '@/components/atoms/Buttons/PrimaryButton';
+import {
+  Role,
+  CreateRoleInput,
+  UpdateRoleInput,
+} from '@/modules/admin/roles/types/Role.types';
+import {
+  PrimaryButton,
+  PrimaryOutlineButton,
+} from '@/components/atoms/Buttons/PrimaryButton';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
 interface RoleFormModalProps {
@@ -42,13 +49,21 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
   onSave,
 }) => {
   const { colorMode } = useColorMode();
-  const [formData, setFormData] = useState<CreateRoleInput>({ name: '', description: '', is_default: false });
+  const [formData, setFormData] = useState<CreateRoleInput>({
+    name: '',
+    description: '',
+    is_default: false,
+  });
   const [loading, setLoading] = useState(false);
   const isEdit = !!role;
 
   useEffect(() => {
     if (role) {
-      setFormData({ name: role.name, description: role.description || '', is_default: role.is_default || false });
+      setFormData({
+        name: role.name,
+        description: role.description || '',
+        is_default: role.is_default || false,
+      });
     } else {
       setFormData({ name: '', description: '', is_default: false });
     }
@@ -60,17 +75,17 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
 
     setLoading(true);
     try {
-      await onSave({ 
+      await onSave({
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
-        is_default: formData.is_default
+        is_default: formData.is_default,
       });
-      
+
       showSuccessAlert(
         isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
         colorMode
       );
-      
+
       onClose();
     } catch (error: any) {
       showErrorAlert(
@@ -86,7 +101,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
       <ModalOverlay backdropFilter="blur(5px)" />
-      <ModalContent 
+      <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
         borderRadius={{ base: 0, md: '16px' }}
         mx={{ base: 0, md: 4 }}
@@ -101,12 +116,12 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
           <HStack spacing={3}>
             <Text>{isEdit ? 'Edit Role' : 'Tambah Role'}</Text>
             {isEdit && (
-              <Badge 
-                colorScheme="blue" 
+              <Badge
+                colorScheme="blue"
                 variant="subtle"
-                fontSize="10px" 
-                px={2} 
-                py={0.5} 
+                fontSize="10px"
+                px={2}
+                py={0.5}
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
@@ -127,7 +142,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
             <VStack spacing={5} align="stretch">
               <FormControl isRequired>
                 <FormLabel
-                  fontSize="sm" 
+                  fontSize="sm"
                   fontWeight="600"
                   mb={2}
                   color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -136,25 +151,20 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 </FormLabel>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Contoh: Admin"
-                  size="md"
-                  borderRadius="md"
-                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                  _hover={{
-                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                  }}
-                  _focus={{
-                    borderColor: 'blue.500',
-                    boxShadow: '0 0 0 1px #3182ce',
-                  }}
-                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  size="lg"
+                  borderRadius="12px"
+                  focusBorderColor={
+                    colorMode === 'light' ? 'blue.500' : 'blue.300'
+                  }
                 />
               </FormControl>
 
               <FormControl>
                 <FormLabel
-                  fontSize="sm" 
+                  fontSize="sm"
                   fontWeight="600"
                   mb={2}
                   color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
@@ -163,19 +173,14 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 </FormLabel>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Deskripsi role..."
-                  size="md"
-                  borderRadius="md"
-                  borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                  _hover={{
-                    borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                  }}
-                  _focus={{
-                    borderColor: 'blue.500',
-                    boxShadow: '0 0 0 1px #3182ce',
-                  }}
-                  bg={colorMode === 'light' ? 'white' : 'gray.700'}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  size="lg"
+                  borderRadius="12px"
+                  focusBorderColor={
+                    colorMode === 'light' ? 'blue.500' : 'blue.300'
+                  }
                   rows={3}
                 />
               </FormControl>
@@ -193,7 +198,9 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 <Switch
                   id="is-default"
                   isChecked={formData.is_default}
-                  onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_default: e.target.checked })
+                  }
                   colorScheme="blue"
                 />
               </FormControl>
@@ -208,7 +215,8 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
                 >
                   <AlertIcon />
                   <Text fontSize="xs">
-                    Role ini akan digunakan sebagai default untuk user yang belum memiliki role spesifik.
+                    Role ini akan digunakan sebagai default untuk user yang
+                    belum memiliki role spesifik.
                   </Text>
                 </Alert>
               )}
@@ -222,22 +230,24 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
           pt={4}
         >
           <HStack spacing={3} width="full" justify="flex-end">
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
+            <Button
+              variant="ghost"
+              onClick={onClose}
               isDisabled={loading}
               minW="120px"
-              h="40px"
-              borderRadius="10px"
+              h="48px"
+              borderRadius="12px"
               fontSize="14px"
             >
               Batal
             </Button>
-            <PrimaryButton 
-              type="submit" 
+            <PrimaryButton
+              type="submit"
               form="role-form"
               isLoading={loading}
-              loadingText="Menyimpan..."
+              minW="120px"
+              h="48px"
+              borderRadius="12px"
             >
               {isEdit ? 'Perbarui' : 'Simpan'}
             </PrimaryButton>

@@ -36,7 +36,10 @@ class PermissionAPI {
   /**
    * Update permissions for a role (handling soft deletes)
    */
-  async updateRolePermissions(roleId: string, urlPatterns: string[]): Promise<void> {
+  async updateRolePermissions(
+    roleId: string,
+    urlPatterns: string[]
+  ): Promise<void> {
     // 1. Get all existing permissions for this role (including deleted ones)
     const { data: existingPermissions, error: fetchError } = await supabase
       .from('role_permissions')
@@ -45,30 +48,39 @@ class PermissionAPI {
 
     if (fetchError) throw fetchError;
 
-    const existingMap = new Map(existingPermissions?.map(p => [p.url_pattern, p]));
+    const existingMap = new Map(
+      existingPermissions?.map((p) => [p.url_pattern, p])
+    );
     const newSet = new Set(urlPatterns);
 
     // 2. Identify permissions to soft delete (exist in DB, active, but not in new list)
-    const toSoftDelete = existingPermissions?.filter(
-      p => !p.deleted_at && !newSet.has(p.url_pattern)
-    ).map(p => p.id) || [];
+    const toSoftDelete =
+      existingPermissions
+        ?.filter((p) => !p.deleted_at && !newSet.has(p.url_pattern))
+        .map((p) => p.id) || [];
 
     // 3. Identify permissions to restore (exist in DB, deleted, but in new list)
-    const toRestore = existingPermissions?.filter(
-      p => p.deleted_at && newSet.has(p.url_pattern)
-    ).map(p => p.id) || [];
+    const toRestore =
+      existingPermissions
+        ?.filter((p) => p.deleted_at && newSet.has(p.url_pattern))
+        .map((p) => p.id) || [];
 
     // 4. Identify permissions to insert (don't exist in DB)
-    const toInsert = urlPatterns.filter(url => !existingMap.has(url)).map(url => ({
-      role_id: roleId,
-      url_pattern: url,
-    }));
+    const toInsert = urlPatterns
+      .filter((url) => !existingMap.has(url))
+      .map((url) => ({
+        role_id: roleId,
+        url_pattern: url,
+      }));
 
     // Execute updates
     if (toSoftDelete.length > 0) {
       const { error } = await supabase
         .from('role_permissions')
-        .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .in('id', toSoftDelete);
       if (error) throw error;
     }
@@ -104,28 +116,31 @@ class PermissionAPI {
     }
 
     if (!data || data.length === 0) {
-      return { hasAccess: false, reason: 'No permissions assigned to this role' };
+      return {
+        hasAccess: false,
+        reason: 'No permissions assigned to this role',
+      };
     }
 
     // Check for wildcard (full access)
-    const hasWildcard = data.some(p => p.url_pattern === '*');
+    const hasWildcard = data.some((p) => p.url_pattern === '*');
     if (hasWildcard) {
       return { hasAccess: true };
     }
 
     // Check for exact match or pattern match
-    const hasMatch = data.some(p => {
+    const hasMatch = data.some((p) => {
       const pattern = p.url_pattern;
-      
+
       // Exact match
       if (pattern === url) return true;
-      
+
       // Wildcard pattern (e.g., /admin/*)
       if (pattern.endsWith('*')) {
         const prefix = pattern.slice(0, -1);
         return url.startsWith(prefix);
       }
-      
+
       return false;
     });
 
@@ -139,14 +154,44 @@ class PermissionAPI {
   /**
    * Get all permissions (for admin view)
    */
-  async getAllPermissions(): Promise<(RolePermission & { roles: { name: string } })[]> {
-    const { data, error } = await supabase
+  async getAllPermissions(
+    includeDeleted: boolean = false,
+    options?: { limit?: number; offset?: number }
+  ): Promise<(RolePermission & { roles: { name: string } })[]> {
+    let query = supabase
       .from('role_permissions')
       .select('*, roles(name)')
-      .order('created_at', { ascending: false });
+      .order('deleted_at', { ascending: true, nullsFirst: true })
+      .order('role_id', { ascending: true })
+      .order('url_pattern', { ascending: true });
+
+    if (!includeDeleted) {
+      query = query.is('deleted_at', null);
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options?.offset) {
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit || 10) - 1
+      );
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data as (RolePermission & { roles: { name: string } })[];
+  }
+
+  async getCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('role_permissions')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) throw error;
+    return count || 0;
   }
 
   /**
@@ -155,7 +200,10 @@ class PermissionAPI {
   async deletePermission(id: string): Promise<void> {
     const { error } = await supabase
       .from('role_permissions')
-      .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id);
 
     if (error) throw error;
@@ -176,7 +224,9 @@ class PermissionAPI {
   /**
    * Create a new permission
    */
-  async createPermission(permission: Omit<RolePermission, 'id' | 'created_at'>): Promise<void> {
+  async createPermission(
+    permission: Omit<RolePermission, 'id' | 'created_at'>
+  ): Promise<void> {
     const { error } = await supabase
       .from('role_permissions')
       .insert(permission);
@@ -187,7 +237,10 @@ class PermissionAPI {
   /**
    * Update an existing permission
    */
-  async updatePermission(id: string, updates: Partial<RolePermission>): Promise<void> {
+  async updatePermission(
+    id: string,
+    updates: Partial<RolePermission>
+  ): Promise<void> {
     const { error } = await supabase
       .from('role_permissions')
       .update({ ...updates, updated_at: new Date().toISOString() })

@@ -4,26 +4,22 @@ import {
   Text,
   useColorMode,
   HStack,
-  Icon,
   Flex,
   Box,
-  Button,
-  Badge,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-import AdminLayout from '@/components/layouts/AdminLayout';
 import { NextPageWithLayout } from '@/pages/_app';
 import PageRow from '@/components/atoms/PageRow';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import RoleTableAdvance from '../components/RoleTableAdvance';
 import RoleFormModal from '../components/RoleFormModal';
 import PermissionModal from '../components/PermissionModal';
 import { useRoles } from '../utils/hooks/useRoles';
 import { Role } from '../types/Role.types';
+import FilterTabs from '@/components/molecules/FilterTabs';
 
 const RoleListPage: NextPageWithLayout = () => {
   const {
@@ -41,7 +37,7 @@ const RoleListPage: NextPageWithLayout = () => {
   const [selectedRoleForPermission, setSelectedRoleForPermission] =
     useState<Role | null>(null);
   const [filterStatus, setFilterStatus] = useState<
-    'all' | 'active' | 'deleted'
+    'all' | 'active' | 'inactive'
   >('all');
   const { colorMode } = useColorMode();
 
@@ -86,7 +82,7 @@ const RoleListPage: NextPageWithLayout = () => {
     return roles.filter((item) => {
       if (filterStatus === 'all') return true;
       if (filterStatus === 'active') return !item.deleted_at;
-      if (filterStatus === 'deleted') return !!item.deleted_at;
+      if (filterStatus === 'inactive') return !!item.deleted_at;
       return true;
     });
   }, [roles, filterStatus]);
@@ -95,18 +91,9 @@ const RoleListPage: NextPageWithLayout = () => {
     return {
       all: roles.length,
       active: roles.filter((i) => !i.deleted_at).length,
-      deleted: roles.filter((i) => i.deleted_at).length,
+      inactive: roles.filter((i) => i.deleted_at).length,
     };
   }, [roles]);
-
-  const HeaderAction = (
-    <PrimaryButton onClick={() => handleOpenModal()} w="auto">
-      <HStack spacing={2}>
-        <MaterialIcon name="add" size={20} variant="rounded" />
-        <Text>Tambah</Text>
-      </HStack>
-    </PrimaryButton>
-  );
 
   return (
     <>
@@ -121,200 +108,44 @@ const RoleListPage: NextPageWithLayout = () => {
               {/* Header Section */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'center' }}
-                direction={{ base: 'row', md: 'row' }}
-                gap={{ base: 2, md: 4 }}
-                wrap={{ base: 'nowrap', md: 'nowrap' }}
+                align={{ base: 'center', md: 'end' }}
+                direction={{ base: 'column', md: 'row' }}
+                gap={{ base: 4, md: 4 }}
+                mb={4}
               >
-                <VStack align="start" spacing={1} flex={1} minW={0}>
+                <VStack align="start" spacing={1} flex={1} w="full">
                   <Text
-                    fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-                    fontWeight="700"
+                    fontSize={{ base: '2xl', md: '4xl' }}
+                    fontWeight="800"
                     color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    noOfLines={1}
+                    letterSpacing="tight"
+                    lineHeight="1.2"
                   >
                     Manajemen Role
                   </Text>
-                  <HStack spacing={2}>
-                    <Text
-                      fontSize={{ base: 'xs', sm: 'sm' }}
-                      color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                      noOfLines={1}
-                    >
-                      Kelola role dan hak akses pengguna
-                    </Text>
-                  </HStack>
+                  <Text
+                    fontSize={{ base: 'sm', md: 'md' }}
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola role dan hak akses pengguna aplikasi Anda
+                  </Text>
                 </VStack>
 
                 {/* User Profile & Actions */}
-                <Box flexShrink={0} display={{ base: 'none', md: 'block' }}>
+                <Box display={{ base: 'none', md: 'block' }}>
                   <UserProfileActions />
                 </Box>
               </Flex>
 
-              {/* Filter Buttons */}
-              <HStack spacing={2} pb={2}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.800'
-                        : 'gray.100'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'all' ? '600' : '500'}
-                  onClick={() => setFilterStatus('all')}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                  }}
-                >
-                  Semua
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.200'
-                          : 'gray.600'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.700'
-                          : 'gray.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.all}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.50'
-                        : 'green.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.700'
-                        : 'green.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'active' ? '600' : '500'}
-                  onClick={() => setFilterStatus('active')}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'green.50' : 'green.900',
-                  }}
-                >
-                  Aktif
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.100'
-                          : 'green.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.700'
-                          : 'green.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.active}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'deleted'
-                      ? colorMode === 'light'
-                        ? 'red.50'
-                        : 'red.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'deleted'
-                      ? colorMode === 'light'
-                        ? 'red.700'
-                        : 'red.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'deleted' ? '600' : '500'}
-                  onClick={() => setFilterStatus('deleted')}
-                  _hover={{ bg: colorMode === 'light' ? 'red.50' : 'red.900' }}
-                >
-                  Tidak Aktif
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'deleted'
-                        ? colorMode === 'light'
-                          ? 'red.100'
-                          : 'red.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'deleted'
-                        ? colorMode === 'light'
-                          ? 'red.700'
-                          : 'red.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.deleted}
-                  </Badge>
-                </Button>
-              </HStack>
+              {/* Filter Tabs */}
+              <Box pb={2}>
+                <FilterTabs
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
+                  counts={counts}
+                />
+              </Box>
 
               <RoleTableAdvance
                 initialData={filteredData}
@@ -324,7 +155,19 @@ const RoleListPage: NextPageWithLayout = () => {
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
                 onManagePermissions={handleManagePermissions}
-                headerAction={HeaderAction}
+                headerAction={
+                  <PrimaryButton
+                    onClick={() => handleOpenModal()}
+                    w="auto"
+                    borderRadius="full"
+                    px={8}
+                    h="48px"
+                  >
+                    <Text fontWeight="700" fontSize="sm">
+                      Tambah Data
+                    </Text>
+                  </PrimaryButton>
+                }
               />
             </VStack>
           </ContainerQuery>

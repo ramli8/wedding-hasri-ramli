@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import AuthAPI from '@/modules/auth/services/AuthAPI';
 import PermissionAPI from '@/modules/admin/permissions/services/PermissionAPI';
+import { Box, Spinner, Flex } from '@chakra-ui/react';
 
 const withAuth = (WrappedComponent: React.ComponentType<any>) => {
   const AuthenticatedComponent = (props: any) => {
@@ -9,6 +10,7 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
       const checkAuthAndPermission = async () => {
@@ -18,8 +20,9 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
         const authAPI = new AuthAPI();
         const permissionAPI = new PermissionAPI();
 
-        // Check authentication
+        // Check authentication first (synchronous)
         if (!authAPI.isAuthenticated()) {
+          setIsChecking(false);
           router.replace('/admin/login');
           return;
         }
@@ -29,6 +32,7 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
         // Get current user and active role
         const currentUser = authAPI.getCurrentUser();
         if (!currentUser) {
+          setIsChecking(false);
           router.replace('/admin/login');
           return;
         }
@@ -53,6 +57,7 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
         }
 
         if (!roleId) {
+          setIsChecking(false);
           router.replace('/admin/login');
           return;
         }
@@ -68,6 +73,7 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
 
           if (permissionCheck.hasAccess) {
             setHasPermission(true);
+            setIsChecking(false);
           } else {
             // Check if the role actually exists (handle stale localStorage data)
             const { data: roleExists } = await permissionAPI.supabase
@@ -86,10 +92,12 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
             }
 
             // Redirect to 403 Forbidden page
+            setIsChecking(false);
             router.replace('/403');
           }
         } catch (error) {
           console.error('Permission check error:', error);
+          setIsChecking(false);
           router.replace('/403');
         } finally {
           setIsLoading(false);
@@ -99,8 +107,28 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
       checkAuthAndPermission();
     }, [router, router.pathname]);
 
-    // Show nothing while checking auth/permission or during SSR
-    if (typeof window === 'undefined' || isLoading || !isAuthenticated || !hasPermission) {
+    // Show loading spinner while checking auth (prevents flash)
+    if (typeof window === 'undefined' || isChecking) {
+      return (
+        <Flex 
+          minH="100vh" 
+          align="center" 
+          justify="center"
+          bg="gray.50"
+          _dark={{ bg: 'gray.900' }}
+        >
+          <Spinner 
+            size="xl" 
+            color="blue.500"
+            thickness="4px"
+            speed="0.65s"
+          />
+        </Flex>
+      );
+    }
+
+    // Don't render anything if not authenticated or no permission (redirecting)
+    if (!isAuthenticated || !hasPermission) {
       return null;
     }
 

@@ -84,3 +84,34 @@ export const showConfirmationAlert = async (
     `
   });
 };
+
+export const showFullscreenAlert = async (
+  colorMode: 'light' | 'dark' = 'light'
+) => {
+  return MySwal.fire({
+    title: '📱 Fullscreen Mode',
+    text: 'Aktifkan mode fullscreen untuk pengalaman terbaik',
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Allow',
+    cancelButtonText: 'Nanti Saja',
+    reverseButtons: true,
+    background: colorMode === 'light' ? '#fff' : '#1A202C',
+    color: colorMode === 'light' ? '#1A202C' : '#fff',
+    customClass: {
+      container: 'swal-high-z-index',
+      popup: 'swal-modern-popup',
+      title: 'swal-modern-title',
+      confirmButton: 'swal-modern-confirm-button',
+      cancelButton: 'swal-modern-cancel-button',
+    },
+    buttonsStyling: false,
+    backdrop: `
+      rgba(0,0,0,0.4)
+      left top
+      no-repeat
+    `,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+  });
+};

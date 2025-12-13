@@ -1,135 +1,127 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import {
   VStack,
+  Text,
+  useColorMode,
+  HStack,
   Flex,
   Box,
-  useColorMode,
-  Text,
-  HStack,
-  Badge,
-  Button,
+  Select,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-
-import ContainerQuery from '@/components/atoms/ContainerQuery';
-import PageRow from '@/components/atoms/PageRow';
-import PermissionAPI, {
-  RolePermission,
-} from '@/modules/admin/permissions/services/PermissionAPI';
-import PermissionTableAdvance, {
-  PermissionWithRole,
-} from '@/modules/admin/permissions/components/PermissionTableAdvance';
-import PermissionFormModal from '@/modules/admin/permissions/components/PermissionFormModal';
-import AdminLayout from '@/components/layouts/AdminLayout';
 import { NextPageWithLayout } from '@/pages/_app';
-import withAuth from '@/hoc/withAuth';
-import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import {
-  showSuccessAlert,
-  showErrorAlert,
-  showConfirmationAlert,
-} from '@/utils/sweetalert';
-import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import PageRow from '@/components/atoms/PageRow';
+import ContainerQuery from '@/components/atoms/ContainerQuery';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import FilterTabs from '@/components/molecules/FilterTabs';
+import RoleFilterTabs from '@/components/molecules/RoleFilterTabs';
 
-const RolePermissionsPage = () => {
-  const [permissions, setPermissions] = useState<PermissionWithRole[]>([]);
-  const [loading, setLoading] = useState(true);
+// Import components from modules
+import PermissionTableAdvance from '@/modules/admin/permissions/components/PermissionTableAdvance';
+import PermissionFormModal from '@/modules/admin/permissions/components/PermissionFormModal';
+import { usePermissions } from '@/modules/admin/permissions/utils/hooks/usePermissions';
+import { RolePermission } from '@/modules/admin/permissions/services/PermissionAPI';
+import { useRoles } from '@/modules/admin/roles/utils/hooks/useRoles';
+
+const RolePermissionsPage: NextPageWithLayout = () => {
+  const {
+    permissions,
+    loading,
+    fetchPermissions,
+    createPermission,
+    updatePermission,
+    deletePermission,
+    restorePermission,
+  } = usePermissions();
+
+  const { roles, fetchRoles } = useRoles();
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPermission, setEditingPermission] =
-    useState<RolePermission | null>(null);
+  const [selectedPermission, setSelectedPermission] = useState<
+    RolePermission | undefined
+  >(undefined);
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'active' | 'inactive'
   >('all');
-
-  const api = new PermissionAPI();
   const { colorMode } = useColorMode();
 
-  const fetchPermissions = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAllPermissions();
-      setPermissions(data);
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPermissions();
-  }, []);
-
   const handleOpenModal = (permission?: RolePermission) => {
-    if (permission) {
-      setEditingPermission(permission);
-    } else {
-      setEditingPermission(null);
-    }
+    setSelectedPermission(permission);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingPermission(null);
+    setSelectedPermission(undefined);
+  };
+
+  const handleSaveSuccess = () => {
+    fetchPermissions();
   };
 
   const handleDelete = async (id: string) => {
-    const result = await showConfirmationAlert(
-      'Konfirmasi Hapus Data?',
-      'Data yang dihapus akan di-soft delete!',
-      'Ya, Hapus',
-      colorMode,
-      true
-    );
-
-    if (result.isConfirmed) {
-      try {
-        await api.deletePermission(id);
-        showSuccessAlert('Data berhasil dihapus', colorMode);
-        fetchPermissions();
-      } catch (error: any) {
-        showErrorAlert('Gagal menghapus', error.message, colorMode);
-      }
+    try {
+      await deletePermission(id);
+      showSuccessAlert('Data berhasil dihapus', colorMode);
+    } catch (error: any) {
+      showErrorAlert('Gagal menghapus', error.message, colorMode);
     }
   };
 
   const handleRestore = async (id: string) => {
     try {
-      await api.restorePermission(id);
+      await restorePermission(id);
       showSuccessAlert('Data berhasil dipulihkan', colorMode);
-      fetchPermissions();
     } catch (error: any) {
       showErrorAlert('Gagal memulihkan', error.message, colorMode);
     }
   };
 
-  const filteredPermissions = useMemo(() => {
-    let result = permissions;
+  const filteredData = useMemo(() => {
+    return permissions.filter((item) => {
+      // Filter by Status
+      if (filterStatus === 'active' && item.deleted_at) return false;
+      if (filterStatus === 'inactive' && !item.deleted_at) return false;
 
-    // Filter by status
-    if (filterStatus === 'active') result = result.filter((p) => !p.deleted_at);
-    if (filterStatus === 'inactive')
-      result = result.filter((p) => p.deleted_at);
+      // Filter by Role
+      if (selectedRoleId && item.role_id !== selectedRoleId) return false;
 
-    return result;
-  }, [permissions, filterStatus]);
+      return true;
+    });
+  }, [permissions, filterStatus, selectedRoleId]);
 
   const counts = useMemo(() => {
     return {
       all: permissions.length,
-      active: permissions.filter((p) => !p.deleted_at).length,
-      inactive: permissions.filter((p) => p.deleted_at).length,
+      active: permissions.filter((i) => !i.deleted_at).length,
+      inactive: permissions.filter((i) => i.deleted_at).length,
     };
   }, [permissions]);
+
+  const roleTabs = useMemo(() => {
+    return roles
+      .filter((r) => !r.deleted_at)
+      .map((role) => ({
+        id: role.id,
+        label: role.name,
+        count: permissions.filter(
+          (p) => p.role_id === role.id && 
+          (filterStatus === 'all' || 
+           (filterStatus === 'active' && !p.deleted_at) ||
+           (filterStatus === 'inactive' && p.deleted_at))
+        ).length,
+      }));
+  }, [roles, permissions, filterStatus]);
 
   return (
     <>
       <Head>
-        <title>
-          Manajemen Permissions • {process.env.NEXT_PUBLIC_APP_NAME_FULL}
-        </title>
+        <title>Manajemen Permissions</title>
       </Head>
 
       <Box p={4}>
@@ -139,216 +131,73 @@ const RolePermissionsPage = () => {
               {/* Header Section */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'center' }}
-                direction={{ base: 'row', md: 'row' }}
-                gap={{ base: 2, md: 4 }}
-                wrap={{ base: 'nowrap', md: 'nowrap' }}
+                align={{ base: 'center', md: 'end' }}
+                direction={{ base: 'column', md: 'row' }}
+                gap={{ base: 4, md: 4 }}
+                mb={4}
               >
-                <VStack align="start" spacing={1} flex={1} minW={0}>
+                <VStack align="start" spacing={1} flex={1} w="full">
                   <Text
-                    fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-                    fontWeight="700"
+                    fontSize={{ base: '2xl', md: '4xl' }}
+                    fontWeight="800"
                     color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    noOfLines={1}
+                    letterSpacing="tight"
+                    lineHeight="1.2"
                   >
                     Manajemen Permissions
                   </Text>
-                  <HStack spacing={2}>
-                    <Text
-                      fontSize={{ base: 'xs', sm: 'sm' }}
-                      color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                      noOfLines={1}
-                    >
-                      Daftar semua permissions
-                    </Text>
-                  </HStack>
+                  <Text
+                    fontSize={{ base: 'sm', md: 'md' }}
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola hak akses URL untuk setiap role secara detail
+                  </Text>
                 </VStack>
 
                 {/* User Profile & Actions */}
-                <Box flexShrink={0} display={{ base: 'none', md: 'block' }}>
+                <Box display={{ base: 'none', md: 'block' }}>
                   <UserProfileActions />
                 </Box>
               </Flex>
 
-              {/* Filters Toolbar */}
-              <HStack spacing={2} overflowX="auto" pb={2}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setFilterStatus('all')}
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.800'
-                        : 'gray.100'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'all' ? '600' : '500'}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                  }}
-                >
-                  Semua
-                  <Badge
-                    ml={2}
-                    bg={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.200'
-                          : 'gray.600'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.700'
-                          : 'gray.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                  >
-                    {counts.all}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setFilterStatus('active')}
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.50'
-                        : 'green.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.700'
-                        : 'green.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'active' ? '600' : '500'}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'green.50' : 'green.900',
-                  }}
-                >
-                  Aktif
-                  <Badge
-                    ml={2}
-                    bg={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.100'
-                          : 'green.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.700'
-                          : 'green.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                  >
-                    {counts.active}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setFilterStatus('inactive')}
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'inactive'
-                      ? colorMode === 'light'
-                        ? 'red.50'
-                        : 'red.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'inactive'
-                      ? colorMode === 'light'
-                        ? 'red.700'
-                        : 'red.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'inactive' ? '600' : '500'}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'red.50' : 'red.900',
-                  }}
-                >
-                  Tidak Aktif
-                  <Badge
-                    ml={2}
-                    bg={
-                      filterStatus === 'inactive'
-                        ? colorMode === 'light'
-                          ? 'red.100'
-                          : 'red.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'inactive'
-                        ? colorMode === 'light'
-                          ? 'red.700'
-                          : 'red.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                  >
-                    {counts.inactive}
-                  </Badge>
-                </Button>
-              </HStack>
+              {/* Filter Tabs */}
+              <VStack align="stretch" spacing={4} pb={4}>
+                <Box>
+                  <FilterTabs
+                    filterStatus={filterStatus}
+                    setFilterStatus={setFilterStatus}
+                    counts={counts}
+                  />
+                </Box>
 
-              {/* Table Section */}
+                <Box>
+                  <RoleFilterTabs
+                    selectedRoleId={selectedRoleId}
+                    setSelectedRoleId={setSelectedRoleId}
+                    roles={roleTabs}
+                  />
+                </Box>
+              </VStack>
+
               <PermissionTableAdvance
-                initialData={filteredPermissions}
+                initialData={filteredData}
                 loading={loading}
+                onEdit={handleOpenModal}
                 onDelete={handleDelete}
                 onRestore={handleRestore}
-                onEdit={handleOpenModal}
+                onAddNew={() => handleOpenModal()}
                 headerAction={
-                  <PrimaryButton onClick={() => handleOpenModal()} w="auto">
-                    <HStack spacing={2} justify="center">
-                      <MaterialIcon name="add" size={20} />
-                      <Text>Tambah</Text>
-                    </HStack>
+                  <PrimaryButton
+                    onClick={() => handleOpenModal()}
+                    w="auto"
+                    borderRadius="full"
+                    px={8}
+                    h="48px"
+                  >
+                    <Text fontWeight="700" fontSize="sm">
+                      Tambah Data
+                    </Text>
                   </PrimaryButton>
                 }
               />
@@ -360,19 +209,32 @@ const RolePermissionsPage = () => {
       <PermissionFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onSuccess={fetchPermissions}
-        initialData={editingPermission}
+        permission={selectedPermission}
+        onSave={async (data) => {
+          try {
+            await createPermission(data);
+            handleSaveSuccess();
+          } catch (error) {
+            console.error('Failed to save permission:', error);
+            throw error;
+          }
+        }}
+        onUpdate={async (id, data) => {
+          try {
+            await updatePermission(id, data);
+            handleSaveSuccess();
+          } catch (error) {
+            console.error('Failed to update permission:', error);
+            throw error;
+          }
+        }}
       />
     </>
   );
 };
 
-const ProtectedRolePermissionsPage = withAuth(RolePermissionsPage);
-
-(ProtectedRolePermissionsPage as any).getLayout = function getLayout(
-  page: React.ReactElement
-) {
+RolePermissionsPage.getLayout = function getLayout(page: React.ReactElement) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default ProtectedRolePermissionsPage;
+export default RolePermissionsPage;

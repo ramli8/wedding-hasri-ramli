@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext, useEffect } from 'react';
 import {
   Box,
   IconButton,
   HStack,
   Text,
+  Icon,
   useColorMode,
   VStack,
   Badge,
@@ -11,286 +12,86 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Icon,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Button,
+  Tooltip,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
-import TableAdvance from '@/components/organisms/TableAdvance';
-import { RolePermission } from '../../permissions/services/PermissionAPI';
+import { ColumnFiltersState } from '@tanstack/react-table';
+import { RolePermission } from '../services/PermissionAPI';
+
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import AppSettingContext from '@/providers/AppSettingProvider';
-import { useContext } from 'react';
-
-export type PermissionWithRole = RolePermission & { roles: { name: string } };
+import { showConfirmationAlert } from '@/utils/sweetalert';
 
 interface PermissionTableAdvanceProps {
-  initialData?: PermissionWithRole[];
+  initialData?: (RolePermission & { roles: { name: string } })[];
   loading?: boolean;
+  onEdit: (permission: RolePermission) => void;
   onDelete: (id: string) => void;
   onRestore: (id: string) => void;
-  onEdit: (permission: PermissionWithRole) => void;
+  onAddNew: () => void;
   headerAction?: React.ReactNode;
 }
 
 const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
   initialData = [],
   loading = false,
+  onEdit,
   onDelete,
   onRestore,
-  onEdit,
+  onAddNew,
   headerAction,
 }) => {
   const { colorMode } = useColorMode();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const { colorPref } = useContext(AppSettingContext);
 
-  // handleDelete removed as it is handled by parent component
+  const handleDelete = async (id: string) => {
+    const result = await showConfirmationAlert(
+      'Konfirmasi Hapus Data?',
+      'Data yang dihapus akan di-soft delete!',
+      'Ya, Hapus!',
+      colorMode,
+      true
+    );
 
-  const columns = useMemo<ColumnDef<PermissionWithRole, any>[]>(
-    () => [
-      {
-        accessorKey: 'roles.name',
-        header: 'Role',
-        cell: (info) => (
-          <Badge
-            px={3}
-            py={1}
-            borderRadius="full"
-            fontSize="xs"
-            fontWeight="600"
-            textTransform="none"
-            bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
-            color={colorMode === 'light' ? 'blue.700' : 'blue.200'}
-            border="1px solid"
-            borderColor={colorMode === 'light' ? 'blue.200' : 'blue.700'}
-          >
-            {info.getValue()}
-          </Badge>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'url_pattern',
-        header: 'URL Pattern',
-        cell: (info) => (
-          <Box
-            px={3}
-            py={1.5}
-            bg={colorMode === 'light' ? 'gray.50' : 'whiteAlpha.100'}
-            borderRadius="lg"
-            display="inline-block"
-            border="1px solid"
-            borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200'}
-            transition="all 0.2s"
-            _hover={{
-              borderColor:
-                colorMode === 'light' ? 'gray.300' : 'whiteAlpha.400',
-              bg: colorMode === 'light' ? 'white' : 'whiteAlpha.200',
-            }}
-          >
-            <Text
-              fontFamily="mono"
-              fontSize="xs"
-              fontWeight="500"
-              color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
-              letterSpacing="tight"
-            >
-              {info.getValue()}
-            </Text>
-          </Box>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'description',
-        header: 'Deskripsi',
-        cell: (info) => (
-          <Text
-            fontSize="sm"
-            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-            noOfLines={2}
-          >
-            {info.getValue() || (
-              <Text as="span" fontStyle="italic" color="gray.400">
-                Tidak ada deskripsi
-              </Text>
-            )}
-          </Text>
-        ),
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'deleted_at',
-        header: 'Status',
-        cell: (info) => {
-          const isDeleted = info.getValue();
-          return (
-            <Badge
-              px={3}
-              py={1}
-              borderRadius="full"
-              fontSize="xs"
-              fontWeight="600"
-              textTransform="none"
-              bg={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.100'
-                    : 'gray.700'
-                  : colorMode === 'light'
-                  ? 'green.50'
-                  : 'green.900'
-              }
-              color={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.600'
-                    : 'gray.400'
-                  : colorMode === 'light'
-                  ? 'green.700'
-                  : 'green.200'
-              }
-              border="1px solid"
-              borderColor={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.300'
-                    : 'gray.600'
-                  : colorMode === 'light'
-                  ? 'green.200'
-                  : 'green.700'
-              }
-            >
-              {isDeleted ? 'Dihapus' : 'Aktif'}
-            </Badge>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        id: 'actions',
-        header: 'Aksi',
-        cell: (info) => {
-          const permission = info.row.original;
-          const isDeleted = permission.deleted_at;
+    if (result.isConfirmed) {
+      onDelete(id);
+    }
+  };
 
-          return (
-            <Menu>
-              <MenuButton
-                as={Button}
-                size="sm"
-                variant="outline"
-                rightIcon={
-                  <MaterialIcon
-                    name="expand_more"
-                    size={16}
-                    variant="rounded"
-                  />
-                }
-                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
-                bg={colorMode === 'light' ? 'white' : 'gray.800'}
-                borderColor={colorMode === 'light' ? 'gray.300' : 'gray.600'}
-                fontWeight="500"
-                fontSize="sm"
-                _hover={{
-                  bg: colorMode === 'light' ? 'gray.50' : 'gray.700',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                _active={{
-                  bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
-                }}
-                borderRadius="8px"
-                px={3}
-                h="32px"
-              >
-                Aksi
-              </MenuButton>
-              <MenuList
-                borderRadius="10px"
-                border="1px solid"
-                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-                boxShadow="lg"
-                py={1}
-              >
-                {!isDeleted ? (
-                  <>
-                    <MenuItem
-                      icon={
-                        <MaterialIcon name="edit" size={18} variant="rounded" />
-                      }
-                      onClick={() => onEdit(permission)}
-                      fontSize="sm"
-                      borderRadius="6px"
-                      mx={1}
-                      _hover={{
-                        bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                      }}
-                    >
-                      Edit
-                    </MenuItem>
-                    <MenuItem
-                      icon={
-                        <MaterialIcon
-                          name="delete"
-                          size={18}
-                          variant="rounded"
-                        />
-                      }
-                      onClick={() => onDelete(permission.id)}
-                      fontSize="sm"
-                      color={colorMode === 'light' ? 'red.600' : 'red.400'}
-                      borderRadius="6px"
-                      mx={1}
-                      _hover={{
-                        bg: colorMode === 'light' ? 'red.50' : 'red.900',
-                      }}
-                    >
-                      Hapus
-                    </MenuItem>
-                  </>
-                ) : (
-                  <MenuItem
-                    icon={
-                      <MaterialIcon
-                        name="restore_from_trash"
-                        size={18}
-                        variant="rounded"
-                      />
-                    }
-                    onClick={() => onRestore(permission.id)}
-                    fontSize="sm"
-                    color={colorMode === 'light' ? 'green.600' : 'green.400'}
-                    borderRadius="6px"
-                    mx={1}
-                    _hover={{
-                      bg: colorMode === 'light' ? 'green.50' : 'green.900',
-                    }}
-                  >
-                    Pulihkan
-                  </MenuItem>
-                )}
-              </MenuList>
-            </Menu>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-    ],
-    [colorMode, onDelete, onRestore, onEdit]
-  );
+  // Filtering logic
+  const globalFilterValue =
+    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
 
-  if (loading) {
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [globalFilterValue]);
+
+  const filteredData = useMemo(() => {
+    if (!globalFilterValue) return initialData;
+    const lowerFilter = globalFilterValue.toLowerCase();
+    return initialData.filter(
+      (item) =>
+        item.url_pattern.toLowerCase().includes(lowerFilter) ||
+        item.roles?.name?.toLowerCase().includes(lowerFilter) ||
+        item.description?.toLowerCase().includes(lowerFilter)
+    );
+  }, [initialData, globalFilterValue]);
+
+  const currentData = useMemo(() => {
+    return filteredData.slice(0, visibleCount);
+  }, [filteredData, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 12);
+  };
+
+  if (loading && initialData.length === 0) {
     return (
       <Box textAlign="center" py={10}>
         <Text>Loading...</Text>
@@ -304,7 +105,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
         pos="relative"
         bg={colorMode === 'light' ? 'white' : '#222222'}
         borderRadius="24px"
-        p="32px"
+        p={{ base: 4, md: '32px' }}
         _before={{
           content: '""',
           pos: 'absolute',
@@ -317,6 +118,7 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
           opacity: colorMode == 'light' ? '0.91' : '0.51',
           filter: 'blur(86.985px)',
           borderRadius: '24px',
+          display: { base: 'none', md: 'block' },
         }}
       >
         <Flex
@@ -326,7 +128,6 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
           direction={{ base: 'column', md: 'row' }}
           gap={3}
         >
-          {/* Add Button on Left */}
           {headerAction && (
             <Box
               flexShrink={0}
@@ -341,54 +142,208 @@ const PermissionTableAdvance: React.FC<PermissionTableAdvanceProps> = ({
           {/* Search Input on Right */}
           <InputGroup
             size="md"
-            maxW={{ base: 'full', md: '350px' }}
+            maxW={{ base: 'full', md: '400px' }}
             w={{ base: 'full', md: 'auto' }}
           >
-            <InputLeftElement pointerEvents="none">
-              <Icon as={FaSearch} color="gray.400" />
+            <InputLeftElement h="48px">
+              <Icon as={FaSearch} color="gray.400" boxSize={4} />
             </InputLeftElement>
             <Input
-              value={
-                (columnFilters.find((f) => f.id === 'global')
-                  ?.value as string) ?? ''
-              }
+              value={globalFilterValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
                 setColumnFilters(value ? [{ id: 'global', value }] : []);
               }}
-              placeholder="Cari data..."
-              borderRadius="10px"
-              bg={colorMode === 'light' ? 'white' : 'gray.800'}
-              border="1px solid"
-              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-              _hover={{
-                borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.600`
-                    : `${colorPref}Dim.600`,
-              }}
-              _focus={{
-                borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.600`
-                    : `${colorPref}Dim.600`,
-                outline: 'none',
-              }}
+              h="48px"
+              variant="filled"
+              borderRadius="full"
+              focusBorderColor={
+                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+              }
               fontSize="sm"
               fontWeight="500"
-              transition="all 0.25s"
-              h="40px"
+              placeholder=""
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.800'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
             />
           </InputGroup>
         </Flex>
 
-        <TableAdvance
-          columns={columns}
-          data={initialData}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          hideSearch
-        />
+        {/* Responsive Grid Layout */}
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={4}>
+          {currentData.map((perm) => {
+            const isDeleted = perm.deleted_at;
+            return (
+              <Box
+                key={perm.id}
+                p={5}
+                borderRadius="2xl"
+                borderWidth="1px"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                shadow="sm"
+                transition="all 0.2s"
+                _hover={{
+                  shadow: 'md',
+                  transform: 'translateY(-2px)',
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+              >
+                <VStack align="start" spacing={3} mb={4}>
+                  <Box width="full">
+                    <HStack justify="space-between" align="start">
+                      <Badge
+                        colorScheme="purple"
+                        variant="subtle"
+                        fontSize="xs"
+                        px={2}
+                        py={0.5}
+                        borderRadius="full"
+                        mb={2}
+                      >
+                        {perm.roles?.name || 'Unknown Role'}
+                      </Badge>
+                      <Badge
+                        px={2}
+                        py={0.5}
+                        borderRadius="full"
+                        fontSize="xs"
+                        colorScheme={isDeleted ? 'red' : 'green'}
+                        variant="subtle"
+                      >
+                        {isDeleted ? 'Dihapus' : 'Aktif'}
+                      </Badge>
+                    </HStack>
+                    <Text
+                      fontFamily="monospace"
+                      fontSize="sm"
+                      fontWeight="600"
+                      bg={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                      p={1.5}
+                      borderRadius="md"
+                      color={colorMode === 'light' ? 'gray.800' : 'gray.200'}
+                      wordBreak="break-all"
+                    >
+                      {perm.url_pattern}
+                    </Text>
+                  </Box>
+
+                  <Text
+                    fontSize="xs"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    noOfLines={2}
+                  >
+                    {perm.description || 'Tidak ada deskripsi'}
+                  </Text>
+                </VStack>
+
+                <HStack
+                  justify="flex-end"
+                  spacing={2}
+                  mt="auto"
+                  pt={4}
+                  borderTopWidth="1px"
+                  borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+                >
+                  {!isDeleted ? (
+                    <>
+                      <Tooltip label="Edit" hasArrow>
+                        <IconButton
+                          aria-label="Edit"
+                          icon={<MaterialIcon name="edit" size={18} />}
+                          size="sm"
+                          borderRadius="full"
+                          variant="ghost"
+                          onClick={() => onEdit(perm)}
+                          bg={
+                            colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
+                          }
+                          color={
+                            colorMode === 'light' ? 'blue.600' : 'blue.300'
+                          }
+                          _hover={{
+                            bg:
+                              colorMode === 'light'
+                                ? 'blue.100'
+                                : 'whiteAlpha.300',
+                          }}
+                        />
+                      </Tooltip>
+                      <Tooltip label="Hapus" hasArrow>
+                        <IconButton
+                          aria-label="Hapus"
+                          icon={<MaterialIcon name="delete" size={18} />}
+                          size="sm"
+                          borderRadius="full"
+                          variant="ghost"
+                          onClick={() => handleDelete(perm.id)}
+                          bg={
+                            colorMode === 'light' ? 'red.50' : 'whiteAlpha.200'
+                          }
+                          color={colorMode === 'light' ? 'red.600' : 'red.300'}
+                          _hover={{
+                            bg:
+                              colorMode === 'light'
+                                ? 'red.100'
+                                : 'whiteAlpha.300',
+                          }}
+                        />
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Tooltip label="Pulihkan" hasArrow>
+                      <IconButton
+                        aria-label="Restore"
+                        icon={
+                          <MaterialIcon name="restore_from_trash" size={18} />
+                        }
+                        size="sm"
+                        borderRadius="full"
+                        variant="ghost"
+                        onClick={() => onRestore(perm.id)}
+                        bg={
+                          colorMode === 'light' ? 'green.50' : 'whiteAlpha.200'
+                        }
+                        color={
+                          colorMode === 'light' ? 'green.600' : 'green.300'
+                        }
+                        _hover={{
+                          bg:
+                            colorMode === 'light'
+                              ? 'green.100'
+                              : 'whiteAlpha.300',
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+              </Box>
+            );
+          })}
+        </SimpleGrid>
+
+        {/* Load More Button */}
+        {visibleCount < filteredData.length && (
+          <Flex justify="center" mt={8}>
+            <PrimaryButton onClick={handleLoadMore}>
+              Muat Lebih Banyak
+            </PrimaryButton>
+          </Flex>
+        )}
+
+        {filteredData.length === 0 && (
+          <Box textAlign="center" py={10}>
+            <Text color="gray.500" fontSize="lg">
+              Tidak ada data ditemukan
+            </Text>
+          </Box>
+        )}
       </Box>
     </Box>
   );

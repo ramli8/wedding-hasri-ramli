@@ -27,6 +27,7 @@ import UserProfileActions from '@/components/molecules/UserProfileActions';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import FilterTabs from '@/components/molecules/FilterTabs';
 
 const KategoriTamuListPage: NextPageWithLayout = () => {
   const { colorMode } = useColorMode();
@@ -115,200 +116,45 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
               {/* Header Section */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'center' }}
-                direction={{ base: 'row', md: 'row' }}
-                gap={{ base: 2, md: 4 }}
-                wrap={{ base: 'nowrap', md: 'nowrap' }}
+                align={{ base: 'center', md: 'end' }}
+                direction={{ base: 'column', md: 'row' }}
+                gap={{ base: 4, md: 4 }}
+                mb={4}
               >
-                <VStack align="start" spacing={1} flex={1} minW={0}>
+                <VStack align="start" spacing={1} flex={1} w="full">
                   <Text
-                    fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-                    fontWeight="700"
+                    fontSize={{ base: '2xl', md: '4xl' }}
+                    fontWeight="800"
                     color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    noOfLines={1}
+                    letterSpacing="tight"
+                    lineHeight="1.2"
                   >
                     Manajemen Kategori Tamu
                   </Text>
-                  <HStack spacing={2}>
-                    <Text
-                      fontSize={{ base: 'xs', sm: 'sm' }}
-                      color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                      noOfLines={1}
-                    >
-                      Kelola daftar kategori tamu undangan pernikahan Anda
-                    </Text>
-                  </HStack>
+                  <Text
+                    fontSize={{ base: 'sm', md: 'md' }}
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola daftar kategori tamu undangan pernikahan Anda dengan
+                    mudah
+                  </Text>
                 </VStack>
 
                 {/* User Profile & Actions */}
-                <Box flexShrink={0} display={{ base: 'none', md: 'block' }}>
+                <Box display={{ base: 'none', md: 'block' }}>
                   <UserProfileActions />
                 </Box>
               </Flex>
 
-              {/* Filter Buttons */}
-              <HStack spacing={2} pb={2}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'all'
-                      ? colorMode === 'light'
-                        ? 'gray.800'
-                        : 'gray.100'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'all' ? '600' : '500'}
-                  onClick={() => setFilterStatus('all')}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-                  }}
-                >
-                  Semua
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.200'
-                          : 'gray.600'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'all'
-                        ? colorMode === 'light'
-                          ? 'gray.700'
-                          : 'gray.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.all}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.50'
-                        : 'green.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'active'
-                      ? colorMode === 'light'
-                        ? 'green.700'
-                        : 'green.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'active' ? '600' : '500'}
-                  onClick={() => setFilterStatus('active')}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'green.50' : 'green.900',
-                  }}
-                >
-                  Aktif
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.100'
-                          : 'green.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'active'
-                        ? colorMode === 'light'
-                          ? 'green.700'
-                          : 'green.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.active}
-                  </Badge>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  borderRadius="10px"
-                  bg={
-                    filterStatus === 'inactive'
-                      ? colorMode === 'light'
-                        ? 'red.50'
-                        : 'red.900'
-                      : 'transparent'
-                  }
-                  color={
-                    filterStatus === 'inactive'
-                      ? colorMode === 'light'
-                        ? 'red.700'
-                        : 'red.200'
-                      : colorMode === 'light'
-                      ? 'gray.600'
-                      : 'gray.400'
-                  }
-                  fontWeight={filterStatus === 'inactive' ? '600' : '500'}
-                  onClick={() => setFilterStatus('inactive')}
-                  _hover={{ bg: colorMode === 'light' ? 'red.50' : 'red.900' }}
-                >
-                  Tidak Aktif
-                  <Badge
-                    ml={2}
-                    borderRadius="full"
-                    fontSize="xs"
-                    px={2}
-                    bg={
-                      filterStatus === 'inactive'
-                        ? colorMode === 'light'
-                          ? 'red.100'
-                          : 'red.800'
-                        : colorMode === 'light'
-                        ? 'gray.100'
-                        : 'gray.700'
-                    }
-                    color={
-                      filterStatus === 'inactive'
-                        ? colorMode === 'light'
-                          ? 'red.700'
-                          : 'red.200'
-                        : colorMode === 'light'
-                        ? 'gray.600'
-                        : 'gray.400'
-                    }
-                  >
-                    {counts.inactive}
-                  </Badge>
-                </Button>
-              </HStack>
+              {/* Filter Tabs */}
+              <Box pb={2}>
+                <FilterTabs
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
+                  counts={counts}
+                />
+              </Box>
 
               {/* Table */}
               <KategoriTableAdvance
@@ -319,11 +165,16 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
                 onRestore={handleRestore}
                 onAddNew={handleAddNew}
                 headerAction={
-                  <PrimaryButton onClick={handleAddNew} w="auto">
-                    <HStack spacing={2}>
-                      <MaterialIcon name="add" size={20} variant="rounded" />
-                      <Text>Tambah</Text>
-                    </HStack>
+                  <PrimaryButton
+                    onClick={handleAddNew}
+                    w="auto"
+                    borderRadius="full"
+                    px={8}
+                    h="48px"
+                  >
+                    <Text fontWeight="700" fontSize="sm">
+                      Tambah Data
+                    </Text>
                   </PrimaryButton>
                 }
               />

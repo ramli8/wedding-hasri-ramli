@@ -7,30 +7,71 @@ export const useRoles = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [api] = useState(() => new RoleAPI());
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchRoles = useCallback(async () => {
+  const fetchRoles = useCallback(
+    async (append: boolean = false) => {
+      try {
+        setLoading(true);
+        // Fetch all including deleted for filtering in UI
+        // Strategy: Fetch all at once for seamless client-side filtering/search
+        const data = await api.getRoles(true);
+
+        if (append) {
+          setRoles((prev) => [...prev, ...data]);
+        } else {
+          setRoles(data);
+        }
+
+        setTotalCount(data.length);
+        setHasMore(false); // Since we fetch all, no more to load from server
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching roles:', err);
+        setError(err.message || 'Gagal mengambil data role');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loading) return;
+
     try {
       setLoading(true);
-      const data = await api.getRoles(true); // Fetch all including deleted for filtering in UI
-      setRoles(data);
+      const offset = roles.length;
+      const limit = 12;
+
+      const data = await api.getRoles(true, { limit, offset });
+
+      if (data.length < limit) {
+        setHasMore(false);
+      }
+
+      setRoles((prev) => [...prev, ...data]);
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching roles:', err);
-      setError(err.message || 'Gagal mengambil data role');
+      console.error('Error loading more roles:', err);
+      setError(err.message || 'Gagal memuat data');
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, roles.length, hasMore, loading]);
 
   useEffect(() => {
     fetchRoles();
-  }, [fetchRoles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createRole = async (input: CreateRoleInput) => {
     try {
       setLoading(true);
       const newRole = await api.createRole(input);
       setRoles((prev) => [newRole, ...prev]);
+      setTotalCount((prev) => prev + 1);
       setError(null);
       return newRole;
     } catch (err: any) {
@@ -106,7 +147,10 @@ export const useRoles = () => {
     roles,
     loading,
     error,
+    hasMore,
+    totalCount,
     fetchRoles,
+    loadMore,
     createRole,
     updateRole,
     deleteRole,

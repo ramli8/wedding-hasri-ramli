@@ -115,25 +115,17 @@ const Sidebar = () => {
     <>
       <Flex
         className="sidebar"
-        w={{ base: '300px', m: isNavbarOpen ? '300px' : '108px', d: '280px' }}
-        minW={{
-          base: '300px',
-          m: isNavbarOpen ? '300px' : '108px',
-          d: '280px',
-        }}
+        w="280px"
+        minW="280px"
         pos="fixed"
         flexShrink="0"
-        zIndex="999" // Increased zIndex to ensure it stays on top of the mobile header (zIndex 100)
+        zIndex="999"
         display="flex"
         h="100vh"
-        padding={{ base: '96px 0 0px', m: '140px 0 0px' }} // Adjusted padding for mobile to account for compact header
+        padding="140px 0 0px"
         bg={colorMode == 'light' ? 'gray.50' : '#222222'}
         borderRight="1px solid"
         borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
-        transform={{
-          base: isNavbarOpen ? 'translateX(0%)' : 'translateX(-100%)',
-          m: 'unset',
-        }}
         transition="transform .25s, width .25s"
       >
         <Box
@@ -152,39 +144,12 @@ const Sidebar = () => {
           }}
           borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
         >
-          <Flex
-            justifyContent="center"
-            alignItems="center"
-            bg="none"
-            mt="5px"
-            visibility={{ base: 'visible', m: 'hidden', d: 'visible' }}
-          >
-            <Button
-              className="sidebar__close"
-              display={{ base: 'inline-block', m: 'none' }}
-              top="50%"
-              transform="translateY(-50%)"
-              right="24px"
-              pos="absolute"
-              fontSize="0"
-              onClick={navbarToggler}
-              bg="none"
-              _hover={{
-                background: 'none',
-              }}
-            >
-              <CloseIconMade
-                fontSize="16px"
-                color={colorMode == 'light' ? '#141414' : '#fff'}
-              ></CloseIconMade>
-            </Button>
-          </Flex>
+
           <Flex
             justifyContent="center"
             alignItems="center"
             maxW="184px"
             mt="8px"
-            visibility={{ base: 'visible' }}
           >
             <Box>
               <Center>
@@ -241,11 +206,7 @@ const Sidebar = () => {
         >
           <Box
             className="sidebar__inner"
-            width={{
-              base: '256px',
-              m: isNavbarOpen ? '256px' : '64px',
-              d: '240px',
-            }}
+            width="240px"
             overflow="hidden"
             transition="width .25s"
           >
@@ -278,19 +239,12 @@ const Sidebar = () => {
                     }}
                   >
                     <Box
-                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
-                      justifyContent={{
-                        base: 'start',
-                        m: 'center',
-                        d: 'flex-start',
-                      }}
-                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
-                      pl={{ base: '20px', m: '0px', d: '20px' }}
+                      pl="20px"
                       color="#808191"
                       transition=".25s"
                     >
@@ -336,19 +290,12 @@ const Sidebar = () => {
                     }}
                   >
                     <Box
-                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
-                      justifyContent={{
-                        base: 'start',
-                        m: 'center',
-                        d: 'flex-start',
-                      }}
-                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
-                      pl={{ base: '20px', m: '0px', d: '20px' }}
+                      pl="20px"
                       color="#808191"
                       transition=".25s"
                     >
@@ -394,19 +341,12 @@ const Sidebar = () => {
                     }}
                   >
                     <Box
-                      display={{ base: 'flex', d: 'box' }}
                       className="sidebar__caption"
                       fontSize="12px"
                       fontWeight="500"
                       lineHeight="1.33333333"
                       mb="16px"
-                      justifyContent={{
-                        base: 'start',
-                        m: 'center',
-                        d: 'flex-start',
-                      }}
-                      alignItems={{ base: 'start', m: 'center', d: 'start' }}
-                      pl={{ base: '20px', m: '0px', d: '20px' }}
+                      pl="20px"
                       color="#808191"
                       transition=".25s"
                     >
@@ -428,15 +368,6 @@ const Sidebar = () => {
           </Box>
         </Box>
       </Flex>
-      <Box
-        display={{ base: isNavbarOpen ? 'flex' : 'none', m: 'none' }}
-        pos="absolute"
-        h="full"
-        w="100%"
-        bg="none"
-        zIndex="15"
-        onClick={navbarToggler}
-      ></Box>
     </>
   );
 };

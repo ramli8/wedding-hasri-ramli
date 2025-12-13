@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, { useMemo, useState, useContext, useEffect } from 'react';
 import {
   Box,
   IconButton,
@@ -13,11 +13,13 @@ import {
   InputGroup,
   InputLeftElement,
   Tooltip,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
+import { ColumnFiltersState } from '@tanstack/react-table';
 import { KategoriTamu } from '../types/KategoriTamu.types';
-import TableAdvance from '@/components/organisms/TableAdvance';
+
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import { showConfirmationAlert } from '@/utils/sweetalert';
@@ -59,141 +61,31 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
     }
   };
 
-  const columns = useMemo<ColumnDef<KategoriTamu, any>[]>(
-    () => [
-      {
-        accessorKey: 'nama',
-        header: 'Nama Kategori',
-        cell: (info) => (
-          <Badge
-            px={3}
-            py={1}
-            borderRadius="full"
-            fontSize="xs"
-            fontWeight="600"
-            textTransform="none"
-            bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
-            color={colorMode === 'light' ? 'blue.700' : 'blue.200'}
-            border="1px solid"
-            borderColor={colorMode === 'light' ? 'blue.200' : 'blue.700'}
-          >
-            {info.getValue()}
-          </Badge>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'deleted_at',
-        header: 'Status',
-        cell: (info) => {
-          const isDeleted = info.getValue();
-          return (
-            <Badge
-              px={3}
-              py={1}
-              borderRadius="full"
-              fontSize="xs"
-              fontWeight="600"
-              textTransform="none"
-              bg={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.100'
-                    : 'gray.700'
-                  : colorMode === 'light'
-                  ? 'green.50'
-                  : 'green.900'
-              }
-              color={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.600'
-                    : 'gray.400'
-                  : colorMode === 'light'
-                  ? 'green.700'
-                  : 'green.200'
-              }
-              border="1px solid"
-              borderColor={
-                isDeleted
-                  ? colorMode === 'light'
-                    ? 'gray.300'
-                    : 'gray.600'
-                  : colorMode === 'light'
-                  ? 'green.200'
-                  : 'green.700'
-              }
-            >
-              {isDeleted ? 'Dihapus' : 'Aktif'}
-            </Badge>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        id: 'actions',
-        header: 'Aksi',
-        cell: (info) => {
-          const kategori = info.row.original;
-          const isDeleted = kategori.deleted_at;
+  // Filtering logic
+  const globalFilterValue =
+    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
 
-          return (
-            <HStack spacing={1} justify="flex-end">
-              {!isDeleted ? (
-                <>
-                  <Tooltip label="Edit" placement="top" hasArrow>
-                    <IconButton
-                      aria-label="Edit"
-                      icon={<MaterialIcon name="edit" size={18} />}
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="blue"
-                      onClick={() => onEdit(kategori)}
-                      _hover={{
-                        bg: colorMode === 'light' ? 'blue.50' : 'blue.900',
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip label="Hapus" placement="top" hasArrow>
-                    <IconButton
-                      aria-label="Hapus"
-                      icon={<MaterialIcon name="delete" size={18} />}
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      onClick={() => handleDelete(kategori.id)}
-                      _hover={{
-                        bg: colorMode === 'light' ? 'red.50' : 'red.900',
-                      }}
-                    />
-                  </Tooltip>
-                </>
-              ) : (
-                <Tooltip label="Restore" placement="top" hasArrow>
-                  <IconButton
-                    aria-label="Restore"
-                    icon={<MaterialIcon name="restore_from_trash" size={18} />}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="green"
-                    onClick={() => onRestore(kategori.id)}
-                    _hover={{
-                      bg: colorMode === 'light' ? 'green.50' : 'green.900',
-                    }}
-                  />
-                </Tooltip>
-              )}
-            </HStack>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-    ],
-    [colorMode, onEdit, onDelete, onRestore]
-  );
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [globalFilterValue]);
+
+  const filteredData = useMemo(() => {
+    if (!globalFilterValue) return initialData;
+    return initialData.filter((item) =>
+      item.nama.toLowerCase().includes(globalFilterValue.toLowerCase())
+    );
+  }, [initialData, globalFilterValue]);
+
+  const currentData = useMemo(() => {
+    return filteredData.slice(0, visibleCount);
+  }, [filteredData, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 12);
+  };
 
   if (loading) {
     return (
@@ -209,7 +101,7 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
         pos="relative"
         bg={colorMode === 'light' ? 'white' : '#222222'}
         borderRadius="24px"
-        p="32px"
+        p={{ base: 4, md: '32px' }}
         _before={{
           content: '""',
           pos: 'absolute',
@@ -222,6 +114,7 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
           opacity: colorMode == 'light' ? '0.91' : '0.51',
           filter: 'blur(86.985px)',
           borderRadius: '24px',
+          display: { base: 'none', md: 'block' },
         }}
       >
         <Flex
@@ -231,7 +124,6 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
           direction={{ base: 'column', md: 'row' }}
           gap={3}
         >
-          {/* Add Button on Left */}
           {headerAction && (
             <Box
               flexShrink={0}
@@ -249,34 +141,175 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
             maxW={{ base: 'full', md: '400px' }}
             w={{ base: 'full', md: 'auto' }}
           >
-            <InputLeftElement h="40px">
+            <InputLeftElement h="48px">
               <Icon as={FaSearch} color="gray.400" boxSize={4} />
             </InputLeftElement>
             <Input
-              value={
-                (columnFilters.find((f) => f.id === 'global')
-                  ?.value as string) ?? ''
-              }
+              value={globalFilterValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
                 setColumnFilters(value ? [{ id: 'global', value }] : []);
               }}
-              h="40px"
-              borderRadius="12px"
-              focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+              h="48px"
+              variant="filled"
+              borderRadius="full"
+              focusBorderColor={
+                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+              }
               fontSize="sm"
               fontWeight="500"
+              placeholder=""
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.800'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
             />
           </InputGroup>
         </Flex>
 
-        <TableAdvance
-          columns={columns}
-          data={initialData}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          hideSearch
-        />
+        {/* Responsive Grid Layout */}
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={4}>
+          {currentData.map((kategori) => {
+            const isDeleted = kategori.deleted_at;
+            return (
+              <Box
+                key={kategori.id}
+                p={5}
+                borderRadius="2xl"
+                borderWidth="1px"
+                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                shadow="sm"
+                transition="all 0.2s"
+                _hover={{
+                  shadow: 'md',
+                  transform: 'translateY(-2px)',
+                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                }}
+              >
+                <Flex justify="space-between" align="start" mb={3}>
+                  <Box>
+                    <Text fontWeight="bold" fontSize="lg" mb={1} noOfLines={1}>
+                      {kategori.nama}
+                    </Text>
+                    <Badge
+                      px={2}
+                      py={0.5}
+                      borderRadius="full"
+                      fontSize="xs"
+                      colorScheme={isDeleted ? 'red' : 'green'}
+                      variant="subtle"
+                    >
+                      {isDeleted ? 'Dihapus' : 'Aktif'}
+                    </Badge>
+                  </Box>
+                </Flex>
+
+                <HStack
+                  justify="flex-end"
+                  spacing={2}
+                  mt={4}
+                  pt={4}
+                  borderTopWidth="1px"
+                  borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+                >
+                  {!isDeleted ? (
+                    <>
+                      <Tooltip label="Edit" hasArrow>
+                        <IconButton
+                          aria-label="Edit"
+                          icon={<MaterialIcon name="edit" size={18} />}
+                          size="sm"
+                          borderRadius="full"
+                          variant="ghost"
+                          onClick={() => onEdit(kategori)}
+                          bg={
+                            colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
+                          }
+                          color={
+                            colorMode === 'light' ? 'blue.600' : 'blue.300'
+                          }
+                          _hover={{
+                            bg:
+                              colorMode === 'light'
+                                ? 'blue.100'
+                                : 'whiteAlpha.300',
+                          }}
+                        />
+                      </Tooltip>
+                      <Tooltip label="Hapus" hasArrow>
+                        <IconButton
+                          aria-label="Hapus"
+                          icon={<MaterialIcon name="delete" size={18} />}
+                          size="sm"
+                          borderRadius="full"
+                          variant="ghost"
+                          onClick={() => handleDelete(kategori.id)}
+                          bg={
+                            colorMode === 'light' ? 'red.50' : 'whiteAlpha.200'
+                          }
+                          color={colorMode === 'light' ? 'red.600' : 'red.300'}
+                          _hover={{
+                            bg:
+                              colorMode === 'light'
+                                ? 'red.100'
+                                : 'whiteAlpha.300',
+                          }}
+                        />
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Tooltip label="Pulihkan" hasArrow>
+                      <IconButton
+                        aria-label="Restore"
+                        icon={
+                          <MaterialIcon name="restore_from_trash" size={18} />
+                        }
+                        size="sm"
+                        borderRadius="full"
+                        variant="ghost"
+                        onClick={() => onRestore(kategori.id)}
+                        bg={
+                          colorMode === 'light' ? 'green.50' : 'whiteAlpha.200'
+                        }
+                        color={
+                          colorMode === 'light' ? 'green.600' : 'green.300'
+                        }
+                        _hover={{
+                          bg:
+                            colorMode === 'light'
+                              ? 'green.100'
+                              : 'whiteAlpha.300',
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+              </Box>
+            );
+          })}
+        </SimpleGrid>
+
+        {/* Load More Button */}
+        {visibleCount < filteredData.length && (
+          <Flex justify="center" mt={8}>
+            <PrimaryButton onClick={handleLoadMore}>
+              Muat Lebih Banyak
+            </PrimaryButton>
+          </Flex>
+        )}
+
+        {filteredData.length === 0 && (
+          <Box textAlign="center" py={10}>
+            <Text color="gray.500" fontSize="lg">
+              Tidak ada data ditemukan
+            </Text>
+          </Box>
+        )}
       </Box>
     </Box>
   );

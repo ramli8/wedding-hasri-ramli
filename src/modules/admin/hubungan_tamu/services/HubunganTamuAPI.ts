@@ -13,24 +13,57 @@ class HubunganTamuAPI {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase URL dan ANON key harus diatur di environment variables');
+      throw new Error(
+        'Supabase URL dan ANON key harus diatur di environment variables'
+      );
     }
 
     this.supabase = createClient(supabaseUrl, supabaseAnonKey);
   }
 
-  async getAll(): Promise<HubunganTamu[]> {
+  async getAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<HubunganTamu[]> {
     try {
-      const { data, error } = await this.supabase
+      let query = this.supabase
         .from('hubungan_tamu')
         .select('*')
+        .order('deleted_at', { ascending: true, nullsFirst: true })
         .order('nama', { ascending: true });
+
+      // Apply pagination if provided
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      if (options?.offset) {
+        query = query.range(
+          options.offset,
+          options.offset + (options.limit || 10) - 1
+        );
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as HubunganTamu[];
     } catch (error: any) {
       console.error('Error in getAll:', error);
       throw new Error(error.message || 'Gagal mengambil data');
+    }
+  }
+
+  async getCount(): Promise<number> {
+    try {
+      const { count, error } = await this.supabase
+        .from('hubungan_tamu')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error: any) {
+      console.error('Error in getCount:', error);
+      throw new Error(error.message || 'Gagal menghitung data');
     }
   }
 
@@ -77,7 +110,10 @@ class HubunganTamuAPI {
     }
   }
 
-  async update(id: string, updates: UpdateHubunganTamuInput): Promise<HubunganTamu> {
+  async update(
+    id: string,
+    updates: UpdateHubunganTamuInput
+  ): Promise<HubunganTamu> {
     try {
       const { data, error } = await this.supabase
         .from('hubungan_tamu')

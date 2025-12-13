@@ -14,12 +14,11 @@ import {
   Stack,
   Text,
   useColorMode,
-  Divider,
   Badge,
   Box,
   HStack,
 } from '@chakra-ui/react';
-import PermissionAPI, { RolePermission } from '../../permissions/services/PermissionAPI';
+import PermissionAPI from '../../permissions/services/PermissionAPI';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 
@@ -39,8 +38,9 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
-  const permissionAPI = new PermissionAPI();
+
+  // Gunakan state untuk instance PermissionAPI agar stabil
+  const [permissionAPI] = useState(() => new PermissionAPI());
   const { colorMode } = useColorMode();
 
   const availableUrls = permissionAPI.getAvailableUrls();
@@ -55,7 +55,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
     try {
       setLoading(true);
       const permissions = await permissionAPI.getRolePermissions(roleId);
-      const urls = permissions.map(p => p.url_pattern);
+      const urls = permissions.map((p) => p.url_pattern);
       setSelectedUrls(urls);
     } catch (error: any) {
       showErrorAlert('Gagal memuat permissions', error.message, colorMode);
@@ -68,7 +68,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
     try {
       setSaving(true);
       await permissionAPI.updateRolePermissions(roleId, selectedUrls);
-      showSuccessAlert('Permissions berhasil diupdate', colorMode);
+      showSuccessAlert('Permissions berhasil diperbarui', colorMode);
       onClose();
     } catch (error: any) {
       showErrorAlert('Gagal update permissions', error.message, colorMode);
@@ -78,127 +78,217 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
   };
 
   const handleCheckboxChange = (values: string[]) => {
-    // If wildcard (*) is selected, only keep wildcard
+    // If wildcard (*) is selected, handle logic
     if (values.includes('*') && !selectedUrls.includes('*')) {
-      setSelectedUrls(['*']);
-    } else if (values.includes('*')) {
+      // Just selected wildcard -> reset others? or keep both?
+      // Usually wildcard overrides everything.
+      // But let's allow multi select and just show warning
       setSelectedUrls(values);
     } else {
-      // Remove wildcard if other items are selected
-      setSelectedUrls(values.filter(v => v !== '*'));
+      setSelectedUrls(values);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
-      <ModalOverlay backdropFilter="blur(5px)" />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: 'full', md: 'xl' }} // Full screen on mobile
+      isCentered
+      scrollBehavior="inside" // Scrollable body
+    >
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
-        borderRadius={{ base: 0, md: '16px' }}
+        borderRadius={{ base: 0, md: '24px' }}
         mx={{ base: 0, md: 4 }}
+        my={{ base: 0, md: 4 }}
+        boxShadow="xl"
       >
         <ModalHeader
-          fontSize={{ base: 'lg', md: 'xl' }}
-          fontWeight="600"
-          pb={3}
-          borderBottom="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+          fontSize="xl"
+          fontWeight="700"
+          pt={6}
+          pb={4}
+          px={6}
+          borderBottom={selectedUrls.length > 0 ? '1px solid' : 'none'}
+          borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
         >
-          <HStack spacing={3}>
+          <VStack align="start" spacing={1}>
             <Text>Kelola Permissions</Text>
-            <Badge 
-              colorScheme="purple" 
-              variant="subtle"
-              fontSize="10px" 
-              px={2} 
-              py={0.5} 
-              borderRadius="full"
-              textTransform="uppercase"
-              letterSpacing="wider"
-              fontWeight="700"
-            >
-              {roleName}
-            </Badge>
-          </HStack>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody py={6}>
-          {loading ? (
-            <Text>Loading...</Text>
-          ) : (
-            <VStack align="stretch" spacing={4}>
-              <Text fontSize="sm" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
-                Pilih halaman yang dapat diakses oleh role ini:
-              </Text>
-              
-              <CheckboxGroup
-                value={selectedUrls}
-                onChange={handleCheckboxChange}
+            <HStack>
+              <Text
+                fontSize="sm"
+                fontWeight="400"
+                color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
               >
-                <Stack direction="column" spacing={3}>
-                  {availableUrls.map((item) => (
-                    <Box
-                      key={item.url}
-                      p={3}
-                      borderRadius="md"
-                      border="1px solid"
-                      borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
-                      _hover={{
-                        bg: colorMode === 'light' ? 'gray.50' : 'gray.700',
-                        borderColor: colorMode === 'light' ? 'gray.300' : 'gray.600',
-                      }}
-                      transition="all 0.2s"
-                    >
-                      <Checkbox
-                        value={item.url}
-                        isDisabled={selectedUrls.includes('*') && item.url !== '*'}
-                        colorScheme="blue"
-                        width="full"
-                      >
-                        <VStack align="start" spacing={0} ml={2}>
-                          <Text fontWeight="600" fontSize="sm">{item.label}</Text>
-                          <Text fontSize="xs" color="gray.500">{item.url}</Text>
-                        </VStack>
-                      </Checkbox>
-                    </Box>
-                  ))}
-                </Stack>
-              </CheckboxGroup>
+                Role:
+              </Text>
+              <Badge
+                colorScheme="purple"
+                variant="subtle"
+                fontSize="xs"
+                px={2}
+                py={0.5}
+                borderRadius="full"
+                fontWeight="700"
+              >
+                {roleName}
+              </Badge>
+            </HStack>
+          </VStack>
+        </ModalHeader>
+        <ModalCloseButton top={6} right={6} size="lg" />
 
+        <ModalBody py={6} px={{ base: 4, md: 6 }}>
+          {loading ? (
+            <VStack py={10}>
+              <Text>Loading permissions...</Text>
+            </VStack>
+          ) : (
+            <VStack align="stretch" spacing={5}>
+              <Text
+                fontSize="sm"
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              >
+                Tentukan halaman apa saja yang dapat diakses oleh role ini.
+                Pilih <strong>* (Wildcard)</strong> untuk memberikan akses
+                penuh.
+              </Text>
+
+              {/* Warning for Wildcard */}
               {selectedUrls.includes('*') && (
-                <Box 
-                  p={3} 
-                  bg={colorMode === 'light' ? 'orange.50' : 'orange.900'} 
-                  borderRadius="md"
+                <Box
+                  p={4}
+                  bg={
+                    colorMode === 'light'
+                      ? 'orange.50'
+                      : 'rgba(237, 137, 54, 0.1)'
+                  }
+                  borderRadius="16px"
                   border="1px solid"
-                  borderColor={colorMode === 'light' ? 'orange.200' : 'orange.700'}
+                  borderColor={
+                    colorMode === 'light' ? 'orange.200' : 'orange.700'
+                  }
                 >
-                  <HStack spacing={2}>
-                    <Text fontSize="lg">⚠️</Text>
-                    <Text fontSize="sm" color={colorMode === 'light' ? 'orange.800' : 'orange.200'} fontWeight="500">
-                      <strong>Full Access</strong> dipilih - role ini dapat mengakses semua halaman tanpa batasan.
-                    </Text>
+                  <HStack spacing={3} align="start">
+                    <Text fontSize="xl">⚠️</Text>
+                    <VStack align="start" spacing={0}>
+                      <Text
+                        fontWeight="700"
+                        color={
+                          colorMode === 'light' ? 'orange.700' : 'orange.200'
+                        }
+                      >
+                        Akses Penuh (Super Admin)
+                      </Text>
+                      <Text
+                        fontSize="sm"
+                        color={
+                          colorMode === 'light' ? 'orange.800' : 'orange.100'
+                        }
+                      >
+                        Role ini dapat mengakses <strong>semua halaman</strong>{' '}
+                        tanpa terkecuali.
+                      </Text>
+                    </VStack>
                   </HStack>
                 </Box>
               )}
+
+              <CheckboxGroup
+                value={selectedUrls}
+                onChange={handleCheckboxChange}
+                colorScheme="blue"
+              >
+                <Stack direction="column" spacing={3}>
+                  {availableUrls.map((item) => {
+                    const isChecked = selectedUrls.includes(item.url);
+                    const isWildcard = item.url === '*';
+                    const isWildcardActive = selectedUrls.includes('*');
+
+                    // Highlight if active
+                    const borderColor = isChecked
+                      ? colorMode === 'light'
+                        ? 'blue.400'
+                        : 'blue.500'
+                      : colorMode === 'light'
+                      ? 'gray.100'
+                      : 'gray.700';
+
+                    const bgColor = isChecked
+                      ? colorMode === 'light'
+                        ? 'blue.50'
+                        : 'rgba(66, 153, 225, 0.1)'
+                      : colorMode === 'light'
+                      ? 'white'
+                      : 'gray.800';
+
+                    return (
+                      <Box
+                        key={item.url}
+                        as="label"
+                        cursor="pointer"
+                        p={4}
+                        borderRadius="16px"
+                        border="1px solid"
+                        borderColor={borderColor}
+                        bg={bgColor}
+                        transition="all 0.2s"
+                        _hover={{
+                          borderColor:
+                            colorMode === 'light' ? 'blue.300' : 'blue.400',
+                          transform: 'translateY(-1px)',
+                          shadow: 'sm',
+                        }}
+                        position="relative"
+                      >
+                        <HStack spacing={4} align="start">
+                          <Checkbox
+                            value={item.url}
+                            isDisabled={isWildcardActive && !isWildcard}
+                            size="lg"
+                            mt={1}
+                            isChecked={isChecked}
+                          />
+                          <VStack align="start" spacing={0.5}>
+                            <Text fontWeight="600" fontSize="md">
+                              {item.label}
+                            </Text>
+                            <CodeBadge url={item.url} colorMode={colorMode} />
+                          </VStack>
+                        </HStack>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </CheckboxGroup>
             </VStack>
           )}
         </ModalBody>
 
         <ModalFooter
           borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+          borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+          pb={{ base: 6, md: 6 }}
+          px={6}
           pt={4}
+          bg={colorMode === 'light' ? 'white' : 'gray.800'}
+          borderRadius={{ base: 0, md: '0 0 24px 24px' }}
         >
           <HStack spacing={3} width="full" justify="flex-end">
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
+            <Button
+              variant="ghost"
+              onClick={onClose}
               isDisabled={saving}
-              minW="120px"
-              h="40px"
-              borderRadius="10px"
-              fontSize="14px"
+              h="50px"
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
             >
               Batal
             </Button>
@@ -206,8 +296,13 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
               onClick={handleSave}
               isLoading={saving}
               loadingText="Menyimpan..."
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
             >
-              Simpan
+              Simpan Perubahan
             </PrimaryButton>
           </HStack>
         </ModalFooter>
@@ -215,5 +310,21 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
     </Modal>
   );
 };
+
+// Helper component for URL badge
+const CodeBadge = ({ url, colorMode }: { url: string; colorMode: string }) => (
+  <Text
+    as="span"
+    fontFamily="monospace"
+    fontSize="xs"
+    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+    bg={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+    px={1.5}
+    py={0.5}
+    borderRadius="md"
+  >
+    {url}
+  </Text>
+);
 
 export default PermissionModal;

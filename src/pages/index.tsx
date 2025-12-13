@@ -5,14 +5,15 @@
  * @version 3.2.0
  **/
 
-import { Box, Button, Container, Heading, Text, useColorMode, VStack, Divider, Flex } from "@chakra-ui/react";
+import { Box, Button, Container, Heading, Text, useColorMode, VStack, Divider, Flex, useToast } from "@chakra-ui/react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import supabase from "@/lib/supabaseClient";
 import UcapanForm from "@/modules/ucapan/components/UcapanForm";
 import UcapanList from "@/modules/ucapan/components/UcapanList";
+import { enterFullscreen } from "@/utils/fullscreen";
 
 
 interface Guest {
@@ -28,6 +29,9 @@ const LandingPage = () => {
 	const [refreshUcapan, setRefreshUcapan] = useState(0);
 	const [isAdminMode, setIsAdminMode] = useState(false);
 	const [adminUserId, setAdminUserId] = useState<string | null>(null);
+	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const [showWelcome, setShowWelcome] = useState(true);
+	const [isPlaying, setIsPlaying] = useState(false);
 
 	useEffect(() => {
 		const fetchGuest = async () => {
@@ -82,6 +86,66 @@ const LandingPage = () => {
 		}
 	}, [admin, router.isReady]);
 
+	// Initialize audio (no autoplay)
+	useEffect(() => {
+		const audio = new Audio('/music/music.mp3');
+		audio.loop = true;
+		audio.volume = 0.4;
+		audioRef.current = audio;
+
+		// Cleanup
+		return () => {
+			if (audioRef.current) {
+				audioRef.current.pause();
+				audioRef.current = null;
+			}
+		};
+	}, []);
+
+	// Handle play button click - Start music & fullscreen
+	const handleStartExperience = async () => {
+		try {
+			// Play music first
+			if (audioRef.current) {
+				await audioRef.current.play();
+				setIsPlaying(true);
+				console.log('🎵 Music started');
+			}
+
+			// Hide welcome screen immediately for smoother UX
+			setShowWelcome(false);
+
+			// Trigger fullscreen with slight delay
+			// This gives browser time to process music play as user gesture
+			setTimeout(async () => {
+				try {
+					await enterFullscreen();
+					console.log('✅ Fullscreen activated');
+				} catch (fsError) {
+					console.log('⚠️ Fullscreen blocked:', fsError);
+					// Try again on next interaction
+					const retryFullscreen = async () => {
+						try {
+							await enterFullscreen();
+							console.log('✅ Fullscreen activated on retry');
+							document.removeEventListener('click', retryFullscreen);
+							document.removeEventListener('touchstart', retryFullscreen);
+						} catch (err) {
+							console.log('Fullscreen still blocked');
+						}
+					};
+					document.addEventListener('click', retryFullscreen, { once: true });
+					document.addEventListener('touchstart', retryFullscreen, { once: true });
+				}
+			}, 100);
+
+		} catch (error) {
+			console.error('Error starting experience:', error);
+			// Still hide welcome even if failed
+			setShowWelcome(false);
+		}
+	};
+
 	const handleUcapanSuccess = () => {
 		setRefreshUcapan(prev => prev + 1);
 	};
@@ -97,6 +161,83 @@ const LandingPage = () => {
 				<meta name="description" content="Welcome to Hasri & Ramli's wedding celebration" />
 				<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 			</Head>
+
+			{/* Welcome Splash Screen */}
+			{showWelcome && (
+				<Box
+					position="fixed"
+					top={0}
+					left={0}
+					right={0}
+					bottom={0}
+					bg={colorMode === 'light' ? 'white' : 'black'}
+					zIndex={9999}
+					display="flex"
+					alignItems="center"
+					justifyContent="center"
+				>
+					<VStack spacing={8}>
+						<VStack spacing={2}>
+							<Text
+								fontSize="xs"
+								fontWeight="600"
+								letterSpacing="widest"
+								textTransform="uppercase"
+								color="gray.500"
+							>
+								The Wedding of
+							</Text>
+							<Heading
+								fontSize={{ base: "5xl", md: "6xl" }}
+								fontWeight="800"
+								letterSpacing="tighter"
+								lineHeight="0.9"
+								color={colorMode === 'light' ? 'black' : 'white'}
+							>
+								Hasri<br/>& Ramli
+							</Heading>
+						</VStack>
+
+						{guest && (
+							<VStack spacing={1}>
+								<Text fontSize="xs" color="gray.500" letterSpacing="wide" textTransform="uppercase">
+									Kepada Yth.
+								</Text>
+								<Text fontSize="lg" fontWeight="bold" color={colorMode === 'light' ? 'black' : 'white'}>
+									{guest.nama}
+								</Text>
+							</VStack>
+						)}
+
+						<Button
+							onClick={handleStartExperience}
+							size="lg"
+							bg={colorMode === 'light' ? 'black' : 'white'}
+							color={colorMode === 'light' ? 'white' : 'black'}
+							_hover={{ 
+								bg: colorMode === 'light' ? 'gray.800' : 'gray.200',
+								transform: 'scale(1.05)'
+							}}
+							_active={{ transform: 'scale(0.95)' }}
+							borderRadius="full"
+							px={10}
+							py={6}
+							fontSize="md"
+							fontWeight="600"
+							leftIcon={
+								<Box fontSize="xl">🎵</Box>
+							}
+							transition="all 0.2s"
+						>
+							Buka Undangan
+						</Button>
+
+						<Text fontSize="xs" color="gray.400" mt={2}>
+							Tap untuk mulai dengan musik
+						</Text>
+					</VStack>
+				</Box>
+			)}
 
 			<Box minH="100vh" bg={colorMode === 'light' ? 'white' : 'black'} position="relative">
 				{/* Header */}

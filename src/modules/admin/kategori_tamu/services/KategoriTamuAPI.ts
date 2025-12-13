@@ -13,25 +13,57 @@ class KategoriTamuAPI {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase URL dan ANON key harus diatur di environment variables');
+      throw new Error(
+        'Supabase URL dan ANON key harus diatur di environment variables'
+      );
     }
 
     this.supabase = createClient(supabaseUrl, supabaseAnonKey);
   }
 
-  async getAll(): Promise<KategoriTamu[]> {
+  async getAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<KategoriTamu[]> {
     try {
-      const { data, error } = await this.supabase
+      let query = this.supabase
         .from('kategori_tamu')
         .select('*')
-        .is('deleted_at', null)
+        .order('deleted_at', { ascending: true, nullsFirst: true })
         .order('nama', { ascending: true });
+
+      // Apply pagination if provided
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      if (options?.offset) {
+        query = query.range(
+          options.offset,
+          options.offset + (options.limit || 10) - 1
+        );
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as KategoriTamu[];
     } catch (error: any) {
       console.error('Error in getAll:', error);
       throw new Error(error.message || 'Gagal mengambil data kategori tamu');
+    }
+  }
+
+  async getCount(): Promise<number> {
+    try {
+      const { count, error } = await this.supabase
+        .from('kategori_tamu')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error: any) {
+      console.error('Error in getCount:', error);
+      throw new Error(error.message || 'Gagal menghitung data');
     }
   }
 
@@ -78,7 +110,10 @@ class KategoriTamuAPI {
     }
   }
 
-  async update(id: string, updates: UpdateKategoriTamuInput): Promise<KategoriTamu> {
+  async update(
+    id: string,
+    updates: UpdateKategoriTamuInput
+  ): Promise<KategoriTamu> {
     try {
       const { data, error } = await this.supabase
         .from('kategori_tamu')

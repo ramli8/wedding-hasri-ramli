@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -7,118 +14,94 @@ import {
   ModalBody,
   ModalFooter,
   ModalCloseButton,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Textarea,
-  VStack,
   useColorMode,
-  Text,
-  Box,
+  VStack,
   HStack,
+  Text,
   Badge,
+  Textarea,
+  Select,
 } from '@chakra-ui/react';
+import { RolePermission } from '../services/PermissionAPI';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import PermissionAPI, {
-  RolePermission,
-} from '../../permissions/services/PermissionAPI';
-import RoleAPI from '../../roles/services/RoleAPI';
-import { Role } from '../../roles/types/Role.types';
-import {
-  showSuccessAlert,
-  showErrorAlert,
-  showAlert,
-} from '@/utils/sweetalert';
+import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import { useRoles } from '../../roles/utils/hooks/useRoles';
 
 interface PermissionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
-  initialData?: RolePermission | null;
+  permission?: RolePermission;
+  onSave: (data: Omit<RolePermission, 'id' | 'created_at'>) => Promise<void>;
+  onUpdate: (id: string, data: Partial<RolePermission>) => Promise<void>;
 }
 
 const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
-  initialData,
+  permission,
+  onSave,
+  onUpdate,
 }) => {
-  const [roleId, setRoleId] = useState('');
-  const [urlPattern, setUrlPattern] = useState('');
-  const [description, setDescription] = useState('');
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const permissionAPI = new PermissionAPI();
-  const [roleAPI] = useState(() => new RoleAPI());
   const { colorMode } = useColorMode();
-  const availableUrls = permissionAPI.getAvailableUrls();
+  const { roles } = useRoles(); // Fetch roles for dropdown
 
-  const fetchRoles = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await roleAPI.getRoles();
-      setRoles(data);
-    } catch (error) {
-      console.error('Failed to fetch roles', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [roleAPI]);
+  const [formData, setFormData] = useState({
+    role_id: '',
+    url_pattern: '',
+    description: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const isEdit = !!permission;
+
+  const initialRef = React.useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchRoles();
-      if (initialData) {
-        setRoleId(initialData.role_id);
-        setUrlPattern(initialData.url_pattern);
-        setDescription(initialData.description || '');
-      } else {
-        setRoleId('');
-        setUrlPattern('');
-        setDescription('');
-      }
-    }
-  }, [isOpen, initialData, fetchRoles]);
-
-  const handleSubmit = async () => {
-    if (!roleId || !urlPattern) {
-      showAlert({
-        title: 'Error',
-        text: 'Role dan URL Pattern harus diisi',
-        icon: 'error',
-        colorMode,
-        showConfirmButton: true,
+    if (permission) {
+      setFormData({
+        role_id: permission.role_id,
+        url_pattern: permission.url_pattern,
+        description: permission.description || '',
       });
-      return;
+    } else {
+      setFormData({ role_id: '', url_pattern: '', description: '' });
     }
+  }, [permission, isOpen]);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.role_id || !formData.url_pattern.trim()) return;
+
+    setLoading(true);
     try {
-      setSaving(true);
-      if (initialData) {
-        await permissionAPI.updatePermission(initialData.id, {
-          role_id: roleId,
-          url_pattern: urlPattern,
-          description,
+      if (isEdit && permission) {
+        await onUpdate(permission.id, {
+          role_id: formData.role_id,
+          url_pattern: formData.url_pattern.trim(),
+          description: formData.description?.trim() || '',
         });
-        showSuccessAlert('Data berhasil diperbarui', colorMode);
       } else {
-        await permissionAPI.createPermission({
-          role_id: roleId,
-          url_pattern: urlPattern,
-          description,
-        });
-        showSuccessAlert('Data berhasil ditambahkan', colorMode);
+        await onSave({
+          role_id: formData.role_id,
+          url_pattern: formData.url_pattern.trim(),
+          description: formData.description?.trim() || '',
+        } as any);
       }
-      onSuccess();
+
+      showSuccessAlert(
+        isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan',
+        colorMode
+      );
+
       onClose();
     } catch (error: any) {
-      showErrorAlert('Gagal menyimpan', error.message, colorMode);
+      showErrorAlert(
+        'Gagal menyimpan',
+        error.message || 'Terjadi kesalahan',
+        colorMode
+      );
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
@@ -126,29 +109,24 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size={{ base: 'full', md: 'xl' }}
+      size="md"
       isCentered
+      initialFocusRef={initialRef}
     >
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
-        borderRadius={{ base: 0, md: '16px' }}
-        mx={{ base: 0, md: 4 }}
+        borderRadius="24px"
+        mx={4}
+        boxShadow="xl"
+        p={2}
       >
-        <ModalHeader
-          fontSize={{ base: 'lg', md: 'xl' }}
-          fontWeight="600"
-          pb={3}
-          borderBottom="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-        >
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
           <HStack spacing={3}>
-            <Text>
-              {initialData ? 'Edit Permission' : 'Tambah Permission Baru'}
-            </Text>
-            {initialData && (
+            <Text>{isEdit ? 'Edit Permission' : 'Tambah Permission'}</Text>
+            {isEdit && (
               <Badge
-                colorScheme="blue"
+                colorScheme="orange"
                 variant="subtle"
                 fontSize="10px"
                 px={2}
@@ -156,147 +134,157 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
-                fontWeight="700"
-                bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
-                color={colorMode === 'light' ? 'blue.600' : 'blue.200'}
-                border="1px solid"
-                borderColor={colorMode === 'light' ? 'blue.100' : 'blue.800'}
+                fontWeight="800"
               >
                 Edit Mode
               </Badge>
             )}
           </HStack>
         </ModalHeader>
-        <ModalCloseButton />
-
-        <ModalBody py={6}>
-          <VStack spacing={5} align="stretch">
-            {/* Role Selection */}
-            <FormControl isRequired>
-              <FormLabel
-                fontSize="sm"
-                fontWeight="600"
-                mb={2}
-                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
-              >
-                Role
-              </FormLabel>
-              <Select
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                isDisabled={loading}
-                size="lg"
-                borderRadius="12px"
-                focusBorderColor={
-                  colorMode === 'light' ? 'blue.500' : 'blue.300'
-                }
-              >
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* URL Pattern Selection */}
-            <FormControl isRequired>
-              <FormLabel
-                fontSize="sm"
-                fontWeight="600"
-                mb={2}
-                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
-              >
-                URL Pattern
-              </FormLabel>
-              <VStack spacing={2} align="stretch">
-                <Select
-                  placeholder="Pilih dari daftar URL yang tersedia"
-                  value={
-                    availableUrls.some((u) => u.url === urlPattern)
-                      ? urlPattern
-                      : ''
-                  }
-                  onChange={(e) => setUrlPattern(e.target.value)}
-                  size="lg"
-                  borderRadius="12px"
-                  focusBorderColor={
-                    colorMode === 'light' ? 'blue.500' : 'blue.300'
-                  }
+        <ModalCloseButton top={6} right={6} />
+        <ModalBody py={4} px={6}>
+          <Box as="form" id="perm-form" onSubmit={handleSubmit}>
+            <VStack spacing={6}>
+              <FormControl isRequired>
+                <FormLabel
+                  fontSize="sm"
+                  fontWeight="600"
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  mb={3}
                 >
-                  {availableUrls.map((item) => (
-                    <option key={item.url} value={item.url}>
-                      {item.label} ({item.url})
-                    </option>
-                  ))}
+                  Role
+                </FormLabel>
+                <Select
+                  ref={initialRef}
+                  placeholder="Pilih Role"
+                  value={formData.role_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role_id: e.target.value })
+                  }
+                  size="lg"
+                  variant="filled"
+                  bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
+                  borderRadius="16px"
+                  fontSize="md"
+                  fontWeight="500"
+                  _hover={{
+                    bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                  }}
+                  _focus={{
+                    bg: colorMode === 'light' ? 'white' : 'gray.800',
+                    borderColor: 'blue.500',
+                  }}
+                >
+                  {roles
+                    .filter((r) => !r.deleted_at)
+                    .map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
                 </Select>
+              </FormControl>
 
-                <Box position="relative">
-                  <Input
-                    value={urlPattern}
-                    onChange={(e) => setUrlPattern(e.target.value)}
-                    size="lg"
-                    borderRadius="12px"
-                    focusBorderColor={
-                      colorMode === 'light' ? 'blue.500' : 'blue.300'
-                    }
-                    fontFamily="mono"
-                    fontSize="sm"
-                  />
-                </Box>
-              </VStack>
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel
+                  fontSize="sm"
+                  fontWeight="600"
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  mb={3}
+                >
+                  URL Pattern
+                </FormLabel>
+                <Input
+                  value={formData.url_pattern}
+                  onChange={(e) =>
+                    setFormData({ ...formData, url_pattern: e.target.value })
+                  }
+                  placeholder="/admin/example"
+                  size="lg"
+                  variant="filled"
+                  bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
+                  borderRadius="16px"
+                  fontSize="md"
+                  fontWeight="500"
+                  _hover={{
+                    bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                  }}
+                  _focus={{
+                    bg: colorMode === 'light' ? 'white' : 'gray.800',
+                    borderColor:
+                      colorMode === 'light' ? 'blue.500' : 'blue.300',
+                    boxShadow: 'none',
+                  }}
+                />
+              </FormControl>
 
-            {/* Description */}
-            <FormControl>
-              <FormLabel
-                fontSize="sm"
-                fontWeight="600"
-                mb={2}
-                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
-              >
-                Deskripsi
-              </FormLabel>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                resize="vertical"
-                size="lg"
-                borderRadius="12px"
-                focusBorderColor={
-                  colorMode === 'light' ? 'blue.500' : 'blue.300'
-                }
-              />
-            </FormControl>
-          </VStack>
+              <FormControl>
+                <FormLabel
+                  fontSize="sm"
+                  fontWeight="600"
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  mb={3}
+                >
+                  Deskripsi
+                </FormLabel>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  size="lg"
+                  variant="filled"
+                  bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
+                  borderRadius="16px"
+                  fontSize="md"
+                  fontWeight="500"
+                  rows={3}
+                  _hover={{
+                    bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                  }}
+                  _focus={{
+                    bg: colorMode === 'light' ? 'white' : 'gray.800',
+                    borderColor:
+                      colorMode === 'light' ? 'blue.500' : 'blue.300',
+                    boxShadow: 'none',
+                  }}
+                />
+              </FormControl>
+            </VStack>
+          </Box>
         </ModalBody>
 
-        <ModalFooter
-          borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-          pt={4}
-        >
+        <ModalFooter pb={6} px={6} pt={4}>
           <HStack spacing={3} width="full" justify="flex-end">
             <Button
               variant="ghost"
               onClick={onClose}
-              isDisabled={saving}
-              minW="120px"
-              h="48px"
-              borderRadius="12px"
-              fontSize="14px"
+              isDisabled={loading}
+              h="50px"
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
             >
               Batal
             </Button>
             <PrimaryButton
-              onClick={handleSubmit}
-              isLoading={saving}
-              minW="120px"
-              h="48px"
-              borderRadius="12px"
+              type="submit"
+              form="perm-form"
+              isLoading={loading}
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
             >
-              {initialData ? 'Perbarui' : 'Simpan'}
+              {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
             </PrimaryButton>
           </HStack>
         </ModalFooter>

@@ -2,20 +2,44 @@ import supabase from '@/lib/supabaseClient';
 import { Role, CreateRoleInput, UpdateRoleInput } from '../types/Role.types';
 
 class RoleAPI {
-  async getRoles(includeDeleted: boolean = false) {
+  async getRoles(
+    includeDeleted: boolean = false,
+    options?: { limit?: number; offset?: number }
+  ) {
     let query = supabase
       .from('roles')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('deleted_at', { ascending: true, nullsFirst: true })
+      .order('name', { ascending: true }); // Menggunakan 'name' sesuai tabel roles
 
     if (!includeDeleted) {
       query = query.is('deleted_at', null);
+    }
+
+    // Apply pagination if provided
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options?.offset) {
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit || 10) - 1
+      );
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
     return data as Role[];
+  }
+
+  async getCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('roles')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) throw error;
+    return count || 0;
   }
 
   async createRole(input: CreateRoleInput) {

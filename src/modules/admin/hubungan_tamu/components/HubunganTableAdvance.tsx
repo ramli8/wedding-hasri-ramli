@@ -153,12 +153,20 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
               h="48px"
               variant="filled"
               borderRadius="full"
-              focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+              focusBorderColor={
+                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+              }
               fontSize="sm"
               fontWeight="500"
               placeholder=""
               bg={colorMode === 'light' ? 'gray.50' : 'gray.800'}
-              _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.700' }}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
             />
           </InputGroup>
         </Flex>
@@ -219,12 +227,17 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
                           borderRadius="full"
                           variant="ghost"
                           onClick={() => onEdit(hubungan)}
-                          bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                          bg={
+                            colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
+                          }
                           color={
-                            colorMode === 'light' ? 'blue.600' : 'blue.200'
+                            colorMode === 'light' ? 'blue.600' : 'blue.300'
                           }
                           _hover={{
-                            bg: colorMode === 'light' ? 'blue.100' : 'blue.800',
+                            bg:
+                              colorMode === 'light'
+                                ? 'blue.100'
+                                : 'whiteAlpha.300',
                           }}
                         />
                       </Tooltip>
@@ -236,10 +249,15 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
                           borderRadius="full"
                           variant="ghost"
                           onClick={() => handleDelete(hubungan.id)}
-                          bg={colorMode === 'light' ? 'red.50' : 'red.900'}
-                          color={colorMode === 'light' ? 'red.600' : 'red.200'}
+                          bg={
+                            colorMode === 'light' ? 'red.50' : 'whiteAlpha.200'
+                          }
+                          color={colorMode === 'light' ? 'red.600' : 'red.300'}
                           _hover={{
-                            bg: colorMode === 'light' ? 'red.100' : 'red.800',
+                            bg:
+                              colorMode === 'light'
+                                ? 'red.100'
+                                : 'whiteAlpha.300',
                           }}
                         />
                       </Tooltip>
@@ -255,12 +273,17 @@ const HubunganTableAdvance: React.FC<HubunganTableAdvanceProps> = ({
                         borderRadius="full"
                         variant="ghost"
                         onClick={() => onRestore(hubungan.id)}
-                        bg={colorMode === 'light' ? 'green.50' : 'green.900'}
+                        bg={
+                          colorMode === 'light' ? 'green.50' : 'whiteAlpha.200'
+                        }
                         color={
-                          colorMode === 'light' ? 'green.600' : 'green.200'
+                          colorMode === 'light' ? 'green.600' : 'green.300'
                         }
                         _hover={{
-                          bg: colorMode === 'light' ? 'green.100' : 'green.800',
+                          bg:
+                            colorMode === 'light'
+                              ? 'green.100'
+                              : 'whiteAlpha.300',
                         }}
                       />
                     </Tooltip>

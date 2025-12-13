@@ -10,7 +10,11 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
-const UserProfileActions = () => {
+interface UserProfileActionsProps {
+  mobileSimplified?: boolean;
+}
+
+const UserProfileActions = ({ mobileSimplified = false }: UserProfileActionsProps) => {
   const { colorMode } = useColorMode();
   const accountInfo = useContext(AccountInfoContext);
   const router = useRouter();
@@ -52,6 +56,19 @@ const UserProfileActions = () => {
     toast({ title: 'Role berhasil diganti', status: 'success', duration: 2000 });
     window.location.href = '/admin/dashboard';
   };
+
+  // Mobile simplified version - just avatar
+  if (mobileSimplified) {
+    return (
+      <Avatar 
+        size="sm"
+        name={accountInfo?.name} 
+        bgGradient="linear(to-r, blue.400, purple.500)"
+        color="white"
+        icon={<MaterialIcon name="person" size={20} />}
+      />
+    );
+  }
 
   return (
     <>

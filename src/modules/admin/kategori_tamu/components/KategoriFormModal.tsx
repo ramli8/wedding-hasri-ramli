@@ -12,20 +12,23 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalCloseButton,
   useColorMode,
-  VStack,
-  HStack,
+  ModalFooter,
   Text,
   Badge,
+  VStack,
+  HStack,
 } from '@chakra-ui/react';
 import {
   KategoriTamu,
   CreateKategoriTamuInput,
   UpdateKategoriTamuInput,
 } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
-import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import {
+  PrimaryButton,
+  PrimaryOutlineButton,
+} from '@/components/atoms/Buttons/PrimaryButton';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 
 interface KategoriFormModalProps {
@@ -49,6 +52,8 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const isEdit = !!kategori;
+
+  const initialRef = React.useRef(null);
 
   useEffect(() => {
     if (kategori) {
@@ -84,25 +89,27 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
-      <ModalOverlay />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      isCentered
+      initialFocusRef={isEdit ? undefined : initialRef}
+    >
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
-        borderRadius={{ base: 0, md: '16px' }}
-        mx={{ base: 0, md: 4 }}
+        borderRadius="24px"
+        mx={4}
+        boxShadow="xl"
+        p={2}
       >
-        <ModalHeader
-          fontSize={{ base: 'lg', md: 'xl' }}
-          fontWeight="600"
-          pb={3}
-          borderBottom="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-        >
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
           <HStack spacing={3}>
             <Text>{isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</Text>
             {isEdit && (
               <Badge
-                colorScheme="blue"
+                colorScheme="orange"
                 variant="subtle"
                 fontSize="10px"
                 px={2}
@@ -110,58 +117,66 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
                 borderRadius="full"
                 textTransform="uppercase"
                 letterSpacing="wider"
-                fontWeight="700"
-                bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
-                color={colorMode === 'light' ? 'blue.600' : 'blue.200'}
-                border="1px solid"
-                borderColor={colorMode === 'light' ? 'blue.100' : 'blue.800'}
+                fontWeight="800"
               >
                 Edit Mode
               </Badge>
             )}
           </HStack>
         </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody py={6}>
+        <ModalCloseButton top={6} right={6} />
+        <ModalBody py={4} px={6}>
           <Box as="form" id="kategori-form" onSubmit={handleSubmit}>
-            <VStack spacing={5} align="stretch">
+            <VStack spacing={6}>
               <FormControl isRequired>
                 <FormLabel
                   fontSize="sm"
                   fontWeight="600"
-                  mb={2}
-                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  mb={3}
                 >
                   Nama Kategori
                 </FormLabel>
                 <Input
+                  ref={initialRef}
                   value={formData.nama}
                   onChange={(e) => setFormData({ nama: e.target.value })}
                   size="lg"
-                  borderRadius="12px"
-                  focusBorderColor={
-                    colorMode === 'light' ? 'blue.500' : 'blue.300'
-                  }
+                  variant="filled"
+                  bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+                  color={colorMode === 'light' ? 'gray.900' : 'white'}
+                  borderRadius="16px"
+                  fontSize="md"
+                  fontWeight="500"
+                  _hover={{
+                    bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                  }}
+                  _focus={{
+                    bg: colorMode === 'light' ? 'white' : 'gray.800',
+                    borderColor:
+                      colorMode === 'light' ? 'blue.500' : 'blue.300',
+                    boxShadow: 'none',
+                  }}
                 />
               </FormControl>
             </VStack>
           </Box>
         </ModalBody>
 
-        <ModalFooter
-          borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-          pt={4}
-        >
+        <ModalFooter pb={6} px={6} pt={4}>
           <HStack spacing={3} width="full" justify="flex-end">
             <Button
               variant="ghost"
               onClick={onClose}
               isDisabled={loading}
-              minW="120px"
-              h="48px"
-              borderRadius="12px"
-              fontSize="14px"
+              h="50px"
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
             >
               Batal
             </Button>
@@ -169,11 +184,13 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
               type="submit"
               form="kategori-form"
               isLoading={loading}
-              minW="120px"
-              h="48px"
-              borderRadius="12px"
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
             >
-              {isEdit ? 'Perbarui' : 'Simpan'}
+              {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
             </PrimaryButton>
           </HStack>
         </ModalFooter>

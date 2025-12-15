@@ -55,6 +55,8 @@ class AuthAPI {
     // Store session in localStorage (only in browser)
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.SESSION_KEY, JSON.stringify(authUser));
+      // Dispatch custom event to notify session change
+      window.dispatchEvent(new Event('sessionChanged'));
     }
 
     return authUser;
@@ -63,6 +65,9 @@ class AuthAPI {
   logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.SESSION_KEY);
+      localStorage.removeItem('active_role_id');
+      // Dispatch custom event to notify session change
+      window.dispatchEvent(new Event('sessionChanged'));
     }
   }
 

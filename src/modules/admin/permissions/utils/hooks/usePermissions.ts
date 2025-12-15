@@ -10,22 +10,51 @@ export const usePermissions = () => {
   const [api] = useState(() => new PermissionAPI());
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+  });
 
   const fetchPermissions = useCallback(
-    async (append: boolean = false) => {
+    async (
+      resetPagination: boolean = true,
+      filters?: {
+        roleId?: string;
+        status?: 'all' | 'active' | 'inactive';
+        search?: string;
+      }
+    ) => {
       try {
         setLoading(true);
-        // Fetch ALL permissions for client-side filtering and grouping
-        const data = await api.getAllPermissions(true);
+        const page = resetPagination ? 1 : pagination.page;
+        const response = await api.getAllPermissions(true, page, pagination.limit, filters);
 
-        if (append) {
-          setPermissions((prev) => [...prev, ...data]);
+        if (resetPagination) {
+          setPermissions(response.data);
+          // Reset pagination state when resetting
+          if (response.pagination) {
+            setPagination(response.pagination);
+          }
         } else {
-          setPermissions(data);
+          setPermissions((prev) => [...prev, ...response.data]);
+          // Update pagination state when appending
+          if (response.pagination) {
+            setPagination(response.pagination);
+          }
         }
 
-        setTotalCount(data.length);
-        setHasMore(false); // Since we fetch all
+        if (response.pagination) {
+          setTotalCount(response.pagination.total);
+          // hasMore hanya jika masih ada halaman berikutnya
+          setHasMore(
+            response.pagination.page < response.pagination.totalPages
+          );
+        } else {
+          setHasMore(false);
+        }
+
         setError(null);
       } catch (err: any) {
         console.error('Error fetching permissions:', err);
@@ -34,36 +63,42 @@ export const usePermissions = () => {
         setLoading(false);
       }
     },
-    [api]
+    [api, pagination.page, pagination.limit]
   );
 
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
+  const loadMore = useCallback(
+    async (filters?: {
+      roleId?: string;
+      status?: 'all' | 'active' | 'inactive';
+      search?: string;
+    }) => {
+      if (!hasMore || loading) return;
 
-    try {
-      setLoading(true);
-      const offset = permissions.length;
-      const limit = 12;
+      try {
+        setLoading(true);
+        const nextPage = pagination.page + 1;
+        const response = await api.getAllPermissions(true, nextPage, pagination.limit, filters);
 
-      const data = await api.getAllPermissions(true, { limit, offset });
+        setPermissions((prev) => [...prev, ...response.data]);
 
-      if (data.length < limit) {
-        setHasMore(false);
+        if (response.pagination) {
+          setPagination(response.pagination);
+          setHasMore(response.pagination.page < response.pagination.totalPages);
+        }
+
+        setError(null);
+      } catch (err: any) {
+        console.error('Error loading more permissions:', err);
+        setError(err.message || 'Gagal memuat data');
+      } finally {
+        setLoading(false);
       }
+    },
+    [api, pagination, hasMore, loading]
+  );
 
-      setPermissions((prev) => [...prev, ...data]);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error loading more permissions:', err);
-      setError(err.message || 'Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  }, [api, permissions.length, hasMore, loading]);
-
-  useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+  // Note: Initial fetch is handled by the page component, not here
+  // This allows the page to pass filters on initial load
 
   const createPermission = async (
     permission: Omit<RolePermission, 'id' | 'created_at'>

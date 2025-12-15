@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
 import {
   VStack,
   Text,
@@ -20,12 +20,15 @@ import PermissionModal from '../components/PermissionModal';
 import { useRoles } from '../utils/hooks/useRoles';
 import { Role } from '../types/Role.types';
 import FilterTabs from '@/components/molecules/FilterTabs';
+import AppSettingContext from '@/providers/AppSettingProvider';
 
 const RoleListPage: NextPageWithLayout = () => {
   const {
     roles,
     loading,
     fetchRoles,
+    loadMore,
+    hasMore,
     createRole,
     updateRole,
     deleteRole,
@@ -39,7 +42,11 @@ const RoleListPage: NextPageWithLayout = () => {
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'active' | 'inactive'
   >('all');
+  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, inactive: 0 });
+  
   const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
+  const api = useMemo(() => new (require('../services/RoleAPI').default)(), []);
 
   const handleOpenModal = (role?: Role) => {
     setSelectedRole(role);
@@ -51,8 +58,24 @@ const RoleListPage: NextPageWithLayout = () => {
     setSelectedRole(undefined);
   };
 
+  const fetchCounts = async () => {
+    try {
+      const counts = await api.getCounts();
+      setStatusCounts(counts);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles(true, { status: filterStatus });
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
+
   const handleSaveSuccess = () => {
-    fetchRoles();
+    fetchRoles(true, { status: filterStatus });
+    fetchCounts();
   };
 
   const handleDelete = async (id: string) => {
@@ -78,22 +101,9 @@ const RoleListPage: NextPageWithLayout = () => {
     setIsPermissionModalOpen(true);
   };
 
-  const filteredData = useMemo(() => {
-    return roles.filter((item) => {
-      if (filterStatus === 'all') return true;
-      if (filterStatus === 'active') return !item.deleted_at;
-      if (filterStatus === 'inactive') return !!item.deleted_at;
-      return true;
-    });
-  }, [roles, filterStatus]);
-
-  const counts = useMemo(() => {
-    return {
-      all: roles.length,
-      active: roles.filter((i) => !i.deleted_at).length,
-      inactive: roles.filter((i) => i.deleted_at).length,
-    };
-  }, [roles]);
+  // Use server-side filtering and counts
+  const filteredRoles = roles;
+  const counts = statusCounts;
 
   return (
     <>
@@ -105,30 +115,48 @@ const RoleListPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section */}
+              {/* Header Section - Clean Typography */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'end' }}
+                align={{ base: 'start', md: 'end' }}
                 direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 4 }}
-                mb={4}
+                gap={{ base: 4, md: 6 }}
+                mb={6}
               >
-                <VStack align="start" spacing={1} flex={1} w="full">
-                  <Text
-                    fontSize={{ base: '2xl', md: '4xl' }}
-                    fontWeight="800"
-                    color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    letterSpacing="tight"
-                    lineHeight="1.2"
-                  >
-                    Manajemen Role
-                  </Text>
+                <VStack align="start" spacing={3} flex={1}>
+                  {/* Title with Gradient Accent */}
+                  <Box>
+                    <Text
+                      fontSize={{ base: '3xl', md: '4xl' }}
+                      fontWeight="700"
+                      color={colorMode === 'light' ? 'gray.900' : 'white'}
+                      letterSpacing="tight"
+                      lineHeight="1.1"
+                      mb={1}
+                    >
+                      Manajemen Role
+                    </Text>
+                    <Box
+                      w="60px"
+                      h="3px"
+                      bg={
+                        colorMode === 'light' 
+                          ? `${colorPref}.500` 
+                          : `${colorPref}.400`
+                      }
+                      borderRadius="full"
+                    />
+                  </Box>
+
+                  {/* Description */}
                   <Text
                     fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
                     fontWeight="400"
+                    maxW="600px"
+                    lineHeight="1.6"
                   >
-                    Kelola role dan hak akses pengguna aplikasi Anda
+                    Kelola role dan permission dengan kontrol akses yang fleksibel
                   </Text>
                 </VStack>
 
@@ -148,13 +176,15 @@ const RoleListPage: NextPageWithLayout = () => {
               </Box>
 
               <RoleTableAdvance
-                initialData={filteredData}
+                initialData={filteredRoles}
                 loading={loading}
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
                 onManagePermissions={handleManagePermissions}
+                onLoadMore={() => loadMore({ status: filterStatus })}
+                hasMore={hasMore}
                 headerAction={
                   <PrimaryButton
                     onClick={() => handleOpenModal()}

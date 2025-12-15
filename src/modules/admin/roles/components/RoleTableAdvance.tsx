@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useContext, useEffect } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import {
   Box,
   IconButton,
@@ -32,6 +32,8 @@ interface RoleTableAdvanceProps {
   onRestore: (id: string) => void;
   onAddNew: () => void;
   onManagePermissions?: (role: Role) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
   headerAction?: React.ReactNode;
 }
 
@@ -43,6 +45,8 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
   onRestore,
   onAddNew,
   onManagePermissions,
+  onLoadMore,
+  hasMore = false,
   headerAction,
 }) => {
   const { colorMode } = useColorMode();
@@ -67,13 +71,6 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
   const globalFilterValue =
     (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
 
-  const [visibleCount, setVisibleCount] = useState(12);
-
-  // Reset visible count when filter changes
-  useEffect(() => {
-    setVisibleCount(12);
-  }, [globalFilterValue]);
-
   const filteredData = useMemo(() => {
     if (!globalFilterValue) return initialData;
     return initialData.filter((item) =>
@@ -81,12 +78,10 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
     );
   }, [initialData, globalFilterValue]);
 
-  const currentData = useMemo(() => {
-    return filteredData.slice(0, visibleCount);
-  }, [filteredData, visibleCount]);
-
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 12);
+    if (onLoadMore) {
+      onLoadMore();
+    }
   };
 
   if (loading && initialData.length === 0) {
@@ -101,9 +96,11 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
     <Box>
       <Box
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
         borderRadius="24px"
         p={{ base: 4, md: '32px' }}
+        borderWidth="1px"
+        borderColor={colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'}
         _before={{
           content: '""',
           pos: 'absolute',
@@ -144,7 +141,11 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
             w={{ base: 'full', md: 'auto' }}
           >
             <InputLeftElement h="48px">
-              <Icon as={FaSearch} color="gray.400" boxSize={4} />
+              <Icon 
+                as={FaSearch} 
+                color={colorMode === 'light' ? 'gray.400' : 'gray.500'} 
+                boxSize={4} 
+              />
             </InputLeftElement>
             <Input
               value={globalFilterValue}
@@ -160,10 +161,21 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
               }
               fontSize="sm"
               fontWeight="500"
-              placeholder=""
-              bg={colorMode === 'light' ? 'gray.50' : 'gray.800'}
+              placeholder="Cari data..."
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              _placeholder={{
+                color: colorMode === 'light' ? 'gray.400' : 'gray.500',
+              }}
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.600',
                 borderColor:
                   colorMode === 'light'
                     ? `${colorPref}.500`
@@ -175,174 +187,159 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
 
         {/* Responsive Grid Layout */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={4}>
-          {currentData.map((role) => {
+          {filteredData.map((role) => {
             const isDeleted = role.deleted_at;
             return (
               <Box
                 key={role.id}
-                p={5}
+                p={6}
                 borderRadius="2xl"
                 borderWidth="1px"
-                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
                 shadow="sm"
-                transition="all 0.2s"
+                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 _hover={{
-                  shadow: 'md',
                   transform: 'translateY(-2px)',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                  shadow: 'lg',
+                  borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}.500`,
                 }}
+                position="relative"
+                overflow="hidden"
               >
-                <Flex justify="space-between" align="start" mb={3}>
-                  <Box>
-                    <HStack mb={1}>
-                      <Text
-                        fontWeight="bold"
-                        fontSize="lg"
-                        noOfLines={1}
-                        title={role.name}
-                      >
-                        {role.name}
-                      </Text>
-                    </HStack>
+                {/* Role Info */}
+                <VStack align="start" spacing={3} mb={4}>
+                  <Flex justify="space-between" align="start" w="full" gap={2}>
+                    <Text
+                      fontWeight="700"
+                      fontSize="lg"
+                      noOfLines={1}
+                      title={role.name}
+                      color={colorMode === 'light' ? 'gray.900' : 'white'}
+                      flex={1}
+                      minW={0}
+                    >
+                      {role.name}
+                    </Text>
+                    
+                    {/* Status Badge */}
                     <Badge
-                      px={2}
-                      py={0.5}
-                      borderRadius="full"
+                      px={2.5}
+                      py={1}
+                      borderRadius="md"
                       fontSize="xs"
+                      fontWeight="600"
                       colorScheme={isDeleted ? 'red' : 'green'}
                       variant="subtle"
+                      flexShrink={0}
                     >
                       {isDeleted ? 'Dihapus' : 'Aktif'}
                     </Badge>
-                  </Box>
-                </Flex>
+                  </Flex>
 
-                <Box mb={4} minH="40px">
                   <Text
                     fontSize="sm"
                     color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
                     noOfLines={2}
+                    minH="40px"
+                    fontWeight="400"
                   >
-                    {role.description || '-'}
+                    {role.description || (
+                      <Text as="span" fontStyle="italic" color={colorMode === 'light' ? 'gray.400' : 'gray.500'}>
+                        No description
+                      </Text>
+                    )}
                   </Text>
-                </Box>
+                </VStack>
 
-                <HStack
+                {/* Action Buttons */}
+                <Flex
                   justify="flex-end"
-                  spacing={2}
-                  mt="auto"
+                  gap={1.5}
+                  mt={4}
                   pt={4}
                   borderTopWidth="1px"
-                  borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+                  borderColor={colorMode === 'light' ? 'gray.100' : 'gray.600'}
                 >
                   {!isDeleted ? (
                     <>
-                      <Tooltip label="Edit" hasArrow>
+                      <Tooltip label="Edit" hasArrow placement="top">
                         <IconButton
                           aria-label="Edit"
-                          icon={<MaterialIcon name="edit" size={18} />}
+                          icon={<MaterialIcon name="edit" size={16} />}
                           size="sm"
-                          borderRadius="full"
+                          borderRadius="md"
                           variant="ghost"
                           onClick={() => onEdit(role)}
-                          bg={
-                            colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
-                          }
-                          color={
-                            colorMode === 'light' ? 'blue.600' : 'blue.300'
-                          }
+                          color={colorMode === 'light' ? 'blue.600' : 'blue.300'}
                           _hover={{
-                            bg:
-                              colorMode === 'light'
-                                ? 'blue.100'
-                                : 'whiteAlpha.300',
+                            bg: colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
-                      <Tooltip label="Permissions" hasArrow>
+                      <Tooltip label="Permissions" hasArrow placement="top">
                         <IconButton
                           aria-label="Permissions"
-                          icon={<MaterialIcon name="security" size={18} />}
+                          icon={<MaterialIcon name="security" size={16} />}
                           size="sm"
-                          borderRadius="full"
+                          borderRadius="md"
                           variant="ghost"
                           onClick={() => onManagePermissions?.(role)}
-                          bg={
-                            colorMode === 'light'
-                              ? 'purple.50'
-                              : 'whiteAlpha.200'
-                          }
-                          color={
-                            colorMode === 'light' ? 'purple.600' : 'purple.300'
-                          }
+                          color={colorMode === 'light' ? 'purple.600' : 'purple.300'}
                           _hover={{
-                            bg:
-                              colorMode === 'light'
-                                ? 'purple.100'
-                                : 'whiteAlpha.300',
+                            bg: colorMode === 'light' ? 'purple.50' : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
-                      <Tooltip label="Hapus" hasArrow>
+                      <Tooltip label="Hapus" hasArrow placement="top">
                         <IconButton
                           aria-label="Hapus"
-                          icon={<MaterialIcon name="delete" size={18} />}
+                          icon={<MaterialIcon name="delete" size={16} />}
                           size="sm"
-                          borderRadius="full"
+                          borderRadius="md"
                           variant="ghost"
                           onClick={() => handleDelete(role.id)}
-                          bg={
-                            colorMode === 'light' ? 'red.50' : 'whiteAlpha.200'
-                          }
                           color={colorMode === 'light' ? 'red.600' : 'red.300'}
                           _hover={{
-                            bg:
-                              colorMode === 'light'
-                                ? 'red.100'
-                                : 'whiteAlpha.300',
+                            bg: colorMode === 'light' ? 'red.50' : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
                     </>
                   ) : (
-                    <Tooltip label="Pulihkan" hasArrow>
+                    <Tooltip label="Pulihkan" hasArrow placement="top">
                       <IconButton
                         aria-label="Restore"
-                        icon={
-                          <MaterialIcon name="restore_from_trash" size={18} />
-                        }
+                        icon={<MaterialIcon name="restore_from_trash" size={16} />}
                         size="sm"
-                        borderRadius="full"
+                        borderRadius="md"
                         variant="ghost"
                         onClick={() => onRestore(role.id)}
-                        bg={
-                          colorMode === 'light' ? 'green.50' : 'whiteAlpha.200'
-                        }
-                        color={
-                          colorMode === 'light' ? 'green.600' : 'green.300'
-                        }
+                        color={colorMode === 'light' ? 'green.600' : 'green.300'}
                         _hover={{
-                          bg:
-                            colorMode === 'light'
-                              ? 'green.100'
-                              : 'whiteAlpha.300',
+                          bg: colorMode === 'light' ? 'green.50' : 'whiteAlpha.200',
                         }}
                       />
                     </Tooltip>
                   )}
-                </HStack>
+                </Flex>
               </Box>
             );
           })}
         </SimpleGrid>
 
         {/* Load More Button */}
-        {visibleCount < filteredData.length && (
+        {hasMore && !loading && (
           <Flex justify="center" mt={8}>
             <PrimaryButton onClick={handleLoadMore}>
               Muat Lebih Banyak
             </PrimaryButton>
+          </Flex>
+        )}
+
+        {loading && initialData.length > 0 && (
+          <Flex justify="center" mt={8}>
+            <Text color="gray.500">Memuat data...</Text>
           </Flex>
         )}
 

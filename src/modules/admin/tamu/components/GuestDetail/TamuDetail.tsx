@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -8,18 +8,19 @@ import {
   ModalBody,
   ModalCloseButton,
   Button,
-  Heading,
   Text,
   Badge,
   HStack,
   VStack,
   Box,
   Grid,
-  useColorModeValue,
+  useColorMode,
   Divider,
-  Avatar,
   Icon,
+  Flex,
 } from '@chakra-ui/react';
+import { FiUser, FiPhone, FiMapPin, FiCalendar, FiClock, FiCheckCircle } from 'react-icons/fi';
+import AppSettingContext from '@/providers/AppSettingProvider';
 import { Tamu } from '../../types/Tamu.types';
 
 interface TamuDetailProps {
@@ -36,90 +37,107 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
   tamu,
   onEdit,
 }) => {
-  // Hooks must be called unconditionally at the top level
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const labelColor = useColorModeValue('gray.500', 'gray.400');
-  const valueColor = useColorModeValue('gray.900', 'white');
-  const sectionBg = useColorModeValue('gray.50', 'gray.800');
-  const avatarBg = useColorModeValue('gray.900', 'white');
-  const avatarColor = useColorModeValue('white', 'gray.900');
-  const subTextColor = useColorModeValue('gray.500', 'gray.400');
-  const modalBg = useColorModeValue('white', 'gray.900');
+  const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
 
   if (!tamu) {
     return null;
   }
 
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { color: string; label: string; bg: string }> = {
+      akan_hadir: { 
+        color: colorMode === 'light' ? 'green.600' : 'green.400', 
+        label: 'Akan Hadir',
+        bg: colorMode === 'light' ? 'green.50' : 'green.900'
+      },
+      tidak_hadir: { 
+        color: colorMode === 'light' ? 'red.600' : 'red.400', 
+        label: 'Tidak Hadir',
+        bg: colorMode === 'light' ? 'red.50' : 'red.900'
+      },
+      belum_konfirmasi: { 
+        color: colorMode === 'light' ? 'yellow.600' : 'yellow.400', 
+        label: 'Belum Konfirmasi',
+        bg: colorMode === 'light' ? 'yellow.50' : 'yellow.900'
+      },
+      dikirim: { 
+        color: colorMode === 'light' ? 'blue.600' : 'blue.400', 
+        label: 'Dikirim',
+        bg: colorMode === 'light' ? 'blue.50' : 'blue.900'
+      },
+      belum_dikirim: { 
+        color: colorMode === 'light' ? 'gray.600' : 'gray.400', 
+        label: 'Belum Dikirim',
+        bg: colorMode === 'light' ? 'gray.50' : 'gray.800'
+      },
+      kadaluarsa: { 
+        color: colorMode === 'light' ? 'orange.600' : 'orange.400', 
+        label: 'Kadaluarsa',
+        bg: colorMode === 'light' ? 'orange.50' : 'orange.900'
+      },
+    };
+
+    return configs[status] || { 
+      color: colorMode === 'light' ? 'gray.600' : 'gray.400', 
+      label: status,
+      bg: colorMode === 'light' ? 'gray.50' : 'gray.800'
+    };
+  };
+
   const renderStatusBadge = (status: string) => {
-    let colorScheme = 'gray';
-    let label = status;
-
-    switch (status) {
-      case 'akan_hadir':
-        colorScheme = 'green';
-        label = 'Akan Hadir';
-        break;
-      case 'tidak_hadir':
-        colorScheme = 'red';
-        label = 'Tidak Hadir';
-        break;
-      case 'belum_konfirmasi':
-        colorScheme = 'yellow';
-        label = 'Belum Konfirmasi';
-        break;
-      case 'dikirim':
-        colorScheme = 'blue';
-        label = 'Dikirim';
-        break;
-      case 'belum_dikirim':
-        colorScheme = 'gray';
-        label = 'Belum Dikirim';
-        break;
-      case 'kadaluarsa':
-        colorScheme = 'orange';
-        label = 'Kadaluarsa';
-        break;
-    }
-
+    const config = getStatusConfig(status);
     return (
       <Badge
-        colorScheme={colorScheme}
-        variant="subtle"
-        px={2}
-        py={0.5}
+        bg={config.bg}
+        color={config.color}
+        px={3}
+        py={1}
         borderRadius="full"
+        fontSize="xs"
+        fontWeight="600"
         textTransform="capitalize"
       >
-        {label}
+        {config.label}
       </Badge>
     );
   };
 
   const InfoItem = ({
+    icon,
     label,
     value,
   }: {
+    icon?: any;
     label: string;
     value: React.ReactNode;
   }) => (
     <Box>
+      <HStack spacing={2} mb={2}>
+        {icon && (
+          <Icon 
+            as={icon} 
+            boxSize={4} 
+            color={colorMode === 'light' ? 'gray.500' : 'gray.400'} 
+          />
+        )}
+        <Text
+          fontSize="xs"
+          fontWeight="600"
+          color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+          textTransform="uppercase"
+          letterSpacing="wide"
+        >
+          {label}
+        </Text>
+      </HStack>
       <Text
-        fontSize="xs"
-        fontWeight="600"
-        color={labelColor}
-        textTransform="uppercase"
-        letterSpacing="wider"
-        mb={1}
-      >
-        {label}
-      </Text>
-      <Text
-        fontSize="sm"
+        fontSize="md"
         fontWeight="500"
-        color={valueColor}
-        lineHeight="short"
+        color={colorMode === 'light' ? 'gray.900' : 'white'}
+        lineHeight="1.5"
       >
-        {value}
+        {value || '-'}
       </Text>
     </Box>
   );
@@ -132,68 +150,87 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
       scrollBehavior="inside"
       isCentered
     >
-      <ModalOverlay backdropFilter="blur(5px)" />
-      <ModalContent borderRadius="xl" overflow="hidden" bg={modalBg}>
-        {/* Modern Header with Background */}
-        <Box
-          bg={sectionBg}
-          px={6}
-          py={8}
-          borderBottom="1px solid"
-          borderColor={borderColor}
-          position="relative"
-        >
-          <ModalCloseButton position="absolute" top={4} right={4} />
-          <HStack spacing={5} align="center">
-            <Avatar
-              size="lg"
-              name={tamu.nama}
-              bg={avatarBg}
-              color={avatarColor}
-              boxShadow="md"
-            />
-            <Box>
-              <Heading size="md" mb={1} letterSpacing="-0.5px">
-                {tamu.nama}
-              </Heading>
-              <HStack spacing={2} wrap="wrap">
-                <Badge
-                  colorScheme="purple"
-                  variant="solid"
-                  px={2}
-                  borderRadius="full"
-                  fontSize="xs"
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+      <ModalContent
+        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        borderRadius="24px"
+        mx={4}
+        boxShadow="xl"
+        p={2}
+      >
+        {/* Header */}
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
+          <HStack spacing={3} justify="space-between">
+            <VStack align="start" spacing={2}>
+              <HStack spacing={3}>
+                <Flex
+                  bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                  color={colorMode === 'light' ? 'blue.600' : 'blue.300'}
+                  w="48px"
+                  h="48px"
+                  borderRadius="16px"
+                  align="center"
+                  justify="center"
                 >
-                  {tamu.kategori}
-                </Badge>
-                <Text fontSize="sm" color={subTextColor} fontWeight="500">
-                  • {tamu.hubungan}
-                </Text>
+                  <Icon as={FiUser} boxSize={6} />
+                </Flex>
+                <Box>
+                  <Text
+                    fontSize="xl"
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    lineHeight="1.2"
+                  >
+                    {tamu.nama}
+                  </Text>
+                  <HStack spacing={2} mt={1}>
+                    <Badge
+                      bg={colorMode === 'light' ? 'purple.50' : 'purple.900'}
+                      color={colorMode === 'light' ? 'purple.600' : 'purple.300'}
+                      px={2}
+                      py={0.5}
+                      borderRadius="full"
+                      fontSize="xs"
+                      fontWeight="600"
+                    >
+                      {tamu.kategori}
+                    </Badge>
+                    <Text fontSize="sm" color={colorMode === 'light' ? 'gray.500' : 'gray.400'} fontWeight="500">
+                      • {tamu.hubungan}
+                    </Text>
+                  </HStack>
+                </Box>
               </HStack>
-            </Box>
+            </VStack>
           </HStack>
-        </Box>
+        </ModalHeader>
+        <ModalCloseButton top={6} right={6} />
 
-        <ModalBody p={0}>
-          <VStack
-            divider={<Divider borderColor={borderColor} />}
-            spacing={0}
-            align="stretch"
-          >
+        <ModalBody py={4} px={6}>
+          <VStack spacing={6} align="stretch">
             {/* Contact Info */}
-            <Box p={6}>
+            <Box>
               <Grid
                 templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
                 gap={6}
               >
-                <InfoItem label="Nomor HP" value={tamu.nomor_hp || '-'} />
-                <InfoItem label="Alamat" value={tamu.alamat || '-'} />
+                <InfoItem icon={FiPhone} label="Nomor HP" value={tamu.nomor_hp} />
+                <InfoItem icon={FiMapPin} label="Alamat" value={tamu.alamat} />
               </Grid>
             </Box>
 
+            <Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'} />
+
             {/* Status Section */}
-            <Box p={6} bg={sectionBg}>
-              <Text fontSize="sm" fontWeight="bold" mb={4} color={valueColor}>
+            <Box>
+              <Text 
+                fontSize="sm" 
+                fontWeight="700" 
+                mb={4} 
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
                 Status & Undangan
               </Text>
               <Grid
@@ -201,14 +238,17 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 gap={6}
               >
                 <InfoItem
+                  icon={FiCheckCircle}
                   label="Status Undangan"
                   value={renderStatusBadge(tamu.status_undangan)}
                 />
                 <InfoItem
+                  icon={FiCheckCircle}
                   label="Konfirmasi"
                   value={renderStatusBadge(tamu.konfirmasi_kehadiran)}
                 />
                 <InfoItem
+                  icon={FiCalendar}
                   label="Dikirim Pada"
                   value={
                     tamu.tgl_kirim_undangan
@@ -216,10 +256,11 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                           'id-ID',
                           { day: 'numeric', month: 'long', year: 'numeric' }
                         )
-                      : '-'
+                      : null
                   }
                 />
                 <InfoItem
+                  icon={FiCalendar}
                   label="Dibaca Pada"
                   value={
                     tamu.tgl_baca_undangan
@@ -227,15 +268,24 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                           'id-ID',
                           { day: 'numeric', month: 'long', year: 'numeric' }
                         )
-                      : '-'
+                      : null
                   }
                 />
               </Grid>
             </Box>
 
+            <Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'} />
+
             {/* Event Info */}
-            <Box p={6}>
-              <Text fontSize="sm" fontWeight="bold" mb={4} color={valueColor}>
+            <Box>
+              <Text 
+                fontSize="sm" 
+                fontWeight="700" 
+                mb={4} 
+                color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
                 Kehadiran Event
               </Text>
               <Grid
@@ -243,6 +293,7 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 gap={6}
               >
                 <InfoItem
+                  icon={FiClock}
                   label="Check-in"
                   value={
                     tamu.check_in
@@ -252,10 +303,11 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                           hour: '2-digit',
                           minute: '2-digit',
                         })
-                      : '-'
+                      : null
                   }
                 />
                 <InfoItem
+                  icon={FiClock}
                   label="Check-out"
                   value={
                     tamu.check_out
@@ -265,7 +317,7 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                           hour: '2-digit',
                           minute: '2-digit',
                         })
-                      : '-'
+                      : null
                   }
                 />
               </Grid>
@@ -273,18 +325,22 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
           </VStack>
         </ModalBody>
 
-        <ModalFooter
-          bg={sectionBg}
-          borderTop="1px solid"
-          borderColor={borderColor}
-          py={3}
-        >
+        <ModalFooter pb={6} px={6} pt={4}>
           <Button
-            variant="ghost"
-            size="sm"
             onClick={onClose}
             w="full"
-            color="gray.500"
+            h="50px"
+            borderRadius="16px"
+            fontSize="sm"
+            fontWeight="600"
+            bg={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`}
+            color="white"
+            _hover={{
+              bg: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+            }}
+            _active={{
+              bg: colorMode === 'light' ? `${colorPref}.700` : `${colorPref}Dim.700`,
+            }}
           >
             Tutup
           </Button>

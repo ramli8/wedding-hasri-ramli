@@ -33,7 +33,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         flex="1"
         ml={{
           base: '0',
-          xl: '280px',
+          xl: '320px',
         }}
         transition="margin-left 0.3s ease"
         minH="100vh"

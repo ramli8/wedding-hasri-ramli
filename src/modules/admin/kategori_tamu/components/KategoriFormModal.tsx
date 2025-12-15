@@ -93,6 +93,7 @@ const KategoriFormModal: React.FC<KategoriFormModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
       isCentered
       initialFocusRef={isEdit ? undefined : initialRef}
     >

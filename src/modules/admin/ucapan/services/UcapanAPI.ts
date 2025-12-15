@@ -1,28 +1,57 @@
 import supabase from '@/lib/supabaseClient';
 import { Ucapan, UcapanWithReplies, CreateUcapanData } from '../types/Ucapan.types';
 
+export interface UcapanApiResponse {
+  data: UcapanWithReplies[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 class UcapanAPI {
   /**
-   * Get all ucapan with replies (threaded)
+   * Get all ucapan with replies (threaded), including soft-deleted
    */
-  async getUcapan(): Promise<UcapanWithReplies[]> {
+  async getUcapan(
+    page?: number, 
+    limit?: number,
+    filters?: { status?: 'all' | 'active' | 'inactive' }
+  ): Promise<UcapanApiResponse> {
     try {
-      // Get all parent messages (where parent_id is null)
-      const { data: parents, error: parentsError } = await supabase
+      // Get all parent messages (where parent_id is null), including deleted
+      let query = supabase
         .from('ucapan')
-        .select('*')
+        .select('*', { count: 'exact' })
         .is('parent_id', null)
-        .is('deleted_at', null)
+        .order('deleted_at', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: false });
+
+      // Apply status filter
+      if (filters?.status === 'active') {
+        query = query.is('deleted_at', null);
+      } else if (filters?.status === 'inactive') {
+        query = query.not('deleted_at', 'is', null);
+      }
+
+      // Apply pagination if provided
+      if (page && limit) {
+        const offset = (page - 1) * limit;
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data: parents, error: parentsError, count } = await query;
 
       if (parentsError) throw parentsError;
 
-      // Get ALL replies (not just direct children)
+      // Get ALL replies (not just direct children), including deleted for admin view
       const { data: allReplies, error: repliesError } = await supabase
         .from('ucapan')
         .select('*')
         .not('parent_id', 'is', null)
-        .is('deleted_at', null)
+        .order('deleted_at', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: true });
 
       if (repliesError) throw repliesError;
@@ -57,7 +86,17 @@ class UcapanAPI {
         };
       });
 
-      return ucapanWithReplies;
+      const totalPages = count && limit ? Math.ceil(count / limit) : 0;
+
+      return {
+        data: ucapanWithReplies,
+        pagination: page && limit ? {
+          page,
+          limit,
+          total: count || 0,
+          totalPages,
+        } : undefined,
+      };
     } catch (error: any) {
       console.error('Error fetching ucapan:', error);
       throw new Error(error.message || 'Failed to fetch ucapan');
@@ -68,7 +107,56 @@ class UcapanAPI {
    * Get ucapan for public display (non-deleted, with replies)
    */
   async getPublicUcapan(): Promise<UcapanWithReplies[]> {
-    return this.getUcapan();
+    try {
+      // Get all parent messages (where parent_id is null), ONLY non-deleted
+      const { data: parents, error: parentsError } = await supabase
+        .from('ucapan')
+        .select('*')
+        .is('parent_id', null)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (parentsError) throw parentsError;
+
+      // Get ALL replies (not just direct children), ONLY non-deleted
+      const { data: allReplies, error: repliesError } = await supabase
+        .from('ucapan')
+        .select('*')
+        .not('parent_id', 'is', null)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      // For each parent, collect ALL replies in its thread
+      const ucapanWithReplies: UcapanWithReplies[] = (parents || []).map((parent) => {
+        // Find all replies that belong to this thread
+        const threadReplies: any[] = [];
+        
+        // Collect all replies in this thread (recursively find all descendants)
+        const collectReplies = (parentId: string) => {
+          (allReplies || []).forEach(reply => {
+            if (reply.parent_id === parentId && !threadReplies.find(r => r.id === reply.id)) {
+              threadReplies.push(reply);
+              // Recursively collect replies to this reply
+              collectReplies(reply.id);
+            }
+          });
+        };
+        
+        collectReplies(parent.id);
+        
+        return {
+          ...parent,
+          replies: threadReplies,
+        };
+      });
+
+      return ucapanWithReplies;
+    } catch (error: any) {
+      console.error('Error fetching public ucapan:', error);
+      throw new Error(error.message || 'Failed to fetch public ucapan');
+    }
   }
 
   /**
@@ -109,6 +197,21 @@ class UcapanAPI {
   /**
    * Create new ucapan (guest or admin)
    */
+  async getCounts(): Promise<{ all: number; active: number; inactive: number }> {
+    const buildQuery = () => supabase.from('ucapan').select('*', { count: 'exact', head: true }).is('parent_id', null);
+    
+    try {
+      const { count: allCount } = await buildQuery();
+      const { count: activeCount } = await buildQuery().is('deleted_at', null);
+      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+      
+      return { all: allCount || 0, active: activeCount || 0, inactive: inactiveCount || 0 };
+    } catch (error: any) {
+      console.error('Error fetching ucapan counts:', error);
+      return { all: 0, active: 0, inactive: 0 };
+    }
+  }
+
   async createUcapan(data: CreateUcapanData): Promise<Ucapan> {
     try {
       const { data: ucapan, error } = await supabase
@@ -145,6 +248,26 @@ class UcapanAPI {
   }
 
   /**
+   * Update ucapan message
+   */
+  async updateUcapan(id: string, pesan: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('ucapan')
+        .update({ 
+          pesan,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error updating ucapan:', error);
+      throw new Error(error.message || 'Failed to update ucapan');
+    }
+  }
+
+  /**
    * Soft delete ucapan
    */
   async deleteUcapan(id: string): Promise<void> {
@@ -158,6 +281,23 @@ class UcapanAPI {
     } catch (error: any) {
       console.error('Error deleting ucapan:', error);
       throw new Error(error.message || 'Failed to delete ucapan');
+    }
+  }
+
+  /**
+   * Restore soft-deleted ucapan
+   */
+  async restoreUcapan(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('ucapan')
+        .update({ deleted_at: null })
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error restoring ucapan:', error);
+      throw new Error(error.message || 'Failed to restore ucapan');
     }
   }
 

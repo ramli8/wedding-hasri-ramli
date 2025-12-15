@@ -38,6 +38,14 @@ class TamuAPI {
         )
         .order('created_at', { ascending: false });
 
+      // Apply status filter (deleted_at)
+      if (filter?.status === 'active') {
+        query = query.is('deleted_at', null);
+      } else if (filter?.status === 'inactive') {
+        query = query.not('deleted_at', 'is', null);
+      }
+      // If 'all' or undefined, don't filter by deleted_at
+
       // Apply filters - need to filter by kategori_tamu.nama
       if (filter?.kategori) {
         query = query.eq('kategori_tamu.nama', filter.kategori);
@@ -140,6 +148,52 @@ class TamuAPI {
     } catch (error: any) {
       console.error('Error in getTamuById:', error);
       throw new Error(error.message || 'Gagal mengambil data tamu');
+    }
+  }
+
+  /**
+   * Get counts by status for status tabs
+   */
+  async getCounts(filters?: {
+    kategori?: string;
+    hubungan?: string;
+  }): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    const buildQuery = () => {
+      let q = this.supabase
+        .from('tamu')
+        .select('*, kategori_tamu:kategori_id(nama), hubungan_tamu:hubungan_id(nama)', { count: 'exact', head: true });
+      
+      if (filters?.kategori) {
+        q = q.eq('kategori_tamu.nama', filters.kategori);
+      }
+      if (filters?.hubungan) {
+        q = q.eq('hubungan_tamu.nama', filters.hubungan);
+      }
+      return q;
+    };
+
+    try {
+      // Count all
+      const { count: allCount } = await buildQuery();
+
+      // Count active (not deleted)
+      const { count: activeCount } = await buildQuery().is('deleted_at', null);
+
+      // Count inactive (deleted)
+      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+
+      return {
+        all: allCount || 0,
+        active: activeCount || 0,
+        inactive: inactiveCount || 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching tamu counts:', error);
+      return { all: 0, active: 0, inactive: 0 };
     }
   }
 

@@ -67,7 +67,7 @@ const menuItemMaster: Array<MenuItem> = [
 const menuItemInsights: Array<MenuItem> = [
   {
     name: 'personalisasi',
-    url: '/personalisasi',
+    url: '/admin/personalisasi',
     icon: 'settings',
   },
 ];

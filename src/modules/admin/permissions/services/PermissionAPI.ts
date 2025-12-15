@@ -15,6 +15,16 @@ export interface PermissionCheck {
   reason?: string;
 }
 
+export interface PermissionApiResponse {
+  data: (RolePermission & { roles: { name: string } })[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 class PermissionAPI {
   public supabase = supabase; // Expose supabase for external use
 
@@ -152,37 +162,64 @@ class PermissionAPI {
   }
 
   /**
-   * Get all permissions (for admin view)
+   * Get all permissions (for admin view) with pagination and server-side filtering
    */
   async getAllPermissions(
     includeDeleted: boolean = false,
-    options?: { limit?: number; offset?: number }
-  ): Promise<(RolePermission & { roles: { name: string } })[]> {
+    page?: number,
+    limit?: number,
+    filters?: {
+      roleId?: string;
+      status?: 'all' | 'active' | 'inactive';
+      search?: string;
+    }
+  ): Promise<PermissionApiResponse> {
     let query = supabase
       .from('role_permissions')
-      .select('*, roles(name)')
+      .select('*, roles(name)', { count: 'exact' })
       .order('deleted_at', { ascending: true, nullsFirst: true })
       .order('role_id', { ascending: true })
       .order('url_pattern', { ascending: true });
 
-    if (!includeDeleted) {
+    // Server-side filtering by status
+    if (filters?.status === 'active') {
+      query = query.is('deleted_at', null);
+    } else if (filters?.status === 'inactive') {
+      query = query.not('deleted_at', 'is', null);
+    } else if (!includeDeleted) {
       query = query.is('deleted_at', null);
     }
 
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-    if (options?.offset) {
-      query = query.range(
-        options.offset,
-        options.offset + (options.limit || 10) - 1
-      );
+    // Server-side filtering by role
+    if (filters?.roleId) {
+      query = query.eq('role_id', filters.roleId);
     }
 
-    const { data, error } = await query;
+    // Server-side search
+    if (filters?.search) {
+      query = query.or(`url_pattern.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
-    return data as (RolePermission & { roles: { name: string } })[];
+
+    const totalPages = count && limit ? Math.ceil(count / limit) : 0;
+
+    return {
+      data: data as (RolePermission & { roles: { name: string } })[],
+      pagination: page && limit ? {
+        page,
+        limit,
+        total: count || 0,
+        totalPages,
+      } : undefined,
+    };
   }
 
   async getCount(): Promise<number> {
@@ -192,6 +229,69 @@ class PermissionAPI {
 
     if (error) throw error;
     return count || 0;
+  }
+
+  /**
+   * Get counts by status for filter tabs (status: All/Active/Inactive)
+   */
+  async getCounts(filters?: {
+    roleId?: string;
+  }): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    // Build base query with role filter if provided
+    const buildQuery = () => {
+      let q = supabase.from('role_permissions').select('*', { count: 'exact', head: true });
+      if (filters?.roleId) {
+        q = q.eq('role_id', filters.roleId);
+      }
+      return q;
+    };
+
+    // Count all
+    const { count: allCount } = await buildQuery();
+
+    // Count active (not deleted)
+    const { count: activeCount } = await buildQuery().is('deleted_at', null);
+
+    // Count inactive (deleted)
+    const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+
+    return {
+      all: allCount || 0,
+      active: activeCount || 0,
+      inactive: inactiveCount || 0,
+    };
+  }
+
+  /**
+   * Get counts per role for role tabs
+   */
+  async getCountsByRole(status?: 'all' | 'active' | 'inactive'): Promise<Record<string, number>> {
+    let query = supabase
+      .from('role_permissions')
+      .select('role_id');
+
+    // Apply status filter
+    if (status === 'active') {
+      query = query.is('deleted_at', null);
+    } else if (status === 'inactive') {
+      query = query.not('deleted_at', 'is', null);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Count per role
+    const counts: Record<string, number> = {};
+    data?.forEach((item) => {
+      counts[item.role_id] = (counts[item.role_id] || 0) + 1;
+    });
+
+    return counts;
   }
 
   /**

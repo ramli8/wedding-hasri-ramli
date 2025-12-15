@@ -5,10 +5,7 @@ import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import AuthAPI from '@/modules/auth/services/AuthAPI';
 import { useRouter } from 'next/router';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { showLogoutAlert } from '@/utils/sweetalert';
 
 interface UserProfileActionsProps {
   mobileSimplified?: boolean;
@@ -27,25 +24,13 @@ const UserProfileActions = ({ mobileSimplified = false }: UserProfileActionsProp
 
   const activeRoleName = accountInfo?.role?.find(r => r.id === accountInfo?.activeRole)?.name || 'Role';
 
-  const handleLogout = () => {
-    MySwal.fire({
-      title: 'Logout?',
-      text: "Apakah Anda yakin ingin keluar?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Keluar',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      background: colorMode === 'light' ? '#fff' : '#1A202C',
-      color: colorMode === 'light' ? '#1A202C' : '#fff',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        authAPI.logout();
-        router.push('/admin/login');
-      }
-    });
+  const handleLogout = async () => {
+    const result = await showLogoutAlert(colorMode);
+
+    if (result.isConfirmed) {
+      authAPI.logout();
+      router.push('/admin/login');
+    }
   };
 
   const handleSwitchRole = () => {
@@ -117,16 +102,18 @@ const UserProfileActions = ({ mobileSimplified = false }: UserProfileActionsProp
               </Text>
             </Box>
             <MenuDivider />
-            <MenuItem 
-              icon={<MaterialIcon name="swap_horiz" size={18} />} 
-              onClick={() => {
-                setSelectedRole(accountInfo?.activeRole || '');
-                setIsRoleModalOpen(true);
-              }}
-              borderRadius="md"
-            >
-              Ganti Role
-            </MenuItem>
+            {accountInfo?.role && accountInfo.role.length > 1 && (
+              <MenuItem 
+                icon={<MaterialIcon name="swap_horiz" size={18} />} 
+                onClick={() => {
+                  setSelectedRole(accountInfo?.activeRole || '');
+                  setIsRoleModalOpen(true);
+                }}
+                borderRadius="md"
+              >
+                Ganti Role
+              </MenuItem>
+            )}
             <MenuItem 
               icon={<MaterialIcon name="logout" size={18} />} 
               onClick={handleLogout} 
@@ -144,25 +131,33 @@ const UserProfileActions = ({ mobileSimplified = false }: UserProfileActionsProp
           <ModalHeader>Ganti Role</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Select 
-              placeholder="Pilih role" 
-              value={selectedRole} 
-              onChange={e => setSelectedRole(e.target.value)}
-            >
-              {accountInfo?.role?.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </Select>
+            {accountInfo?.role && accountInfo.role.length > 0 ? (
+              <Select 
+                placeholder="Pilih role" 
+                value={selectedRole} 
+                onChange={e => setSelectedRole(e.target.value)}
+              >
+                {accountInfo.role.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Text color="gray.500" textAlign="center" py={4}>
+                Tidak ada role tersedia. Silakan login ulang.
+              </Text>
+            )}
           </ModalBody>
           <ModalFooter>
             <Button variant="ghost" mr={3} onClick={() => setIsRoleModalOpen(false)}>
               Batal
             </Button>
-            <PrimaryButton onClick={handleSwitchRole}>
-              Simpan
-            </PrimaryButton>
+            {accountInfo?.role && accountInfo.role.length > 0 && (
+              <PrimaryButton onClick={handleSwitchRole}>
+                Simpan
+              </PrimaryButton>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>

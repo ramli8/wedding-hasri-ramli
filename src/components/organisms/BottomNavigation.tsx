@@ -27,10 +27,7 @@ import AccountInfoContext from '@/providers/AccountInfoProvider';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import PermissionAPI from '@/modules/admin/permissions/services/PermissionAPI';
 import AuthAPI from '@/modules/auth/services/AuthAPI';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-
-const MySwal = withReactContent(Swal);
+import { showLogoutAlert } from '@/utils/sweetalert';
 
 const BottomNavigation = () => {
   const { colorMode } = useColorMode();
@@ -144,27 +141,14 @@ const BottomNavigation = () => {
     window.location.href = '/admin/dashboard';
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     onClose();
-    MySwal.fire({
-      title: 'Logout?',
-      text: "Apakah Anda yakin ingin keluar?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Keluar',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      background: colorMode === 'light' ? '#fff' : '#1A202C',
-      color: colorMode === 'light' ? '#1A202C' : '#fff',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const authAPI = new AuthAPI();
-        authAPI.logout();
-        router.push('/admin/login');
-      }
-    });
+    const result = await showLogoutAlert(colorMode);
+    if (result.isConfirmed) {
+      const authAPI = new AuthAPI();
+      authAPI.logout();
+      router.push('/admin/login');
+    }
   };
 
   const activeRoleName = accountInfo?.role?.find(r => r.id === accountInfo?.activeRole)?.name || 'Role';
@@ -172,54 +156,75 @@ const BottomNavigation = () => {
   const NavItem = ({ item }: { item: MenuItem }) => {
     const active = isActive(item.url);
     
-    // Dynamic colors based on theme
-    const activeColor = colorMode === 'light' 
-      ? `var(--chakra-colors-${colorPref}-700)`
-      : `var(--chakra-colors-${colorPref}Dim-200)`;
+    // Dynamic colors based on theme - Subtle background
+    const activeBg = colorMode === 'light' 
+      ? `${colorPref}.50`
+      : `${colorPref}Dim.900`;
     
-    const inactiveColor = colorMode === 'light' ? '#808191' : '#808191';
+    const activeIconColor = colorMode === 'light' 
+      ? `${colorPref}.600`
+      : `${colorPref}Dim.300`;
+    
+    const activeTextColor = colorMode === 'light' 
+      ? `${colorPref}.700`
+      : `${colorPref}Dim.200`;
+    
+    const inactiveColor = colorMode === 'light' ? 'gray.500' : 'gray.400';
     
     return (
-      <VStack
-        spacing={0.5}
+      <Flex
+        direction="column"
+        align="center"
+        justify="center"
+        gap={1.5}
         onClick={() => handleNavClick(item.url)}
         cursor="pointer"
-        minW="70px"
-        py={2}
-        px={1}
+        minW="72px"
+        h="100%"
         position="relative"
+        transition="all 0.3s ease"
         flexShrink={0}
       >
-        <Box position="relative">
+        <Box
+          position="relative"
+          w="48px"
+          h="48px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          borderRadius="16px"
+          bg={active ? activeBg : 'transparent'}
+          transition="all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
+          transform={active ? 'scale(1)' : 'scale(0.92)'}
+          boxShadow={active 
+            ? colorMode === 'light'
+              ? `0 2px 8px var(--chakra-colors-${colorPref}-100)`
+              : `0 2px 8px rgba(0, 0, 0, 0.3)`
+            : 'none'
+          }
+          _hover={{
+            transform: active ? 'scale(1.05)' : 'scale(0.98)',
+          }}
+        >
           <MaterialIcon
             name={item.icon}
             size={24}
-            color={active ? activeColor : inactiveColor}
+            color={active ? activeIconColor : inactiveColor}
           />
-          {active && (
-            <Box
-              position="absolute"
-              top="-4px"
-              left="50%"
-              transform="translateX(-50%)"
-              w="4px"
-              h="4px"
-              borderRadius="full"
-              bg={activeColor}
-            />
-          )}
         </Box>
+        
         <Text
           fontSize="10px"
-          fontWeight={active ? '600' : '500'}
-          color={active ? activeColor : inactiveColor}
-          textTransform="capitalize"
+          fontWeight={active ? '700' : '500'}
+          color={active ? activeTextColor : inactiveColor}
           textAlign="center"
           noOfLines={1}
+          maxW="68px"
+          textTransform="capitalize"
         >
           {item.name.replace('_', ' ')}
         </Text>
-      </VStack>
+      </Flex>
     );
   };
 
@@ -232,10 +237,15 @@ const BottomNavigation = () => {
         right={0}
         zIndex={1000}
         display={{ base: 'block', xl: 'none' }}
-        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        bg={colorMode === 'light' ? 'gray.50' : '#222222'}
+        borderTopRadius="24px"
         borderTop="1px solid"
-        borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-        boxShadow="0 -2px 10px rgba(0, 0, 0, 0.05)"
+        borderColor={colorMode === 'light' ? 'rgba(229, 231, 235, 0.6)' : 'rgba(55, 65, 81, 0.4)'}
+        boxShadow={colorMode === 'light' 
+          ? '0 -1px 2px rgba(0, 0, 0, 0.03), 0 -4px 16px rgba(0, 0, 0, 0.04)' 
+          : '0 -1px 2px rgba(0, 0, 0, 0.2), 0 -4px 16px rgba(0, 0, 0, 0.3)'
+        }
+        pb="env(safe-area-inset-bottom)"
       >
         <Box
           overflowX="auto"
@@ -243,47 +253,75 @@ const BottomNavigation = () => {
           sx={{
             '&::-webkit-scrollbar': {
               height: '0px',
+              display: 'none',
             },
-            WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
           }}
         >
-          <HStack spacing={0} h="64px" px={2} w="fit-content" minW="100%">
+          <Flex
+            h="76px"
+            align="center"
+            gap={1}
+            px={3}
+            py={2}
+            w="fit-content"
+            minW="100%"
+            justify="center"
+          >
             {allMenuItems.map((item, index) => (
               <NavItem key={index} item={item} />
             ))}
             
-            {/* Profile Menu Item - Opens Modal */}
-            <VStack
-              spacing={0.5}
+            {/* Profile Menu Item - Pill Design */}
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              gap={1.5}
               onClick={handleOpenModal}
               cursor="pointer"
-              minW="70px"
-              py={2}
-              px={1}
+              minW="72px"
+              h="100%"
               position="relative"
+              transition="all 0.3s ease"
               flexShrink={0}
             >
-              <Box position="relative">
+              <Box
+                position="relative"
+                w="48px"
+                h="48px"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                borderRadius="16px"
+                bg="transparent"
+                transition="all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                transform="scale(0.92)"
+                _hover={{
+                  transform: 'scale(0.98)',
+                }}
+              >
                 <MaterialIcon
                   name="account_circle"
                   size={24}
-                  color={colorMode === 'light' ? '#808191' : '#808191'}
+                  color={colorMode === 'light' ? '#6B7280' : '#9CA3AF'}
                 />
               </Box>
+              
               <Text
                 fontSize="10px"
                 fontWeight="500"
-                color={colorMode === 'light' ? '#808191' : '#808191'}
-                textTransform="capitalize"
+                color={colorMode === 'light' ? '#6B7280' : '#9CA3AF'}
                 textAlign="center"
                 noOfLines={1}
+                maxW="68px"
+                textTransform="capitalize"
               >
                 Profile
               </Text>
-            </VStack>
-          </HStack>
+            </Flex>
+          </Flex>
         </Box>
       </Box>
 

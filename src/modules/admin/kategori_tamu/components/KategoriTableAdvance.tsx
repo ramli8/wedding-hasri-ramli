@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useContext, useEffect } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import {
   Box,
   IconButton,
@@ -31,6 +31,8 @@ interface KategoriTableAdvanceProps {
   onDelete: (id: string) => void;
   onRestore: (id: string) => void;
   onAddNew: () => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
   headerAction?: React.ReactNode;
 }
 
@@ -41,6 +43,8 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
   onDelete,
   onRestore,
   onAddNew,
+  onLoadMore,
+  hasMore = false,
   headerAction,
 }) => {
   const { colorMode } = useColorMode();
@@ -65,13 +69,6 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
   const globalFilterValue =
     (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
 
-  const [visibleCount, setVisibleCount] = useState(12);
-
-  // Reset visible count when filter changes
-  useEffect(() => {
-    setVisibleCount(12);
-  }, [globalFilterValue]);
-
   const filteredData = useMemo(() => {
     if (!globalFilterValue) return initialData;
     return initialData.filter((item) =>
@@ -79,12 +76,10 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
     );
   }, [initialData, globalFilterValue]);
 
-  const currentData = useMemo(() => {
-    return filteredData.slice(0, visibleCount);
-  }, [filteredData, visibleCount]);
-
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 12);
+    if (onLoadMore) {
+      onLoadMore();
+    }
   };
 
   if (loading) {
@@ -99,9 +94,11 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
     <Box>
       <Box
         pos="relative"
-        bg={colorMode === 'light' ? 'white' : '#222222'}
+        bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
         borderRadius="24px"
         p={{ base: 4, md: '32px' }}
+        borderWidth="1px"
+        borderColor={colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'}
         _before={{
           content: '""',
           pos: 'absolute',
@@ -142,7 +139,11 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
             w={{ base: 'full', md: 'auto' }}
           >
             <InputLeftElement h="48px">
-              <Icon as={FaSearch} color="gray.400" boxSize={4} />
+              <Icon 
+                as={FaSearch} 
+                color={colorMode === 'light' ? 'gray.400' : 'gray.500'} 
+                boxSize={4} 
+              />
             </InputLeftElement>
             <Input
               value={globalFilterValue}
@@ -158,10 +159,21 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
               }
               fontSize="sm"
               fontWeight="500"
-              placeholder=""
-              bg={colorMode === 'light' ? 'gray.50' : 'gray.800'}
+              placeholder="Cari data..."
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              _placeholder={{
+                color: colorMode === 'light' ? 'gray.400' : 'gray.500',
+              }}
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.600',
                 borderColor:
                   colorMode === 'light'
                     ? `${colorPref}.500`
@@ -173,40 +185,51 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
 
         {/* Responsive Grid Layout */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={4}>
-          {currentData.map((kategori) => {
+          {filteredData.map((kategori) => {
             const isDeleted = kategori.deleted_at;
             return (
               <Box
                 key={kategori.id}
-                p={5}
+                p={6}
                 borderRadius="2xl"
                 borderWidth="1px"
-                borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-                bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
                 shadow="sm"
-                transition="all 0.2s"
+                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 _hover={{
-                  shadow: 'md',
                   transform: 'translateY(-2px)',
-                  borderColor: colorMode === 'light' ? 'gray.400' : 'gray.500',
+                  shadow: 'lg',
+                  borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}.500`,
                 }}
+                position="relative"
+                overflow="hidden"
               >
-                <Flex justify="space-between" align="start" mb={3}>
-                  <Box>
-                    <Text fontWeight="bold" fontSize="lg" mb={1} noOfLines={1}>
-                      {kategori.nama}
-                    </Text>
-                    <Badge
-                      px={2}
-                      py={0.5}
-                      borderRadius="full"
-                      fontSize="xs"
-                      colorScheme={isDeleted ? 'red' : 'green'}
-                      variant="subtle"
-                    >
-                      {isDeleted ? 'Dihapus' : 'Aktif'}
-                    </Badge>
-                  </Box>
+                <Flex justify="space-between" align="start" mb={4}>
+                  <Text 
+                    fontWeight="bold" 
+                    fontSize="lg" 
+                    noOfLines={1}
+                    flex={1}
+                    minW={0}
+                    mr={2}
+                  >
+                    {kategori.nama}
+                  </Text>
+                  
+                  {/* Status Badge - Top Right */}
+                  <Badge
+                    px={2.5}
+                    py={1}
+                    borderRadius="md"
+                    fontSize="xs"
+                    fontWeight="600"
+                    colorScheme={isDeleted ? 'red' : 'green'}
+                    variant="subtle"
+                    flexShrink={0}
+                  >
+                    {isDeleted ? 'Dihapus' : 'Aktif'}
+                  </Badge>
                 </Flex>
 
                 <HStack
@@ -295,11 +318,17 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
         </SimpleGrid>
 
         {/* Load More Button */}
-        {visibleCount < filteredData.length && (
+        {hasMore && !loading && (
           <Flex justify="center" mt={8}>
             <PrimaryButton onClick={handleLoadMore}>
               Muat Lebih Banyak
             </PrimaryButton>
+          </Flex>
+        )}
+
+        {loading && initialData.length > 0 && (
+          <Flex justify="center" mt={8}>
+            <Text color="gray.500">Memuat data...</Text>
           </Flex>
         )}
 

@@ -115,17 +115,17 @@ const Sidebar = () => {
     <>
       <Flex
         className="sidebar"
-        w="280px"
-        minW="280px"
+        w="320px"
+        minW="320px"
         pos="fixed"
         flexShrink="0"
         zIndex="999"
         display="flex"
         h="100vh"
         padding="140px 0 0px"
-        bg={colorMode == 'light' ? 'gray.50' : '#222222'}
+        bg={colorMode == 'light' ? 'white' : '#1a1a1a'}
         borderRight="1px solid"
-        borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
+        borderColor={colorMode == 'light' ? 'gray.200' : 'rgba(255,255,255,0.08)'}
         transition="transform .25s, width .25s"
       >
         <Box
@@ -138,75 +138,84 @@ const Sidebar = () => {
           justifyContent="center"
           alignContent="center"
           h={{ base: '96px', m: '140px' }}
-          borderBottom={{
-            base: colorMode == 'light' ? '1px solid' : '1px solid',
-            m: 'unset',
-          }}
-          borderColor={colorMode == 'light' ? 'gray.100' : 'gray.700'}
+          borderBottom="none"
         >
 
           <Flex
             justifyContent="center"
             alignItems="center"
-            maxW="184px"
-            mt="8px"
+            maxW="280px"
+            py="24px"
+            px="24px"
           >
-            <Box>
-              <Center>
-                <MyITSLogo
-                  w={{ base: '68px', d: '86px' }}
-                  h="auto"
-                  color={colorMode === 'light' ? '#013880' : 'white'}
-                />
-              </Center>
-              <Center>
-                <Text
-                  fontSize={{ base: '13px', d: '16px' }}
-                  fontWeight={600}
-                  textAlign="center"
-                  lineHeight={1.2}
-                  mt="4px"
-                  whiteSpace="nowrap"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  maxW={{ base: '96px', d: 'full' }}
-                  title={process.env.NEXT_PUBLIC_APP_NAME}
+            <Box w="full">
+              <Flex alignItems="center" gap={3}>
+                <Box
+                  p={2}
+                  borderRadius="12px"
+                  bg={colorMode === 'light' ? 'blue.50' : 'whiteAlpha.100'}
                 >
-                  {process.env.NEXT_PUBLIC_APP_NAME}
-                </Text>
-              </Center>
+                  <MyITSLogo
+                    w="36px"
+                    h="36px"
+                    color={colorMode === 'light' ? '#013880' : '#3b82f6'}
+                  />
+                </Box>
+                <Box flex={1} minW={0}>
+                  <Text
+                    fontSize="18px"
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="tight"
+                    lineHeight={1.2}
+                    noOfLines={1}
+                  >
+                    {process.env.NEXT_PUBLIC_APP_NAME || 'Dashboard'}
+                  </Text>
+                  <Text
+                    fontSize="12px"
+                    fontWeight="500"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    letterSpacing="wide"
+                    textTransform="uppercase"
+                  >
+                    Admin Panel
+                  </Text>
+                </Box>
+              </Flex>
             </Box>
           </Flex>
         </Box>
         <Box
           className="sidebar__wrapper"
           maxH="100%"
-          padding="0 20px 30px"
+          padding="0 24px 30px"
           overflowY="auto"
           sx={{
             '::-webkit-scrollbar': {
-              width: '20px',
-              height: '20px',
+              width: '16px',
+              height: '16px',
               backgroundColor: 'transparent',
             },
             '::-webkit-scrollbar-track': {
               backgroundColor: 'transparent',
+              margin: '8px',
             },
             '::-webkit-scrollbar-thumb': {
-              backgroundColor: colorMode == 'light' ? '#dadada' : '#313131',
-              borderRadius: '20px',
-              border: '6px solid transparent',
+              backgroundColor: colorMode == 'light' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)',
+              borderRadius: '12px',
+              border: '4px solid transparent',
               backgroundClip: 'content-box',
             },
             '::-webkit-scrollbar-thumb:hover': {
-              backgroundColor: colorMode == 'light' ? '#b3b3b3' : '#393939',
+              backgroundColor: colorMode == 'light' ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.18)',
             },
           }}
           overflowX="hidden"
         >
           <Box
             className="sidebar__inner"
-            width="240px"
+            width="280px"
             overflow="hidden"
             transition="width .25s"
           >
@@ -224,8 +233,8 @@ const Sidebar = () => {
                     className="sidebar__group"
                     _notLast={{
                       position: 'relative',
-                      marginBottom: '40px',
-                      paddingBottom: '30px',
+                      marginBottom: '32px',
+                      paddingBottom: '24px',
                       _before: {
                         content: '""',
                         position: 'absolute',
@@ -234,18 +243,20 @@ const Sidebar = () => {
                         bottom: 0,
                         height: '1px',
                         background:
-                          colorMode == 'light' ? '#e8eaee' : '#2a2a2a',
+                          colorMode == 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
                       },
                     }}
                   >
                     <Box
                       className="sidebar__caption"
-                      fontSize="12px"
-                      fontWeight="500"
-                      lineHeight="1.33333333"
-                      mb="16px"
+                      fontSize="11px"
+                      fontWeight="600"
+                      lineHeight="1"
+                      mb="12px"
                       pl="20px"
-                      color="#808191"
+                      color={colorMode === 'light' ? 'gray.500' : 'gray.500'}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
                       transition=".25s"
                     >
                       Menu
@@ -275,8 +286,8 @@ const Sidebar = () => {
                     className="sidebar__group"
                     _notLast={{
                       position: 'relative',
-                      marginBottom: '40px',
-                      paddingBottom: '30px',
+                      marginBottom: '32px',
+                      paddingBottom: '24px',
                       _before: {
                         content: '""',
                         position: 'absolute',
@@ -285,18 +296,20 @@ const Sidebar = () => {
                         bottom: 0,
                         height: '1px',
                         background:
-                          colorMode == 'light' ? '#e8eaee' : '#2a2a2a',
+                          colorMode == 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
                       },
                     }}
                   >
                     <Box
                       className="sidebar__caption"
-                      fontSize="12px"
-                      fontWeight="500"
-                      lineHeight="1.33333333"
-                      mb="16px"
+                      fontSize="11px"
+                      fontWeight="600"
+                      lineHeight="1"
+                      mb="12px"
                       pl="20px"
-                      color="#808191"
+                      color={colorMode === 'light' ? 'gray.500' : 'gray.500'}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
                       transition=".25s"
                     >
                       Master

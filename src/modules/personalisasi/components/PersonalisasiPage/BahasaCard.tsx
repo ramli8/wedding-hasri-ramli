@@ -14,47 +14,52 @@ import {
     Grid,
     GridItem,
     Text,
-    useToast
+    useColorMode
 } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { useContext } from "react";
-import BahasaToast from "./BahasaToast";
+import { showSuccessAlert } from "@/utils/sweetalert";
 
 const BahasaCard = () => {
     const { langPref, setLangPref } = useContext(AppSettingContext);
     const t = useTranslations("Personalisasi.bahasa");
-    const toast = useToast();
+    const { colorMode } = useColorMode();
 
     const handleChangeLanguage = (newLangPref: LanguagePreference) => {
         if (setLangPref) {
             setLangPref(newLangPref);
             localStorage.setItem("lang_pref", newLangPref);
-            toast({
-                position: "top-right",
-                status: "success",
-                duration: 5000,
-                isClosable: true,
-                render: (props) => <BahasaToast onClose={props.onClose} />,
-            });
+            showSuccessAlert(
+                newLangPref === "id" ? "Bahasa Indonesia dipilih" : "English selected",
+                colorMode
+            );
         }
     };
 
     return (
         <PlainCard>
-            <Text fontSize="18px" fontWeight="600" mb="4px">
+            <Text 
+                fontSize={{ base: 'lg', md: 'xl' }} 
+                fontWeight="700" 
+                mb={2}
+                color={colorMode === 'light' ? 'gray.800' : 'white'}
+            >
                 {t("title")}
             </Text>
-            <Text fontSize="16px" fontWeight="500" color="gray">
+            <Text 
+                fontSize={{ base: 'sm', md: 'md' }} 
+                fontWeight="400" 
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                mb={6}
+            >
                 {t("subtitle")}
             </Text>
             <Grid
-                mt="24px"
                 templateColumns={{
                     base: "repeat(1, 1fr)",
                     a: "repeat(2, 1fr)",
-                    // d: "repeat(3, 1fr)",
                 }}
-                gap={3}
+                gap={4}
                 as={RadioCardGroup}
                 value={langPref}
                 // @ts-expect-error
@@ -62,12 +67,12 @@ const BahasaCard = () => {
                 transition="all .25s"
             >
                 <RadioCard hasMark h="100%" as={GridItem} value="id" hasBackground>
-                    <Text fontSize="14px" fontWeight={600}>
+                    <Text fontSize="sm" fontWeight={600}>
                         {t("language.id")}
                     </Text>
                 </RadioCard>
                 <RadioCard hasMark h="100%" as={GridItem} value="en" hasBackground>
-                    <Text fontSize="14px" fontWeight={600}>
+                    <Text fontSize="sm" fontWeight={600}>
                         {t("language.en")}
                     </Text>
                 </RadioCard>

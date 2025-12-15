@@ -5,6 +5,16 @@ import {
   UpdateKategoriTamuInput,
 } from '../types/KategoriTamu.types';
 
+export interface KategoriTamuApiResponse {
+  data: KategoriTamu[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 class KategoriTamuAPI {
   private supabase: SupabaseClient;
 
@@ -21,32 +31,46 @@ class KategoriTamuAPI {
     this.supabase = createClient(supabaseUrl, supabaseAnonKey);
   }
 
-  async getAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<KategoriTamu[]> {
+  async getAll(
+    page?: number, 
+    limit?: number,
+    filters?: { status?: 'all' | 'active' | 'inactive' }
+  ): Promise<KategoriTamuApiResponse> {
     try {
       let query = this.supabase
         .from('kategori_tamu')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('deleted_at', { ascending: true, nullsFirst: true })
         .order('nama', { ascending: true });
 
-      // Apply pagination if provided
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
-      if (options?.offset) {
-        query = query.range(
-          options.offset,
-          options.offset + (options.limit || 10) - 1
-        );
+      // Apply status filter
+      if (filters?.status === 'active') {
+        query = query.is('deleted_at', null);
+      } else if (filters?.status === 'inactive') {
+        query = query.not('deleted_at', 'is', null);
       }
 
-      const { data, error } = await query;
+      // Apply pagination if provided
+      if (page && limit) {
+        const offset = (page - 1) * limit;
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
-      return data as KategoriTamu[];
+
+      const totalPages = count && limit ? Math.ceil(count / limit) : 0;
+
+      return {
+        data: data as KategoriTamu[],
+        pagination: page && limit ? {
+          page,
+          limit,
+          total: count || 0,
+          totalPages,
+        } : undefined,
+      };
     } catch (error: any) {
       console.error('Error in getAll:', error);
       throw new Error(error.message || 'Gagal mengambil data kategori tamu');
@@ -85,6 +109,21 @@ class KategoriTamuAPI {
     } catch (error: any) {
       console.error('Error in getById:', error);
       throw new Error(error.message || 'Gagal mengambil data kategori tamu');
+    }
+  }
+
+  async getCounts(): Promise<{ all: number; active: number; inactive: number }> {
+    const buildQuery = () => this.supabase.from('kategori_tamu').select('*', { count: 'exact', head: true });
+    
+    try {
+      const { count: allCount } = await buildQuery();
+      const { count: activeCount } = await buildQuery().is('deleted_at', null);
+      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+      
+      return { all: allCount || 0, active: activeCount || 0, inactive: inactiveCount || 0 };
+    } catch (error: any) {
+      console.error('Error fetching kategori counts:', error);
+      return { all: 0, active: 0, inactive: 0 };
     }
   }
 

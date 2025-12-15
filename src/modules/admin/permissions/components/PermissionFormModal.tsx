@@ -110,6 +110,7 @@ const PermissionFormModal: React.FC<PermissionFormModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
       isCentered
       initialFocusRef={initialRef}
     >

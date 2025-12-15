@@ -79,11 +79,19 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Balas Ucapan</ModalHeader>
-        <ModalCloseButton />
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside" isCentered>
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+      <ModalContent
+        bg={colorMode === 'light' ? 'white' : 'gray.800'}
+        borderRadius="24px"
+        mx={4}
+        boxShadow="xl"
+        p={2}
+      >
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
+          Balas Ucapan
+        </ModalHeader>
+        <ModalCloseButton top={6} right={6} />
         <ModalBody>
           <VStack spacing={4} align="stretch">
             {ucapan && (

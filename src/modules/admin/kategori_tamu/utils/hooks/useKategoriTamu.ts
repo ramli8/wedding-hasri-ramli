@@ -26,23 +26,40 @@ export const useKategoriTamu = () => {
     }
   }, []);
 
-  const fetchKategoriTamu = async (append: boolean = false) => {
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+  });
+
+  const fetchKategoriTamu = async (
+    resetPagination: boolean = true,
+    filters?: { status?: 'all' | 'active' | 'inactive' }
+  ) => {
     if (!api) return;
     try {
       setLoading(true);
+      const page = resetPagination ? 1 : pagination.page;
+      const response = await api.getAll(page, pagination.limit, filters);
 
-      // For initial load or refresh, get all data
-      // This is optimal for small datasets like kategori_tamu
-      const data = await api.getAll();
-
-      if (append) {
-        setKategoriTamu((prev) => [...prev, ...data]);
+      if (resetPagination) {
+        setKategoriTamu(response.data);
       } else {
-        setKategoriTamu(data);
+        setKategoriTamu((prev) => [...prev, ...response.data]);
       }
 
-      setTotalCount(data.length);
-      setHasMore(false); // We load all data at once
+      if (response.pagination) {
+        setPagination(response.pagination);
+        setTotalCount(response.pagination.total);
+        setHasMore(
+          response.pagination.page < response.pagination.totalPages &&
+          response.data.length === response.pagination.limit
+        );
+      } else {
+        setHasMore(false);
+      }
+
       setError(null);
     } catch (err: any) {
       console.error('Error fetching kategori tamu:', err);
@@ -52,29 +69,35 @@ export const useKategoriTamu = () => {
     }
   };
 
-  const loadMore = useCallback(async () => {
-    if (!api || !hasMore || loading) return;
+  const loadMore = useCallback(
+    async (filters?: { status?: 'all' | 'active' | 'inactive' }) => {
+      if (!api || !hasMore || loading) return;
 
-    try {
-      setLoading(true);
-      const offset = kategoriTamu.length;
-      const limit = 12;
+      try {
+        setLoading(true);
+        const nextPage = pagination.page + 1;
+        const response = await api.getAll(nextPage, pagination.limit, filters);
 
-      const data = await api.getAll({ limit, offset });
+      setKategoriTamu((prev) => [...prev, ...response.data]);
 
-      if (data.length < limit) {
-        setHasMore(false);
+      if (response.pagination) {
+        setPagination(response.pagination);
+        setHasMore(
+          response.pagination.page < response.pagination.totalPages &&
+          response.data.length === response.pagination.limit
+        );
       }
 
-      setKategoriTamu((prev) => [...prev, ...data]);
       setError(null);
     } catch (err: any) {
       console.error('Error loading more kategori tamu:', err);
-      setError(err.message || 'Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  }, [api, kategoriTamu.length, hasMore, loading]);
+        setError(err.message || 'Gagal memuat data');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, pagination, hasMore, loading]
+  );
 
   const createKategoriTamu = async (input: CreateKategoriTamuInput) => {
     if (!api) throw new Error('API belum siap');

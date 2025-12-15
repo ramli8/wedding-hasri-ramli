@@ -115,3 +115,32 @@ export const showFullscreenAlert = async (
     allowEscapeKey: false,
   });
 };
+
+export const showLogoutAlert = async (
+  colorMode: 'light' | 'dark' = 'light'
+) => {
+  return MySwal.fire({
+    title: 'Konfirmasi Logout',
+    text: 'Apakah Anda yakin ingin keluar?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Keluar',
+    cancelButtonText: 'Batal',
+    reverseButtons: true,
+    background: colorMode === 'light' ? '#fff' : '#1A202C',
+    color: colorMode === 'light' ? '#1A202C' : '#fff',
+    customClass: {
+      container: 'swal-high-z-index',
+      popup: 'swal-modern-popup',
+      title: 'swal-modern-title',
+      confirmButton: 'swal-modern-danger-button',
+      cancelButton: 'swal-modern-cancel-button',
+    },
+    buttonsStyling: false,
+    backdrop: `
+      rgba(0,0,0,0.4)
+      left top
+      no-repeat
+    `
+  });
+};

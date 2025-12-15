@@ -10,13 +10,9 @@ import {
   Heading,
   Text,
   useColorMode,
-  InputGroup,
-  InputLeftElement,
-  Icon,
   Flex,
   keyframes,
 } from '@chakra-ui/react';
-import { FiUser, FiLock, FiLogIn } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 import AuthAPI from '../services/AuthAPI';
 import AppSettingContext from '@/providers/AppSettingProvider';
@@ -79,198 +75,178 @@ const LoginPage = () => {
   };
 
   const isDark = colorMode === 'dark';
-  const bg = isDark ? 'gray.900' : 'gray.50';
+  const bg = isDark 
+    ? 'linear-gradient(135deg, #1A202C 0%, #2D3748 100%)'
+    : 'linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%)';
   const cardBg = isDark ? 'gray.800' : 'white';
   const borderColor = isDark ? 'gray.700' : 'gray.200';
 
   // Dynamic brand colors
-  const brandColor = isDark ? `${colorPref}.200` : `${colorPref}.500`;
-  const brandHoverColor = isDark ? `${colorPref}.300` : `${colorPref}.600`;
-  const iconColor = isDark ? `${colorPref}.200` : `${colorPref}.500`;
+  const brandColor = isDark ? `${colorPref}.400` : `${colorPref}.500`;
+  const brandHoverColor = isDark ? `${colorPref}.500` : `${colorPref}.600`;
+  const accentColor = isDark ? `${colorPref}.300` : `${colorPref}.600`;
 
   return (
     <Flex
       minH="100vh"
       align="center"
       justify="center"
-      bg={bg}
-      px={{ base: 4, md: 8 }}
+      bg={isDark ? 'gray.900' : 'gray.50'}
+      px={4}
     >
       <Container
-        maxW={{ base: 'full', sm: '400px', md: '440px' }}
+        maxW="420px"
         animation={`${fadeIn} 0.6s ease-out`}
       >
-        <Box
-          bg={cardBg}
-          borderRadius="xl"
-          border="1px solid"
-          borderColor={borderColor}
-          boxShadow="sm"
-          p={{ base: 6, sm: 8, md: 10 }}
-        >
-          <VStack spacing={{ base: 6, md: 8 }} align="stretch">
-            {/* Header */}
-            <Box textAlign="center">
-              <Box
-                display="inline-flex"
-                p={3}
-                borderRadius="xl"
-                bg={isDark ? `${colorPref}.900` : `${colorPref}.50`}
-                mb={4}
-              >
-                <Icon
-                  as={FiLogIn}
-                  boxSize={{ base: 6, md: 7 }}
-                  color={iconColor}
-                />
-              </Box>
-              <Heading
-                size={{ base: 'lg', md: 'xl' }}
-                mb={2}
-                fontWeight="800"
-                letterSpacing="tight"
-                color={isDark ? 'white' : 'gray.900'}
-              >
-                Admin Panel
-              </Heading>
-              <Text
-                color={isDark ? 'gray.400' : 'gray.500'}
-                fontSize={{ base: 'sm', md: 'md' }}
-                fontWeight="500"
-              >
-                Masuk untuk melanjutkan
-              </Text>
-            </Box>
+        <VStack spacing={6}>
+          {/* Branding Section */}
+          <VStack spacing={2}>
+            <Heading
+              size="xl"
+              fontWeight="800"
+              letterSpacing="tight"
+              color={isDark ? 'white' : 'gray.900'}
+              textAlign="center"
+            >
+              Admin Portal
+            </Heading>
+            <Text
+              color={isDark ? 'gray.400' : 'gray.600'}
+              fontSize="sm"
+              fontWeight="500"
+              textAlign="center"
+            >
+              Wedding Management System
+            </Text>
+          </VStack>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit}>
-              <VStack spacing={5}>
-                {/* Username Field */}
-                <FormControl isRequired>
-                  <FormLabel
-                    fontSize="sm"
-                    fontWeight="600"
-                    color={isDark ? 'gray.300' : 'gray.700'}
-                    mb={2}
-                  >
-                    Username
-                  </FormLabel>
-                  <InputGroup>
-                    <InputLeftElement height="full" pointerEvents="none">
-                      <Icon
-                        as={FiUser}
-                        color={isDark ? 'gray.500' : 'gray.400'}
-                        boxSize={5}
-                      />
-                    </InputLeftElement>
+          {/* Login Card */}
+          <Box
+            w="full"
+            bg={cardBg}
+            borderRadius="xl"
+            border="1px solid"
+            borderColor={borderColor}
+            boxShadow="lg"
+            p={8}
+          >
+            <VStack spacing={6} align="stretch">
+
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
+                <VStack spacing={5}>
+                  {/* Username Field */}
+                  <FormControl isRequired>
+                    <FormLabel
+                      fontSize="sm"
+                      fontWeight="600"
+                      color={isDark ? 'gray.300' : 'gray.700'}
+                      mb={2}
+                    >
+                      Username
+                    </FormLabel>
                     <Input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Masukkan username"
-                      bg={isDark ? 'gray.900' : 'white'}
-                      border="1px solid"
-                      borderColor={borderColor}
+                      variant="filled"
+                      bg={isDark ? 'gray.900' : 'gray.50'}
+                      border="2px solid transparent"
                       _hover={{
-                        borderColor: isDark ? 'gray.500' : 'gray.400',
+                        bg: isDark ? 'gray.900' : 'gray.100',
+                        borderColor: isDark ? 'gray.600' : 'gray.300',
                       }}
                       _focus={{
+                        bg: isDark ? 'gray.900' : 'white',
                         borderColor: brandColor,
-                        boxShadow: `0 0 0 1px var(--chakra-colors-${colorPref}-${
-                          isDark ? '200' : '500'
-                        })`,
+                        boxShadow: `0 0 0 1px ${brandColor}`,
                       }}
-                      borderRadius="lg"
-                      height={{ base: '48px', md: '50px' }}
-                      fontSize={{ base: 'sm', md: 'md' }}
-                      pl="45px"
+                      borderRadius="xl"
+                      height="52px"
+                      fontSize="md"
+                      fontWeight="500"
                       transition="all 0.2s"
                     />
-                  </InputGroup>
-                </FormControl>
+                  </FormControl>
 
-                {/* Password Field */}
-                <FormControl isRequired>
-                  <FormLabel
-                    fontSize="sm"
-                    fontWeight="600"
-                    color={isDark ? 'gray.300' : 'gray.700'}
-                    mb={2}
-                  >
-                    Password
-                  </FormLabel>
-                  <InputGroup>
-                    <InputLeftElement height="full" pointerEvents="none">
-                      <Icon
-                        as={FiLock}
-                        color={isDark ? 'gray.500' : 'gray.400'}
-                        boxSize={5}
-                      />
-                    </InputLeftElement>
+                  {/* Password Field */}
+                  <FormControl isRequired>
+                    <FormLabel
+                      fontSize="sm"
+                      fontWeight="600"
+                      color={isDark ? 'gray.300' : 'gray.700'}
+                      mb={2}
+                    >
+                      Password
+                    </FormLabel>
                     <Input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Masukkan password"
-                      bg={isDark ? 'gray.900' : 'white'}
-                      border="1px solid"
-                      borderColor={borderColor}
+                      variant="filled"
+                      bg={isDark ? 'gray.900' : 'gray.50'}
+                      border="2px solid transparent"
                       _hover={{
-                        borderColor: isDark ? 'gray.500' : 'gray.400',
+                        bg: isDark ? 'gray.900' : 'gray.100',
+                        borderColor: isDark ? 'gray.600' : 'gray.300',
                       }}
                       _focus={{
+                        bg: isDark ? 'gray.900' : 'white',
                         borderColor: brandColor,
-                        boxShadow: `0 0 0 1px var(--chakra-colors-${colorPref}-${
-                          isDark ? '200' : '500'
-                        })`,
+                        boxShadow: `0 0 0 1px ${brandColor}`,
                       }}
-                      borderRadius="lg"
-                      height={{ base: '48px', md: '50px' }}
-                      fontSize={{ base: 'sm', md: 'md' }}
-                      pl="45px"
+                      borderRadius="xl"
+                      height="52px"
+                      fontSize="md"
+                      fontWeight="500"
                       transition="all 0.2s"
                     />
-                  </InputGroup>
-                </FormControl>
+                  </FormControl>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  width="full"
-                  height={{ base: '48px', md: '52px' }}
-                  bg={brandColor}
-                  color={isDark ? 'gray.900' : 'white'}
-                  _hover={{
-                    bg: brandHoverColor,
-                    transform: 'translateY(-1px)',
-                  }}
-                  _active={{
-                    transform: 'translateY(0)',
-                  }}
-                  isLoading={loading}
-                  loadingText="Memproses..."
-                  borderRadius="lg"
-                  fontSize={{ base: 'sm', md: 'md' }}
-                  fontWeight="600"
-                  mt={2}
-                  transition="all 0.2s"
-                >
-                  Masuk
-                </Button>
-              </VStack>
-            </form>
-          </VStack>
-        </Box>
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    width="full"
+                    height="52px"
+                    bg={brandColor}
+                    color="white"
+                    _hover={{
+                      bg: brandHoverColor,
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'lg',
+                    }}
+                    _active={{
+                      transform: 'translateY(0)',
+                    }}
+                    isLoading={loading}
+                    loadingText="Memproses..."
+                    borderRadius="xl"
+                    fontSize="md"
+                    fontWeight="600"
+                    mt={3}
+                    boxShadow="md"
+                    transition="all 0.2s"
+                  >
+                    Masuk ke Dashboard
+                  </Button>
+                </VStack>
+              </form>
 
-        {/* Footer Text */}
+            </VStack>
+          </Box>
+        </VStack>
+
+        {/* Footer */}
         <Text
           textAlign="center"
-          fontSize={{ base: 'xs', md: 'sm' }}
-          color={isDark ? 'gray.500' : 'gray.500'}
-          mt={8}
+          fontSize="xs"
+          color={isDark ? 'gray.600' : 'gray.500'}
+          mt={6}
           fontWeight="500"
         >
-          Wedding Management System
+          © 2024 Wedding Management System. All rights reserved.
         </Text>
       </Container>
     </Flex>

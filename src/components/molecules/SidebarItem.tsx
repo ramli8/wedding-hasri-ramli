@@ -88,63 +88,58 @@ const SidebarItem = ({
           className="sidebar__item"
           data-group="sidebar--item"
           _hover={{
-            color: isActive
-              ? colorMode == 'light'
-                ? `${colorPref}.700`
-                : `${colorPref}Dim.200`
-              : colorMode == 'light'
-              ? `${colorPref}.700`
-              : `${colorPref}Dim.200`,
-            bg: isActive
+            bg: isActive 
               ? colorMode == 'light'
                 ? `${colorPref}.100`
-                : `${colorPref}Dim.800`
+                : `${colorPref}.900`
               : colorMode == 'light'
-              ? `${colorPref}.50`
-              : `${colorPref}Dim.900`,
+              ? 'gray.50'
+              : 'whiteAlpha.50',
           }}
           alignItems="center"
           h="44px"
           my="4px"
           pos="relative"
-          px="12px"
-          borderRadius="12px"
-          fontSize="14px"
+          px="14px"
+          borderRadius="10px"
+          fontSize="15px"
           color={
             isActive
               ? colorMode == 'light'
                 ? `${colorPref}.700`
-                : `${colorPref}Dim.200`
+                : `${colorPref}.300`
               : colorMode == 'light'
-              ? 'gray.600'
-              : 'gray.500'
+              ? 'gray.700'
+              : 'gray.300'
           }
           bg={
             isActive
               ? colorMode == 'light'
-                ? `${colorPref}.100`
-                : `${colorPref}Dim.800`
+                ? `${colorPref}.50`
+                : `${colorPref}.900`
               : 'transparent'
           }
           fontWeight={isActive ? '600' : '500'}
-          transition="all 0.2s"
+          transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
           cursor="pointer"
         >
           <Flex
             className="sidebar__icon"
             justifyContent="center"
             alignItems="center"
-            w="20px"
-            h="20px"
-            mr="12px"
-            data-group="sidebar--item"
+            w="22px"
+            h="22px"
+            mr="14px"
+            flexShrink={0}
+            color="inherit"
+            transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
           >
             <MaterialIcon
               name={menuItem.icon}
               fill={isActive ? 1 : 0}
-              weight={500}
+              weight={isActive ? 500 : 400}
               variant="rounded"
-              size={20}
+              size={22}
             />
           </Flex>
           <Box
@@ -346,11 +341,11 @@ const SubmenuItem = ({
         }}
         pos="relative"
         alignItems="center"
-        h="40px"
-        my="2px"
-        px="12px"
-        borderRadius="12px"
-        fontSize="14px"
+        h="44px"
+        my="3px"
+        px="14px"
+        borderRadius="10px"
+        fontSize="15px"
         color={
           isActive
             ? colorMode == 'light'
@@ -409,9 +404,9 @@ const SubmenuItem = ({
           className="sidebar__icon"
           justifyContent="center"
           alignItems="center"
-          w="20px"
-          h="20px"
-          mr="12px"
+          w="22px"
+          h="22px"
+          mr="14px"
           data-group="sidebar--item"
         ></Flex>
         <Box

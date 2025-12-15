@@ -20,9 +20,9 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
         const authAPI = new AuthAPI();
         const permissionAPI = new PermissionAPI();
 
-        // Check authentication first (synchronous)
+        // Check authentication first (synchronous) - FAST CHECK
         if (!authAPI.isAuthenticated()) {
-          setIsChecking(false);
+          // Immediately redirect without setting any state to prevent flash
           router.replace('/admin/login');
           return;
         }
@@ -108,23 +108,9 @@ const withAuth = (WrappedComponent: React.ComponentType<any>) => {
     }, [router, router.pathname]);
 
     // Show loading spinner while checking auth (prevents flash)
-    if (typeof window === 'undefined' || isChecking) {
-      return (
-        <Flex 
-          minH="100vh" 
-          align="center" 
-          justify="center"
-          bg="gray.50"
-          _dark={{ bg: 'gray.900' }}
-        >
-          <Spinner 
-            size="xl" 
-            color="blue.500"
-            thickness="4px"
-            speed="0.65s"
-          />
-        </Flex>
-      );
+    // IMPORTANT: Return early to prevent ANY layout rendering
+    if (typeof window === 'undefined' || isChecking || isLoading) {
+      return null; // Return null instead of spinner to prevent any flash
     }
 
     // Don't render anything if not authenticated or no permission (redirecting)

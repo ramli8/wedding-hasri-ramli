@@ -131,7 +131,7 @@ const TamuListTable: React.FC<TamuListTableProps> = ({
             <TableSortingRow>
               <TableSortingCol>
                 <InputText
-                  placeholder="Cari nama atau nomor..."
+                  placeholder="Cari data..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                 />

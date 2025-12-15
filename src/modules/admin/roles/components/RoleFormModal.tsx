@@ -96,6 +96,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
       isCentered
       initialFocusRef={isEdit ? undefined : initialRef}
     >

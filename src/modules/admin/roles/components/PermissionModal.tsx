@@ -93,17 +93,17 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size={{ base: 'full', md: 'xl' }} // Full screen on mobile
+      size="xl"
       isCentered
-      scrollBehavior="inside" // Scrollable body
+      scrollBehavior="inside"
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
-        borderRadius={{ base: 0, md: '24px' }}
-        mx={{ base: 0, md: 4 }}
-        my={{ base: 0, md: 4 }}
+        borderRadius="24px"
+        mx={4}
         boxShadow="xl"
+        p={2}
       >
         <ModalHeader
           fontSize="xl"

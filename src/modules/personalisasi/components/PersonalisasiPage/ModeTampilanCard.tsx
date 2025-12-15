@@ -23,17 +23,15 @@ import {
     useColorMode,
     useRadio,
     useRadioGroup,
-    UseRadioProps,
-    useToast
+    UseRadioProps
 } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { useContext } from "react";
-import ModeTampilanToast from "./ModeTampilanToast";
+import { showSuccessAlert } from "@/utils/sweetalert";
 
 const ModeTampilanCard = () => {
     const t = useTranslations("Personalisasi.tampilan");
     const { setColorMode, colorMode } = useColorMode();
-    const toast = useToast();
 
     const { colorPref, setColorPref } = useContext(AppSettingContext);
     const { getRootProps, getRadioProps } = useRadioGroup({
@@ -43,6 +41,7 @@ const ModeTampilanCard = () => {
                 const validColor = newColor as ColorPreference;
                 setColorPref(validColor);
                 localStorage.setItem("color_pref", validColor);
+                showSuccessAlert("Warna tema berhasil diubah", colorMode);
             }
         },
     });
@@ -59,30 +58,36 @@ const ModeTampilanCard = () => {
 
     const handleChange = (newColorMode: "light" | "dark") => {
         setColorMode(newColorMode);
-        toast({
-            position: "top-right",
-            status: "success",
-            duration: 5000,
-            isClosable: true,
-            render: (props) => <ModeTampilanToast onClose={props.onClose} />,
-        });
+        showSuccessAlert(
+            newColorMode === "light" ? "Mode terang diaktifkan" : "Mode gelap diaktifkan",
+            newColorMode
+        );
     };
 
     return (
         <PlainCard>
-            <Text fontSize="18px" fontWeight="600" mb="4px">
+            <Text 
+                fontSize={{ base: 'lg', md: 'xl' }} 
+                fontWeight="700" 
+                mb={2}
+                color={colorMode === 'light' ? 'gray.800' : 'white'}
+            >
                 {t("title")}
             </Text>
-            <Text fontSize="16px" fontWeight="500" color="gray">
+            <Text 
+                fontSize={{ base: 'sm', md: 'md' }} 
+                fontWeight="400" 
+                color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                mb={6}
+            >
                 {t("subtitle")}
             </Text>
             <Grid
-                mt="24px"
                 templateColumns={{
                     base: "repeat(1, 1fr)",
                     a: "repeat(2, 1fr)",
                 }}
-                gap={3}
+                gap={4}
                 as={RadioCardGroup}
                 value={colorMode}
                 transition="all .25s"
@@ -90,17 +95,17 @@ const ModeTampilanCard = () => {
                 onChange={handleChange}
             >
                 <RadioCard hasMark h="100%" as={GridItem} value="light" hasBackground>
-                    <Text fontSize="14px" fontWeight={600}>
+                    <Text fontSize="sm" fontWeight={600}>
                         {t("option.light")}
                     </Text>
                 </RadioCard>
                 <RadioCard hasMark h="100%" as={GridItem} value="dark" hasBackground>
-                    <Text fontSize="14px" fontWeight={600}>
+                    <Text fontSize="sm" fontWeight={600}>
                         {t("option.dark")}
                     </Text>
                 </RadioCard>
             </Grid>
-            <Divider w="full" my="24px" />
+            <Divider w="full" my={6} />
             <HStack flexWrap="wrap" gap={4} {...group}>
                 {optionsColor.map((value) => {
                     const radio = getRadioProps({ value });

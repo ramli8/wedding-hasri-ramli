@@ -25,7 +25,8 @@ import { NextPage } from 'next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { ReactElement, ReactNode, useState } from 'react';
+import { ReactElement, ReactNode, useState, useEffect } from 'react';
+import AuthAPI from '@/modules/auth/services/AuthAPI';
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
 	getLayout?: (page: ReactElement) => ReactNode
@@ -39,6 +40,36 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 	const router = useRouter()
 
 	const [queryClient] = useState(() => new QueryClient())
+	const [isAuthChecked, setIsAuthChecked] = useState(false)
+
+	// CRITICAL: Auth check BEFORE any rendering
+	useEffect(() => {
+		// Only run on client
+		if (typeof window === 'undefined') return;
+
+		// Check if current route is admin route (starts with /admin but not /admin/login)
+		const isAdminRoute = router.pathname.startsWith('/admin') && router.pathname !== '/admin/login';
+
+		if (isAdminRoute) {
+			const authAPI = new AuthAPI();
+			
+			// Synchronous check - INSTANT
+			if (!authAPI.isAuthenticated()) {
+				// Block rendering and redirect immediately
+				router.replace('/admin/login');
+				return;
+			}
+		}
+
+		// Allow rendering
+		setIsAuthChecked(true);
+	}, [router.pathname]);
+
+	// IMPORTANT: Don't render ANYTHING until auth is checked for admin routes
+	const isAdminRoute = router.pathname.startsWith('/admin') && router.pathname !== '/admin/login';
+	if (isAdminRoute && !isAuthChecked) {
+		return null; // Blank screen - no flash!
+	}
 
 	const getLayout = Component.getLayout ?? ((page) => page)
 	

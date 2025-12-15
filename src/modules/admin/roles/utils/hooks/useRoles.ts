@@ -9,23 +9,40 @@ export const useRoles = () => {
   const [api] = useState(() => new RoleAPI());
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+  });
 
   const fetchRoles = useCallback(
-    async (append: boolean = false) => {
+    async (
+      resetPagination: boolean = true,
+      filters?: { status?: 'all' | 'active' | 'inactive' }
+    ) => {
       try {
         setLoading(true);
-        // Fetch all including deleted for filtering in UI
-        // Strategy: Fetch all at once for seamless client-side filtering/search
-        const data = await api.getRoles(true);
+        const page = resetPagination ? 1 : pagination.page;
+        const response = await api.getRoles(true, page, pagination.limit, filters);
 
-        if (append) {
-          setRoles((prev) => [...prev, ...data]);
+        if (resetPagination) {
+          setRoles(response.data);
         } else {
-          setRoles(data);
+          setRoles((prev) => [...prev, ...response.data]);
         }
 
-        setTotalCount(data.length);
-        setHasMore(false); // Since we fetch all, no more to load from server
+        if (response.pagination) {
+          setPagination(response.pagination);
+          setTotalCount(response.pagination.total);
+          setHasMore(
+            response.pagination.page < response.pagination.totalPages &&
+            response.data.length === response.pagination.limit
+          );
+        } else {
+          setHasMore(false);
+        }
+
         setError(null);
       } catch (err: any) {
         console.error('Error fetching roles:', err);
@@ -34,32 +51,38 @@ export const useRoles = () => {
         setLoading(false);
       }
     },
-    [api]
+    [api, pagination.page, pagination.limit]
   );
 
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
+  const loadMore = useCallback(
+    async (filters?: { status?: 'all' | 'active' | 'inactive' }) => {
+      if (!hasMore || loading) return;
 
-    try {
-      setLoading(true);
-      const offset = roles.length;
-      const limit = 12;
+      try {
+        setLoading(true);
+        const nextPage = pagination.page + 1;
+        const response = await api.getRoles(true, nextPage, pagination.limit, filters);
 
-      const data = await api.getRoles(true, { limit, offset });
+      setRoles((prev) => [...prev, ...response.data]);
 
-      if (data.length < limit) {
-        setHasMore(false);
+      if (response.pagination) {
+        setPagination(response.pagination);
+        setHasMore(
+          response.pagination.page < response.pagination.totalPages &&
+          response.data.length === response.pagination.limit
+        );
       }
 
-      setRoles((prev) => [...prev, ...data]);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error loading more roles:', err);
-      setError(err.message || 'Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  }, [api, roles.length, hasMore, loading]);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error loading more roles:', err);
+        setError(err.message || 'Gagal memuat data');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, pagination, hasMore, loading]
+  );
 
   useEffect(() => {
     fetchRoles();

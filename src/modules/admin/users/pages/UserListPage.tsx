@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import { VStack, Flex, Box, useColorMode, Text, Icon, HStack, Badge } from '@chakra-ui/react';
+import Head from 'next/head';
 import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import PageRow from '@/components/atoms/PageRow';
@@ -8,10 +9,10 @@ import UserTableAdvance from '../components/UserTableAdvance';
 import UserFormModal from '../components/UserFormModal';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
-import { Badge, Button, HStack } from '@chakra-ui/react';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import FilterTabs from '@/components/molecules/FilterTabs';
+import { FaUsers } from 'react-icons/fa';
+import AppSettingContext from '@/providers/AppSettingProvider';
 
 const UserListPage: NextPageWithLayout = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,50 +21,118 @@ const UserListPage: NextPageWithLayout = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0,
+  });
+  const [hasMore, setHasMore] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
+  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, inactive: 0 });
 
   const api = React.useMemo(() => new UserAPI(), []);
   const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
 
-  const fetchData = React.useCallback(async () => {
+  const fetchData = React.useCallback(async (resetPagination = true) => {
     try {
       setLoading(true);
-      const [usersData, rolesData] = await Promise.all([
-        api.getUsers(),
+      const page = resetPagination ? 1 : pagination.page;
+      const [usersResponse, rolesData] = await Promise.all([
+        api.getUsers(page, pagination.limit),
         api.getRoles(),
       ]);
-      setUsers(usersData);
+      
+      if (resetPagination) {
+        setUsers(usersResponse.data);
+      } else {
+        setUsers(prev => [...prev, ...usersResponse.data]);
+      }
+      
+      if (usersResponse.pagination) {
+        setPagination(usersResponse.pagination);
+        setHasMore(
+          usersResponse.pagination.page < usersResponse.pagination.totalPages &&
+          usersResponse.data.length === usersResponse.pagination.limit
+        );
+      } else {
+        setHasMore(false);
+      }
+      
       setRoles(rolesData);
     } catch (error: any) {
       showErrorAlert('Gagal memuat data user', error.message, colorMode);
     } finally {
       setLoading(false);
     }
-  }, [api, colorMode]);
+  }, [api, colorMode, pagination.page, pagination.limit]);
 
-  // const [filterRole, setFilterRole] = useState<string>('all'); // Deprecated for Status Filter
-  const [filterStatus, setFilterStatus] = useState<
-    'all' | 'active' | 'inactive'
-  >('all');
+  const loadMore = React.useCallback(async () => {
+    if (!hasMore || loading) return;
+    
+    try {
+      setLoading(true);
+      const nextPage = pagination.page + 1;
+      const response = await api.getUsers(nextPage, pagination.limit, { status: filterStatus });
+      
+      setUsers(prev => [...prev, ...response.data]);
+      
+      if (response.pagination) {
+        setPagination(response.pagination);
+        setHasMore(response.pagination.page < response.pagination.totalPages);
+      }
+    } catch (error: any) {
+      showErrorAlert('Gagal memuat data', error.message, colorMode);
+    } finally {
+      setLoading(false);
+    }
+  }, [api, pagination, hasMore, loading, colorMode, filterStatus]);
+
+  const fetchCounts = async () => {
+    try {
+      const counts = await api.getCounts();
+      setStatusCounts(counts);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
+  };
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchDataWithFilter();
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
 
-  // Calculate counts (Simulated since no soft delete on users yet)
-  const counts = React.useMemo(() => {
-    return {
-      all: users.length,
-      active: users.length, // Assuming all fetched are active
-      inactive: 0, // Placeholder
-    };
-  }, [users]);
+  const fetchDataWithFilter = async () => {
+    try {
+      setLoading(true);
+      const [usersResponse, rolesData] = await Promise.all([
+        api.getUsers(1, pagination.limit, { status: filterStatus }),
+        api.getRoles(),
+      ]);
+      
+      setUsers(usersResponse.data);
+      
+      if (usersResponse.pagination) {
+        setPagination(usersResponse.pagination);
+        setHasMore(usersResponse.pagination.page < usersResponse.pagination.totalPages);
+      } else {
+        setHasMore(false);
+      }
+      
+      setRoles(rolesData);
+    } catch (error: any) {
+      showErrorAlert('Gagal memuat data user', error.message, colorMode);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredUsers = React.useMemo(() => {
-    // If filterStatus is 'active', show all users (since we don't have deleted users yet)
-    // If 'inactive', show none
-    if (filterStatus === 'inactive') return [];
-    return users;
-  }, [users, filterStatus]);
+  const filteredUsers = users; // No client-side filtering
+  const counts = statusCounts;
 
   const handleOpenModal = (user?: User) => {
     setEditingUser(user || undefined);
@@ -109,13 +178,23 @@ const UserListPage: NextPageWithLayout = () => {
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
       await api.deleteUser(id);
-      showSuccessAlert('User berhasil dihapus', colorMode);
+      showSuccessAlert('Data berhasil dihapus', colorMode);
       fetchData();
     } catch (error: any) {
-      showErrorAlert('Gagal menghapus user', error.message, colorMode);
+      showErrorAlert('Gagal menghapus', error.message, colorMode);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await api.restoreUser(id);
+      showSuccessAlert('Data berhasil dipulihkan', colorMode);
+      fetchData();
+    } catch (error: any) {
+      showErrorAlert('Gagal memulihkan', error.message, colorMode);
     }
   };
 
@@ -127,64 +206,95 @@ const UserListPage: NextPageWithLayout = () => {
 
   return (
     <>
+      <Head>
+        <title>Manajemen User</title>
+      </Head>
+
       <Box p={4}>
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section */}
+              {/* Header Section - Clean Typography */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'center' }}
-                direction={{ base: 'row', md: 'row' }}
-                gap={{ base: 2, md: 4 }}
-                wrap={{ base: 'nowrap', md: 'nowrap' }}
+                align={{ base: 'start', md: 'end' }}
+                direction={{ base: 'column', md: 'row' }}
+                gap={{ base: 4, md: 6 }}
+                mb={6}
               >
-                <VStack align="start" spacing={1} flex={1} minW={0}>
-                  <Text
-                    fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-                    fontWeight="700"
-                    color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    noOfLines={1}
-                  >
-                    Manajemen User
-                  </Text>
-                  <HStack spacing={2}>
+                <VStack align="start" spacing={3} flex={1}>
+                  {/* Title with Gradient Accent */}
+                  <Box>
                     <Text
-                      fontSize={{ base: 'xs', sm: 'sm' }}
-                      color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                      noOfLines={1}
+                      fontSize={{ base: '3xl', md: '4xl' }}
+                      fontWeight="700"
+                      color={colorMode === 'light' ? 'gray.900' : 'white'}
+                      letterSpacing="tight"
+                      lineHeight="1.1"
+                      mb={1}
                     >
-                      Kelola pengguna dan hak akses
+                      Manajemen User
                     </Text>
-                  </HStack>
+                    <Box
+                      w="60px"
+                      h="3px"
+                      bg={
+                        colorMode === 'light' 
+                          ? `${colorPref}.500` 
+                          : `${colorPref}.400`
+                      }
+                      borderRadius="full"
+                    />
+                  </Box>
+
+                  {/* Description */}
+                  <Text
+                    fontSize={{ base: 'sm', md: 'md' }}
+                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                    fontWeight="400"
+                    maxW="600px"
+                    lineHeight="1.6"
+                  >
+                    Kelola pengguna, role, dan permission dengan kontrol akses yang fleksibel
+                  </Text>
                 </VStack>
 
                 {/* User Profile & Actions */}
-                <Box flexShrink={0} display={{ base: 'none', md: 'block' }}>
+                <Box display={{ base: 'none', md: 'block' }}>
                   <UserProfileActions />
                 </Box>
               </Flex>
 
-              {/* Filters Toolbar */}
-              <FilterTabs
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                counts={counts}
-              />
+              {/* Filter Tabs */}
+              <Box pb={2}>
+                <FilterTabs
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
+                  counts={counts}
+                />
+              </Box>
 
-              {/* Content */}
               <UserTableAdvance
                 initialData={filteredUsers}
                 loading={loading}
                 onEdit={handleOpenModal}
-                onDelete={handleDeleteUser}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onAddNew={() => handleOpenModal()}
                 onCopyMagicLink={handleCopyMagicLink}
+                onLoadMore={loadMore}
+                hasMore={hasMore}
                 headerAction={
-                  <PrimaryButton onClick={() => handleOpenModal()} w="auto">
-                    <HStack spacing={2} justify="center">
-                      <MaterialIcon name="add" size={20} />
-                      <Text>Tambah</Text>
-                    </HStack>
+                  <PrimaryButton
+                    onClick={() => handleOpenModal()}
+                    w="auto"
+                    borderRadius="full"
+                    px={8}
+                    h="48px"
+                  >
+                    <Text fontWeight="700" fontSize="sm">
+                      Tambah Data
+                    </Text>
                   </PrimaryButton>
                 }
               />

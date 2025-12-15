@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import {
   VStack,
@@ -19,18 +19,22 @@ import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import FilterTabs from '@/components/molecules/FilterTabs';
 import RoleFilterTabs from '@/components/molecules/RoleFilterTabs';
+import AppSettingContext from '@/providers/AppSettingProvider';
 
 // Import components from modules
 import PermissionTableAdvance from '@/modules/admin/permissions/components/PermissionTableAdvance';
 import PermissionFormModal from '@/modules/admin/permissions/components/PermissionFormModal';
 import { usePermissions } from '@/modules/admin/permissions/utils/hooks/usePermissions';
-import { RolePermission } from '@/modules/admin/permissions/services/PermissionAPI';
+import PermissionAPI, { RolePermission } from '@/modules/admin/permissions/services/PermissionAPI';
 import { useRoles } from '@/modules/admin/roles/utils/hooks/useRoles';
 
 const RolePermissionsPage: NextPageWithLayout = () => {
   const {
     permissions,
     loading,
+    hasMore,
+    totalCount,
+    loadMore,
     fetchPermissions,
     createPermission,
     updatePermission,
@@ -40,6 +44,14 @@ const RolePermissionsPage: NextPageWithLayout = () => {
 
   const { roles, fetchRoles } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
+  const [statusCounts, setStatusCounts] = useState<{ all: number; active: number; inactive: number }>({
+    all: 0,
+    active: 0,
+    inactive: 0,
+  });
+  
+  const permissionAPI = React.useMemo(() => new PermissionAPI(), []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPermission, setSelectedPermission] = useState<
@@ -49,6 +61,7 @@ const RolePermissionsPage: NextPageWithLayout = () => {
     'all' | 'active' | 'inactive'
   >('all');
   const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
 
   const handleOpenModal = (permission?: RolePermission) => {
     setSelectedPermission(permission);
@@ -61,8 +74,32 @@ const RolePermissionsPage: NextPageWithLayout = () => {
   };
 
   const handleSaveSuccess = () => {
-    fetchPermissions();
+    fetchPermissions(true, { roleId: selectedRoleId, status: filterStatus });
   };
+
+  // Fetch counts from server
+  const fetchCounts = async () => {
+    try {
+      // Fetch role counts (changes based on status filter)
+      const roleCounts = await permissionAPI.getCountsByRole(filterStatus);
+      setRoleCounts(roleCounts);
+      
+      // Fetch status counts (changes based on role filter)
+      const statusCounts = await permissionAPI.getCounts(
+        selectedRoleId ? { roleId: selectedRoleId } : undefined
+      );
+      setStatusCounts(statusCounts);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
+  };
+
+  // Trigger server-side fetch when filters change
+  useEffect(() => {
+    fetchPermissions(true, { roleId: selectedRoleId, status: filterStatus });
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, selectedRoleId]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -82,26 +119,11 @@ const RolePermissionsPage: NextPageWithLayout = () => {
     }
   };
 
-  const filteredData = useMemo(() => {
-    return permissions.filter((item) => {
-      // Filter by Status
-      if (filterStatus === 'active' && item.deleted_at) return false;
-      if (filterStatus === 'inactive' && !item.deleted_at) return false;
+  // No need for client-side filtering anymore, server handles it
+  const filteredData = permissions;
 
-      // Filter by Role
-      if (selectedRoleId && item.role_id !== selectedRoleId) return false;
-
-      return true;
-    });
-  }, [permissions, filterStatus, selectedRoleId]);
-
-  const counts = useMemo(() => {
-    return {
-      all: permissions.length,
-      active: permissions.filter((i) => !i.deleted_at).length,
-      inactive: permissions.filter((i) => i.deleted_at).length,
-    };
-  }, [permissions]);
+  // Use status counts from server (not from totalCount which is filtered)
+  const counts = statusCounts;
 
   const roleTabs = useMemo(() => {
     return roles
@@ -109,14 +131,9 @@ const RolePermissionsPage: NextPageWithLayout = () => {
       .map((role) => ({
         id: role.id,
         label: role.name,
-        count: permissions.filter(
-          (p) => p.role_id === role.id && 
-          (filterStatus === 'all' || 
-           (filterStatus === 'active' && !p.deleted_at) ||
-           (filterStatus === 'inactive' && p.deleted_at))
-        ).length,
+        count: roleCounts[role.id] || 0, // Use server-side counts
       }));
-  }, [roles, permissions, filterStatus]);
+  }, [roles, roleCounts]);
 
   return (
     <>
@@ -128,30 +145,48 @@ const RolePermissionsPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section */}
+              {/* Header Section - Clean Typography */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'end' }}
+                align={{ base: 'start', md: 'end' }}
                 direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 4 }}
-                mb={4}
+                gap={{ base: 4, md: 6 }}
+                mb={6}
               >
-                <VStack align="start" spacing={1} flex={1} w="full">
-                  <Text
-                    fontSize={{ base: '2xl', md: '4xl' }}
-                    fontWeight="800"
-                    color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    letterSpacing="tight"
-                    lineHeight="1.2"
-                  >
-                    Manajemen Permissions
-                  </Text>
+                <VStack align="start" spacing={3} flex={1}>
+                  {/* Title with Gradient Accent */}
+                  <Box>
+                    <Text
+                      fontSize={{ base: '3xl', md: '4xl' }}
+                      fontWeight="700"
+                      color={colorMode === 'light' ? 'gray.900' : 'white'}
+                      letterSpacing="tight"
+                      lineHeight="1.1"
+                      mb={1}
+                    >
+                      Manajemen Permissions
+                    </Text>
+                    <Box
+                      w="60px"
+                      h="3px"
+                      bg={
+                        colorMode === 'light' 
+                          ? `${colorPref}.500` 
+                          : `${colorPref}.400`
+                      }
+                      borderRadius="full"
+                    />
+                  </Box>
+
+                  {/* Description */}
                   <Text
                     fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
                     fontWeight="400"
+                    maxW="600px"
+                    lineHeight="1.6"
                   >
-                    Kelola hak akses URL untuk setiap role secara detail
+                    Kelola permission dan kontrol akses untuk setiap role
                   </Text>
                 </VStack>
 
@@ -187,6 +222,8 @@ const RolePermissionsPage: NextPageWithLayout = () => {
                 onDelete={handleDelete}
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
+                onLoadMore={() => loadMore({ roleId: selectedRoleId, status: filterStatus })}
+                hasMore={hasMore}
                 headerAction={
                   <PrimaryButton
                     onClick={() => handleOpenModal()}

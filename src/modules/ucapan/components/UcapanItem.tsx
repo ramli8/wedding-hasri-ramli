@@ -31,6 +31,8 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(ucapan.pesan);
   const toast = useToast();
   const api = new UcapanAPI();
   const accountInfo = useContext(AccountInfoContext);
@@ -38,6 +40,17 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
   // Can reply if: admin mode OR guest with valid ID
   const canReply = (isAdminMode && adminUserId) || (guestId && guestName);
   const replyerName = isAdminMode ? (accountInfo?.name || 'Admin') : guestName;
+
+  // Can edit if: owner of this ucapan (matching user_id or tamu_id)
+  const canEdit = () => {
+    if (isAdminMode && adminUserId && ucapan.user_id === adminUserId) {
+      return true;
+    }
+    if (!isAdminMode && guestId && ucapan.tamu_id === guestId) {
+      return true;
+    }
+    return false;
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -53,6 +66,60 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
   const handleReplyClick = () => {
     setShowReplyForm(!showReplyForm);
     setReplyText('');
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setEditText(ucapan.pesan);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText(ucapan.pesan);
+  };
+
+  const handleSubmitEdit = async () => {
+    if (!editText.trim()) {
+      toast({
+        title: 'Pesan tidak boleh kosong',
+        status: 'warning',
+        duration: 3000,
+      });
+      return;
+    }
+
+    if (editText.trim() === ucapan.pesan) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await api.updateUcapan(ucapan.id, editText.trim());
+
+      toast({
+        title: 'Ucapan berhasil diperbarui',
+        status: 'success',
+        duration: 3000,
+      });
+
+      setIsEditing(false);
+      
+      // Force refresh
+      if (onReplySuccess) {
+        await onReplySuccess();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Gagal memperbarui ucapan',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmitReply = async () => {
@@ -146,33 +213,105 @@ const UcapanItem: React.FC<UcapanItemProps> = ({
               </Text>
             </Box>
           </HStack>
-          <HStack justify="space-between" w="full" align="start">
-            <Text fontSize="sm" whiteSpace="pre-wrap" flex="1" color={colorMode === 'light' ? 'gray.700' : 'gray.300'}>
-              {ucapan.pesan}
-            </Text>
-            {canReply && isLastInThread && (
-              <IconButton
-                aria-label="Balas ucapan"
-                icon={
-                  <Icon viewBox="0 0 24 24" width="16px" height="16px">
-                    <path
-                      fill="currentColor"
-                      d="M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z"
-                    />
-                  </Icon>
-                }
-                size="xs"
-                variant="ghost"
-                color="gray.500"
-                onClick={handleReplyClick}
-                isActive={showReplyForm}
-                _hover={{
-                  color: colorMode === 'light' ? 'black' : 'white',
-                  bg: 'transparent',
+          {isEditing ? (
+            <VStack spacing={3} align="stretch" w="full">
+              <Textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                rows={3}
+                disabled={isSubmitting}
+                fontSize="sm"
+                borderRadius="md"
+                bg="transparent"
+                border="1px solid"
+                borderColor={borderColor}
+                _focus={{
+                  borderColor: focusBorderColor,
+                  boxShadow: 'none',
                 }}
               />
-            )}
-          </HStack>
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  bg={buttonBg}
+                  color={buttonColor}
+                  _hover={{ bg: buttonHoverBg }}
+                  _active={{ bg: buttonHoverBg }}
+                  onClick={handleSubmitEdit}
+                  isLoading={isSubmitting}
+                  loadingText="Menyimpan..."
+                  borderRadius="md"
+                  fontSize="xs"
+                  fontWeight="600"
+                >
+                  Simpan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  fontSize="xs"
+                  fontWeight="500"
+                  color="gray.500"
+                  _hover={{ color: colorMode === 'light' ? 'black' : 'white', bg: 'transparent' }}
+                >
+                  Batal
+                </Button>
+              </HStack>
+            </VStack>
+          ) : (
+            <HStack justify="space-between" w="full" align="start">
+              <Text fontSize="sm" whiteSpace="pre-wrap" flex="1" color={colorMode === 'light' ? 'gray.700' : 'gray.300'}>
+                {ucapan.pesan}
+              </Text>
+              <HStack spacing={1}>
+                {canEdit() && (
+                  <IconButton
+                    aria-label="Edit ucapan"
+                    icon={
+                      <Icon viewBox="0 0 24 24" width="16px" height="16px">
+                        <path
+                          fill="currentColor"
+                          d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+                        />
+                      </Icon>
+                    }
+                    size="xs"
+                    variant="ghost"
+                    color="gray.500"
+                    onClick={handleEditClick}
+                    _hover={{
+                      color: colorMode === 'light' ? 'black' : 'white',
+                      bg: 'transparent',
+                    }}
+                  />
+                )}
+                {canReply && isLastInThread && (
+                  <IconButton
+                    aria-label="Balas ucapan"
+                    icon={
+                      <Icon viewBox="0 0 24 24" width="16px" height="16px">
+                        <path
+                          fill="currentColor"
+                          d="M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z"
+                        />
+                      </Icon>
+                    }
+                    size="xs"
+                    variant="ghost"
+                    color="gray.500"
+                    onClick={handleReplyClick}
+                    isActive={showReplyForm}
+                    _hover={{
+                      color: colorMode === 'light' ? 'black' : 'white',
+                      bg: 'transparent',
+                    }}
+                  />
+                )}
+              </HStack>
+            </HStack>
+          )}
         </VStack>
       </Box>
 

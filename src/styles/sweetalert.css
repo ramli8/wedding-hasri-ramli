@@ -1,5 +1,9 @@
 
 /* SweetAlert2 Modern Theme */
+.swal-high-z-index {
+  z-index: 99999 !important;
+}
+
 .swal-modern-popup {
   border-radius: 24px !important;
   padding: 2rem !important;

@@ -21,6 +21,7 @@ const AccountInfoContext = createContext<AccountInfo | null>(null);
 
 export function AccountInfoProvider({ children }: { children: ReactNode }) {
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const authAPI = new AuthAPI();
 
   useEffect(() => {
@@ -28,7 +29,10 @@ export function AccountInfoProvider({ children }: { children: ReactNode }) {
       if (typeof window === 'undefined') return;
       
       const session = authAPI.getSession();
-      if (!session) return;
+      if (!session) {
+        setAccountInfo(null);
+        return;
+      }
 
       try {
         // Fetch actual role IDs from database
@@ -77,7 +81,27 @@ export function AccountInfoProvider({ children }: { children: ReactNode }) {
     };
 
     fetchAccountInfo();
-  }, []);
+
+    // Listen to storage changes (for login/logout events)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'wedding_admin_session' || e.key === 'active_role_id') {
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+
+    // Listen to custom event for session changes
+    const handleSessionChange = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sessionChanged', handleSessionChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sessionChanged', handleSessionChange);
+    };
+  }, [refreshTrigger]);
 
   return (
     <AccountInfoContext.Provider value={accountInfo}>

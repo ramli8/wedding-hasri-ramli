@@ -66,6 +66,7 @@ export interface TamuFilter {
   status_undangan?: string;
   konfirmasi_kehadiran?: string;
   search?: string;
+  status?: 'all' | 'active' | 'inactive'; // Filter untuk deleted status
   page?: number;
   limit?: number;
 }

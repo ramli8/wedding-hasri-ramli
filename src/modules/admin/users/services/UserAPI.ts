@@ -4,6 +4,7 @@ export interface Role {
   id: string;
   name: string;
   description: string;
+  deleted_at?: string;
 }
 
 export interface User {
@@ -11,6 +12,7 @@ export interface User {
   username: string;
   name: string;
   roles?: Role[];
+  deleted_at?: string;
 }
 
 export interface CreateUserInput {
@@ -20,9 +22,26 @@ export interface CreateUserInput {
   role_ids: string[];
 }
 
+export interface UserApiResponse {
+  data: User[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 class UserAPI {
-  async getUsers() {
-    const { data, error } = await supabase
+  async getUsers(
+    page?: number, 
+    limit?: number,
+    filters?: {
+      status?: 'all' | 'active' | 'inactive';
+      roleId?: string;
+    }
+  ): Promise<UserApiResponse> {
+    let query = supabase
       .from('users')
       .select(`
         *,
@@ -32,22 +51,83 @@ class UserAPI {
             name
           )
         )
-      `)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false });
+
+    // Apply status filter
+    if (filters?.status === 'active') {
+      query = query.is('deleted_at', null);
+    } else if (filters?.status === 'inactive') {
+      query = query.not('deleted_at', 'is', null);
+    }
+
+    // Apply pagination if provided
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
     
     // Transform data to flatten roles
-    return data.map((user: any) => ({
+    let transformedData = (data || []).map((user: any) => ({
       ...user,
       roles: user.user_roles.map((ur: any) => ur.roles)
     }));
+
+    // Client-side filter by role if needed (because of join complexity)
+    if (filters?.roleId) {
+      transformedData = transformedData.filter(user => 
+        user.roles.some((role: any) => role.id === filters.roleId)
+      );
+    }
+
+    const totalPages = count && limit ? Math.ceil(count / limit) : 0;
+
+    return {
+      data: transformedData,
+      pagination: page && limit ? {
+        page,
+        limit,
+        total: count || 0,
+        totalPages,
+      } : undefined,
+    };
+  }
+
+  async getCounts(filters?: { roleId?: string }): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    const buildQuery = () => {
+      let q = supabase.from('users').select('*', { count: 'exact', head: true });
+      return q;
+    };
+
+    try {
+      const { count: allCount } = await buildQuery();
+      const { count: activeCount } = await buildQuery().is('deleted_at', null);
+      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+
+      return {
+        all: allCount || 0,
+        active: activeCount || 0,
+        inactive: inactiveCount || 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching user counts:', error);
+      return { all: 0, active: 0, inactive: 0 };
+    }
   }
 
   async getRoles() {
     const { data, error } = await supabase
       .from('roles')
       .select('*')
+      .is('deleted_at', null)
       .order('name');
     
     if (error) throw error;
@@ -128,7 +208,16 @@ class UserAPI {
   async deleteUser(id: string) {
     const { error } = await supabase
       .from('users')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+
+  async restoreUser(id: string) {
+    const { error } = await supabase
+      .from('users')
+      .update({ deleted_at: null })
       .eq('id', id);
     
     if (error) throw error;

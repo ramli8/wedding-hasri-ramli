@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import {
   Box,
   IconButton,
@@ -7,65 +7,45 @@ import {
   Icon,
   useColorMode,
   VStack,
-  Avatar,
+  Flex,
   Badge,
-  Tooltip,
-} from '@chakra-ui/react';
-import { ColumnDef, ColumnFiltersState } from '@tanstack/react-table';
-import TableAdvance from '@/components/organisms/TableAdvance';
-import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
-import { UcapanWithReplies } from '../types/Ucapan.types';
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
-import { showSuccessAlert } from '@/utils/sweetalert';
-import { MaterialIcon } from '@/components/atoms/MaterialIcon';
-import AppSettingContext from '@/providers/AppSettingProvider';
-import { showConfirmationAlert } from '@/utils/sweetalert';
-import { useContext } from 'react';
-import {
   Input,
   InputGroup,
   InputLeftElement,
-  Flex,
-  // Menu, // Removed as per instruction
-  // MenuButton, // Removed as per instruction
-  // MenuList, // Removed as per instruction
-  // MenuItem, // Removed as per instruction
-  // Avatar, // Moved to top import
-  useColorModeValue,
+  Tooltip,
+  SimpleGrid,
 } from '@chakra-ui/react';
-
-const MySwal = withReactContent(Swal);
+import { ColumnFiltersState } from '@tanstack/react-table';
+import { UcapanWithReplies } from '../types/Ucapan.types';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
+import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import AppSettingContext from '@/providers/AppSettingProvider';
+import { showConfirmationAlert } from '@/utils/sweetalert';
 
 interface UcapanTableAdvanceProps {
   initialData?: UcapanWithReplies[];
   loading?: boolean;
-  onReply: (ucapan: UcapanWithReplies) => void;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
-  headerAction?: React.ReactNode;
+  onRestore: (id: string) => void;
+  onAddNew: () => void;
+  onViewDetail: (ucapan: UcapanWithReplies) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 }
 
 const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
   initialData = [],
   loading = false,
-  onReply,
   onDelete,
-  onRefresh,
-  headerAction,
+  onRestore,
+  onAddNew,
+  onViewDetail,
+  onLoadMore,
+  hasMore = false,
 }) => {
   const { colorMode } = useColorMode();
-  const { colorPref } = useContext(AppSettingContext);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const boxBg = useColorModeValue('white', 'gray.900');
-  const leftBorderColor = useColorModeValue(
-    `${colorPref}.500`,
-    `${colorPref}Dim.500`
-  );
-  const tableBorderColor = useColorModeValue('gray.200', 'gray.800');
+  const { colorPref } = useContext(AppSettingContext);
 
   const handleDelete = async (id: string) => {
     const result = await showConfirmationAlert(
@@ -81,6 +61,24 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
     }
   };
 
+  // Filtering logic
+  const globalFilterValue =
+    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
+
+  const filteredData = useMemo(() => {
+    if (!globalFilterValue) return initialData;
+    return initialData.filter((item) =>
+      item.nama.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
+      item.pesan.toLowerCase().includes(globalFilterValue.toLowerCase())
+    );
+  }, [initialData, globalFilterValue]);
+
+  const handleLoadMore = () => {
+    if (onLoadMore) {
+      onLoadMore();
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
@@ -91,121 +89,6 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
       minute: '2-digit',
     });
   };
-
-  const columns = useMemo<ColumnDef<UcapanWithReplies, any>[]>(
-    () => [
-      {
-        accessorKey: 'nama',
-        header: 'Nama',
-        cell: (info) => (
-          <HStack spacing={3}>
-            <Avatar
-              name={info.getValue()}
-              size="sm"
-              bg={colorMode === 'light' ? 'gray.900' : 'white'}
-              color={colorMode === 'light' ? 'white' : 'gray.900'}
-            />
-            <Text
-              fontWeight="600"
-              fontSize="sm"
-              color={colorMode === 'light' ? 'gray.900' : 'white'}
-            >
-              {info.getValue()}
-            </Text>
-          </HStack>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'pesan',
-        header: 'Pesan',
-        cell: (info) => (
-          <Text
-            fontSize="sm"
-            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-            noOfLines={2}
-          >
-            {info.getValue()}
-          </Text>
-        ),
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        accessorKey: 'created_at',
-        header: 'Tanggal',
-        cell: (info) => (
-          <Text fontSize="xs" color="gray.500">
-            {formatDate(info.getValue())}
-          </Text>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      },
-      {
-        id: 'status',
-        header: 'Status',
-        cell: (info) => {
-          const ucapan = info.row.original;
-          const hasReply = ucapan.replies && ucapan.replies.length > 0;
-          return (
-            <Badge
-              variant="outline"
-              colorScheme={colorMode === 'light' ? 'blackAlpha' : 'whiteAlpha'}
-              borderColor={colorMode === 'light' ? 'gray.900' : 'white'}
-              color={colorMode === 'light' ? 'gray.900' : 'white'}
-              fontSize="xs"
-            >
-              {hasReply ? 'Sudah Dibalas' : 'Belum Dibalas'}
-            </Badge>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        id: 'actions',
-        header: 'Aksi',
-        cell: (info) => {
-          const ucapan = info.row.original;
-          return (
-            <HStack spacing={1} justify="flex-end">
-              <Tooltip label="Balas" placement="top" hasArrow>
-                <IconButton
-                  aria-label="Balas"
-                  icon={<MaterialIcon name="reply" size={18} />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="blue"
-                  onClick={() => onReply(ucapan)}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'blue.50' : 'blue.900',
-                  }}
-                />
-              </Tooltip>
-              <Tooltip label="Hapus" placement="top" hasArrow>
-                <IconButton
-                  aria-label="Hapus"
-                  icon={<MaterialIcon name="delete" size={18} />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="red"
-                  onClick={() => handleDelete(ucapan.id)}
-                  _hover={{
-                    bg: colorMode === 'light' ? 'red.50' : 'red.900',
-                  }}
-                />
-              </Tooltip>
-            </HStack>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-    ],
-    [colorMode, onReply, onDelete, handleDelete]
-  );
 
   if (loading) {
     return (
@@ -218,11 +101,12 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
   return (
     <Box>
       <Box
-        bg={boxBg}
+        pos="relative"
+        bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
         borderRadius="24px"
-        p={6}
-        border="1px solid"
-        borderColor={tableBorderColor}
+        p={{ base: 4, md: '32px' }}
+        borderWidth="1px"
+        borderColor={colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'}
         _before={{
           content: '""',
           pos: 'absolute',
@@ -235,60 +119,227 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
           opacity: colorMode == 'light' ? '0.91' : '0.51',
           filter: 'blur(86.985px)',
           borderRadius: '24px',
+          display: { base: 'none', md: 'block' },
         }}
-        pos="relative"
-        boxShadow="none"
       >
-        {/* Table Header / Toolbar */}
         <Flex
           mb={6}
-          justify="space-between"
+          justify="flex-end"
           align="center"
-          direction={{ base: 'column', md: 'row' }}
-          gap={3}
         >
-          {/* Header Action on Left */}
-          {headerAction && (
-            <Box
-              flexShrink={0}
-              w={{ base: 'full', md: 'auto' }}
-              display="flex"
-              justifyContent="flex-start"
-            >
-              <Box w="fit-content">{headerAction}</Box>
-            </Box>
-          )}
-
+          {/* Search Input on Right */}
           <InputGroup
             size="md"
-            w={{ base: 'full', md: 'auto' }}
             maxW={{ base: 'full', md: '400px' }}
+            w={{ base: 'full', md: 'auto' }}
           >
-            <InputLeftElement h="40px">
-              <MaterialIcon name="search" size={18} color="gray.400" />
+            <InputLeftElement h="48px">
+              <Icon 
+                as={MaterialIcon} 
+                name="search" 
+                boxSize={4} 
+                color={colorMode === 'light' ? 'gray.400' : 'gray.500'} 
+              />
             </InputLeftElement>
             <Input
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              h="40px"
-              borderRadius="12px"
-              focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+              value={globalFilterValue}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value;
+                setColumnFilters(value ? [{ id: 'global', value }] : []);
+              }}
+              h="48px"
+              variant="filled"
+              borderRadius="full"
+              focusBorderColor={
+                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+              }
               fontSize="sm"
               fontWeight="500"
-              size="lg"
+              placeholder="Cari data..."
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              _placeholder={{
+                color: colorMode === 'light' ? 'gray.400' : 'gray.500',
+              }}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.600',
+                borderColor:
+                  colorMode === 'light'
+                    ? `${colorPref}.500`
+                    : `${colorPref}.300`,
+              }}
             />
           </InputGroup>
         </Flex>
 
-        <TableAdvance
-          columns={columns}
-          data={initialData}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          globalFilter={globalFilter}
-          onGlobalFilterChange={setGlobalFilter}
-          hideSearch={true}
-        />
+        {/* Responsive Grid Layout */}
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={4}>
+          {filteredData.map((ucapan) => {
+            const isDeleted = ucapan.deleted_at;
+            const hasReply = ucapan.replies && ucapan.replies.length > 0;
+            return (
+              <Box
+                key={ucapan.id}
+                p={6}
+                borderRadius="2xl"
+                borderWidth="1px"
+                borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
+                shadow="sm"
+                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                _hover={{
+                  transform: 'translateY(-2px)',
+                  shadow: 'lg',
+                  borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}.500`,
+                }}
+                position="relative"
+                overflow="hidden"
+              >
+                <Flex justify="space-between" align="start" mb={3}>
+                  <VStack align="start" spacing={1} flex={1}>
+                    <Text fontWeight="bold" fontSize="lg" mb={1} noOfLines={1}>
+                      {ucapan.nama}
+                    </Text>
+                    <Badge
+                      px={2}
+                      py={0.5}
+                      borderRadius="full"
+                      fontSize="xs"
+                      colorScheme={isDeleted ? 'red' : hasReply ? 'green' : 'yellow'}
+                      variant="subtle"
+                    >
+                      {isDeleted ? 'Dihapus' : hasReply ? 'Sudah Dibalas' : 'Belum Dibalas'}
+                    </Badge>
+                  </VStack>
+                </Flex>
+
+                <Text
+                  fontSize="sm"
+                  color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  noOfLines={3}
+                  mb={2}
+                >
+                  {ucapan.pesan}
+                </Text>
+
+                <Text fontSize="xs" color="gray.500" mb={3}>
+                  {formatDate(ucapan.created_at)}
+                </Text>
+
+                <HStack
+                  justify="flex-end"
+                  spacing={2}
+                  mt={4}
+                  pt={4}
+                  borderTopWidth="1px"
+                  borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
+                >
+                  {!isDeleted ? (
+                    <>
+                      {hasReply && (
+                        <Tooltip label="Detail & Balasan" hasArrow>
+                          <IconButton
+                            aria-label="Detail"
+                            icon={<MaterialIcon name="visibility" size={18} />}
+                            size="sm"
+                            borderRadius="full"
+                            variant="ghost"
+                            onClick={() => onViewDetail(ucapan)}
+                            bg={
+                              colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
+                            }
+                            color={colorMode === 'light' ? 'blue.600' : 'blue.300'}
+                            _hover={{
+                              bg:
+                                colorMode === 'light'
+                                  ? 'blue.100'
+                                  : 'whiteAlpha.300',
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                      <Tooltip label="Hapus" hasArrow>
+                        <IconButton
+                          aria-label="Hapus"
+                          icon={<MaterialIcon name="delete" size={18} />}
+                          size="sm"
+                          borderRadius="full"
+                          variant="ghost"
+                          onClick={() => handleDelete(ucapan.id)}
+                          bg={
+                            colorMode === 'light' ? 'red.50' : 'whiteAlpha.200'
+                          }
+                          color={colorMode === 'light' ? 'red.600' : 'red.300'}
+                          _hover={{
+                            bg:
+                              colorMode === 'light'
+                                ? 'red.100'
+                                : 'whiteAlpha.300',
+                          }}
+                        />
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Tooltip label="Pulihkan" hasArrow>
+                      <IconButton
+                        aria-label="Restore"
+                        icon={
+                          <MaterialIcon name="restore_from_trash" size={18} />
+                        }
+                        size="sm"
+                        borderRadius="full"
+                        variant="ghost"
+                        onClick={() => onRestore(ucapan.id)}
+                        bg={
+                          colorMode === 'light' ? 'green.50' : 'whiteAlpha.200'
+                        }
+                        color={
+                          colorMode === 'light' ? 'green.600' : 'green.300'
+                        }
+                        _hover={{
+                          bg:
+                            colorMode === 'light'
+                              ? 'green.100'
+                              : 'whiteAlpha.300',
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+              </Box>
+            );
+          })}
+        </SimpleGrid>
+
+        {/* Load More Button */}
+        {hasMore && !loading && (
+          <Flex justify="center" mt={8}>
+            <PrimaryButton onClick={handleLoadMore}>
+              Muat Lebih Banyak
+            </PrimaryButton>
+          </Flex>
+        )}
+
+        {loading && initialData.length > 0 && (
+          <Flex justify="center" mt={8}>
+            <Text color="gray.500">Memuat data...</Text>
+          </Flex>
+        )}
+
+        {filteredData.length === 0 && (
+          <Box textAlign="center" py={10}>
+            <Text color="gray.500" fontSize="lg">
+              Tidak ada data ditemukan
+            </Text>
+          </Box>
+        )}
       </Box>
     </Box>
   );

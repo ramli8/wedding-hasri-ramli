@@ -75,24 +75,24 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         const kategoriAPI = new KategoriTamuAPI();
         const hubunganAPI = new HubunganTamuAPI();
 
-        const [kategoriesData, relationshipsData] = await Promise.all([
-          kategoriAPI.getAll(),
-          hubunganAPI.getAll(),
+        const [kategoriesResponse, relationshipsResponse] = await Promise.all([
+          kategoriAPI.getAll(undefined, undefined, { status: 'active' }),
+          hubunganAPI.getAll(undefined, undefined, { status: 'active' }),
         ]);
 
-        setCategories(kategoriesData);
-        setRelationships(relationshipsData);
+        setCategories(kategoriesResponse.data);
+        setRelationships(relationshipsResponse.data);
 
         // Set default values if not editing
         if (
           !tamu &&
-          kategoriesData.length > 0 &&
-          relationshipsData.length > 0
+          kategoriesResponse.data.length > 0 &&
+          relationshipsResponse.data.length > 0
         ) {
           setFormData((prev) => ({
             ...prev,
-            kategori_id: kategoriesData[0].id,
-            hubungan_id: relationshipsData[0].id,
+            kategori_id: kategoriesResponse.data[0].id,
+            hubungan_id: relationshipsResponse.data[0].id,
           }));
         }
       } catch (error) {
@@ -218,10 +218,20 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           readOnly
           variant="filled"
           size="lg"
-          borderRadius="12px"
-          focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
-          _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200' }}
+          bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+          color={colorMode === 'light' ? 'gray.900' : 'white'}
+          borderRadius="16px"
+          fontSize="md"
+          fontWeight="500"
           cursor="pointer"
+          _hover={{
+            bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+          }}
+          _focus={{
+            bg: colorMode === 'light' ? 'white' : 'gray.800',
+            borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+            boxShadow: 'none',
+          }}
         />
         <InputRightElement pointerEvents="none" h="full" mr={2}>
           <Icon as={icon} color="gray.500" />
@@ -246,15 +256,34 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     <Box as="form" onSubmit={handleSubmit}>
       <Stack spacing={5}>
         <FormControl isRequired isInvalid={!!errors.nama}>
-          <FormLabel>Nama</FormLabel>
+          <FormLabel
+            fontSize="sm"
+            fontWeight="600"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            mb={3}
+          >
+            Nama
+          </FormLabel>
           <Input
             name="nama"
             value={formData.nama}
             onChange={handleChange}
             isDisabled={loading}
             size="lg"
-            borderRadius="12px"
-            focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+            variant="filled"
+            bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+            color={colorMode === 'light' ? 'gray.900' : 'white'}
+            borderRadius="16px"
+            fontSize="md"
+            fontWeight="500"
+            _hover={{
+              bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+            }}
+            _focus={{
+              bg: colorMode === 'light' ? 'white' : 'gray.800',
+              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+              boxShadow: 'none',
+            }}
           />
           {errors.nama && (
             <Box color="red.500" fontSize="sm" mt={1}>
@@ -265,7 +294,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
 
         <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
           <FormControl isRequired isInvalid={!!errors.kategori_id}>
-            <FormLabel>Kategori</FormLabel>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Kategori
+            </FormLabel>
             <Select
               name="kategori_id"
               value={formData.kategori_id}
@@ -273,10 +309,23 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               isDisabled={loading}
               variant="filled"
               size="lg"
-              borderRadius="12px"
-              focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              borderRadius="16px"
+              fontSize="md"
+              fontWeight="500"
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.800',
+                borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+                boxShadow: 'none',
+              }}
+              sx={{
+                option: {
+                  bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+                },
               }}
             >
               <option value="">Pilih Kategori</option>
@@ -294,7 +343,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
 
           <FormControl isRequired isInvalid={!!errors.hubungan_id}>
-            <FormLabel>Hubungan</FormLabel>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Hubungan
+            </FormLabel>
             <Select
               name="hubungan_id"
               value={formData.hubungan_id}
@@ -302,10 +358,23 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
               isDisabled={loading}
               variant="filled"
               size="lg"
-              borderRadius="12px"
-              focusBorderColor={colorMode === 'light' ? 'teal.500' : 'teal.300'}
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              borderRadius="16px"
+              fontSize="md"
+              fontWeight="500"
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.800',
+                borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+                boxShadow: 'none',
+              }}
+              sx={{
+                option: {
+                  bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200',
+                },
               }}
             >
               <option value="">Pilih Hubungan</option>
@@ -324,7 +393,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         </Stack>
 
         <FormControl isRequired isInvalid={!!errors.alamat}>
-          <FormLabel>Alamat</FormLabel>
+          <FormLabel
+            fontSize="sm"
+            fontWeight="600"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            mb={3}
+          >
+            Alamat
+          </FormLabel>
           <Textarea
             name="alamat"
             value={formData.alamat}
@@ -333,8 +409,20 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             rows={3}
             resize="none"
             size="lg"
-            borderRadius="12px"
-            focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+            variant="filled"
+            bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+            color={colorMode === 'light' ? 'gray.900' : 'white'}
+            borderRadius="16px"
+            fontSize="md"
+            fontWeight="500"
+            _hover={{
+              bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+            }}
+            _focus={{
+              bg: colorMode === 'light' ? 'white' : 'gray.800',
+              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+              boxShadow: 'none',
+            }}
           />
           {errors.alamat && (
             <Box color="red.500" fontSize="sm" mt={1}>
@@ -344,7 +432,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         </FormControl>
 
         <FormControl isRequired isInvalid={!!errors.nomor_hp}>
-          <FormLabel>Nomor HP</FormLabel>
+          <FormLabel
+            fontSize="sm"
+            fontWeight="600"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            mb={3}
+          >
+            Nomor HP
+          </FormLabel>
           <Input
             name="nomor_hp"
             type="tel"
@@ -352,8 +447,20 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             onChange={handleChange}
             isDisabled={loading}
             size="lg"
-            borderRadius="12px"
-            focusBorderColor={colorMode === 'light' ? 'blue.500' : 'blue.300'}
+            variant="filled"
+            bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+            color={colorMode === 'light' ? 'gray.900' : 'white'}
+            borderRadius="16px"
+            fontSize="md"
+            fontWeight="500"
+            _hover={{
+              bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+            }}
+            _focus={{
+              bg: colorMode === 'light' ? 'white' : 'gray.800',
+              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+              boxShadow: 'none',
+            }}
           />
           {errors.nomor_hp && (
             <Box color="red.500" fontSize="sm" mt={1}>
@@ -368,7 +475,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           align="flex-start"
         >
           <FormControl flex={2}>
-            <FormLabel>Tanggal Resepsi</FormLabel>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Tanggal Resepsi
+            </FormLabel>
             <DatePicker
               selected={selectedDate}
               onChange={(date: Date) => setSelectedDate(date)}
@@ -382,7 +496,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
 
           <FormControl flex={1}>
-            <FormLabel>Jam Mulai</FormLabel>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Jam Mulai
+            </FormLabel>
             <DatePicker
               selected={startTime}
               onChange={(date: Date) => setStartTime(date)}
@@ -398,7 +519,14 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
 
           <FormControl flex={1}>
-            <FormLabel>Jam Selesai</FormLabel>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Jam Selesai
+            </FormLabel>
             <DatePicker
               selected={endTime}
               onChange={(date: Date) => setEndTime(date)}
@@ -414,8 +542,7 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
         </Stack>
 
-        <Stack
-          direction={{ base: 'column-reverse', md: 'row' }}
+        <HStack
           spacing={4}
           justify="flex-end"
           pt={4}
@@ -425,24 +552,31 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           <Button
             onClick={onCancel}
             isDisabled={loading}
-            minW="120px"
-            h="48px"
-            borderRadius="12px"
-            fontSize="14px"
-            variant="outline"
+            variant="ghost"
+            h="50px"
+            px={8}
+            borderRadius="16px"
+            fontSize="sm"
+            fontWeight="600"
+            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+            _hover={{
+              bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+            }}
           >
             Batal
           </Button>
           <PrimaryButton
             type="submit"
             isLoading={loading}
-            minW="120px"
-            h="48px"
-            borderRadius="12px"
+            h="50px"
+            px={8}
+            borderRadius="16px"
+            fontSize="sm"
+            fontWeight="600"
           >
-            {isEdit ? 'Perbarui' : 'Simpan'}
+            {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
           </PrimaryButton>
-        </Stack>
+        </HStack>
       </Stack>
     </Box>
   );

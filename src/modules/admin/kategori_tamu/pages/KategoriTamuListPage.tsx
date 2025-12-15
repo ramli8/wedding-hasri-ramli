@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import {
   VStack,
   Box,
@@ -24,6 +24,7 @@ import PlainCard from '@/components/organisms/Cards/Card';
 import PageRow from '@/components/atoms/PageRow';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
+import AppSettingContext from '@/providers/AppSettingProvider';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
@@ -31,16 +32,22 @@ import FilterTabs from '@/components/molecules/FilterTabs';
 
 const KategoriTamuListPage: NextPageWithLayout = () => {
   const { colorMode } = useColorMode();
+  const { colorPref } = useContext(AppSettingContext);
   const {
     kategoriTamu,
     loading,
     error,
+    hasMore,
+    loadMore,
     deleteKategoriTamu,
     fetchKategoriTamu,
     restoreKategoriTamu,
     createKategoriTamu,
     updateKategoriTamu,
   } = useKategoriTamu();
+
+  const KategoriAPI = require('../services/KategoriTamuAPI').default;
+  const api = useMemo(() => new KategoriAPI(), [KategoriAPI]);
 
   // State for modal and selected item
   const [selectedKategori, setSelectedKategori] = useState<KategoriTamu | null>(
@@ -73,17 +80,37 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
       });
   };
 
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
+  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, inactive: 0 });
+
+  const fetchCounts = async () => {
+    try {
+      const counts = await api.getCounts();
+      setStatusCounts(counts);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchKategoriTamu(true, { status: filterStatus });
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
+
   const handleSaveSuccess = () => {
     setShowFormModal(false);
-    fetchKategoriTamu().catch((err) => {
-      console.error('Failed to fetch kategori after save:', err);
-    });
+    fetchKategoriTamu(true, { status: filterStatus });
+    fetchCounts();
   };
 
   const handleRestore = (id: string) => {
     restoreKategoriTamu(id)
       .then(() => {
         showSuccessAlert('Data berhasil dipulihkan', colorMode);
+        fetchCounts();
       })
       .catch((err) => {
         console.error('Failed to restore kategori:', err);
@@ -91,21 +118,8 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
       });
   };
 
-  const [filterStatus, setFilterStatus] = useState<
-    'all' | 'active' | 'inactive'
-  >('all');
-
-  const filteredData = kategoriTamu.filter((item) => {
-    if (filterStatus === 'all') return true;
-    if (filterStatus === 'active') return !item.deleted_at;
-    return !!item.deleted_at;
-  });
-
-  const counts = {
-    all: kategoriTamu.length,
-    active: kategoriTamu.filter((i) => !i.deleted_at).length,
-    inactive: kategoriTamu.filter((i) => i.deleted_at).length,
-  };
+  const filteredData = kategoriTamu; // No client-side filtering
+  const counts = statusCounts;
 
   return (
     <>
@@ -113,31 +127,48 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section */}
+              {/* Header Section - Clean Typography */}
               <Flex
                 justify="space-between"
-                align={{ base: 'center', md: 'end' }}
+                align={{ base: 'start', md: 'end' }}
                 direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 4 }}
-                mb={4}
+                gap={{ base: 4, md: 6 }}
+                mb={6}
               >
-                <VStack align="start" spacing={1} flex={1} w="full">
-                  <Text
-                    fontSize={{ base: '2xl', md: '4xl' }}
-                    fontWeight="800"
-                    color={colorMode === 'light' ? 'gray.900' : 'white'}
-                    letterSpacing="tight"
-                    lineHeight="1.2"
-                  >
-                    Manajemen Kategori Tamu
-                  </Text>
+                <VStack align="start" spacing={3} flex={1}>
+                  {/* Title with Gradient Accent */}
+                  <Box>
+                    <Text
+                      fontSize={{ base: '3xl', md: '4xl' }}
+                      fontWeight="700"
+                      color={colorMode === 'light' ? 'gray.900' : 'white'}
+                      letterSpacing="tight"
+                      lineHeight="1.1"
+                      mb={1}
+                    >
+                      Manajemen Kategori Tamu
+                    </Text>
+                    <Box
+                      w="60px"
+                      h="3px"
+                      bg={
+                        colorMode === 'light' 
+                          ? `${colorPref}.500` 
+                          : `${colorPref}.400`
+                      }
+                      borderRadius="full"
+                    />
+                  </Box>
+
+                  {/* Description */}
                   <Text
                     fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
                     fontWeight="400"
+                    maxW="600px"
+                    lineHeight="1.6"
                   >
-                    Kelola daftar kategori tamu undangan pernikahan Anda dengan
-                    mudah
+                    Kelola kategori tamu undangan dengan sistem yang terintegrasi
                   </Text>
                 </VStack>
 
@@ -164,6 +195,8 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
                 onDelete={handleDelete}
                 onRestore={handleRestore}
                 onAddNew={handleAddNew}
+                onLoadMore={() => loadMore({ status: filterStatus })}
+                hasMore={hasMore}
                 headerAction={
                   <PrimaryButton
                     onClick={handleAddNew}

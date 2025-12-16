@@ -8,68 +8,70 @@
 
 import { MenuItem } from '@/types/menu-item';
 
+// Transaksi Section - Main operational menus
 const menuItem: Array<MenuItem> = [
   {
     name: 'dashboard',
     url: '/admin/dashboard',
-    icon: 'dashboard',
-  },
-  {
-    name: 'tamu',
-    url: '/admin/tamu',
-    icon: 'people',
-  },
-  {
-    name: 'users',
-    url: '/admin/users',
-    icon: 'manage_accounts',
+    icon: 'space_dashboard', // Modern dashboard icon
   },
   {
     name: 'checkin',
     url: '/admin/checkin',
-    icon: 'qr_code_scanner',
+    icon: 'login', // Clean login/checkin icon
   },
   {
     name: 'checkout',
     url: '/admin/checkout',
-    icon: 'qr_code_scanner',
+    icon: 'logout', // Clean logout/checkout icon
+  },
+  {
+    name: 'tamu',
+    url: '/admin/tamu',
+    icon: 'group', // Clean people icon
   },
   {
     name: 'ucapan',
     url: '/admin/ucapan',
-    icon: 'forum',
+    icon: 'chat_bubble', // Clean message icon
   },
 ];
 
+// Master Section - Data management menus
 const menuItemMaster: Array<MenuItem> = [
-  {
-    name: 'roles',
-    url: '/admin/roles',
-    icon: 'shield',
-  },
   {
     name: 'kategori_tamu',
     url: '/admin/kategori_tamu',
-    icon: 'folder',
+    icon: 'category', // Category icon
   },
   {
     name: 'hubungan_tamu',
     url: '/admin/hubungan_tamu',
-    icon: 'link',
+    icon: 'hub', // Connection/hub icon
+  },
+  {
+    name: 'users',
+    url: '/admin/users',
+    icon: 'person', // Clean user icon
   },
   {
     name: 'permissions',
     url: '/admin/role_permissions',
-    icon: 'lock',
+    icon: 'key', // Permission/key icon
   },
-];
-
-const menuItemInsights: Array<MenuItem> = [
+  {
+    name: 'roles',
+    url: '/admin/roles',
+    icon: 'shield', // Role/shield icon
+  },
   {
     name: 'personalisasi',
     url: '/admin/personalisasi',
-    icon: 'settings',
+    icon: 'tune', // Settings/tune icon
   },
 ];
+
+// Empty insights section (merged into master)
+const menuItemInsights: Array<MenuItem> = [];
 
 export { menuItem, menuItemMaster, menuItemInsights };

@@ -7,7 +7,12 @@ import AppSettingContext from '@/providers/AppSettingProvider';
 import AccountInfoContext from '@/providers/AccountInfoProvider';
 import { useContext } from 'react';
 import UserProfileActions from '../molecules/UserProfileActions';
-import { enterFullscreen, shouldAutoFullscreen, isMobileOrTablet, isFullscreenActive } from '@/utils/fullscreen';
+import {
+  enterFullscreen,
+  shouldAutoFullscreen,
+  isMobileOrTablet,
+  isFullscreenActive,
+} from '@/utils/fullscreen';
 import { showFullscreenAlert } from '@/utils/sweetalert';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 
@@ -33,7 +38,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         flex="1"
         ml={{
           base: '0',
-          xl: '320px',
+          xl: '368px',
         }}
         transition="margin-left 0.3s ease"
         minH="100vh"

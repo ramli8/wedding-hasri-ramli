@@ -152,14 +152,14 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
         _before={{
           content: '""',
           pos: 'absolute',
-          top: '43px',
-          left: '32px',
-          right: '32px',
-          bottom: '-43px',
+          top: '20px',
+          left: '20px',
+          right: '20px',
+          bottom: '-20px',
           zIndex: '-1',
-          background: colorMode == 'light' ? '#e3e6ec' : '#000',
-          opacity: colorMode == 'light' ? '0.91' : '0.51',
-          filter: 'blur(86.985px)',
+          background: colorMode === 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode === 'light' ? '0.91' : '0.51',
+          filter: 'blur(40px)',
           borderRadius: '24px',
           display: { base: 'none', md: 'block' },
         }}
@@ -205,29 +205,25 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
               variant="filled"
               borderRadius="full"
               focusBorderColor={
-                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+                colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400'
               }
               fontSize="sm"
               fontWeight="500"
               placeholder="Cari data..."
-              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              bg={colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50'}
               color={colorMode === 'light' ? 'gray.900' : 'white'}
               _placeholder={{
                 color: colorMode === 'light' ? 'gray.400' : 'gray.500',
               }}
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.300' : 'whiteAlpha.300',
               }}
               _focus={{
-                bg: colorMode === 'light' ? 'white' : 'gray.600',
+                bg: colorMode === 'light' ? 'white' : 'whiteAlpha.200',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400',
               }}
             />
           </InputGroup>
@@ -252,10 +248,6 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                 _hover={{
                   transform: 'translateY(-2px)',
                   shadow: 'lg',
-                  borderColor:
-                    colorMode === 'light'
-                      ? `${colorPref}.400`
-                      : `${colorPref}.500`,
                 }}
                 position="relative"
                 overflow="hidden"

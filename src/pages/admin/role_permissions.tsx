@@ -25,7 +25,9 @@ import AppSettingContext from '@/providers/AppSettingProvider';
 import PermissionTableAdvance from '@/modules/admin/permissions/components/PermissionTableAdvance';
 import PermissionFormModal from '@/modules/admin/permissions/components/PermissionFormModal';
 import { usePermissions } from '@/modules/admin/permissions/utils/hooks/usePermissions';
-import PermissionAPI, { RolePermission } from '@/modules/admin/permissions/services/PermissionAPI';
+import PermissionAPI, {
+  RolePermission,
+} from '@/modules/admin/permissions/services/PermissionAPI';
 import { useRoles } from '@/modules/admin/roles/utils/hooks/useRoles';
 
 const RolePermissionsPage: NextPageWithLayout = () => {
@@ -45,12 +47,16 @@ const RolePermissionsPage: NextPageWithLayout = () => {
   const { roles, fetchRoles } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
-  const [statusCounts, setStatusCounts] = useState<{ all: number; active: number; inactive: number }>({
+  const [statusCounts, setStatusCounts] = useState<{
+    all: number;
+    active: number;
+    inactive: number;
+  }>({
     all: 0,
     active: 0,
     inactive: 0,
   });
-  
+
   const permissionAPI = React.useMemo(() => new PermissionAPI(), []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,7 +89,7 @@ const RolePermissionsPage: NextPageWithLayout = () => {
       // Fetch role counts (changes based on status filter)
       const roleCounts = await permissionAPI.getCountsByRole(filterStatus);
       setRoleCounts(roleCounts);
-      
+
       // Fetch status counts (changes based on role filter)
       const statusCounts = await permissionAPI.getCounts(
         selectedRoleId ? { roleId: selectedRoleId } : undefined
@@ -145,50 +151,26 @@ const RolePermissionsPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section - Clean Typography */}
-              <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'end' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 6 }}
-                mb={6}
-              >
-                <VStack align="start" spacing={3} flex={1}>
-                  {/* Title with Gradient Accent */}
-                  <Box>
-                    <Text
-                      fontSize={{ base: '3xl', md: '4xl' }}
-                      fontWeight="700"
-                      color={colorMode === 'light' ? 'gray.900' : 'white'}
-                      letterSpacing="tight"
-                      lineHeight="1.1"
-                      mb={1}
-                    >
-                      Manajemen Permissions
-                    </Text>
-                    <Box
-                      w="60px"
-                      h="3px"
-                      bg={
-                        colorMode === 'light' 
-                          ? `${colorPref}.500` 
-                          : `${colorPref}.400`
-                      }
-                      borderRadius="full"
-                    />
-                  </Box>
-
-                  {/* Description */}
+              {/* Header Section - Minimalist & Modern */}
+              <Flex justify="space-between" align="center" mb={6} gap={4}>
+                <Box>
                   <Text
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                    fontWeight="400"
-                    maxW="600px"
-                    lineHeight="1.6"
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="-0.02em"
+                    mb="4px"
                   >
-                    Kelola permission dan kontrol akses untuk setiap role
+                    Data Permissions
                   </Text>
-                </VStack>
+                  <Text
+                    fontSize="14px"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola data permissions dan hak akses
+                  </Text>
+                </Box>
 
                 {/* User Profile & Actions */}
                 <Box display={{ base: 'none', md: 'block' }}>
@@ -196,8 +178,8 @@ const RolePermissionsPage: NextPageWithLayout = () => {
                 </Box>
               </Flex>
 
-              {/* Filter Tabs */}
               <VStack align="stretch" spacing={4} pb={4}>
+                {/* Main Status Filter */}
                 <Box>
                   <FilterTabs
                     filterStatus={filterStatus}
@@ -206,12 +188,62 @@ const RolePermissionsPage: NextPageWithLayout = () => {
                   />
                 </Box>
 
-                <Box>
-                  <RoleFilterTabs
-                    selectedRoleId={selectedRoleId}
-                    setSelectedRoleId={setSelectedRoleId}
-                    roles={roleTabs}
-                  />
+                {/* Secondary Filters Group */}
+                <Box
+                  pos="relative"
+                  bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
+                  p={{ base: 4, md: 6 }}
+                  borderRadius="24px"
+                  borderWidth="1px"
+                  borderColor={
+                    colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'
+                  }
+                  _before={{
+                    content: '""',
+                    pos: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    right: '20px',
+                    bottom: '-20px',
+                    zIndex: '-1',
+                    background: colorMode === 'light' ? '#e3e6ec' : '#000',
+                    opacity: colorMode === 'light' ? '0.91' : '0.51',
+                    filter: 'blur(40px)',
+                    borderRadius: '24px',
+                    display: { base: 'none', md: 'block' },
+                  }}
+                >
+                  <VStack spacing={4} align="stretch">
+                    {/* Role Filter */}
+                    <Box>
+                      <Text
+                        fontSize="11px"
+                        fontWeight="700"
+                        mb={3}
+                        color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                        textTransform="uppercase"
+                        letterSpacing="0.05em"
+                      >
+                        Role
+                      </Text>
+                      <Box
+                        overflowX="auto"
+                        mx={{ base: -3, md: 0 }}
+                        px={{ base: 3, md: 0 }}
+                        pb={1}
+                        css={{
+                          '&::-webkit-scrollbar': { display: 'none' },
+                          scrollbarWidth: 'none',
+                        }}
+                      >
+                        <RoleFilterTabs
+                          selectedRoleId={selectedRoleId}
+                          setSelectedRoleId={setSelectedRoleId}
+                          roles={roleTabs}
+                        />
+                      </Box>
+                    </Box>
+                  </VStack>
                 </Box>
               </VStack>
 
@@ -222,7 +254,9 @@ const RolePermissionsPage: NextPageWithLayout = () => {
                 onDelete={handleDelete}
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
-                onLoadMore={() => loadMore({ roleId: selectedRoleId, status: filterStatus })}
+                onLoadMore={() =>
+                  loadMore({ roleId: selectedRoleId, status: filterStatus })
+                }
                 hasMore={hasMore}
                 headerAction={
                   <PrimaryButton

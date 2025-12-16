@@ -1,6 +1,6 @@
-import { Box, BoxProps, ChakraComponent, useColorMode } from "@chakra-ui/react";
+import { Box, BoxProps, ChakraComponent, useColorMode } from '@chakra-ui/react';
 
-type DivComponent = ChakraComponent<"div", {}>;
+type DivComponent = ChakraComponent<'div', {}>;
 
 const PlainCard = ((props: BoxProps) => {
   const { colorMode } = useColorMode();
@@ -11,19 +11,21 @@ const PlainCard = ((props: BoxProps) => {
       p="32px"
       mb="24px"
       borderRadius="24px"
-      bg={colorMode == "light" ? "#fff" : "#222222"}
+      bg={colorMode == 'light' ? '#fff' : 'whiteAlpha.50'}
+      borderWidth="1px"
+      borderColor={colorMode == 'light' ? 'transparent' : 'whiteAlpha.100'}
       _before={{
         content: '""',
-        pos: "absolute",
-        top: "43px",
-        left: "32px",
-        right: "32px",
-        bottom: "-43px",
-        zIndex: "-1",
-        background: colorMode == "light" ? "#e3e6ec" : "#000",
-        opacity: colorMode == "light" ? "0.91" : "0.51",
-        filter: "blur(86.985px)",
-        borderRadius: "24px",
+        pos: 'absolute',
+        top: '43px',
+        left: '32px',
+        right: '32px',
+        bottom: '-43px',
+        zIndex: '-1',
+        background: colorMode == 'light' ? '#e3e6ec' : '#000',
+        opacity: colorMode == 'light' ? '0.91' : '0.51',
+        filter: 'blur(86.985px)',
+        borderRadius: '24px',
       }}
       {...props}
     ></Box>

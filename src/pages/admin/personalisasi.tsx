@@ -34,49 +34,26 @@ const PersonalisasiPage = () => {
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
               {/* Header Section - Clean Typography */}
-              <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'end' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 6 }}
-                mb={6}
-              >
-                <VStack align="start" spacing={3} flex={1}>
-                  {/* Title with Gradient Accent */}
-                  <Box>
-                    <Text
-                      fontSize={{ base: '3xl', md: '4xl' }}
-                      fontWeight="700"
-                      color={colorMode === 'light' ? 'gray.900' : 'white'}
-                      letterSpacing="tight"
-                      lineHeight="1.1"
-                      mb={1}
-                    >
-                      {t('title')}
-                    </Text>
-                    <Box
-                      w="60px"
-                      h="3px"
-                      bg={
-                        colorMode === 'light' 
-                          ? `${colorPref}.500` 
-                          : `${colorPref}.400`
-                      }
-                      borderRadius="full"
-                    />
-                  </Box>
-
-                  {/* Description */}
+              {/* Header Section - Minimalist & Modern */}
+              <Flex justify="space-between" align="center" mb={6} gap={4}>
+                <Box>
                   <Text
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="-0.02em"
+                    mb="4px"
+                  >
+                    {t('title')}
+                  </Text>
+                  <Text
+                    fontSize="14px"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
                     fontWeight="400"
-                    maxW="600px"
-                    lineHeight="1.6"
                   >
                     Atur tema warna dan bahasa sesuai preferensi Anda
                   </Text>
-                </VStack>
+                </Box>
 
                 {/* User Profile & Actions */}
                 <Box display={{ base: 'none', md: 'block' }}>
@@ -99,7 +76,9 @@ const PersonalisasiPage = () => {
 const ProtectedPersonalisasiPage = withAuth(PersonalisasiPage);
 
 // Preserve getLayout after HOC
-(ProtectedPersonalisasiPage as any).getLayout = function getLayout(page: React.ReactElement) {
+(ProtectedPersonalisasiPage as any).getLayout = function getLayout(
+  page: React.ReactElement
+) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 

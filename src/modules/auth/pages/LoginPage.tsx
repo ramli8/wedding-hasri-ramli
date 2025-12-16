@@ -12,8 +12,13 @@ import {
   useColorMode,
   Flex,
   keyframes,
+  InputGroup,
+  InputRightElement,
+  IconButton,
+  Icon,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
+import { FiEye, FiEyeOff, FiLock, FiUser } from 'react-icons/fi';
 import AuthAPI from '../services/AuthAPI';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
@@ -30,8 +35,11 @@ const LoginPage = () => {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+
+  const isDark = colorMode === 'dark';
 
   useEffect(() => {
     // Only run on client side
@@ -47,7 +55,7 @@ const LoginPage = () => {
     } else {
       setIsChecking(false);
     }
-  }, [router]); // Run once on mount and when router changes (though router shouldn't change here)
+  }, [router]);
 
   // Don't render form while checking auth
   if (isChecking) {
@@ -74,17 +82,9 @@ const LoginPage = () => {
     }
   };
 
-  const isDark = colorMode === 'dark';
-  const bg = isDark 
-    ? 'linear-gradient(135deg, #1A202C 0%, #2D3748 100%)'
-    : 'linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%)';
-  const cardBg = isDark ? 'gray.800' : 'white';
-  const borderColor = isDark ? 'gray.700' : 'gray.200';
-
   // Dynamic brand colors
   const brandColor = isDark ? `${colorPref}.400` : `${colorPref}.500`;
   const brandHoverColor = isDark ? `${colorPref}.500` : `${colorPref}.600`;
-  const accentColor = isDark ? `${colorPref}.300` : `${colorPref}.600`;
 
   return (
     <Flex
@@ -93,161 +93,221 @@ const LoginPage = () => {
       justify="center"
       bg={isDark ? 'gray.900' : 'gray.50'}
       px={4}
+      pos="relative"
+      overflow="hidden"
     >
+      {/* Background Decor - Optional (Subtle) */}
+      <Box
+        pos="absolute"
+        top="-20%"
+        left="-10%"
+        w="500px"
+        h="500px"
+        bg={`${colorPref}.500`}
+        opacity={isDark ? 0.05 : 0.03}
+        filter="blur(120px)"
+        borderRadius="full"
+        zIndex={0}
+      />
+
       <Container
         maxW="420px"
-        animation={`${fadeIn} 0.6s ease-out`}
+        position="relative"
+        zIndex={1}
+        animation={`${fadeIn} 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)`}
       >
-        <VStack spacing={6}>
-          {/* Branding Section */}
-          <VStack spacing={2}>
+        <VStack spacing={8}>
+          {/* Header Section */}
+          <VStack spacing={1}>
             <Heading
-              size="xl"
+              size="lg"
               fontWeight="800"
-              letterSpacing="tight"
-              color={isDark ? 'white' : 'gray.900'}
+              letterSpacing="-0.02em"
+              color={isDark ? 'white' : 'gray.800'}
               textAlign="center"
             >
-              Admin Portal
+              Selamat Datang
             </Heading>
             <Text
-              color={isDark ? 'gray.400' : 'gray.600'}
-              fontSize="sm"
-              fontWeight="500"
+              color={isDark ? 'whiteAlpha.600' : 'gray.500'}
+              fontSize="md"
+              fontWeight="400"
               textAlign="center"
             >
-              Wedding Management System
+              Admin Portal Wedding
             </Text>
           </VStack>
 
-          {/* Login Card */}
+          {/* Login Card with Glass Blur Shadow */}
           <Box
+            as="form"
+            onSubmit={handleSubmit}
+            pos="relative"
             w="full"
-            bg={cardBg}
-            borderRadius="xl"
+            bg={isDark ? 'whiteAlpha.50' : 'white'}
+            borderRadius="32px"
             border="1px solid"
-            borderColor={borderColor}
-            boxShadow="lg"
-            p={8}
+            borderColor={isDark ? 'whiteAlpha.100' : 'gray.100'}
+            p={{ base: 6, md: 8 }}
+            _before={{
+              content: '""',
+              pos: 'absolute',
+              top: '25px',
+              left: '25px',
+              right: '25px',
+              bottom: '-25px',
+              zIndex: '-1',
+              background: isDark ? '#000' : '#e3e6ec',
+              opacity: isDark ? 0.6 : 1,
+              filter: 'blur(30px)',
+              borderRadius: '32px',
+              transform: 'scale(1)',
+            }}
           >
-            <VStack spacing={6} align="stretch">
-
-              {/* Form */}
-              <form onSubmit={handleSubmit}>
-                <VStack spacing={5}>
-                  {/* Username Field */}
-                  <FormControl isRequired>
-                    <FormLabel
-                      fontSize="sm"
-                      fontWeight="600"
-                      color={isDark ? 'gray.300' : 'gray.700'}
-                      mb={2}
-                    >
-                      Username
-                    </FormLabel>
+            <VStack spacing={6}>
+              {/* Login Form */}
+              <VStack spacing={5} w="full">
+                {/* Username Field */}
+                <FormControl isRequired>
+                  <FormLabel
+                    fontSize="xs"
+                    fontWeight="700"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    color={isDark ? 'gray.400' : 'gray.500'}
+                    mb={3}
+                  >
+                    Username
+                  </FormLabel>
+                  <InputGroup>
                     <Input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Masukkan username"
-                      variant="filled"
-                      bg={isDark ? 'gray.900' : 'gray.50'}
-                      border="2px solid transparent"
+                      placeholder="Masukkan username anda"
+                      bg={isDark ? 'whiteAlpha.50' : 'gray.50'}
+                      border="1px solid"
+                      borderColor={isDark ? 'transparent' : 'gray.200'}
                       _hover={{
-                        bg: isDark ? 'gray.900' : 'gray.100',
-                        borderColor: isDark ? 'gray.600' : 'gray.300',
+                        bg: isDark ? 'whiteAlpha.100' : 'gray.100',
+                        borderColor: isDark ? 'whiteAlpha.300' : 'gray.300',
                       }}
                       _focus={{
-                        bg: isDark ? 'gray.900' : 'white',
+                        bg: isDark ? 'whiteAlpha.100' : 'white',
                         borderColor: brandColor,
                         boxShadow: `0 0 0 1px ${brandColor}`,
                       }}
-                      borderRadius="xl"
-                      height="52px"
-                      fontSize="md"
-                      fontWeight="500"
-                      transition="all 0.2s"
-                    />
-                  </FormControl>
-
-                  {/* Password Field */}
-                  <FormControl isRequired>
-                    <FormLabel
+                      borderRadius="2xl"
+                      height="50px"
                       fontSize="sm"
-                      fontWeight="600"
-                      color={isDark ? 'gray.300' : 'gray.700'}
-                      mb={2}
-                    >
-                      Password
-                    </FormLabel>
+                      fontWeight="500"
+                      pl={4}
+                      _placeholder={{
+                        color: isDark ? 'whiteAlpha.300' : 'gray.400',
+                      }}
+                    />
+                  </InputGroup>
+                </FormControl>
+
+                {/* Password Field */}
+                <FormControl isRequired>
+                  <FormLabel
+                    fontSize="xs"
+                    fontWeight="700"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    color={isDark ? 'gray.400' : 'gray.500'}
+                    mb={3}
+                  >
+                    Password
+                  </FormLabel>
+                  <InputGroup>
                     <Input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Masukkan password"
-                      variant="filled"
-                      bg={isDark ? 'gray.900' : 'gray.50'}
-                      border="2px solid transparent"
+                      placeholder="Masukkan password anda"
+                      bg={isDark ? 'whiteAlpha.50' : 'gray.50'}
+                      border="1px solid"
+                      borderColor={isDark ? 'transparent' : 'gray.200'}
                       _hover={{
-                        bg: isDark ? 'gray.900' : 'gray.100',
-                        borderColor: isDark ? 'gray.600' : 'gray.300',
+                        bg: isDark ? 'whiteAlpha.100' : 'gray.100',
+                        borderColor: isDark ? 'whiteAlpha.300' : 'gray.300',
                       }}
                       _focus={{
-                        bg: isDark ? 'gray.900' : 'white',
+                        bg: isDark ? 'whiteAlpha.100' : 'white',
                         borderColor: brandColor,
                         boxShadow: `0 0 0 1px ${brandColor}`,
                       }}
-                      borderRadius="xl"
-                      height="52px"
-                      fontSize="md"
+                      borderRadius="2xl"
+                      height="50px"
+                      fontSize="sm"
                       fontWeight="500"
-                      transition="all 0.2s"
+                      pl={4}
+                      _placeholder={{
+                        color: isDark ? 'whiteAlpha.300' : 'gray.400',
+                      }}
                     />
-                  </FormControl>
+                    <InputRightElement h="50px" mr={1}>
+                      <IconButton
+                        aria-label={
+                          showPassword ? 'Hide password' : 'Show password'
+                        }
+                        icon={showPassword ? <FiEyeOff /> : <FiEye />}
+                        onClick={() => setShowPassword(!showPassword)}
+                        variant="ghost"
+                        size="sm"
+                        color={isDark ? 'gray.400' : 'gray.500'}
+                        borderRadius="full"
+                        _hover={{ bg: isDark ? 'whiteAlpha.100' : 'gray.200' }}
+                      />
+                    </InputRightElement>
+                  </InputGroup>
+                </FormControl>
+              </VStack>
 
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    width="full"
-                    height="52px"
-                    bg={brandColor}
-                    color="white"
-                    _hover={{
-                      bg: brandHoverColor,
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'lg',
-                    }}
-                    _active={{
-                      transform: 'translateY(0)',
-                    }}
-                    isLoading={loading}
-                    loadingText="Memproses..."
-                    borderRadius="xl"
-                    fontSize="md"
-                    fontWeight="600"
-                    mt={3}
-                    boxShadow="md"
-                    transition="all 0.2s"
-                  >
-                    Masuk ke Dashboard
-                  </Button>
-                </VStack>
-              </form>
-
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                width="full"
+                height="54px"
+                bg={brandColor}
+                color="white"
+                _hover={{
+                  bg: brandHoverColor,
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'lg',
+                }}
+                _active={{
+                  transform: 'translateY(0)',
+                  bg: brandHoverColor,
+                }}
+                isLoading={loading}
+                loadingText="Masuk..."
+                borderRadius="full"
+                fontSize="sm"
+                fontWeight="700"
+                letterSpacing="0.02em"
+                mt={4}
+                boxShadow="xl"
+                transition="all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)"
+              >
+                MASUK SEKARANG
+              </Button>
             </VStack>
           </Box>
-        </VStack>
 
-        {/* Footer */}
-        <Text
-          textAlign="center"
-          fontSize="xs"
-          color={isDark ? 'gray.600' : 'gray.500'}
-          mt={6}
-          fontWeight="500"
-        >
-          © 2024 Wedding Management System. All rights reserved.
-        </Text>
+          {/* Copyright */}
+          <Text
+            textAlign="center"
+            fontSize="11px"
+            color={isDark ? 'whiteAlpha.400' : 'gray.400'}
+            fontWeight="500"
+            letterSpacing="wide"
+          >
+            © 2024 WEDDING MANAGEMENT SYSTEM
+          </Text>
+        </VStack>
       </Container>
     </Flex>
   );

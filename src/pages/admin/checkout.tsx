@@ -14,7 +14,13 @@ import {
   Divider,
   Badge,
 } from '@chakra-ui/react';
-import { FaCamera, FaCheckCircle, FaInfoCircle, FaTimesCircle, FaUser } from 'react-icons/fa';
+import {
+  FaCamera,
+  FaCheckCircle,
+  FaInfoCircle,
+  FaTimesCircle,
+  FaUser,
+} from 'react-icons/fa';
 import Head from 'next/head';
 import QRScanner from '@/components/QRScanner';
 import TamuAPI from '@/modules/admin/tamu/services/TamuAPI';
@@ -29,10 +35,14 @@ const CheckOutPage = () => {
   const [data, setData] = useState<string | null>(null);
   const [scannedGuest, setScannedGuest] = useState<Tamu | null>(null);
   const [loading, setLoading] = useState(false);
-  const [resultType, setResultType] = useState<'success' | 'info' | 'error' | null>(null);
+  const [resultType, setResultType] = useState<
+    'success' | 'info' | 'error' | null
+  >(null);
   const [resultMessage, setResultMessage] = useState<string>('');
   const [isScanning, setIsScanning] = useState(true);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
+    'environment'
+  );
   const toast = useToast();
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
@@ -87,7 +97,9 @@ const CheckOutPage = () => {
         } else if (!response.success && response.guest) {
           // Tamu belum check-in atau sudah check-out
           setResultType('info');
-          setResultMessage(response.error || 'Tamu belum check-in atau sudah check-out');
+          setResultMessage(
+            response.error || 'Tamu belum check-in atau sudah check-out'
+          );
         } else {
           // Error - QR tidak valid
           setResultType('error');
@@ -99,7 +111,7 @@ const CheckOutPage = () => {
           err.response?.data?.message ||
           err.message ||
           'Terjadi kesalahan sistem';
-        
+
         setResultType('error');
         setResultMessage(msg);
         setScannedGuest(null);
@@ -116,7 +128,7 @@ const CheckOutPage = () => {
         console.log('Already processing, ignoring scan');
         return;
       }
-      
+
       if (decodedText && decodedText !== data) {
         console.log('Decoded text:', decodedText);
         setData(decodedText);
@@ -143,11 +155,13 @@ const CheckOutPage = () => {
 
   const borderColor = colorMode === 'light' ? 'gray.200' : 'gray.700';
   const bg = colorMode === 'light' ? 'white' : 'black';
-  
+
   // Theme colors using colorPref (pink, blue, etc.)
-  const activeButtonBg = colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.400`;
+  const activeButtonBg =
+    colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.400`;
   const activeButtonColor = colorMode === 'light' ? 'white' : 'gray.900';
-  const activeButtonHoverBg = colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.500`;
+  const activeButtonHoverBg =
+    colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.500`;
   const inactiveButtonColor = colorMode === 'light' ? 'gray.600' : 'gray.400';
   const inactiveButtonHoverBg = colorMode === 'light' ? 'gray.100' : 'gray.700';
 
@@ -162,14 +176,18 @@ const CheckOutPage = () => {
       </Head>
 
       {/* Main Container with PageRow style from checkin */}
-      <Box position="relative" minH="100vh" bg={bg}>
+      <Box position="relative" minH="100vh">
         <ContainerQuery>
           <PageRow>
             <Box w="100%" position="relative" pt={{ base: 4, md: 6 }}>
               {/* Header - No Border */}
               <Box mb={6} px={{ base: 2, md: 0 }}>
                 <VStack spacing={1} align="start">
-                  <Text fontSize="xl" fontWeight="bold" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+                  <Text
+                    fontSize="xl"
+                    fontWeight="bold"
+                    color={colorMode === 'light' ? 'gray.800' : 'white'}
+                  >
                     Scanner QR Check-out
                   </Text>
                   <Text fontSize="xs" color="gray.500">
@@ -194,9 +212,9 @@ const CheckOutPage = () => {
                 mb={8}
               >
                 {/* Scanner View */}
-                <Box 
-                  w="100%" 
-                  h={{ base: "400px", md: "500px" }} 
+                <Box
+                  w="100%"
+                  h={{ base: '400px', md: '500px' }}
                   position="relative"
                   bg={bg}
                   overflow="hidden"
@@ -227,8 +245,16 @@ const CheckOutPage = () => {
                   >
                     <Button
                       size="md"
-                      bg={facingMode === 'environment' ? activeButtonBg : 'transparent'}
-                      color={facingMode === 'environment' ? activeButtonColor : inactiveButtonColor}
+                      bg={
+                        facingMode === 'environment'
+                          ? activeButtonBg
+                          : 'transparent'
+                      }
+                      color={
+                        facingMode === 'environment'
+                          ? activeButtonColor
+                          : inactiveButtonColor
+                      }
                       variant="ghost"
                       borderRadius="full"
                       onClick={() => setFacingMode('environment')}
@@ -238,7 +264,10 @@ const CheckOutPage = () => {
                       px={5}
                       leftIcon={<FaCamera size={14} />}
                       _hover={{
-                        bg: facingMode === 'environment' ? activeButtonHoverBg : inactiveButtonHoverBg,
+                        bg:
+                          facingMode === 'environment'
+                            ? activeButtonHoverBg
+                            : inactiveButtonHoverBg,
                         transform: 'scale(1.02)',
                       }}
                       transition="all 0.2s"
@@ -247,8 +276,14 @@ const CheckOutPage = () => {
                     </Button>
                     <Button
                       size="md"
-                      bg={facingMode === 'user' ? activeButtonBg : 'transparent'}
-                      color={facingMode === 'user' ? activeButtonColor : inactiveButtonColor}
+                      bg={
+                        facingMode === 'user' ? activeButtonBg : 'transparent'
+                      }
+                      color={
+                        facingMode === 'user'
+                          ? activeButtonColor
+                          : inactiveButtonColor
+                      }
                       variant="ghost"
                       borderRadius="full"
                       onClick={() => setFacingMode('user')}
@@ -258,7 +293,10 @@ const CheckOutPage = () => {
                       px={5}
                       leftIcon={<FaCamera size={14} />}
                       _hover={{
-                        bg: facingMode === 'user' ? activeButtonHoverBg : inactiveButtonHoverBg,
+                        bg:
+                          facingMode === 'user'
+                            ? activeButtonHoverBg
+                            : inactiveButtonHoverBg,
                         transform: 'scale(1.02)',
                       }}
                       transition="all 0.2s"
@@ -301,7 +339,10 @@ const CheckOutPage = () => {
               >
                 {loading ? (
                   <VStack spacing={6} p={10}>
-                    <Circle size="80px" bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}>
+                    <Circle
+                      size="80px"
+                      bg={colorMode === 'light' ? 'blue.50' : 'blue.900'}
+                    >
                       <Box
                         as="span"
                         display="inline-block"
@@ -314,7 +355,11 @@ const CheckOutPage = () => {
                         animation="spin 0.8s linear infinite"
                       />
                     </Circle>
-                    <Text fontSize="lg" fontWeight="600" color={colorMode === 'light' ? 'gray.600' : 'gray.300'}>
+                    <Text
+                      fontSize="lg"
+                      fontWeight="600"
+                      color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
+                    >
                       Memproses...
                     </Text>
                   </VStack>
@@ -331,10 +376,10 @@ const CheckOutPage = () => {
                             ? 'blue.50'
                             : 'red.50'
                           : resultType === 'success'
-                            ? 'green.900'
-                            : resultType === 'info'
-                            ? 'blue.900'
-                            : 'red.900'
+                          ? 'green.900'
+                          : resultType === 'info'
+                          ? 'blue.900'
+                          : 'red.900'
                       }
                       pt={8}
                       pb={6}
@@ -374,10 +419,10 @@ const CheckOutPage = () => {
                                 ? 'blue.700'
                                 : 'red.700'
                               : resultType === 'success'
-                                ? 'green.200'
-                                : resultType === 'info'
-                                ? 'blue.200'
-                                : 'red.200'
+                              ? 'green.200'
+                              : resultType === 'info'
+                              ? 'blue.200'
+                              : 'red.200'
                           }
                         >
                           {resultType === 'success'
@@ -399,11 +444,17 @@ const CheckOutPage = () => {
                               fontSize="2xl"
                               fontWeight="700"
                               textAlign="center"
-                              color={colorMode === 'light' ? 'gray.800' : 'white'}
+                              color={
+                                colorMode === 'light' ? 'gray.800' : 'white'
+                              }
                             >
                               {scannedGuest.nama}
                             </Text>
-                            <Text fontSize="sm" color="gray.500" textAlign="center">
+                            <Text
+                              fontSize="sm"
+                              color="gray.500"
+                              textAlign="center"
+                            >
                               {resultMessage}
                             </Text>
                           </VStack>
@@ -412,26 +463,52 @@ const CheckOutPage = () => {
 
                           <HStack w="100%" justify="space-around">
                             <VStack spacing={1}>
-                              <Text fontSize="xs" color="gray.500" fontWeight="600">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="600"
+                              >
                                 KATEGORI
                               </Text>
-                              <Badge colorScheme="purple" fontSize="xs" px={2} py={1} borderRadius="md">
+                              <Badge
+                                colorScheme="purple"
+                                fontSize="xs"
+                                px={2}
+                                py={1}
+                                borderRadius="md"
+                              >
                                 {scannedGuest.kategori}
                               </Badge>
                             </VStack>
                             <Divider orientation="vertical" h="40px" />
                             <VStack spacing={1}>
-                              <Text fontSize="xs" color="gray.500" fontWeight="600">
+                              <Text
+                                fontSize="xs"
+                                color="gray.500"
+                                fontWeight="600"
+                              >
                                 HUBUNGAN
                               </Text>
-                              <Badge colorScheme="cyan" fontSize="xs" px={2} py={1} borderRadius="md">
+                              <Badge
+                                colorScheme="cyan"
+                                fontSize="xs"
+                                px={2}
+                                py={1}
+                                borderRadius="md"
+                              >
                                 {scannedGuest.hubungan}
                               </Badge>
                             </VStack>
                           </HStack>
                         </>
                       ) : (
-                        <Text fontSize="md" color={colorMode === 'light' ? 'gray.600' : 'gray.400'} textAlign="center">
+                        <Text
+                          fontSize="md"
+                          color={
+                            colorMode === 'light' ? 'gray.600' : 'gray.400'
+                          }
+                          textAlign="center"
+                        >
                           {resultMessage}
                         </Text>
                       )}

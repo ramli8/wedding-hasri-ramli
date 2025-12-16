@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
-import { VStack, Flex, Box, useColorMode, Text, Icon, HStack, Badge } from '@chakra-ui/react';
+import {
+  VStack,
+  Flex,
+  Box,
+  useColorMode,
+  Text,
+  Icon,
+  HStack,
+  Badge,
+} from '@chakra-ui/react';
 import Head from 'next/head';
 import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
@@ -31,55 +40,65 @@ const UserListPage: NextPageWithLayout = () => {
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'active' | 'inactive'
   >('all');
-  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, inactive: 0 });
+  const [statusCounts, setStatusCounts] = useState({
+    all: 0,
+    active: 0,
+    inactive: 0,
+  });
 
   const api = React.useMemo(() => new UserAPI(), []);
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
 
-  const fetchData = React.useCallback(async (resetPagination = true) => {
-    try {
-      setLoading(true);
-      const page = resetPagination ? 1 : pagination.page;
-      const [usersResponse, rolesData] = await Promise.all([
-        api.getUsers(page, pagination.limit),
-        api.getRoles(),
-      ]);
-      
-      if (resetPagination) {
-        setUsers(usersResponse.data);
-      } else {
-        setUsers(prev => [...prev, ...usersResponse.data]);
+  const fetchData = React.useCallback(
+    async (resetPagination = true) => {
+      try {
+        setLoading(true);
+        const page = resetPagination ? 1 : pagination.page;
+        const [usersResponse, rolesData] = await Promise.all([
+          api.getUsers(page, pagination.limit),
+          api.getRoles(),
+        ]);
+
+        if (resetPagination) {
+          setUsers(usersResponse.data);
+        } else {
+          setUsers((prev) => [...prev, ...usersResponse.data]);
+        }
+
+        if (usersResponse.pagination) {
+          setPagination(usersResponse.pagination);
+          setHasMore(
+            usersResponse.pagination.page <
+              usersResponse.pagination.totalPages &&
+              usersResponse.data.length === usersResponse.pagination.limit
+          );
+        } else {
+          setHasMore(false);
+        }
+
+        setRoles(rolesData);
+      } catch (error: any) {
+        showErrorAlert('Gagal memuat data user', error.message, colorMode);
+      } finally {
+        setLoading(false);
       }
-      
-      if (usersResponse.pagination) {
-        setPagination(usersResponse.pagination);
-        setHasMore(
-          usersResponse.pagination.page < usersResponse.pagination.totalPages &&
-          usersResponse.data.length === usersResponse.pagination.limit
-        );
-      } else {
-        setHasMore(false);
-      }
-      
-      setRoles(rolesData);
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data user', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, colorMode, pagination.page, pagination.limit]);
+    },
+    [api, colorMode, pagination.page, pagination.limit]
+  );
 
   const loadMore = React.useCallback(async () => {
     if (!hasMore || loading) return;
-    
+
     try {
       setLoading(true);
       const nextPage = pagination.page + 1;
-      const response = await api.getUsers(nextPage, pagination.limit, { status: filterStatus });
-      
-      setUsers(prev => [...prev, ...response.data]);
-      
+      const response = await api.getUsers(nextPage, pagination.limit, {
+        status: filterStatus,
+      });
+
+      setUsers((prev) => [...prev, ...response.data]);
+
       if (response.pagination) {
         setPagination(response.pagination);
         setHasMore(response.pagination.page < response.pagination.totalPages);
@@ -113,16 +132,18 @@ const UserListPage: NextPageWithLayout = () => {
         api.getUsers(1, pagination.limit, { status: filterStatus }),
         api.getRoles(),
       ]);
-      
+
       setUsers(usersResponse.data);
-      
+
       if (usersResponse.pagination) {
         setPagination(usersResponse.pagination);
-        setHasMore(usersResponse.pagination.page < usersResponse.pagination.totalPages);
+        setHasMore(
+          usersResponse.pagination.page < usersResponse.pagination.totalPages
+        );
       } else {
         setHasMore(false);
       }
-      
+
       setRoles(rolesData);
     } catch (error: any) {
       showErrorAlert('Gagal memuat data user', error.message, colorMode);
@@ -215,49 +236,26 @@ const UserListPage: NextPageWithLayout = () => {
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
               {/* Header Section - Clean Typography */}
-              <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'end' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 6 }}
-                mb={6}
-              >
-                <VStack align="start" spacing={3} flex={1}>
-                  {/* Title with Gradient Accent */}
-                  <Box>
-                    <Text
-                      fontSize={{ base: '3xl', md: '4xl' }}
-                      fontWeight="700"
-                      color={colorMode === 'light' ? 'gray.900' : 'white'}
-                      letterSpacing="tight"
-                      lineHeight="1.1"
-                      mb={1}
-                    >
-                      Manajemen User
-                    </Text>
-                    <Box
-                      w="60px"
-                      h="3px"
-                      bg={
-                        colorMode === 'light' 
-                          ? `${colorPref}.500` 
-                          : `${colorPref}.400`
-                      }
-                      borderRadius="full"
-                    />
-                  </Box>
-
-                  {/* Description */}
+              {/* Header Section - Minimalist & Modern */}
+              <Flex justify="space-between" align="center" mb={6} gap={4}>
+                <Box>
                   <Text
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                    fontWeight="400"
-                    maxW="600px"
-                    lineHeight="1.6"
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="-0.02em"
+                    mb="4px"
                   >
-                    Kelola pengguna, role, dan permission dengan kontrol akses yang fleksibel
+                    Data Pengguna
                   </Text>
-                </VStack>
+                  <Text
+                    fontSize="14px"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola data pengguna dan akses sistem
+                  </Text>
+                </Box>
 
                 {/* User Profile & Actions */}
                 <Box display={{ base: 'none', md: 'block' }}>

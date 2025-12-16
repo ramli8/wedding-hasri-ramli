@@ -46,8 +46,10 @@ class TamuAPI {
       }
       // If 'all' or undefined, don't filter by deleted_at
 
-      // Apply filters - need to filter by kategori_tamu.nama
-      if (filter?.kategori) {
+      // Apply filters - need to filter by kategori_tamu.nama or kategori_id
+      if (filter?.kategori_id) {
+        query = query.eq('kategori_id', filter.kategori_id);
+      } else if (filter?.kategori) {
         query = query.eq('kategori_tamu.nama', filter.kategori);
       }
 
@@ -57,6 +59,33 @@ class TamuAPI {
 
       if (filter?.konfirmasi_kehadiran) {
         query = query.eq('konfirmasi_kehadiran', filter.konfirmasi_kehadiran);
+      }
+
+      // Apply status belum filter
+      if (filter?.status_belum) {
+        switch (filter.status_belum) {
+          case 'undangan_belum_dikirim':
+            query = query.is('tgl_kirim_undangan', null);
+            break;
+          case 'undangan_belum_dibaca':
+            query = query.is('tgl_baca_undangan', null);
+            break;
+          case 'pengingat_qr_belum_dikirim':
+            query = query.is('tgl_kirim_cek_qr_code', null);
+            break;
+          case 'pengingat_qr_belum_dibaca':
+            query = query.is('tgl_baca_cek_qr_code', null);
+            break;
+          case 'belum_konfirmasi':
+            query = query.eq('konfirmasi_kehadiran', 'belum_konfirmasi');
+            break;
+          case 'belum_checkin':
+            query = query.is('check_in', null);
+            break;
+          case 'belum_checkout':
+            query = query.is('check_out', null);
+            break;
+        }
       }
 
       if (filter?.search) {
@@ -152,6 +181,7 @@ class TamuAPI {
    */
   async getCounts(filters?: {
     kategori?: string;
+    kategori_id?: string;
     hubungan?: string;
   }): Promise<{
     all: number;
@@ -161,9 +191,14 @@ class TamuAPI {
     const buildQuery = () => {
       let q = this.supabase
         .from('tamu')
-        .select('*, kategori_tamu:kategori_id(nama), hubungan_tamu:hubungan_id(nama)', { count: 'exact', head: true });
-      
-      if (filters?.kategori) {
+        .select(
+          '*, kategori_tamu:kategori_id(nama), hubungan_tamu:hubungan_id(nama)',
+          { count: 'exact', head: true }
+        );
+
+      if (filters?.kategori_id) {
+        q = q.eq('kategori_id', filters.kategori_id);
+      } else if (filters?.kategori) {
         q = q.eq('kategori_tamu.nama', filters.kategori);
       }
       if (filters?.hubungan) {
@@ -180,7 +215,11 @@ class TamuAPI {
       const { count: activeCount } = await buildQuery().is('deleted_at', null);
 
       // Count inactive (deleted)
-      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+      const { count: inactiveCount } = await buildQuery().not(
+        'deleted_at',
+        'is',
+        null
+      );
 
       return {
         all: allCount || 0,
@@ -802,6 +841,137 @@ class TamuAPI {
     } catch (error: any) {
       console.error('Error in directCheckOut:', error);
       throw new Error(error.message || 'Gagal memproses check-out');
+    }
+  }
+
+  /**
+   * Get counts by category for category filter tabs
+   * @param status - Filter by status ('all' | 'active' | 'inactive')
+   */
+  async getCountsByCategory(
+    status?: 'all' | 'active' | 'inactive'
+  ): Promise<Record<string, number>> {
+    try {
+      // Get all categories first
+      const { data: categories, error: catError } = await this.supabase
+        .from('kategori_tamu')
+        .select('id, nama')
+        .is('deleted_at', null);
+
+      if (catError) throw catError;
+
+      // Build base query for counting
+      let query = this.supabase
+        .from('tamu')
+        .select('kategori_id', { count: 'exact' });
+
+      // Apply status filter
+      if (status === 'active') {
+        query = query.is('deleted_at', null);
+      } else if (status === 'inactive') {
+        query = query.not('deleted_at', 'is', null);
+      }
+      // If 'all' or undefined, don't filter by deleted_at
+
+      const { data: tamuData, error: tamuError } = await query;
+
+      if (tamuError) throw tamuError;
+
+      // Count tamu per category
+      const counts: Record<string, number> = {};
+      (categories || []).forEach((cat: { id: string; nama: string }) => {
+        counts[cat.id] = 0;
+      });
+
+      (tamuData || []).forEach((tamu: { kategori_id: string }) => {
+        if (tamu.kategori_id && counts.hasOwnProperty(tamu.kategori_id)) {
+          counts[tamu.kategori_id]++;
+        }
+      });
+
+      return counts;
+    } catch (error: any) {
+      console.error('Error fetching counts by category:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Get counts by status belum for status filter tabs
+   * @param filters - Optional filters to apply (status, kategori_id)
+   */
+  async getCountsByStatusBelum(filters?: {
+    status?: 'all' | 'active' | 'inactive';
+    kategori_id?: string;
+  }): Promise<{
+    undangan_belum_dikirim: number;
+    undangan_belum_dibaca: number;
+    pengingat_qr_belum_dikirim: number;
+    pengingat_qr_belum_dibaca: number;
+    belum_konfirmasi: number;
+    belum_checkin: number;
+    belum_checkout: number;
+  }> {
+    const buildBaseQuery = () => {
+      let q = this.supabase
+        .from('tamu')
+        .select('*', { count: 'exact', head: true });
+
+      // Apply status filter
+      if (filters?.status === 'active') {
+        q = q.is('deleted_at', null);
+      } else if (filters?.status === 'inactive') {
+        q = q.not('deleted_at', 'is', null);
+      }
+
+      // Apply kategori filter
+      if (filters?.kategori_id) {
+        q = q.eq('kategori_id', filters.kategori_id);
+      }
+
+      return q;
+    };
+
+    try {
+      // Count each status belum
+      const [
+        undanganBelumDikirim,
+        undanganBelumDibaca,
+        pengingatQrBelumDikirim,
+        pengingatQrBelumDibaca,
+        belumKonfirmasi,
+        belumCheckin,
+        belumCheckout,
+      ] = await Promise.all([
+        buildBaseQuery().is('tgl_kirim_undangan', null),
+        buildBaseQuery().is('tgl_baca_undangan', null),
+        buildBaseQuery().is('tgl_kirim_cek_qr_code', null),
+        buildBaseQuery().is('tgl_baca_cek_qr_code', null),
+        buildBaseQuery().eq('konfirmasi_kehadiran', 'belum_konfirmasi'),
+        buildBaseQuery().is('check_in', null),
+        buildBaseQuery().is('check_out', null),
+      ]);
+
+      return {
+        undangan_belum_dikirim: undanganBelumDikirim.count || 0,
+        undangan_belum_dibaca: undanganBelumDibaca.count || 0,
+        pengingat_qr_belum_dikirim: pengingatQrBelumDikirim.count || 0,
+        pengingat_qr_belum_dibaca: pengingatQrBelumDibaca.count || 0,
+        belum_konfirmasi: belumKonfirmasi.count || 0,
+        belum_checkin: belumCheckin.count || 0,
+        belum_checkout: belumCheckout.count || 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching counts by status belum:', error);
+      return {
+        undangan_belum_dikirim: 0,
+        undangan_belum_dibaca: 0,
+        pengingat_qr_belum_dikirim: 0,
+        pengingat_qr_belum_dibaca: 0,
+        belum_konfirmasi: 0,
+        belum_checkin: 0,
+        belum_checkout: 0,
+      };
     }
   }
 

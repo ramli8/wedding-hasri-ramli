@@ -58,12 +58,24 @@ export interface TamuApiResponse {
   };
 }
 
+export type StatusBelumType =
+  | ''
+  | 'undangan_belum_dikirim'
+  | 'undangan_belum_dibaca'
+  | 'pengingat_qr_belum_dikirim'
+  | 'pengingat_qr_belum_dibaca'
+  | 'belum_konfirmasi'
+  | 'belum_checkin'
+  | 'belum_checkout';
+
 export interface TamuFilter {
   kategori?: string;
+  kategori_id?: string; // Filter by kategori UUID directly
   hubungan?: string;
   konfirmasi_kehadiran?: string;
   search?: string;
   status?: 'all' | 'active' | 'inactive'; // Filter untuk deleted status
+  status_belum?: StatusBelumType; // Filter untuk status "belum"
   page?: number;
   limit?: number;
 }

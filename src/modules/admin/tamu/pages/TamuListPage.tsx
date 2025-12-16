@@ -27,8 +27,16 @@ import UserProfileActions from '@/components/molecules/UserProfileActions';
 import TamuAPI from '../services/TamuAPI';
 import KategoriTamuAPI from '@/modules/admin/kategori_tamu/services/KategoriTamuAPI';
 import HubunganTamuAPI from '@/modules/admin/hubungan_tamu/services/HubunganTamuAPI';
-import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import {
+  showSuccessAlert,
+  showErrorAlert,
+  showMessageTypeAlert,
+} from '@/utils/sweetalert';
 import FilterTabs from '@/components/molecules/FilterTabs';
+import CategoryFilterTabs from '@/components/molecules/CategoryFilterTabs';
+import StatusBelumFilterTabs, {
+  StatusBelumType,
+} from '@/components/molecules/StatusBelumFilterTabs';
 import PageRow from '@/components/atoms/PageRow';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import AppSettingContext from '@/providers/AppSettingProvider';
@@ -75,6 +83,24 @@ const TamuListPage: NextPageWithLayout = () => {
   const [relationships, setRelationships] = useState<
     { id: string; nama: string }[]
   >([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>(
+    {}
+  );
+  const [selectedStatusBelum, setSelectedStatusBelum] =
+    useState<StatusBelumType>('');
+  const [statusBelumCounts, setStatusBelumCounts] = useState<
+    Record<StatusBelumType, number>
+  >({
+    '': 0,
+    undangan_belum_dikirim: 0,
+    undangan_belum_dibaca: 0,
+    pengingat_qr_belum_dikirim: 0,
+    pengingat_qr_belum_dibaca: 0,
+    belum_konfirmasi: 0,
+    belum_checkin: 0,
+    belum_checkout: 0,
+  });
 
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
@@ -86,12 +112,36 @@ const TamuListPage: NextPageWithLayout = () => {
   const fetchCounts = async () => {
     try {
       const counts = await api.getCounts({
+        kategori_id: selectedCategoryId || undefined,
         kategori: filter?.kategori,
         hubungan: filter?.hubungan,
       });
       setStatusCounts(counts);
     } catch (error) {
       console.error('Error fetching counts:', error);
+    }
+  };
+
+  // Fetch counts by category for category filter tabs
+  const fetchCategoryCounts = async () => {
+    try {
+      const counts = await api.getCountsByCategory(filterStatus);
+      setCategoryCounts(counts);
+    } catch (error) {
+      console.error('Error fetching category counts:', error);
+    }
+  };
+
+  // Fetch counts by status belum
+  const fetchStatusBelumCounts = async () => {
+    try {
+      const counts = await api.getCountsByStatusBelum({
+        status: filterStatus,
+        kategori_id: selectedCategoryId || undefined,
+      });
+      setStatusBelumCounts((prev) => ({ ...prev, ...counts }));
+    } catch (error) {
+      console.error('Error fetching status belum counts:', error);
     }
   };
 
@@ -156,15 +206,25 @@ const TamuListPage: NextPageWithLayout = () => {
   const handleSendWhatsApp = async (tamu: Tamu) => {
     if (!tamu.nomor_hp) return;
 
-    // Generate invitation URL
+    // Show SweetAlert to select message type
+    const type = await showMessageTypeAlert('whatsapp', colorMode);
+    if (!type) return; // User cancelled
+
+    // Generate URLs
     const baseUrl =
       typeof window !== 'undefined'
         ? window.location.origin
         : 'https://yourdomain.com';
     const invitationUrl = `${baseUrl}/?to=${tamu.id}`;
+    const qrCodeUrl = `${baseUrl}/cek-qrcode?id=${tamu.id}`;
 
-    // Create WhatsApp message
-    const message = `Assalamualaikum ${tamu.nama},\n\nKami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.\n\nBuka undangan di:\n${invitationUrl}\n\nTerima kasih.\n\nHasri & Ramli`;
+    // Create message based on type
+    let message = '';
+    if (type === 'undangan') {
+      message = `Assalamualaikum ${tamu.nama},\n\nKami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.\n\nBuka undangan di:\n${invitationUrl}\n\nTerima kasih.\n\nHasri & Ramli`;
+    } else {
+      message = `Assalamualaikum ${tamu.nama},\n\nIni adalah pengingat untuk acara pernikahan kami.\n\nSilakan cek QR Code Anda di:\n${qrCodeUrl}\n\nJangan lupa membawa QR Code saat hadir ya!\n\nTerima kasih.\n\nHasri & Ramli`;
+    }
 
     // Format phone number for WhatsApp (remove leading 0, add 62)
     let phoneNumber = tamu.nomor_hp.replace(/\D/g, '');
@@ -178,30 +238,47 @@ const TamuListPage: NextPageWithLayout = () => {
     )}`;
     window.open(whatsappUrl, '_blank');
 
-    // Update tgl_kirim_undangan
+    // Update appropriate column based on type
     try {
-      await updateTamu(tamu.id, {
-        tgl_kirim_undangan: new Date().toISOString(),
-      });
+      if (type === 'undangan') {
+        await updateTamu(tamu.id, {
+          tgl_kirim_undangan: new Date().toISOString(),
+        });
+        showSuccessAlert('Undangan berhasil dikirim via WhatsApp', colorMode);
+      } else {
+        await updateTamu(tamu.id, {
+          tgl_kirim_cek_qr_code: new Date().toISOString(),
+        });
+        showSuccessAlert(
+          'Pengingat QR Code berhasil dikirim via WhatsApp',
+          colorMode
+        );
+      }
       await refetchTamu();
-      showSuccessAlert('Undangan berhasil dikirim via WhatsApp', colorMode);
     } catch (err: any) {
-      console.error('Failed to update tgl_kirim_undangan:', err);
+      console.error('Failed to update:', err);
     }
   };
 
   const handleSendInstagram = async (tamu: Tamu) => {
     if (!tamu.username_instagram) return;
 
-    // Generate invitation URL
+    // Show SweetAlert to select message type
+    const type = await showMessageTypeAlert('instagram', colorMode);
+    if (!type) return; // User cancelled
+
+    // Generate URLs
     const baseUrl =
       typeof window !== 'undefined'
         ? window.location.origin
         : 'https://yourdomain.com';
     const invitationUrl = `${baseUrl}/?to=${tamu.id}`;
+    const qrCodeUrl = `${baseUrl}/cek-qrcode?id=${tamu.id}`;
 
-    // Create message
-    const message = `Assalamualaikum ${tamu.nama},
+    // Create message based on type
+    let message = '';
+    if (type === 'undangan') {
+      message = `Assalamualaikum ${tamu.nama},
 
 Kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.
 
@@ -211,6 +288,20 @@ ${invitationUrl}
 Terima kasih.
 
 Hasri & Ramli`;
+    } else {
+      message = `Assalamualaikum ${tamu.nama},
+
+Ini adalah pengingat untuk acara pernikahan kami.
+
+Silakan cek QR Code Anda di:
+${qrCodeUrl}
+
+Jangan lupa membawa QR Code saat hadir ya!
+
+Terima kasih.
+
+Hasri & Ramli`;
+    }
 
     // Copy message to clipboard FIRST (before opening new window)
     let copySuccess = false;
@@ -238,25 +329,42 @@ Hasri & Ramli`;
     const instagramUrl = `https://ig.me/m/${tamu.username_instagram}`;
     window.open(instagramUrl, '_blank');
 
-    // Update tgl_kirim_undangan
+    // Update appropriate column based on type
     try {
-      await updateTamu(tamu.id, {
-        tgl_kirim_undangan: new Date().toISOString(),
-      });
-      await refetchTamu();
-      if (copySuccess) {
-        showSuccessAlert(
-          'Instagram DM dibuka. Pesan undangan sudah di-copy, silakan paste (Ctrl+V)!',
-          colorMode
-        );
+      if (type === 'undangan') {
+        await updateTamu(tamu.id, {
+          tgl_kirim_undangan: new Date().toISOString(),
+        });
+        if (copySuccess) {
+          showSuccessAlert(
+            'Instagram DM dibuka. Pesan undangan sudah di-copy, silakan paste (Ctrl+V)!',
+            colorMode
+          );
+        } else {
+          showSuccessAlert(
+            'Instagram DM dibuka. Silakan ketik pesan undangan secara manual.',
+            colorMode
+          );
+        }
       } else {
-        showSuccessAlert(
-          'Instagram DM dibuka. Silakan ketik pesan undangan secara manual.',
-          colorMode
-        );
+        await updateTamu(tamu.id, {
+          tgl_kirim_cek_qr_code: new Date().toISOString(),
+        });
+        if (copySuccess) {
+          showSuccessAlert(
+            'Instagram DM dibuka. Pesan pengingat sudah di-copy, silakan paste (Ctrl+V)!',
+            colorMode
+          );
+        } else {
+          showSuccessAlert(
+            'Instagram DM dibuka. Silakan ketik pesan pengingat secara manual.',
+            colorMode
+          );
+        }
       }
+      await refetchTamu();
     } catch (err: any) {
-      console.error('Failed to update tgl_kirim_undangan:', err);
+      console.error('Failed to update:', err);
     }
   };
 
@@ -315,18 +423,40 @@ Hasri & Ramli`;
     const newFilter: TamuFilter = {
       ...filter,
       status: filterStatus,
+      kategori_id: selectedCategoryId || undefined,
+      status_belum: selectedStatusBelum || undefined,
     };
     refetchTamu(newFilter, true);
     fetchCounts();
+    fetchCategoryCounts();
+    fetchStatusBelumCounts();
     fetchOptionsForImport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus, filter?.kategori, filter?.hubungan, isApiReady]);
+  }, [
+    filterStatus,
+    selectedCategoryId,
+    selectedStatusBelum,
+    filter?.kategori,
+    filter?.hubungan,
+    isApiReady,
+  ]);
 
   // No client-side filtering, data comes filtered from server
   const filteredTamu = tamuList;
 
   // Use server-side counts
   const counts = statusCounts;
+
+  // Build category tabs with counts
+  const categoryTabs = useMemo(() => {
+    return categories
+      .filter((c) => c.nama) // Only include categories with names
+      .map((cat) => ({
+        id: cat.id,
+        label: cat.nama,
+        count: categoryCounts[cat.id] || 0,
+      }));
+  }, [categories, categoryCounts]);
 
   return (
     <>
@@ -338,51 +468,26 @@ Hasri & Ramli`;
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section - Clean Typography */}
-              <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'end' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 6 }}
-                mb={6}
-              >
-                <VStack align="start" spacing={3} flex={1}>
-                  {/* Title with Gradient Accent */}
-                  <Box>
-                    <Text
-                      fontSize={{ base: '3xl', md: '4xl' }}
-                      fontWeight="700"
-                      color={colorMode === 'light' ? 'gray.900' : 'white'}
-                      letterSpacing="tight"
-                      lineHeight="1.1"
-                      mb={1}
-                    >
-                      Manajemen Tamu Undangan
-                    </Text>
-                    <Box
-                      w="60px"
-                      h="3px"
-                      bg={
-                        colorMode === 'light'
-                          ? `${colorPref}.500`
-                          : `${colorPref}.400`
-                      }
-                      borderRadius="full"
-                    />
-                  </Box>
-
-                  {/* Description */}
+              {/* Header Section - Minimalist & Modern */}
+              <Flex justify="space-between" align="center" mb={6} gap={4}>
+                <Box>
                   <Text
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                    fontWeight="400"
-                    maxW="600px"
-                    lineHeight="1.6"
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="-0.02em"
+                    mb="4px"
                   >
-                    Kelola daftar tamu undangan pernikahan dengan mudah dan
-                    terorganisir
+                    Data Tamu
                   </Text>
-                </VStack>
+                  <Text
+                    fontSize="14px"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola seluruh data tamu undangan pernikahan
+                  </Text>
+                </Box>
 
                 {/* User Profile & Actions */}
                 <Box display={{ base: 'none', md: 'block' }}>
@@ -397,14 +502,110 @@ Hasri & Ramli`;
                 </Alert>
               )}
 
-              {/* Filter Tabs */}
-              <Box pb={2}>
-                <FilterTabs
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
-                  counts={counts}
-                />
-              </Box>
+              {/* Filter Tabs Section - Mobile Optimized */}
+              <VStack align="stretch" spacing={4} pb={4}>
+                {/* Main Status Filter */}
+                <Box>
+                  <FilterTabs
+                    filterStatus={filterStatus}
+                    setFilterStatus={setFilterStatus}
+                    counts={counts}
+                  />
+                </Box>
+
+                {/* Secondary Filters Group */}
+                <Box
+                  pos="relative"
+                  bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
+                  p={{ base: 4, md: 6 }}
+                  borderRadius="24px"
+                  borderWidth="1px"
+                  borderColor={
+                    colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'
+                  }
+                  _before={{
+                    content: '""',
+                    pos: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    right: '20px',
+                    bottom: '-20px',
+                    zIndex: '-1',
+                    background: colorMode === 'light' ? '#e3e6ec' : '#000',
+                    opacity: colorMode === 'light' ? '0.91' : '0.51',
+                    filter: 'blur(40px)',
+                    borderRadius: '24px',
+                    display: { base: 'none', md: 'block' },
+                  }}
+                >
+                  <VStack spacing={4} align="stretch">
+                    {/* Kategori */}
+                    <Box>
+                      <Text
+                        fontSize="11px"
+                        fontWeight="700"
+                        mb={3}
+                        color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                        textTransform="uppercase"
+                        letterSpacing="0.05em"
+                      >
+                        Kategori Tamu
+                      </Text>
+                      <Box
+                        overflowX="auto"
+                        mx={{ base: -3, md: 0 }}
+                        px={{ base: 3, md: 0 }}
+                        pb={1}
+                        css={{
+                          '&::-webkit-scrollbar': { display: 'none' },
+                          scrollbarWidth: 'none',
+                        }}
+                      >
+                        <CategoryFilterTabs
+                          selectedCategoryId={selectedCategoryId}
+                          setSelectedCategoryId={setSelectedCategoryId}
+                          categories={categoryTabs}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Box
+                      h="1px"
+                      bg={colorMode === 'light' ? 'gray.200' : 'whiteAlpha.200'}
+                    />
+
+                    {/* Status Belum */}
+                    <Box>
+                      <Text
+                        fontSize="11px"
+                        fontWeight="700"
+                        mb={3}
+                        color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                        textTransform="uppercase"
+                        letterSpacing="0.05em"
+                      >
+                        Status Undangan
+                      </Text>
+                      <Box
+                        overflowX="auto"
+                        mx={{ base: -3, md: 0 }}
+                        px={{ base: 3, md: 0 }}
+                        pb={1}
+                        css={{
+                          '&::-webkit-scrollbar': { display: 'none' },
+                          scrollbarWidth: 'none',
+                        }}
+                      >
+                        <StatusBelumFilterTabs
+                          selectedStatus={selectedStatusBelum}
+                          setSelectedStatus={setSelectedStatusBelum}
+                          statusCounts={statusBelumCounts}
+                        />
+                      </Box>
+                    </Box>
+                  </VStack>
+                </Box>
+              </VStack>
 
               <TamuTableAdvance
                 initialTamu={filteredTamu}

@@ -104,14 +104,14 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
         _before={{
           content: '""',
           pos: 'absolute',
-          top: '43px',
-          left: '32px',
-          right: '32px',
-          bottom: '-43px',
+          top: '20px',
+          left: '20px',
+          right: '20px',
+          bottom: '-20px',
           zIndex: '-1',
-          background: colorMode == 'light' ? '#e3e6ec' : '#000',
-          opacity: colorMode == 'light' ? '0.91' : '0.51',
-          filter: 'blur(86.985px)',
+          background: colorMode === 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode === 'light' ? '0.91' : '0.51',
+          filter: 'blur(40px)',
           borderRadius: '24px',
           display: { base: 'none', md: 'block' },
         }}
@@ -141,10 +141,10 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
             w={{ base: 'full', md: 'auto' }}
           >
             <InputLeftElement h="48px">
-              <Icon 
-                as={FaSearch} 
-                color={colorMode === 'light' ? 'gray.400' : 'gray.500'} 
-                boxSize={4} 
+              <Icon
+                as={FaSearch}
+                color={colorMode === 'light' ? 'gray.400' : 'gray.500'}
+                boxSize={4}
               />
             </InputLeftElement>
             <Input
@@ -157,29 +157,25 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
               variant="filled"
               borderRadius="full"
               focusBorderColor={
-                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+                colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400'
               }
               fontSize="sm"
               fontWeight="500"
               placeholder="Cari data..."
-              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              bg={colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50'}
               color={colorMode === 'light' ? 'gray.900' : 'white'}
               _placeholder={{
                 color: colorMode === 'light' ? 'gray.400' : 'gray.500',
               }}
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.300' : 'whiteAlpha.300',
               }}
               _focus={{
-                bg: colorMode === 'light' ? 'white' : 'gray.600',
+                bg: colorMode === 'light' ? 'white' : 'whiteAlpha.200',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400',
               }}
             />
           </InputGroup>
@@ -195,14 +191,15 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                 p={6}
                 borderRadius="2xl"
                 borderWidth="1px"
-                borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                borderColor={
+                  colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'
+                }
                 bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
                 shadow="sm"
                 transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 _hover={{
                   transform: 'translateY(-2px)',
                   shadow: 'lg',
-                  borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}.500`,
                 }}
                 position="relative"
                 overflow="hidden"
@@ -221,7 +218,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     >
                       {role.name}
                     </Text>
-                    
+
                     {/* Status Badge */}
                     <Badge
                       px={2.5}
@@ -245,7 +242,11 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     fontWeight="400"
                   >
                     {role.description || (
-                      <Text as="span" fontStyle="italic" color={colorMode === 'light' ? 'gray.400' : 'gray.500'}>
+                      <Text
+                        as="span"
+                        fontStyle="italic"
+                        color={colorMode === 'light' ? 'gray.400' : 'gray.500'}
+                      >
                         No description
                       </Text>
                     )}
@@ -271,9 +272,14 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                           borderRadius="md"
                           variant="ghost"
                           onClick={() => onEdit(role)}
-                          color={colorMode === 'light' ? 'blue.600' : 'blue.300'}
+                          color={
+                            colorMode === 'light' ? 'blue.600' : 'blue.300'
+                          }
                           _hover={{
-                            bg: colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200',
+                            bg:
+                              colorMode === 'light'
+                                ? 'blue.50'
+                                : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
@@ -285,9 +291,14 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                           borderRadius="md"
                           variant="ghost"
                           onClick={() => onManagePermissions?.(role)}
-                          color={colorMode === 'light' ? 'purple.600' : 'purple.300'}
+                          color={
+                            colorMode === 'light' ? 'purple.600' : 'purple.300'
+                          }
                           _hover={{
-                            bg: colorMode === 'light' ? 'purple.50' : 'whiteAlpha.200',
+                            bg:
+                              colorMode === 'light'
+                                ? 'purple.50'
+                                : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
@@ -301,7 +312,10 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                           onClick={() => handleDelete(role.id)}
                           color={colorMode === 'light' ? 'red.600' : 'red.300'}
                           _hover={{
-                            bg: colorMode === 'light' ? 'red.50' : 'whiteAlpha.200',
+                            bg:
+                              colorMode === 'light'
+                                ? 'red.50'
+                                : 'whiteAlpha.200',
                           }}
                         />
                       </Tooltip>
@@ -310,14 +324,21 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
                     <Tooltip label="Pulihkan" hasArrow placement="top">
                       <IconButton
                         aria-label="Restore"
-                        icon={<MaterialIcon name="restore_from_trash" size={16} />}
+                        icon={
+                          <MaterialIcon name="restore_from_trash" size={16} />
+                        }
                         size="sm"
                         borderRadius="md"
                         variant="ghost"
                         onClick={() => onRestore(role.id)}
-                        color={colorMode === 'light' ? 'green.600' : 'green.300'}
+                        color={
+                          colorMode === 'light' ? 'green.600' : 'green.300'
+                        }
                         _hover={{
-                          bg: colorMode === 'light' ? 'green.50' : 'whiteAlpha.200',
+                          bg:
+                            colorMode === 'light'
+                              ? 'green.50'
+                              : 'whiteAlpha.200',
                         }}
                       />
                     </Tooltip>

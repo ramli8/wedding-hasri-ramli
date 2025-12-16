@@ -27,6 +27,7 @@ import {
   FiClock,
   FiCheckCircle,
 } from 'react-icons/fi';
+import { FaInstagram } from 'react-icons/fa';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import { Tamu } from '../../types/Tamu.types';
 
@@ -255,9 +256,14 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 gap={6}
               >
                 <InfoItem
-                  icon={FiPhone}
-                  label="Nomor HP"
-                  value={tamu.nomor_hp}
+                  icon={tamu.nomor_hp ? FiPhone : FaInstagram}
+                  label={tamu.nomor_hp ? 'Nomor HP' : 'Instagram'}
+                  value={
+                    tamu.nomor_hp ||
+                    (tamu.username_instagram
+                      ? `@${tamu.username_instagram}`
+                      : null)
+                  }
                 />
                 <InfoItem icon={FiMapPin} label="Alamat" value={tamu.alamat} />
               </Grid>
@@ -297,13 +303,23 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 />
                 <InfoItem
                   icon={FiCalendar}
-                  label="Dikirim Pada"
+                  label="Undangan Dikirim"
                   value={formatDateTime(tamu.tgl_kirim_undangan)}
                 />
                 <InfoItem
                   icon={FiCalendar}
-                  label="Dibaca Pada"
+                  label="Undangan Dibaca"
                   value={formatDateTime(tamu.tgl_baca_undangan)}
+                />
+                <InfoItem
+                  icon={FiCalendar}
+                  label="Pengingat QR Dikirim"
+                  value={formatDateTime(tamu.tgl_kirim_cek_qr_code)}
+                />
+                <InfoItem
+                  icon={FiCalendar}
+                  label="Pengingat QR Dibaca"
+                  value={formatDateTime(tamu.tgl_baca_cek_qr_code)}
                 />
               </Grid>
             </Box>

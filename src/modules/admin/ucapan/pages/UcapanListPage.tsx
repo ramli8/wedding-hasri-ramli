@@ -32,8 +32,13 @@ const UcapanListPage: NextPageWithLayout = () => {
   const [filterReply, setFilterReply] = useState<
     'all' | 'replied' | 'unreplied'
   >('all');
-  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, inactive: 0 });
-  const [selectedUcapan, setSelectedUcapan] = useState<UcapanWithReplies | null>(null);
+  const [statusCounts, setStatusCounts] = useState({
+    all: 0,
+    active: 0,
+    inactive: 0,
+  });
+  const [selectedUcapan, setSelectedUcapan] =
+    useState<UcapanWithReplies | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -56,49 +61,54 @@ const UcapanListPage: NextPageWithLayout = () => {
     }
   };
 
-  const fetchData = React.useCallback(async (resetPagination = true) => {
-    try {
-      setLoading(true);
-      const page = resetPagination ? 1 : pagination.page;
-      const response = await api.getUcapan(page, pagination.limit, { status: filterStatus });
-      
-      if (resetPagination) {
-        setUcapanList(response.data);
-      } else {
-        setUcapanList(prev => [...prev, ...response.data]);
+  const fetchData = React.useCallback(
+    async (resetPagination = true) => {
+      try {
+        setLoading(true);
+        const page = resetPagination ? 1 : pagination.page;
+        const response = await api.getUcapan(page, pagination.limit, {
+          status: filterStatus,
+        });
+
+        if (resetPagination) {
+          setUcapanList(response.data);
+        } else {
+          setUcapanList((prev) => [...prev, ...response.data]);
+        }
+
+        if (response.pagination) {
+          setPagination(response.pagination);
+          setHasMore(
+            response.pagination.page < response.pagination.totalPages &&
+              response.data.length === response.pagination.limit
+          );
+        } else {
+          setHasMore(false);
+        }
+      } catch (error: any) {
+        showErrorAlert('Gagal memuat data ucapan', error.message, colorMode);
+      } finally {
+        setLoading(false);
       }
-      
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setHasMore(
-          response.pagination.page < response.pagination.totalPages &&
-          response.data.length === response.pagination.limit
-        );
-      } else {
-        setHasMore(false);
-      }
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data ucapan', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, colorMode, pagination.page, pagination.limit]);
+    },
+    [api, colorMode, pagination.page, pagination.limit]
+  );
 
   const loadMore = React.useCallback(async () => {
     if (!hasMore || loading) return;
-    
+
     try {
       setLoading(true);
       const nextPage = pagination.page + 1;
       const response = await api.getUcapan(nextPage, pagination.limit);
-      
-      setUcapanList(prev => [...prev, ...response.data]);
-      
+
+      setUcapanList((prev) => [...prev, ...response.data]);
+
       if (response.pagination) {
         setPagination(response.pagination);
         setHasMore(
           response.pagination.page < response.pagination.totalPages &&
-          response.data.length === response.pagination.limit
+            response.data.length === response.pagination.limit
         );
       }
     } catch (error: any) {
@@ -121,8 +131,10 @@ const UcapanListPage: NextPageWithLayout = () => {
   const replyCounts = React.useMemo(() => {
     return {
       all: ucapanList.length,
-      replied: ucapanList.filter((u) => u.replies && u.replies.length > 0).length,
-      unreplied: ucapanList.filter((u) => !u.replies || u.replies.length === 0).length,
+      replied: ucapanList.filter((u) => u.replies && u.replies.length > 0)
+        .length,
+      unreplied: ucapanList.filter((u) => !u.replies || u.replies.length === 0)
+        .length,
     };
   }, [ucapanList]);
 
@@ -200,49 +212,26 @@ const UcapanListPage: NextPageWithLayout = () => {
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
               {/* Header Section - Clean Typography */}
-              <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'end' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={{ base: 4, md: 6 }}
-                mb={6}
-              >
-                <VStack align="start" spacing={3} flex={1}>
-                  {/* Title with Gradient Accent */}
-                  <Box>
-                    <Text
-                      fontSize={{ base: '3xl', md: '4xl' }}
-                      fontWeight="700"
-                      color={colorMode === 'light' ? 'gray.900' : 'white'}
-                      letterSpacing="tight"
-                      lineHeight="1.1"
-                      mb={1}
-                    >
-                      Manajemen Ucapan
-                    </Text>
-                    <Box
-                      w="60px"
-                      h="3px"
-                      bg={
-                        colorMode === 'light' 
-                          ? `${colorPref}.500` 
-                          : `${colorPref}.400`
-                      }
-                      borderRadius="full"
-                    />
-                  </Box>
-
-                  {/* Description */}
+              {/* Header Section - Minimalist & Modern */}
+              <Flex justify="space-between" align="center" mb={6} gap={4}>
+                <Box>
                   <Text
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-                    fontWeight="400"
-                    maxW="600px"
-                    lineHeight="1.6"
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="700"
+                    color={colorMode === 'light' ? 'gray.900' : 'white'}
+                    letterSpacing="-0.02em"
+                    mb="4px"
                   >
-                    Kelola ucapan dan doa dari tamu dengan sistem yang terintegrasi
+                    Data Ucapan
                   </Text>
-                </VStack>
+                  <Text
+                    fontSize="14px"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    fontWeight="400"
+                  >
+                    Kelola seluruh ucapan dan doa dari tamu undangan
+                  </Text>
+                </Box>
 
                 {/* User Profile & Actions */}
                 <Box display={{ base: 'none', md: 'block' }}>
@@ -250,86 +239,177 @@ const UcapanListPage: NextPageWithLayout = () => {
                 </Box>
               </Flex>
 
-              {/* Filter Tabs - Status */}
-              <Box pb={2}>
-                <FilterTabs
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
-                  counts={counts}
-                />
-              </Box>
-
-              {/* Filter Tabs - Reply Status */}
-              <Box pb={2} overflowX="auto" w="full">
-                <Box
-                  bg={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
-                  p={1}
-                  borderRadius="full"
-                  display="inline-flex"
-                  w={{ base: 'full', md: 'fit-content' }}
-                  minW={{ base: 'full', md: 'auto' }}
-                >
-                  <HStack spacing={0} w="full" justify={{ base: 'space-between', md: 'flex-start' }}>
-                    {[
-                      { id: 'all', label: 'Semua', count: replyCounts.all },
-                      { id: 'replied', label: 'Dibalas', count: replyCounts.replied },
-                      { id: 'unreplied', label: 'Belum', count: replyCounts.unreplied },
-                    ].map((tab) => {
-                      const isActive = filterReply === tab.id;
-                      return (
-                        <Button
-                          key={tab.id}
-                          onClick={() => setFilterReply(tab.id as any)}
-                          size="sm"
-                          borderRadius="full"
-                          variant="ghost"
-                          bg={isActive ? (colorMode === 'light' ? 'white' : 'gray.700') : 'transparent'}
-                          color={isActive ? (colorMode === 'light' ? 'gray.900' : 'white') : (colorMode === 'light' ? 'gray.500' : 'gray.400')}
-                          boxShadow={isActive ? 'sm' : 'none'}
-                          _hover={{
-                            bg: isActive
-                              ? (colorMode === 'light' ? 'white' : 'gray.700')
-                              : colorMode === 'light'
-                              ? 'blackAlpha.50'
-                              : 'whiteAlpha.50',
-                          }}
-                          px={{ base: 2, md: 4 }}
-                          h="32px"
-                          fontWeight="600"
-                          fontSize={{ base: 'xs', md: 'sm' }}
-                          flex={{ base: 1, md: 'initial' }}
-                          minW="0"
-                        >
-                          <HStack spacing={{ base: 1, md: 2 }}>
-                            <Text noOfLines={1}>{tab.label}</Text>
-                            <Badge
-                              bg={
-                                isActive
-                                  ? colorMode === 'light'
-                                    ? 'gray.100'
-                                    : 'gray.600'
-                                  : 'transparent'
-                              }
-                              color={
-                                isActive
-                                  ? colorMode === 'light'
-                                    ? 'gray.800'
-                                    : 'gray.200'
-                                  : colorMode === 'light' ? 'gray.500' : 'gray.400'
-                              }
-                              borderRadius="full"
-                              px={{ base: 1, md: 1.5 }}
-                              fontSize="xs"
-                            >
-                              {tab.count}
-                            </Badge>
-                          </HStack>
-                        </Button>
-                      );
-                    })}
-                  </HStack>
+              <VStack align="stretch" spacing={4} pb={4}>
+                {/* Main Filter (Status) */}
+                <Box>
+                  <FilterTabs
+                    filterStatus={filterStatus}
+                    setFilterStatus={setFilterStatus}
+                    counts={counts}
+                  />
                 </Box>
-              </Box>
+
+                {/* Secondary Filters Group (Reply Status) */}
+                <Box
+                  pos="relative"
+                  bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
+                  p={{ base: 4, md: 6 }}
+                  borderRadius="24px"
+                  borderWidth="1px"
+                  borderColor={
+                    colorMode === 'light' ? 'transparent' : 'whiteAlpha.100'
+                  }
+                  _before={{
+                    content: '""',
+                    pos: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    right: '20px',
+                    bottom: '-20px',
+                    zIndex: '-1',
+                    background: colorMode === 'light' ? '#e3e6ec' : '#000',
+                    opacity: colorMode === 'light' ? '0.91' : '0.51',
+                    filter: 'blur(40px)',
+                    borderRadius: '24px',
+                    display: { base: 'none', md: 'block' },
+                  }}
+                >
+                  <VStack spacing={4} align="stretch">
+                    <Box>
+                      <Text
+                        fontSize="11px"
+                        fontWeight="700"
+                        mb={3}
+                        color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                        textTransform="uppercase"
+                        letterSpacing="0.05em"
+                      >
+                        Status Balasan
+                      </Text>
+                      <Box
+                        overflowX="auto"
+                        mx={{ base: -3, md: 0 }}
+                        px={{ base: 3, md: 0 }}
+                        pb={1}
+                        css={{
+                          '&::-webkit-scrollbar': { display: 'none' },
+                          scrollbarWidth: 'none',
+                        }}
+                      >
+                        <Box
+                          bg={
+                            colorMode === 'light'
+                              ? 'gray.100'
+                              : 'whiteAlpha.100'
+                          }
+                          p={1}
+                          borderRadius="full"
+                          display="inline-flex"
+                          w={{ base: 'full', md: 'fit-content' }}
+                          minW={{ base: 'full', md: 'auto' }}
+                        >
+                          <HStack
+                            spacing={0}
+                            w="full"
+                            justify={{
+                              base: 'space-between',
+                              md: 'flex-start',
+                            }}
+                          >
+                            {[
+                              {
+                                id: 'all',
+                                label: 'Semua',
+                                count: replyCounts.all,
+                              },
+                              {
+                                id: 'replied',
+                                label: 'Dibalas',
+                                count: replyCounts.replied,
+                              },
+                              {
+                                id: 'unreplied',
+                                label: 'Belum',
+                                count: replyCounts.unreplied,
+                              },
+                            ].map((tab) => {
+                              const isActive = filterReply === tab.id;
+                              return (
+                                <Button
+                                  key={tab.id}
+                                  onClick={() => setFilterReply(tab.id as any)}
+                                  size="sm"
+                                  borderRadius="full"
+                                  variant="ghost"
+                                  bg={
+                                    isActive
+                                      ? colorMode === 'light'
+                                        ? 'white'
+                                        : 'gray.700'
+                                      : 'transparent'
+                                  }
+                                  color={
+                                    isActive
+                                      ? colorMode === 'light'
+                                        ? 'gray.900'
+                                        : 'white'
+                                      : colorMode === 'light'
+                                      ? 'gray.500'
+                                      : 'gray.400'
+                                  }
+                                  boxShadow={isActive ? 'sm' : 'none'}
+                                  _hover={{
+                                    bg: isActive
+                                      ? colorMode === 'light'
+                                        ? 'white'
+                                        : 'gray.700'
+                                      : colorMode === 'light'
+                                      ? 'blackAlpha.50'
+                                      : 'whiteAlpha.50',
+                                  }}
+                                  px={{ base: 2, md: 4 }}
+                                  h="32px"
+                                  fontWeight="600"
+                                  fontSize={{ base: 'xs', md: 'sm' }}
+                                  flex={{ base: 1, md: 'initial' }}
+                                  minW="0"
+                                >
+                                  <HStack spacing={{ base: 1, md: 2 }}>
+                                    <Text noOfLines={1}>{tab.label}</Text>
+                                    <Badge
+                                      bg={
+                                        isActive
+                                          ? colorMode === 'light'
+                                            ? 'gray.100'
+                                            : 'gray.600'
+                                          : 'transparent'
+                                      }
+                                      color={
+                                        isActive
+                                          ? colorMode === 'light'
+                                            ? 'gray.800'
+                                            : 'gray.200'
+                                          : colorMode === 'light'
+                                          ? 'gray.500'
+                                          : 'gray.400'
+                                      }
+                                      borderRadius="full"
+                                      px={{ base: 1, md: 1.5 }}
+                                      fontSize="xs"
+                                    >
+                                      {tab.count}
+                                    </Badge>
+                                  </HStack>
+                                </Button>
+                              );
+                            })}
+                          </HStack>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </VStack>
+                </Box>
+              </VStack>
 
               {/* Table */}
               <UcapanTableAdvance

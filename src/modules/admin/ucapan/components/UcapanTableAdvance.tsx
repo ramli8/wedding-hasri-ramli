@@ -15,6 +15,7 @@ import {
   Tooltip,
   SimpleGrid,
 } from '@chakra-ui/react';
+import { FaSearch } from 'react-icons/fa';
 import { ColumnFiltersState } from '@tanstack/react-table';
 import { UcapanWithReplies } from '../types/Ucapan.types';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
@@ -67,9 +68,10 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
 
   const filteredData = useMemo(() => {
     if (!globalFilterValue) return initialData;
-    return initialData.filter((item) =>
-      item.nama.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
-      item.pesan.toLowerCase().includes(globalFilterValue.toLowerCase())
+    return initialData.filter(
+      (item) =>
+        item.nama.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
+        item.pesan.toLowerCase().includes(globalFilterValue.toLowerCase())
     );
   }, [initialData, globalFilterValue]);
 
@@ -110,23 +112,19 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
         _before={{
           content: '""',
           pos: 'absolute',
-          top: '43px',
-          left: '32px',
-          right: '32px',
-          bottom: '-43px',
+          top: '20px',
+          left: '20px',
+          right: '20px',
+          bottom: '-20px',
           zIndex: '-1',
-          background: colorMode == 'light' ? '#e3e6ec' : '#000',
-          opacity: colorMode == 'light' ? '0.91' : '0.51',
-          filter: 'blur(86.985px)',
+          background: colorMode === 'light' ? '#e3e6ec' : '#000',
+          opacity: colorMode === 'light' ? '0.91' : '0.51',
+          filter: 'blur(40px)',
           borderRadius: '24px',
           display: { base: 'none', md: 'block' },
         }}
       >
-        <Flex
-          mb={6}
-          justify="flex-end"
-          align="center"
-        >
+        <Flex mb={6} justify="flex-end" align="center">
           {/* Search Input on Right */}
           <InputGroup
             size="md"
@@ -134,11 +132,10 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
             w={{ base: 'full', md: 'auto' }}
           >
             <InputLeftElement h="48px">
-              <Icon 
-                as={MaterialIcon} 
-                name="search" 
-                boxSize={4} 
-                color={colorMode === 'light' ? 'gray.400' : 'gray.500'} 
+              <Icon
+                as={FaSearch}
+                color={colorMode === 'light' ? 'gray.400' : 'gray.500'}
+                boxSize={4}
               />
             </InputLeftElement>
             <Input
@@ -151,29 +148,25 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
               variant="filled"
               borderRadius="full"
               focusBorderColor={
-                colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.300`
+                colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400'
               }
               fontSize="sm"
               fontWeight="500"
               placeholder="Cari data..."
-              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              bg={colorMode === 'light' ? 'gray.50' : 'whiteAlpha.50'}
               color={colorMode === 'light' ? 'gray.900' : 'white'}
               _placeholder={{
                 color: colorMode === 'light' ? 'gray.400' : 'gray.500',
               }}
               _hover={{
-                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+                bg: colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.300' : 'whiteAlpha.300',
               }}
               _focus={{
-                bg: colorMode === 'light' ? 'white' : 'gray.600',
+                bg: colorMode === 'light' ? 'white' : 'whiteAlpha.200',
                 borderColor:
-                  colorMode === 'light'
-                    ? `${colorPref}.500`
-                    : `${colorPref}.300`,
+                  colorMode === 'light' ? 'gray.400' : 'whiteAlpha.400',
               }}
             />
           </InputGroup>
@@ -190,14 +183,15 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
                 p={6}
                 borderRadius="2xl"
                 borderWidth="1px"
-                borderColor={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'}
+                borderColor={
+                  colorMode === 'light' ? 'gray.100' : 'whiteAlpha.100'
+                }
                 bg={colorMode === 'light' ? 'white' : 'whiteAlpha.50'}
                 shadow="sm"
                 transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 _hover={{
                   transform: 'translateY(-2px)',
                   shadow: 'lg',
-                  borderColor: colorMode === 'light' ? `${colorPref}.400` : `${colorPref}.500`,
                 }}
                 position="relative"
                 overflow="hidden"
@@ -212,10 +206,16 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
                       py={0.5}
                       borderRadius="full"
                       fontSize="xs"
-                      colorScheme={isDeleted ? 'red' : hasReply ? 'green' : 'yellow'}
+                      colorScheme={
+                        isDeleted ? 'red' : hasReply ? 'green' : 'yellow'
+                      }
                       variant="subtle"
                     >
-                      {isDeleted ? 'Dihapus' : hasReply ? 'Sudah Dibalas' : 'Belum Dibalas'}
+                      {isDeleted
+                        ? 'Dihapus'
+                        : hasReply
+                        ? 'Sudah Dibalas'
+                        : 'Belum Dibalas'}
                     </Badge>
                   </VStack>
                 </Flex>
@@ -253,9 +253,13 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
                             variant="ghost"
                             onClick={() => onViewDetail(ucapan)}
                             bg={
-                              colorMode === 'light' ? 'blue.50' : 'whiteAlpha.200'
+                              colorMode === 'light'
+                                ? 'blue.50'
+                                : 'whiteAlpha.200'
                             }
-                            color={colorMode === 'light' ? 'blue.600' : 'blue.300'}
+                            color={
+                              colorMode === 'light' ? 'blue.600' : 'blue.300'
+                            }
                             _hover={{
                               bg:
                                 colorMode === 'light'

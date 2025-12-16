@@ -49,7 +49,7 @@ const PageCol = ({ children }: { children: ReactNode }) => {
         maxW="100%"
         p={{
           base: '0 16px',
-          x: '0 24px 44px 24px',
+          x: '0 24px 44px 0',
         }}
       >
         {children}

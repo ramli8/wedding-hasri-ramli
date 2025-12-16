@@ -55,10 +55,6 @@ class TamuAPI {
         query = query.eq('hubungan_tamu.nama', filter.hubungan);
       }
 
-      if (filter?.status_undangan) {
-        query = query.eq('status_undangan', filter.status_undangan);
-      }
-
       if (filter?.konfirmasi_kehadiran) {
         query = query.eq('konfirmasi_kehadiran', filter.konfirmasi_kehadiran);
       }
@@ -197,6 +193,77 @@ class TamuAPI {
     }
   }
 
+  /**
+   * Check if nomor_hp or username_instagram already exists
+   * Returns object with duplicate info
+   */
+  async checkDuplicate(
+    nomor_hp?: string,
+    username_instagram?: string,
+    excludeId?: string
+  ): Promise<{
+    isDuplicate: boolean;
+    duplicateField?: 'nomor_hp' | 'username_instagram';
+    duplicateName?: string;
+  }> {
+    try {
+      // Check nomor_hp if provided
+      if (nomor_hp) {
+        let query = this.supabase
+          .from('tamu')
+          .select('id, nama, nomor_hp')
+          .eq('nomor_hp', nomor_hp)
+          .is('deleted_at', null);
+
+        // Exclude current tamu id when editing
+        if (excludeId) {
+          query = query.neq('id', excludeId);
+        }
+
+        const { data: nomorHpData } = await query.maybeSingle();
+
+        if (nomorHpData) {
+          return {
+            isDuplicate: true,
+            duplicateField: 'nomor_hp',
+            duplicateName: nomorHpData.nama,
+          };
+        }
+      }
+
+      // Check username_instagram if provided
+      if (username_instagram) {
+        let query = this.supabase
+          .from('tamu')
+          .select('id, nama, username_instagram')
+          .eq('username_instagram', username_instagram)
+          .is('deleted_at', null);
+
+        // Exclude current tamu id when editing
+        if (excludeId) {
+          query = query.neq('id', excludeId);
+        }
+
+        const { data: instagramData } = await query.maybeSingle();
+
+        if (instagramData) {
+          return {
+            isDuplicate: true,
+            duplicateField: 'username_instagram',
+            duplicateName: instagramData.nama,
+          };
+        }
+      }
+
+      return {
+        isDuplicate: false,
+      };
+    } catch (error: any) {
+      console.error('Error checking duplicate:', error);
+      throw new Error(error.message || 'Gagal memeriksa duplikasi data');
+    }
+  }
+
   // Method untuk membuat tamu baru
   async createTamu(tamuData: CreateTamuInput): Promise<Tamu> {
     try {
@@ -212,11 +279,9 @@ class TamuAPI {
             hubungan_id: tamuData.hubungan_id,
             alamat: tamuData.alamat,
             nomor_hp: tamuData.nomor_hp,
+            username_instagram: tamuData.username_instagram,
             qr_code,
-            status_undangan: 'belum_dikirim',
             konfirmasi_kehadiran: 'belum_konfirmasi',
-            tgl_mulai_resepsi: tamuData.tgl_mulai_resepsi,
-            tgl_akhir_resepsi: tamuData.tgl_akhir_resepsi,
           },
         ])
         .select(
@@ -409,18 +474,20 @@ class TamuAPI {
     }
   }
 
-  // Method untuk update status undangan
+  // Method untuk update status undangan (mark as sent)
   async updateStatusUndangan(
     id: string,
-    status: 'dikirim' | 'belum_dikirim' | 'kadaluarsa'
+    status: 'dikirim' | 'belum_dikirim'
   ): Promise<Tamu> {
     try {
       const { data, error } = await this.supabase
         .from('tamu')
         .update({
-          status_undangan: status,
           ...(status === 'dikirim' && {
             tgl_kirim_undangan: new Date().toISOString(),
+          }),
+          ...(status === 'belum_dikirim' && {
+            tgl_kirim_undangan: null,
           }),
         })
         .eq('id', id)

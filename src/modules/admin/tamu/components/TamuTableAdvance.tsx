@@ -16,7 +16,7 @@ import {
   SimpleGrid,
   Avatar,
 } from '@chakra-ui/react';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaWhatsapp, FaInstagram } from 'react-icons/fa';
 import { ColumnFiltersState } from '@tanstack/react-table';
 import { Tamu } from '../types/Tamu.types';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
@@ -34,6 +34,8 @@ interface TamuTableAdvanceProps {
   onViewDetail?: (tamu: Tamu) => void;
   onQRCodeClick?: (tamu: Tamu) => void;
   onUpdateStatus?: (id: string, status: 'dikirim') => Promise<void>;
+  onSendWhatsApp?: (tamu: Tamu) => void;
+  onSendInstagram?: (tamu: Tamu) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
   headerAction?: React.ReactNode;
@@ -49,6 +51,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
   onViewDetail,
   onQRCodeClick,
   onUpdateStatus,
+  onSendWhatsApp,
+  onSendInstagram,
   onLoadMore,
   hasMore = false,
   headerAction,
@@ -285,7 +289,11 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                         color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
                         noOfLines={1}
                       >
-                        {tamu.nomor_hp}
+                        {tamu.nomor_hp
+                          ? tamu.nomor_hp
+                          : tamu.username_instagram
+                          ? `@${tamu.username_instagram}`
+                          : '-'}
                       </Text>
                     </VStack>
                   </Flex>
@@ -385,6 +393,58 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
                           />
                         </Tooltip>
                       )}
+                      {onSendWhatsApp && tamu.nomor_hp && (
+                        <Tooltip
+                          label="Kirim WhatsApp"
+                          hasArrow
+                          placement="top"
+                        >
+                          <IconButton
+                            aria-label="Kirim WhatsApp"
+                            icon={<Icon as={FaWhatsapp} boxSize={4} />}
+                            size="sm"
+                            borderRadius="md"
+                            variant="ghost"
+                            onClick={() => onSendWhatsApp(tamu)}
+                            color={
+                              colorMode === 'light' ? 'green.600' : 'green.400'
+                            }
+                            _hover={{
+                              bg:
+                                colorMode === 'light'
+                                  ? 'green.50'
+                                  : 'whiteAlpha.200',
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                      {onSendInstagram &&
+                        !tamu.nomor_hp &&
+                        tamu.username_instagram && (
+                          <Tooltip
+                            label="Kirim Instagram DM"
+                            hasArrow
+                            placement="top"
+                          >
+                            <IconButton
+                              aria-label="Kirim Instagram DM"
+                              icon={<Icon as={FaInstagram} boxSize={4} />}
+                              size="sm"
+                              borderRadius="md"
+                              variant="ghost"
+                              onClick={() => onSendInstagram(tamu)}
+                              color={
+                                colorMode === 'light' ? 'pink.600' : 'pink.400'
+                              }
+                              _hover={{
+                                bg:
+                                  colorMode === 'light'
+                                    ? 'pink.50'
+                                    : 'whiteAlpha.200',
+                              }}
+                            />
+                          </Tooltip>
+                        )}
                       <Tooltip label="Edit" hasArrow placement="top">
                         <IconButton
                           aria-label="Edit"

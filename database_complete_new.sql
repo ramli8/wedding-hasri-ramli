@@ -44,14 +44,14 @@ CREATE TABLE IF NOT EXISTS tamu (
   kategori_id UUID NOT NULL REFERENCES kategori_tamu(id),
   hubungan_id UUID NOT NULL REFERENCES hubungan_tamu(id),
   alamat TEXT NOT NULL,
-  nomor_hp VARCHAR(20) UNIQUE NOT NULL,
+  nomor_hp VARCHAR(20) UNIQUE,
+  username_instagram VARCHAR(100),
   qr_code VARCHAR(255) UNIQUE NOT NULL,
-  status_undangan VARCHAR(20) NOT NULL DEFAULT 'belum_dikirim' CHECK (status_undangan IN ('dikirim', 'belum_dikirim', 'kadaluarsa')),
   konfirmasi_kehadiran VARCHAR(30) NOT NULL DEFAULT 'belum_konfirmasi' CHECK (konfirmasi_kehadiran IN ('akan_hadir', 'tidak_hadir', 'belum_konfirmasi')),
   tgl_kirim_undangan TIMESTAMP WITH TIME ZONE,
   tgl_baca_undangan TIMESTAMP WITH TIME ZONE,
-  tgl_mulai_resepsi TIMESTAMP WITH TIME ZONE,
-  tgl_akhir_resepsi TIMESTAMP WITH TIME ZONE,
+  tgl_kirim_cek_qr_code TIMESTAMP WITH TIME ZONE,
+  tgl_baca_cek_qr_code TIMESTAMP WITH TIME ZONE,
   check_in TIMESTAMP WITH TIME ZONE,
   check_out TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -271,16 +271,10 @@ INSERT INTO tamu (
   kategori_id, 
   hubungan_id, 
   alamat, 
-  nomor_hp, 
+  nomor_hp,
+  username_instagram,
   qr_code, 
-  status_undangan, 
-  konfirmasi_kehadiran,
-  tgl_kirim_undangan,
-  tgl_baca_undangan,
-  tgl_mulai_resepsi,
-  tgl_akhir_resepsi,
-  check_in,
-  check_out
+  konfirmasi_kehadiran
 ) VALUES
   -- Tamu Hasri
   (
@@ -289,15 +283,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kuliah'),
     'Jl. Merdeka No. 123, Surabaya',
     '081234567890',
+    'ahmadfauzi',
     '123456',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Eko Prasetyo',
@@ -305,15 +293,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman SMA'),
     'Jl. Diponegoro No. 12, Yogyakarta',
     '085678901234',
+    'ekoprasetyo',
     '567890',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Indah Permata',
@@ -321,15 +303,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Tetangga'),
     'Jl. Kemerdekaan No. 89, Jakarta',
     '089012345678',
+    'indahpermata',
     '901234',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Maya Anggraini',
@@ -337,15 +313,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kerja'),
     'Jl. Pancasila No. 67, Malang',
     '084455667788',
+    'mayaanggraini',
     '445566',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
 
   -- Tamu Ramli
@@ -355,15 +325,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kerja'),
     'Jl. Sudirman No. 45, Jakarta',
     '082345678901',
+    'sitinurhaliza',
     '234567',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Fitri Handayani',
@@ -371,15 +335,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman SD'),
     'Jl. Pahlawan No. 56, Malang',
     '086789012345',
+    'fitrihandayani',
     '678901',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Joko Widodo',
@@ -387,15 +345,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman SMP'),
     'Jl. Proklamasi No. 101, Bandung',
     '081122334455',
+    'jokowidodo',
     '112233',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Nugroho Adi',
@@ -403,15 +355,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Tetangga'),
     'Jl. Bhinneka No. 89, Solo',
     '085566778899',
+    'nugrohoadi',
     '556677',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
 
   -- Tamu Ayah
@@ -421,15 +367,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Lainnya'),
     'Jl. Gatot Subroto No. 78, Bandung',
     '083456789012',
+    'budisantoso',
     '345678',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Gunawan Wijaya',
@@ -437,15 +377,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kerja'),
     'Jl. Veteran No. 34, Solo',
     '087890123456',
+    'gunawanwijaya',
     '789012',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Kartika Sari',
@@ -453,15 +387,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman SMA'),
     'Jl. Indonesia Raya No. 23, Semarang',
     '082233445566',
+    'kartikasari',
     '223344',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Olivia Tan',
@@ -469,15 +397,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kuliah'),
     'Jl. Tunggal Ika No. 12, Surabaya',
     '086677889900',
+    'oliviatan',
     '667788',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
 
   -- Tamu Ibu
@@ -487,15 +409,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Tetangga'),
     'Jl. Ahmad Yani No. 90, Semarang',
     '084567890123',
+    'dewilestari',
     '456789',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Hendra Kusuma',
@@ -503,15 +419,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Teman Kuliah'),
     'Jl. Pemuda No. 67, Surabaya',
     '088901234567',
+    'hendrakusuma',
     '890123',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   ),
   (
     'Lukman Hakim',
@@ -519,15 +429,9 @@ INSERT INTO tamu (
     (SELECT id FROM hubungan WHERE nama = 'Lainnya'),
     'Jl. Garuda No. 45, Yogyakarta',
     '083344556677',
+    'lukmanhakim',
     '334455',
-    'belum_dikirim',
-    'belum_konfirmasi',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    'belum_konfirmasi'
   );
 
 -- ============================================

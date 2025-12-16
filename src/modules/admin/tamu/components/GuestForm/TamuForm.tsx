@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FormControl,
   FormLabel,
@@ -9,9 +9,6 @@ import {
   Textarea,
   Box,
   useColorMode,
-  InputGroup,
-  InputRightElement,
-  Icon,
   Spinner,
   Text,
   Button,
@@ -21,17 +18,16 @@ import {
   PrimaryButton,
   PrimaryOutlineButton,
 } from '@/components/atoms/Buttons/PrimaryButton';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import id from 'date-fns/locale/id';
-import { FaCalendarAlt, FaClock } from 'react-icons/fa';
-import 'react-datepicker/dist/react-datepicker.css';
 import KategoriTamuAPI from '@/modules/admin/kategori_tamu/services/KategoriTamuAPI';
 import HubunganTamuAPI from '@/modules/admin/hubungan_tamu/services/HubunganTamuAPI';
 import { KategoriTamu } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
 import { HubunganTamu } from '@/modules/admin/hubungan_tamu/types/HubunganTamu.types';
-
-// Register locale Indonesia
-registerLocale('id', id);
+import {
+  normalizePhoneNumber,
+  normalizeInstagramUsername,
+  validatePhoneNumber,
+} from '../../utils/phoneUtils';
+import TamuAPI from '../../services/TamuAPI';
 
 interface TamuFormProps {
   tamu?: Tamu;
@@ -54,14 +50,8 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
     hubungan_id: '',
     alamat: '',
     nomor_hp: '',
-    tgl_mulai_resepsi: undefined,
-    tgl_akhir_resepsi: undefined,
+    username_instagram: '',
   });
-
-  // State terpisah untuk DatePicker
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -113,33 +103,25 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
         hubungan_id: tamu.hubungan_id,
         alamat: tamu.alamat || '',
         nomor_hp: tamu.nomor_hp || '',
-        tgl_mulai_resepsi: tamu.tgl_mulai_resepsi
-          ? new Date(tamu.tgl_mulai_resepsi)
-          : undefined,
-        tgl_akhir_resepsi: tamu.tgl_akhir_resepsi
-          ? new Date(tamu.tgl_akhir_resepsi)
-          : undefined,
+        username_instagram: tamu.username_instagram || '',
       });
-
-      // Set initial date/time states
-      if (tamu.tgl_mulai_resepsi) {
-        const start = new Date(tamu.tgl_mulai_resepsi);
-        setSelectedDate(start);
-        setStartTime(start);
-      }
-      if (tamu.tgl_akhir_resepsi) {
-        setEndTime(new Date(tamu.tgl_akhir_resepsi));
-      }
     }
   }, [tamu]);
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!formData.nama.trim()) newErrors.nama = 'Nama wajib diisi';
-    if (!formData.nomor_hp.trim()) newErrors.nomor_hp = 'Nomor HP wajib diisi';
     if (!formData.alamat.trim()) newErrors.alamat = 'Alamat wajib diisi';
     if (!formData.kategori_id) newErrors.kategori_id = 'Kategori wajib dipilih';
     if (!formData.hubungan_id) newErrors.hubungan_id = 'Hubungan wajib dipilih';
+
+    // Validate at least one contact method
+    const hasNomorHp = formData.nomor_hp?.trim();
+    const hasInstagram = formData.username_instagram?.trim();
+    if (!hasNomorHp && !hasInstagram) {
+      newErrors.nomor_hp = 'Minimal salah satu harus diisi';
+      newErrors.username_instagram = 'Minimal salah satu harus diisi';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -152,10 +134,21 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error for the changed field
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
+
+        // If user fills nomor_hp or username_instagram, clear both contact errors
+        if (name === 'nomor_hp' || name === 'username_instagram') {
+          if (value.trim()) {
+            delete newErrors.nomor_hp;
+            delete newErrors.username_instagram;
+          }
+        }
+
         return newErrors;
       });
     }
@@ -167,37 +160,53 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
 
     setLoading(true);
     try {
-      // Combine date and time
-      let finalStart: Date | undefined =
-        typeof formData.tgl_mulai_resepsi === 'string'
-          ? new Date(formData.tgl_mulai_resepsi)
-          : formData.tgl_mulai_resepsi;
-      let finalEnd: Date | undefined =
-        typeof formData.tgl_akhir_resepsi === 'string'
-          ? new Date(formData.tgl_akhir_resepsi)
-          : formData.tgl_akhir_resepsi;
+      // Normalize phone number and instagram username before saving
+      const normalizedPhone = normalizePhoneNumber(formData.nomor_hp);
+      const normalizedInstagram = normalizeInstagramUsername(
+        formData.username_instagram
+      );
 
-      if (selectedDate && startTime) {
-        const start = new Date(selectedDate);
-        start.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-        finalStart = start;
+      // Validate phone number format (minimal 10 digit)
+      const phoneValidationError = validatePhoneNumber(normalizedPhone);
+      if (phoneValidationError) {
+        setErrors((prev) => ({
+          ...prev,
+          nomor_hp: phoneValidationError,
+        }));
+        setLoading(false);
+        return;
       }
 
-      if (selectedDate && endTime) {
-        const end = new Date(selectedDate);
-        end.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-        finalEnd = end;
+      // Check for duplicates
+      const tamuAPI = new TamuAPI();
+      const duplicateCheck = await tamuAPI.checkDuplicate(
+        normalizedPhone,
+        normalizedInstagram,
+        tamu?.id // Exclude current tamu when editing
+      );
+
+      if (duplicateCheck.isDuplicate) {
+        const fieldLabel =
+          duplicateCheck.duplicateField === 'nomor_hp'
+            ? 'Nomor HP'
+            : 'Username Instagram';
+        const errorMessage = `${fieldLabel} sudah digunakan oleh "${duplicateCheck.duplicateName}"`;
+
+        setErrors((prev) => ({
+          ...prev,
+          [duplicateCheck.duplicateField!]: errorMessage,
+        }));
+        setLoading(false);
+        return;
       }
 
-      const dataToSave: any = {
+      const dataToSave: CreateTamuInput | UpdateTamuInput = {
         nama: formData.nama.trim(),
         kategori_id: formData.kategori_id,
         hubungan_id: formData.hubungan_id,
         alamat: formData.alamat.trim(),
-        nomor_hp: formData.nomor_hp.trim(),
-        // Convert dates to ISO string format for proper TIMESTAMP WITH TIME ZONE storage
-        tgl_mulai_resepsi: finalStart ? finalStart.toISOString() : undefined,
-        tgl_akhir_resepsi: finalEnd ? finalEnd.toISOString() : undefined,
+        nomor_hp: normalizedPhone || null,
+        username_instagram: normalizedInstagram || null,
       };
 
       await onSave(dataToSave);
@@ -207,39 +216,6 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
       setLoading(false);
     }
   };
-
-  // Custom Input Component for DatePicker
-  const CustomInput = forwardRef(
-    ({ value, onClick, placeholder, icon }: any, ref: any) => (
-      <InputGroup onClick={onClick}>
-        <Input
-          ref={ref}
-          value={value}
-          readOnly
-          variant="filled"
-          size="lg"
-          bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
-          color={colorMode === 'light' ? 'gray.900' : 'white'}
-          borderRadius="16px"
-          fontSize="md"
-          fontWeight="500"
-          cursor="pointer"
-          _hover={{
-            bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
-          }}
-          _focus={{
-            bg: colorMode === 'light' ? 'white' : 'gray.800',
-            borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
-            boxShadow: 'none',
-          }}
-        />
-        <InputRightElement pointerEvents="none" h="full" mr={2}>
-          <Icon as={icon} color="gray.500" />
-        </InputRightElement>
-      </InputGroup>
-    )
-  );
-  CustomInput.displayName = 'CustomInput';
 
   if (loadingOptions) {
     return (
@@ -392,6 +368,92 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           </FormControl>
         </Stack>
 
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+          <FormControl isInvalid={!!errors.nomor_hp}>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Nomor HP{' '}
+              <Text as="span" fontSize="xs" color="gray.500" fontWeight="400">
+                (minimal salah satu)
+              </Text>
+            </FormLabel>
+            <Input
+              name="nomor_hp"
+              type="tel"
+              placeholder="08123456789"
+              value={formData.nomor_hp || ''}
+              onChange={handleChange}
+              isDisabled={loading}
+              size="lg"
+              variant="filled"
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              borderRadius="16px"
+              fontSize="md"
+              fontWeight="500"
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.800',
+                borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+                boxShadow: 'none',
+              }}
+            />
+            {errors.nomor_hp && (
+              <Box color="red.500" fontSize="sm" mt={1}>
+                {errors.nomor_hp}
+              </Box>
+            )}
+          </FormControl>
+
+          <FormControl isInvalid={!!errors.username_instagram}>
+            <FormLabel
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              mb={3}
+            >
+              Username Instagram{' '}
+              <Text as="span" fontSize="xs" color="gray.500" fontWeight="400">
+                (minimal salah satu)
+              </Text>
+            </FormLabel>
+            <Input
+              name="username_instagram"
+              type="text"
+              placeholder="username"
+              value={formData.username_instagram || ''}
+              onChange={handleChange}
+              isDisabled={loading}
+              size="lg"
+              variant="filled"
+              bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
+              color={colorMode === 'light' ? 'gray.900' : 'white'}
+              borderRadius="16px"
+              fontSize="md"
+              fontWeight="500"
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
+              }}
+              _focus={{
+                bg: colorMode === 'light' ? 'white' : 'gray.800',
+                borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
+                boxShadow: 'none',
+              }}
+            />
+            {errors.username_instagram && (
+              <Box color="red.500" fontSize="sm" mt={1}>
+                {errors.username_instagram}
+              </Box>
+            )}
+          </FormControl>
+        </Stack>
+
         <FormControl isRequired isInvalid={!!errors.alamat}>
           <FormLabel
             fontSize="sm"
@@ -430,117 +492,6 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
             </Box>
           )}
         </FormControl>
-
-        <FormControl isRequired isInvalid={!!errors.nomor_hp}>
-          <FormLabel
-            fontSize="sm"
-            fontWeight="600"
-            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-            mb={3}
-          >
-            Nomor HP
-          </FormLabel>
-          <Input
-            name="nomor_hp"
-            type="tel"
-            value={formData.nomor_hp}
-            onChange={handleChange}
-            isDisabled={loading}
-            size="lg"
-            variant="filled"
-            bg={colorMode === 'light' ? 'gray.50' : 'gray.700'}
-            color={colorMode === 'light' ? 'gray.900' : 'white'}
-            borderRadius="16px"
-            fontSize="md"
-            fontWeight="500"
-            _hover={{
-              bg: colorMode === 'light' ? 'gray.100' : 'gray.600',
-            }}
-            _focus={{
-              bg: colorMode === 'light' ? 'white' : 'gray.800',
-              borderColor: colorMode === 'light' ? 'blue.500' : 'blue.300',
-              boxShadow: 'none',
-            }}
-          />
-          {errors.nomor_hp && (
-            <Box color="red.500" fontSize="sm" mt={1}>
-              {errors.nomor_hp}
-            </Box>
-          )}
-        </FormControl>
-
-        <Stack
-          direction={{ base: 'column', md: 'row' }}
-          spacing={4}
-          align="flex-start"
-        >
-          <FormControl flex={2}>
-            <FormLabel
-              fontSize="sm"
-              fontWeight="600"
-              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-              mb={3}
-            >
-              Tanggal Resepsi
-            </FormLabel>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date: Date) => setSelectedDate(date)}
-              dateFormat="dd MMMM yyyy"
-              locale="id"
-              customInput={
-                <CustomInput placeholder="Pilih Tanggal" icon={FaCalendarAlt} />
-              }
-              wrapperClassName="w-full"
-            />
-          </FormControl>
-
-          <FormControl flex={1}>
-            <FormLabel
-              fontSize="sm"
-              fontWeight="600"
-              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-              mb={3}
-            >
-              Jam Mulai
-            </FormLabel>
-            <DatePicker
-              selected={startTime}
-              onChange={(date: Date) => setStartTime(date)}
-              showTimeSelect
-              showTimeSelectOnly
-              timeIntervals={15}
-              timeCaption="Jam"
-              dateFormat="HH:mm"
-              locale="id"
-              customInput={<CustomInput placeholder="Mulai" icon={FaClock} />}
-              wrapperClassName="w-full"
-            />
-          </FormControl>
-
-          <FormControl flex={1}>
-            <FormLabel
-              fontSize="sm"
-              fontWeight="600"
-              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-              mb={3}
-            >
-              Jam Selesai
-            </FormLabel>
-            <DatePicker
-              selected={endTime}
-              onChange={(date: Date) => setEndTime(date)}
-              showTimeSelect
-              showTimeSelectOnly
-              timeIntervals={15}
-              timeCaption="Jam"
-              dateFormat="HH:mm"
-              locale="id"
-              customInput={<CustomInput placeholder="Selesai" icon={FaClock} />}
-              wrapperClassName="w-full"
-            />
-          </FormControl>
-        </Stack>
 
         <HStack
           spacing={4}

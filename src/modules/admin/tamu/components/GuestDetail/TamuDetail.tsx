@@ -19,7 +19,14 @@ import {
   Icon,
   Flex,
 } from '@chakra-ui/react';
-import { FiUser, FiPhone, FiMapPin, FiCalendar, FiClock, FiCheckCircle } from 'react-icons/fi';
+import {
+  FiUser,
+  FiPhone,
+  FiMapPin,
+  FiCalendar,
+  FiClock,
+  FiCheckCircle,
+} from 'react-icons/fi';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import { Tamu } from '../../types/Tamu.types';
 
@@ -44,45 +51,72 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
     return null;
   }
 
+  // Format: Selasa, 16-12-2025 11:23
+  const formatDateTime = (date: Date | string | undefined) => {
+    if (!date) return null;
+    const d = new Date(date);
+    const days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+    ];
+    const day = days[d.getDay()];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${day}, ${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  };
+
   const getStatusConfig = (status: string) => {
-    const configs: Record<string, { color: string; label: string; bg: string }> = {
-      akan_hadir: { 
-        color: colorMode === 'light' ? 'green.600' : 'green.400', 
+    const configs: Record<
+      string,
+      { color: string; label: string; bg: string }
+    > = {
+      akan_hadir: {
+        color: colorMode === 'light' ? 'green.600' : 'green.400',
         label: 'Akan Hadir',
-        bg: colorMode === 'light' ? 'green.50' : 'green.900'
+        bg: colorMode === 'light' ? 'green.50' : 'green.900',
       },
-      tidak_hadir: { 
-        color: colorMode === 'light' ? 'red.600' : 'red.400', 
+      tidak_hadir: {
+        color: colorMode === 'light' ? 'red.600' : 'red.400',
         label: 'Tidak Hadir',
-        bg: colorMode === 'light' ? 'red.50' : 'red.900'
+        bg: colorMode === 'light' ? 'red.50' : 'red.900',
       },
-      belum_konfirmasi: { 
-        color: colorMode === 'light' ? 'yellow.600' : 'yellow.400', 
+      belum_konfirmasi: {
+        color: colorMode === 'light' ? 'yellow.600' : 'yellow.400',
         label: 'Belum Konfirmasi',
-        bg: colorMode === 'light' ? 'yellow.50' : 'yellow.900'
+        bg: colorMode === 'light' ? 'yellow.50' : 'yellow.900',
       },
-      dikirim: { 
-        color: colorMode === 'light' ? 'blue.600' : 'blue.400', 
+      dikirim: {
+        color: colorMode === 'light' ? 'blue.600' : 'blue.400',
         label: 'Dikirim',
-        bg: colorMode === 'light' ? 'blue.50' : 'blue.900'
+        bg: colorMode === 'light' ? 'blue.50' : 'blue.900',
       },
-      belum_dikirim: { 
-        color: colorMode === 'light' ? 'gray.600' : 'gray.400', 
+      belum_dikirim: {
+        color: colorMode === 'light' ? 'gray.600' : 'gray.400',
         label: 'Belum Dikirim',
-        bg: colorMode === 'light' ? 'gray.50' : 'gray.800'
+        bg: colorMode === 'light' ? 'gray.50' : 'gray.800',
       },
-      kadaluarsa: { 
-        color: colorMode === 'light' ? 'orange.600' : 'orange.400', 
+      kadaluarsa: {
+        color: colorMode === 'light' ? 'orange.600' : 'orange.400',
         label: 'Kadaluarsa',
-        bg: colorMode === 'light' ? 'orange.50' : 'orange.900'
+        bg: colorMode === 'light' ? 'orange.50' : 'orange.900',
       },
     };
 
-    return configs[status] || { 
-      color: colorMode === 'light' ? 'gray.600' : 'gray.400', 
-      label: status,
-      bg: colorMode === 'light' ? 'gray.50' : 'gray.800'
-    };
+    return (
+      configs[status] || {
+        color: colorMode === 'light' ? 'gray.600' : 'gray.400',
+        label: status,
+        bg: colorMode === 'light' ? 'gray.50' : 'gray.800',
+      }
+    );
   };
 
   const renderStatusBadge = (status: string) => {
@@ -115,10 +149,10 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
     <Box>
       <HStack spacing={2} mb={2}>
         {icon && (
-          <Icon 
-            as={icon} 
-            boxSize={4} 
-            color={colorMode === 'light' ? 'gray.500' : 'gray.400'} 
+          <Icon
+            as={icon}
+            boxSize={4}
+            color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
           />
         )}
         <Text
@@ -186,7 +220,9 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                   <HStack spacing={2} mt={1}>
                     <Badge
                       bg={colorMode === 'light' ? 'purple.50' : 'purple.900'}
-                      color={colorMode === 'light' ? 'purple.600' : 'purple.300'}
+                      color={
+                        colorMode === 'light' ? 'purple.600' : 'purple.300'
+                      }
                       px={2}
                       py={0.5}
                       borderRadius="full"
@@ -195,7 +231,11 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                     >
                       {tamu.kategori}
                     </Badge>
-                    <Text fontSize="sm" color={colorMode === 'light' ? 'gray.500' : 'gray.400'} fontWeight="500">
+                    <Text
+                      fontSize="sm"
+                      color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                      fontWeight="500"
+                    >
                       • {tamu.hubungan}
                     </Text>
                   </HStack>
@@ -214,19 +254,25 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }}
                 gap={6}
               >
-                <InfoItem icon={FiPhone} label="Nomor HP" value={tamu.nomor_hp} />
+                <InfoItem
+                  icon={FiPhone}
+                  label="Nomor HP"
+                  value={tamu.nomor_hp}
+                />
                 <InfoItem icon={FiMapPin} label="Alamat" value={tamu.alamat} />
               </Grid>
             </Box>
 
-            <Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'} />
+            <Divider
+              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+            />
 
             {/* Status Section */}
             <Box>
-              <Text 
-                fontSize="sm" 
-                fontWeight="700" 
-                mb={4} 
+              <Text
+                fontSize="sm"
+                fontWeight="700"
+                mb={4}
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
                 textTransform="uppercase"
                 letterSpacing="wide"
@@ -240,7 +286,9 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 <InfoItem
                   icon={FiCheckCircle}
                   label="Status Undangan"
-                  value={renderStatusBadge(tamu.status_undangan)}
+                  value={renderStatusBadge(
+                    tamu.tgl_kirim_undangan ? 'dikirim' : 'belum_dikirim'
+                  )}
                 />
                 <InfoItem
                   icon={FiCheckCircle}
@@ -250,38 +298,26 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
                 <InfoItem
                   icon={FiCalendar}
                   label="Dikirim Pada"
-                  value={
-                    tamu.tgl_kirim_undangan
-                      ? new Date(tamu.tgl_kirim_undangan).toLocaleDateString(
-                          'id-ID',
-                          { day: 'numeric', month: 'long', year: 'numeric' }
-                        )
-                      : null
-                  }
+                  value={formatDateTime(tamu.tgl_kirim_undangan)}
                 />
                 <InfoItem
                   icon={FiCalendar}
                   label="Dibaca Pada"
-                  value={
-                    tamu.tgl_baca_undangan
-                      ? new Date(tamu.tgl_baca_undangan).toLocaleDateString(
-                          'id-ID',
-                          { day: 'numeric', month: 'long', year: 'numeric' }
-                        )
-                      : null
-                  }
+                  value={formatDateTime(tamu.tgl_baca_undangan)}
                 />
               </Grid>
             </Box>
 
-            <Divider borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'} />
+            <Divider
+              borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+            />
 
             {/* Event Info */}
             <Box>
-              <Text 
-                fontSize="sm" 
-                fontWeight="700" 
-                mb={4} 
+              <Text
+                fontSize="sm"
+                fontWeight="700"
+                mb={4}
                 color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
                 textTransform="uppercase"
                 letterSpacing="wide"
@@ -333,13 +369,21 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
             borderRadius="16px"
             fontSize="sm"
             fontWeight="600"
-            bg={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`}
+            bg={
+              colorMode === 'light' ? `${colorPref}.500` : `${colorPref}Dim.500`
+            }
             color="white"
             _hover={{
-              bg: colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.600`,
+              bg:
+                colorMode === 'light'
+                  ? `${colorPref}.600`
+                  : `${colorPref}Dim.600`,
             }}
             _active={{
-              bg: colorMode === 'light' ? `${colorPref}.700` : `${colorPref}Dim.700`,
+              bg:
+                colorMode === 'light'
+                  ? `${colorPref}.700`
+                  : `${colorPref}Dim.700`,
             }}
           >
             Tutup

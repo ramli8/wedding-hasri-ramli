@@ -64,7 +64,9 @@
     "sweetalert2": "^11.26.3",
     "sweetalert2-react-content": "^5.1.0",
     "swr": "^2.1.5",
-    "typescript": "5.0.4"
+    "typescript": "5.0.4",
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
     "@types/locomotive-scroll": "^4.1.0",

@@ -33,7 +33,6 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
       limit = 10,
       kategori,
       hubungan,
-      status_undangan,
       konfirmasi_kehadiran,
       search
     } = req.query as TamuFilter;
@@ -54,11 +53,6 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     // Filter berdasarkan hubungan
     if (hubungan) {
       query = query.eq('hubungan', hubungan);
-    }
-
-    // Filter berdasarkan status undangan
-    if (status_undangan) {
-      query = query.eq('status_undangan', status_undangan);
     }
 
     // Filter berdasarkan konfirmasi kehadiran
@@ -102,14 +96,34 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       kategori_id, 
       hubungan_id, 
       alamat, 
-      nomor_hp, 
-      tgl_mulai_resepsi, 
-      tgl_akhir_resepsi 
+      nomor_hp,
+      username_instagram
     } = req.body as CreateTamuInput;
 
     // Validasi input
-    if (!nama || !kategori_id || !hubungan_id || !alamat || !nomor_hp) {
-      return res.status(400).json({ error: 'Nama, kategori_id, hubungan_id, alamat, dan nomor_hp wajib diisi' });
+    if (!nama || !kategori_id || !hubungan_id || !alamat) {
+      return res.status(400).json({ error: 'Nama, kategori_id, hubungan_id, dan alamat wajib diisi' });
+    }
+
+    // Validasi minimal salah satu kontak harus diisi
+    if (!nomor_hp && !username_instagram) {
+      return res.status(400).json({ error: 'Minimal salah satu harus diisi: Nomor HP atau Username Instagram' });
+    }
+
+    // Validasi format nomor HP (minimal 10 digit)
+    if (nomor_hp) {
+      // Must be all digits
+      if (!/^\d+$/.test(nomor_hp)) {
+        return res.status(400).json({ error: 'Nomor HP harus berisi angka saja' });
+      }
+      // Must be at least 10 digits
+      if (nomor_hp.length < 10) {
+        return res.status(400).json({ error: 'Nomor HP minimal 10 digit' });
+      }
+      // Must be at most 15 digits
+      if (nomor_hp.length > 15) {
+        return res.status(400).json({ error: 'Nomor HP maksimal 15 digit' });
+      }
     }
 
     // Generate 6-digit random QR code
@@ -124,11 +138,9 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
         hubungan_id,
         alamat,
         nomor_hp,
+        username_instagram,
         qr_code,
-        status_undangan: 'belum_dikirim',
-        konfirmasi_kehadiran: 'belum_konfirmasi',
-        tgl_mulai_resepsi,
-        tgl_akhir_resepsi
+        konfirmasi_kehadiran: 'belum_konfirmasi'
       }])
       .select(`
         *,
@@ -176,6 +188,22 @@ async function handlePUT(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { id } = req.query;
     const updates = req.body as UpdateTamuInput;
+
+    // Validasi format nomor HP jika ada (minimal 10 digit)
+    if (updates.nomor_hp) {
+      // Must be all digits
+      if (!/^\d+$/.test(updates.nomor_hp)) {
+        return res.status(400).json({ error: 'Nomor HP harus berisi angka saja' });
+      }
+      // Must be at least 10 digits
+      if (updates.nomor_hp.length < 10) {
+        return res.status(400).json({ error: 'Nomor HP minimal 10 digit' });
+      }
+      // Must be at most 15 digits
+      if (updates.nomor_hp.length > 15) {
+        return res.status(400).json({ error: 'Nomor HP maksimal 15 digit' });
+      }
+    }
 
     // Update di database
     const { data, error } = await supabase

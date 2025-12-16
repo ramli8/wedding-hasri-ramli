@@ -6,15 +6,15 @@ export interface Tamu {
   kategori?: string; // Display name (populated from join)
   hubungan?: string; // Display name (populated from join)
   alamat: string;
-  nomor_hp: string;
+  nomor_hp?: string;
+  username_instagram?: string;
   qr_code: string;
   kode_unik?: string; // Alias for qr_code or separate unique code
-  status_undangan: 'dikirim' | 'belum_dikirim' | 'kadaluarsa';
   konfirmasi_kehadiran: 'akan_hadir' | 'tidak_hadir' | 'belum_konfirmasi';
   tgl_kirim_undangan?: Date;
   tgl_baca_undangan?: Date;
-  tgl_mulai_resepsi?: Date;
-  tgl_akhir_resepsi?: Date;
+  tgl_kirim_cek_qr_code?: Date;
+  tgl_baca_cek_qr_code?: Date;
   check_in?: Date;
   check_out?: Date;
   created_at: Date;
@@ -27,11 +27,9 @@ export interface CreateTamuInput {
   kategori_id: string; // UUID
   hubungan_id: string; // UUID
   alamat: string;
-  nomor_hp: string;
-  status_undangan?: Tamu['status_undangan'];
+  nomor_hp?: string | null;
+  username_instagram?: string | null;
   konfirmasi_kehadiran?: Tamu['konfirmasi_kehadiran'];
-  tgl_mulai_resepsi?: Date | string; // Accept both Date and ISO string
-  tgl_akhir_resepsi?: Date | string; // Accept both Date and ISO string
 }
 
 export interface UpdateTamuInput {
@@ -39,13 +37,13 @@ export interface UpdateTamuInput {
   kategori_id?: string; // UUID
   hubungan_id?: string; // UUID
   alamat?: string;
-  nomor_hp?: string;
-  status_undangan?: Tamu['status_undangan'];
+  nomor_hp?: string | null;
+  username_instagram?: string | null;
   konfirmasi_kehadiran?: Tamu['konfirmasi_kehadiran'];
   tgl_kirim_undangan?: Date | string;
   tgl_baca_undangan?: Date | string;
-  tgl_mulai_resepsi?: Date | string; // Accept both Date and ISO string
-  tgl_akhir_resepsi?: Date | string; // Accept both Date and ISO string
+  tgl_kirim_cek_qr_code?: Date | string;
+  tgl_baca_cek_qr_code?: Date | string;
   check_in?: Date | string;
   check_out?: Date | string;
 }
@@ -63,7 +61,6 @@ export interface TamuApiResponse {
 export interface TamuFilter {
   kategori?: string;
   hubungan?: string;
-  status_undangan?: string;
   konfirmasi_kehadiran?: string;
   search?: string;
   status?: 'all' | 'active' | 'inactive'; // Filter untuk deleted status

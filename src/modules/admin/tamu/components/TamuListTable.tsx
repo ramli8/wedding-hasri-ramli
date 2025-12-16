@@ -246,7 +246,7 @@ const TamuListTable: React.FC<TamuListTableProps> = ({
                           </HStack>
                         </TableBodyCell>
                         <TableBodyCell>
-                          {renderStatusBadge(tamu.status_undangan)}
+                          {renderStatusBadge(tamu.tgl_kirim_undangan ? 'dikirim' : 'belum_dikirim')}
                         </TableBodyCell>
                         <TableBodyCell>
                           {renderStatusBadge(tamu.konfirmasi_kehadiran)}

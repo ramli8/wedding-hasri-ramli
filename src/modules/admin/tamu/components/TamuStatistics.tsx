@@ -33,10 +33,10 @@ const TamuStatistics: React.FC<TamuStatisticsProps> = ({ data }) => {
       (t) => t.konfirmasi_kehadiran === 'belum_konfirmasi'
     ).length;
     const undanganDikirim = data.filter(
-      (t) => t.status_undangan === 'dikirim'
+      (t) => t.tgl_kirim_undangan !== null
     ).length;
     const undanganBelumDikirim = data.filter(
-      (t) => t.status_undangan === 'belum_dikirim'
+      (t) => t.tgl_kirim_undangan === null
     ).length;
 
     return {

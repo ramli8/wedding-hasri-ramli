@@ -284,7 +284,7 @@ const UcapanListPage: NextPageWithLayout = () => {
                         textTransform="uppercase"
                         letterSpacing="0.05em"
                       >
-                        Status Balasan
+                        Filter Status Balasan
                       </Text>
                       <Box
                         overflowX="auto"

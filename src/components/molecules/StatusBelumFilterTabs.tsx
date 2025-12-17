@@ -101,7 +101,8 @@ const StatusBelumFilterTabs: React.FC<StatusBelumFilterTabsProps> = ({
   };
 
   const selectedLabel =
-    STATUS_ITEMS.find((s) => s.id === selectedStatus)?.shortLabel || 'Semua';
+    STATUS_ITEMS.find((s) => s.id === selectedStatus)?.shortLabel ||
+    'Semua Status';
 
   return (
     <Box w="100%">
@@ -137,7 +138,7 @@ const StatusBelumFilterTabs: React.FC<StatusBelumFilterTabsProps> = ({
         >
           <HStack spacing={2}>
             <MaterialIcon name="filter_list" size={16} />
-            <Text>Filter Status: {selectedLabel}</Text>
+            <Text>{selectedLabel}</Text>
           </HStack>
         </Button>
       </Box>

@@ -86,7 +86,13 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="xl"
+      isCentered
+      scrollBehavior="inside"
+    >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
@@ -117,7 +123,10 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                   <Text fontWeight="bold" fontSize="lg">
                     {ucapan.nama}
                   </Text>
-                  <Text fontSize="xs" color={colorMode === 'light' ? 'gray.600' : 'gray.400'}>
+                  <Text
+                    fontSize="xs"
+                    color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+                  >
                     {formatDate(ucapan.created_at)}
                   </Text>
                 </VStack>
@@ -160,14 +169,22 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                       borderRadius="xl"
                       borderWidth="1px"
                       borderColor={
-                        isDeleted 
-                          ? colorMode === 'light' ? 'red.200' : 'red.700'
-                          : colorMode === 'light' ? 'gray.200' : 'gray.700'
+                        isDeleted
+                          ? colorMode === 'light'
+                            ? 'red.200'
+                            : 'red.700'
+                          : colorMode === 'light'
+                          ? 'gray.200'
+                          : 'gray.700'
                       }
                       bg={
                         isDeleted
-                          ? colorMode === 'light' ? 'red.50' : 'red.900'
-                          : colorMode === 'light' ? 'white' : 'gray.800'
+                          ? colorMode === 'light'
+                            ? 'red.50'
+                            : 'red.900'
+                          : colorMode === 'light'
+                          ? 'white'
+                          : 'gray.800'
                       }
                       position="relative"
                       opacity={isDeleted ? 0.7 : 1}
@@ -185,12 +202,22 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                               {reply.nama}
                             </Text>
                             {isAdmin && (
-                              <Badge colorScheme="green" fontSize="10px" px={2} py={0.5}>
+                              <Badge
+                                colorScheme="green"
+                                fontSize="10px"
+                                px={2}
+                                py={0.5}
+                              >
                                 Admin
                               </Badge>
                             )}
                             {isDeleted && (
-                              <Badge colorScheme="red" fontSize="10px" px={2} py={0.5}>
+                              <Badge
+                                colorScheme="red"
+                                fontSize="10px"
+                                px={2}
+                                py={0.5}
+                              >
                                 Dihapus
                               </Badge>
                             )}
@@ -199,7 +226,7 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                             {formatDate(reply.created_at)}
                           </Text>
                         </VStack>
-                        
+
                         {/* Action Buttons for Reply */}
                         {!isDeleted ? (
                           <Tooltip label="Hapus Balasan" hasArrow>
@@ -209,10 +236,13 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                               size="xs"
                               borderRadius="full"
                               variant="ghost"
-                              onClick={() => handleDeleteReply(reply.id, reply.nama)}
+                              onClick={() =>
+                                handleDeleteReply(reply.id, reply.nama)
+                              }
                               colorScheme="red"
                               _hover={{
-                                bg: colorMode === 'light' ? 'red.100' : 'red.900',
+                                bg:
+                                  colorMode === 'light' ? 'red.100' : 'red.900',
                               }}
                             />
                           </Tooltip>
@@ -220,20 +250,30 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
                           <Tooltip label="Pulihkan Balasan" hasArrow>
                             <IconButton
                               aria-label="Pulihkan"
-                              icon={<MaterialIcon name="restore_from_trash" size={16} />}
+                              icon={
+                                <MaterialIcon
+                                  name="restore_from_trash"
+                                  size={16}
+                                />
+                              }
                               size="xs"
                               borderRadius="full"
                               variant="ghost"
-                              onClick={() => handleRestoreReply(reply.id, reply.nama)}
+                              onClick={() =>
+                                handleRestoreReply(reply.id, reply.nama)
+                              }
                               colorScheme="green"
                               _hover={{
-                                bg: colorMode === 'light' ? 'green.100' : 'green.900',
+                                bg:
+                                  colorMode === 'light'
+                                    ? 'green.100'
+                                    : 'green.900',
                               }}
                             />
                           </Tooltip>
                         )}
                       </HStack>
-                      
+
                       <Text
                         fontSize="sm"
                         color={colorMode === 'light' ? 'gray.600' : 'gray.300'}
@@ -251,20 +291,17 @@ const UcapanDetailModal: React.FC<UcapanDetailModalProps> = ({
           </VStack>
         </ModalBody>
 
-        <ModalFooter pb={6} px={6} pt={2}>
-          <Flex justify="center" w="full">
-            <PrimaryButton
-              onClick={onClose}
-              w="auto"
-              borderRadius="full"
-              px={8}
-              h="48px"
-            >
-              <Text fontWeight="700" fontSize="sm">
-                Tutup
-              </Text>
-            </PrimaryButton>
-          </Flex>
+        <ModalFooter pb={6} px={6} pt={4}>
+          <PrimaryButton
+            onClick={onClose}
+            w="full"
+            borderRadius="16px"
+            h="50px"
+          >
+            <Text fontWeight="700" fontSize="sm">
+              Tutup
+            </Text>
+          </PrimaryButton>
         </ModalFooter>
       </ModalContent>
     </Modal>

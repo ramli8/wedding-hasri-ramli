@@ -224,7 +224,7 @@ const RolePermissionsPage: NextPageWithLayout = () => {
                         textTransform="uppercase"
                         letterSpacing="0.05em"
                       >
-                        Role
+                        Filter Role
                       </Text>
                       <Box
                         overflowX="auto"

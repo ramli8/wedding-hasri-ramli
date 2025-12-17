@@ -79,7 +79,13 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside" isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="lg"
+      scrollBehavior="inside"
+      isCentered
+    >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
@@ -119,15 +125,15 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
           </VStack>
         </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter pb={6} px={6} pt={4}>
           <Button
             variant="ghost"
             mr={3}
             onClick={onClose}
             disabled={isSubmitting}
             minW="120px"
-            h="48px"
-            borderRadius="12px"
+            h="50px"
+            borderRadius="16px"
             fontSize="14px"
           >
             Batal
@@ -138,8 +144,8 @@ const UcapanReplyModal: React.FC<UcapanReplyModalProps> = ({
             isLoading={isSubmitting}
             loadingText="Mengirim..."
             minW="120px"
-            h="48px"
-            borderRadius="12px"
+            h="50px"
+            borderRadius="16px"
             fontSize="14px"
           >
             Kirim Balasan

@@ -549,7 +549,7 @@ Hasri & Ramli`;
                         textTransform="uppercase"
                         letterSpacing="0.05em"
                       >
-                        Kategori Tamu
+                        Filter Kategori Tamu
                       </Text>
                       <Box
                         overflowX="auto"
@@ -584,7 +584,7 @@ Hasri & Ramli`;
                         textTransform="uppercase"
                         letterSpacing="0.05em"
                       >
-                        Status Undangan
+                        Filter Status Undangan
                       </Text>
                       <Box
                         overflowX="auto"

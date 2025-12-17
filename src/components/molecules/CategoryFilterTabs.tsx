@@ -84,7 +84,7 @@ const CategoryFilterTabs: React.FC<CategoryFilterTabsProps> = ({
         >
           <HStack spacing={2}>
             <MaterialIcon name="filter_list" size={16} />
-            <Text>Filter Kategori: {selectedCategoryName}</Text>
+            <Text>{selectedCategoryName}</Text>
           </HStack>
         </Button>
       </Box>

@@ -14,10 +14,7 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { Tamu, CreateTamuInput, UpdateTamuInput } from '../../types/Tamu.types';
-import {
-  PrimaryButton,
-  PrimaryOutlineButton,
-} from '@/components/atoms/Buttons/PrimaryButton';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import KategoriTamuAPI from '@/modules/admin/kategori_tamu/services/KategoriTamuAPI';
 import HubunganTamuAPI from '@/modules/admin/hubungan_tamu/services/HubunganTamuAPI';
 import { KategoriTamu } from '@/modules/admin/kategori_tamu/types/KategoriTamu.types';
@@ -33,9 +30,15 @@ interface TamuFormProps {
   tamu?: Tamu;
   onSave: (data: CreateTamuInput | UpdateTamuInput) => void;
   onCancel: () => void;
+  isModal?: boolean;
 }
 
-const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
+const TamuForm: React.FC<TamuFormProps> = ({
+  tamu,
+  onSave,
+  onCancel,
+  isModal = false,
+}) => {
   const { colorMode } = useColorMode();
 
   // State for categories and relationships
@@ -229,7 +232,7 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
   }
 
   return (
-    <Box as="form" onSubmit={handleSubmit}>
+    <Box as="form" id="tamu-form" onSubmit={handleSubmit}>
       <Stack spacing={5}>
         <FormControl isRequired isInvalid={!!errors.nama}>
           <FormLabel
@@ -493,41 +496,43 @@ const TamuForm: React.FC<TamuFormProps> = ({ tamu, onSave, onCancel }) => {
           )}
         </FormControl>
 
-        <HStack
-          spacing={4}
-          justify="flex-end"
-          pt={4}
-          borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
-        >
-          <Button
-            onClick={onCancel}
-            isDisabled={loading}
-            variant="ghost"
-            h="50px"
-            px={8}
-            borderRadius="16px"
-            fontSize="sm"
-            fontWeight="600"
-            color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
-            _hover={{
-              bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
-            }}
+        {!isModal && (
+          <HStack
+            spacing={4}
+            justify="flex-end"
+            pt={4}
+            borderTop="1px solid"
+            borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
           >
-            Batal
-          </Button>
-          <PrimaryButton
-            type="submit"
-            isLoading={loading}
-            h="50px"
-            px={8}
-            borderRadius="16px"
-            fontSize="sm"
-            fontWeight="600"
-          >
-            {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
-          </PrimaryButton>
-        </HStack>
+            <Button
+              onClick={onCancel}
+              isDisabled={loading}
+              variant="ghost"
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
+            >
+              Batal
+            </Button>
+            <PrimaryButton
+              type="submit"
+              isLoading={loading}
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+            >
+              {isEdit ? 'Simpan Perubahan' : 'Tambah Data'}
+            </PrimaryButton>
+          </HStack>
+        )}
       </Stack>
     </Box>
   );

@@ -5,16 +5,19 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  ModalFooter,
   ModalCloseButton,
   useColorMode,
   HStack,
   Text,
   Badge,
+  Button,
 } from '@chakra-ui/react';
 import { Tamu } from '../../types/Tamu.types';
 import TamuForm from './TamuForm';
 import { useTamu } from '../../utils/hooks/useTamu';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
+import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 
 interface TamuFormModalProps {
   isOpen: boolean;
@@ -92,13 +95,44 @@ const TamuFormModal: React.FC<TamuFormModalProps> = ({
           </HStack>
         </ModalHeader>
         <ModalCloseButton top={6} right={6} />
-        <ModalBody py={4} px={6}>
+        <ModalBody py={6} px={6}>
           <TamuForm
             tamu={tamu || undefined}
             onSave={handleSave}
             onCancel={onClose}
+            isModal={true}
           />
         </ModalBody>
+
+        <ModalFooter pb={6} px={6} pt={4}>
+          <HStack spacing={3} width="full" justify="flex-end">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              h="50px"
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
+            >
+              Batal
+            </Button>
+            <PrimaryButton
+              type="submit"
+              form="tamu-form" // Connects to the form ID in TamuForm
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              fontSize="sm"
+              fontWeight="600"
+            >
+              {tamu ? 'Simpan Perubahan' : 'Tambah Data'}
+            </PrimaryButton>
+          </HStack>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

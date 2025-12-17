@@ -37,63 +37,63 @@ const SidebarItem = ({
     >
       <Flex
         alignItems="center"
-        h="44px"
-        my="3px"
-        px="14px"
-        borderRadius="10px"
-        fontSize="15px"
+        h="42px" // Slightly reduced height for tighter look
+        my="4px" // Slightly more vertical spacing between items
+        px="12px"
+        mx="8px" // Add horizontal margin for "floating" feel
+        borderRadius="12px" // Softer border radius
+        fontSize="14px"
         color={
           isActive
             ? colorMode === 'light'
-              ? `${colorPref}.600`
-              : `${colorPref}.300`
+              ? `${colorPref}.700` // Use theme darken color
+              : `${colorPref}Dim.300` // Dark mode active text (Light Pastel)
             : colorMode === 'light'
-            ? 'gray.600'
+            ? 'gray.700'
             : 'gray.400'
         }
         bg={
           isActive
             ? colorMode === 'light'
-              ? `${colorPref}.50`
-              : `whiteAlpha.100`
+              ? `${colorPref}.50` // Use theme pastel background
+              : `${colorPref}Dim.900` // Dark mode active background (Dark Tint)
             : 'transparent'
         }
         fontWeight={isActive ? '600' : '500'}
-        transition="all 0.15s ease"
+        transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
         cursor="pointer"
         _hover={{
           bg: isActive
             ? colorMode === 'light'
               ? `${colorPref}.100`
-              : 'whiteAlpha.150'
+              : `${colorPref}Dim.800`
             : colorMode === 'light'
             ? 'gray.50'
             : 'whiteAlpha.50',
           color: isActive
             ? colorMode === 'light'
-              ? `${colorPref}.700`
-              : `${colorPref}.200`
+              ? `${colorPref}.800`
+              : `${colorPref}Dim.200`
             : colorMode === 'light'
             ? 'gray.900'
             : 'white',
+          transform: 'translateX(2px)', // Subtle movement on hover
         }}
       >
         {/* Icon */}
         <Flex
           justifyContent="center"
           alignItems="center"
-          w="22px"
-          h="22px"
-          mr="14px"
+          w="20px"
+          h="20px"
+          mr="12px"
           flexShrink={0}
           color="inherit"
         >
-          <MaterialIcon
-            name={menuItem.icon}
-            fill={isActive ? 1 : 0}
-            weight={isActive ? 500 : 400}
-            variant="rounded"
-            size={22}
+          <Box
+            as={menuItem.icon}
+            size="20px"
+            strokeWidth={isActive ? 2.5 : 2}
           />
         </Flex>
 
@@ -105,17 +105,6 @@ const SidebarItem = ({
         >
           {t(`${menuItem.name}.title`)}
         </Text>
-
-        {/* Active Indicator */}
-        {isActive && (
-          <Box
-            w="4px"
-            h="4px"
-            borderRadius="full"
-            bg={colorMode === 'light' ? `${colorPref}.500` : `${colorPref}.400`}
-            ml="auto"
-          />
-        )}
       </Flex>
     </Link>
   );

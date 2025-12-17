@@ -102,12 +102,13 @@
 }
 
 /* Dark mode styles */
-.dark .swal-modern-cancel-button {
+/* Dark mode styles */
+.swal-modern-popup.dark .swal-modern-cancel-button {
   color: #a0aec0 !important;
   border-color: #4a5568 !important;
 }
 
-.dark .swal-modern-cancel-button:hover {
+.swal-modern-popup.dark .swal-modern-cancel-button:hover {
   background-color: #2d3748 !important;
   color: #e2e8f0 !important;
   border-color: #718096 !important;
@@ -120,7 +121,11 @@
 
 /* Improve text styling */
 .swal2-html-container {
-  color: #718096 !important;
+  color: #4a5568 !important; /* Gray 600 for light mode */
   font-size: 0.875rem !important;
   margin-top: 0 !important;
+}
+
+.swal-modern-popup.dark .swal2-html-container {
+  color: #ebebeb !important; /* Gray 100 for dark mode */
 }

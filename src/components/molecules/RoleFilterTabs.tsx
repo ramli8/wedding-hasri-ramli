@@ -40,11 +40,16 @@ const RoleFilterTabs: React.FC<RoleFilterTabsProps> = ({
   const inactiveColor = colorMode === 'light' ? 'gray.500' : 'gray.400';
 
   const tabs: RoleTab[] = [
-    { id: '', label: 'Semua Role', count: roles.reduce((sum, r) => sum + r.count, 0) },
+    {
+      id: '',
+      label: 'Semua Role',
+      count: roles.reduce((sum, r) => sum + r.count, 0),
+    },
     ...roles,
   ];
 
-  const selectedRoleName = tabs.find((t) => t.id === selectedRoleId)?.label || 'Semua Role';
+  const selectedRoleName =
+    tabs.find((t) => t.id === selectedRoleId)?.label || 'Semua Role';
 
   return (
     <Box w="100%">
@@ -72,15 +77,15 @@ const RoleFilterTabs: React.FC<RoleFilterTabsProps> = ({
           fontWeight="600"
           fontSize="sm"
           rightIcon={
-            <MaterialIcon 
-              name={isOpen ? 'expand_less' : 'expand_more'} 
-              size={18} 
+            <MaterialIcon
+              name={isOpen ? 'expand_less' : 'expand_more'}
+              size={18}
             />
           }
         >
           <HStack spacing={2}>
             <MaterialIcon name="filter_list" size={16} />
-            <Text>Filter Role: {selectedRoleName}</Text>
+            <Text>{selectedRoleName}</Text>
           </HStack>
         </Button>
       </Box>
@@ -102,7 +107,8 @@ const RoleFilterTabs: React.FC<RoleFilterTabsProps> = ({
                 height: '4px',
               },
               '&::-webkit-scrollbar-thumb': {
-                background: colorMode === 'light' ? 'gray.300' : 'whiteAlpha.300',
+                background:
+                  colorMode === 'light' ? 'gray.300' : 'whiteAlpha.300',
                 borderRadius: 'full',
               },
             }}

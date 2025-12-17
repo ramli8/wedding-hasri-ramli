@@ -7,33 +7,46 @@
  **/
 
 import { MenuItem } from '@/types/menu-item';
+import {
+  FiHome,
+  FiLogIn,
+  FiLogOut,
+  FiUsers,
+  FiMessageSquare,
+  FiGrid,
+  FiLink,
+  FiUser,
+  FiKey,
+  FiShield,
+  FiSettings,
+} from 'react-icons/fi';
 
 // Transaksi Section - Main operational menus
 const menuItem: Array<MenuItem> = [
   {
     name: 'dashboard',
     url: '/admin/dashboard',
-    icon: 'space_dashboard', // Modern dashboard icon
+    icon: FiHome,
   },
   {
     name: 'checkin',
     url: '/admin/checkin',
-    icon: 'login', // Clean login/checkin icon
+    icon: FiLogIn,
   },
   {
     name: 'checkout',
     url: '/admin/checkout',
-    icon: 'logout', // Clean logout/checkout icon
+    icon: FiLogOut,
   },
   {
     name: 'tamu',
     url: '/admin/tamu',
-    icon: 'group', // Clean people icon
+    icon: FiUsers,
   },
   {
     name: 'ucapan',
     url: '/admin/ucapan',
-    icon: 'chat_bubble', // Clean message icon
+    icon: FiMessageSquare,
   },
 ];
 
@@ -42,32 +55,32 @@ const menuItemMaster: Array<MenuItem> = [
   {
     name: 'kategori_tamu',
     url: '/admin/kategori_tamu',
-    icon: 'category', // Category icon
+    icon: FiGrid,
   },
   {
     name: 'hubungan_tamu',
     url: '/admin/hubungan_tamu',
-    icon: 'hub', // Connection/hub icon
+    icon: FiLink,
   },
   {
     name: 'users',
     url: '/admin/users',
-    icon: 'person', // Clean user icon
+    icon: FiUser,
   },
   {
     name: 'permissions',
     url: '/admin/role_permissions',
-    icon: 'key', // Permission/key icon
+    icon: FiKey,
   },
   {
     name: 'roles',
     url: '/admin/roles',
-    icon: 'shield', // Role/shield icon
+    icon: FiShield,
   },
   {
     name: 'personalisasi',
     url: '/admin/personalisasi',
-    icon: 'tune', // Settings/tune icon
+    icon: FiSettings,
   },
 ];
 

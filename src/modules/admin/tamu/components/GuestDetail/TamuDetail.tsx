@@ -247,7 +247,7 @@ const TamuDetail: React.FC<TamuDetailProps> = ({
         </ModalHeader>
         <ModalCloseButton top={6} right={6} />
 
-        <ModalBody py={4} px={6}>
+        <ModalBody py={6} px={6}>
           <VStack spacing={6} align="stretch">
             {/* Contact Info */}
             <Box>

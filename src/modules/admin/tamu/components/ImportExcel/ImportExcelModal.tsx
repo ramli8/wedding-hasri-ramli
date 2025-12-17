@@ -5,6 +5,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  ModalFooter,
   ModalCloseButton,
   VStack,
   Box,
@@ -593,20 +594,29 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="xl"
+      isCentered
+      scrollBehavior="inside"
+    >
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
       <ModalContent
         bg={colorMode === 'light' ? 'white' : 'gray.800'}
         borderRadius="24px"
         boxShadow="2xl"
         maxW="600px"
+        mx={4}
+        p={2}
       >
         <ModalHeader
-          fontSize="2xl"
+          fontSize="xl"
           fontWeight="700"
           color={colorMode === 'light' ? 'gray.900' : 'white'}
-          pt={8}
-          px={8}
+          pt={6}
+          pb={2}
+          px={6}
         >
           Import Data Tamu dari Excel
         </ModalHeader>
@@ -618,7 +628,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
             bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
           }}
         />
-        <ModalBody px={8} pb={8}>
+        <ModalBody py={6} px={6}>
           <VStack spacing={6} align="stretch">
             {/* Download Template Section */}
             <Box>
@@ -799,32 +809,36 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
                 <Text fontSize="sm">{success}</Text>
               </Alert>
             )}
-
-            {/* Action Buttons */}
-            <HStack spacing={4} justify="flex-end" pt={4}>
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                h="50px"
-                px={8}
-                borderRadius="16px"
-                isDisabled={loading}
-              >
-                Batal
-              </Button>
-              <PrimaryButton
-                onClick={handleUpload}
-                isLoading={loading}
-                isDisabled={!selectedFile || loading}
-                h="50px"
-                px={8}
-                borderRadius="16px"
-              >
-                Import Data
-              </PrimaryButton>
-            </HStack>
           </VStack>
         </ModalBody>
+        <ModalFooter pb={6} px={6} pt={4}>
+          <HStack spacing={4} justify="flex-end" w="full">
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              h="50px"
+              px={8}
+              borderRadius="16px"
+              isDisabled={loading}
+              color={colorMode === 'light' ? 'gray.600' : 'gray.400'}
+              _hover={{
+                bg: colorMode === 'light' ? 'gray.100' : 'gray.700',
+              }}
+            >
+              Batal
+            </Button>
+            <PrimaryButton
+              onClick={handleUpload}
+              isLoading={loading}
+              isDisabled={!selectedFile || loading}
+              h="50px"
+              px={8}
+              borderRadius="16px"
+            >
+              Import Data
+            </PrimaryButton>
+          </HStack>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

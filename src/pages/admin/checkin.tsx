@@ -206,7 +206,7 @@ const CheckInPage = () => {
               {/* Camera Scanner Card */}
               <Box
                 bg={bg}
-                borderRadius="xl"
+                borderRadius="24px"
                 overflow="hidden"
                 boxShadow="lg"
                 borderWidth="1px"
@@ -333,7 +333,7 @@ const CheckInPage = () => {
               <Box
                 bg={colorMode === 'light' ? 'white' : 'gray.800'}
                 w={{ base: '90%', md: '480px' }}
-                borderRadius="2xl"
+                borderRadius="24px"
                 overflow="hidden"
                 boxShadow="2xl"
                 transform="scale(1)"

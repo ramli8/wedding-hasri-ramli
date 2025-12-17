@@ -5,7 +5,6 @@ import {
   Text,
   VStack,
   useColorMode,
-  HStack,
   useToast,
   Modal,
   ModalOverlay,
@@ -13,14 +12,14 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
-  ModalFooter,
   Avatar,
   Button,
   Divider,
   useDisclosure,
+  Icon,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { MaterialIcon } from '@/components/atoms/MaterialIcon';
+import { FiUser, FiLogOut, FiRepeat, FiCheckCircle } from 'react-icons/fi';
 import { menuItem, menuItemMaster, menuItemInsights } from '@/data/menu';
 import { MenuItem } from '@/types/menu-item';
 import AccountInfoContext from '@/providers/AccountInfoProvider';
@@ -36,7 +35,9 @@ const BottomNavigation = () => {
   const accountInfo = useContext(AccountInfoContext);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedRole, setSelectedRole] = useState(accountInfo?.activeRole || '');
+  const [selectedRole, setSelectedRole] = useState(
+    accountInfo?.activeRole || ''
+  );
 
   // Update selectedRole when modal opens to reflect current active role
   const handleOpenModal = () => {
@@ -118,7 +119,9 @@ const BottomNavigation = () => {
 
   // All menu items combined
   const allMenuItems = [
-    ...menuItem.filter(({ isShown }) => !isShown || isShown(accountInfo)).filter((item) => hasAccess(item.url)),
+    ...menuItem
+      .filter(({ isShown }) => !isShown || isShown(accountInfo))
+      .filter((item) => hasAccess(item.url)),
     ...menuItemMaster.filter((item) => hasAccess(item.url)),
     ...menuItemInsights.filter((item) => hasAccess(item.url)),
   ];
@@ -136,7 +139,11 @@ const BottomNavigation = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('active_role_id', selectedRole);
     }
-    toast({ title: 'Role berhasil diganti', status: 'success', duration: 2000 });
+    toast({
+      title: 'Role berhasil diganti',
+      status: 'success',
+      duration: 2000,
+    });
     onClose();
     window.location.href = '/admin/dashboard';
   };
@@ -151,26 +158,25 @@ const BottomNavigation = () => {
     }
   };
 
-  const activeRoleName = accountInfo?.role?.find(r => r.id === accountInfo?.activeRole)?.name || 'Role';
+  const activeRoleName =
+    accountInfo?.role?.find((r) => r.id === accountInfo?.activeRole)?.name ||
+    'Role';
 
   const NavItem = ({ item }: { item: MenuItem }) => {
     const active = isActive(item.url);
-    
+
     // Dynamic colors based on theme - Subtle background
-    const activeBg = colorMode === 'light' 
-      ? `${colorPref}.50`
-      : `${colorPref}Dim.900`;
-    
-    const activeIconColor = colorMode === 'light' 
-      ? `${colorPref}.600`
-      : `${colorPref}Dim.300`;
-    
-    const activeTextColor = colorMode === 'light' 
-      ? `${colorPref}.700`
-      : `${colorPref}Dim.200`;
-    
+    const activeBg =
+      colorMode === 'light' ? `${colorPref}.50` : `${colorPref}Dim.900`;
+
+    const activeIconColor =
+      colorMode === 'light' ? `${colorPref}.600` : `${colorPref}Dim.300`;
+
+    const activeTextColor =
+      colorMode === 'light' ? `${colorPref}.700` : `${colorPref}Dim.200`;
+
     const inactiveColor = colorMode === 'light' ? 'gray.500' : 'gray.400';
-    
+
     return (
       <Flex
         direction="column"
@@ -196,23 +202,25 @@ const BottomNavigation = () => {
           bg={active ? activeBg : 'transparent'}
           transition="all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
           transform={active ? 'scale(1)' : 'scale(0.92)'}
-          boxShadow={active 
-            ? colorMode === 'light'
-              ? `0 2px 8px var(--chakra-colors-${colorPref}-100)`
-              : `0 2px 8px rgba(0, 0, 0, 0.3)`
-            : 'none'
+          boxShadow={
+            active
+              ? colorMode === 'light'
+                ? `0 2px 8px var(--chakra-colors-${colorPref}-100)`
+                : `0 2px 8px rgba(0, 0, 0, 0.3)`
+              : 'none'
           }
           _hover={{
             transform: active ? 'scale(1.05)' : 'scale(0.98)',
           }}
         >
-          <MaterialIcon
-            name={item.icon}
-            size={24}
+          {/* Use Chakra Icon component passing the icon component from item.icon */}
+          <Icon
+            as={item.icon}
+            boxSize={6}
             color={active ? activeIconColor : inactiveColor}
           />
         </Box>
-        
+
         <Text
           fontSize="10px"
           fontWeight={active ? '700' : '500'}
@@ -240,10 +248,15 @@ const BottomNavigation = () => {
         bg={colorMode === 'light' ? 'gray.50' : '#222222'}
         borderTopRadius="24px"
         borderTop="1px solid"
-        borderColor={colorMode === 'light' ? 'rgba(229, 231, 235, 0.6)' : 'rgba(55, 65, 81, 0.4)'}
-        boxShadow={colorMode === 'light' 
-          ? '0 -1px 2px rgba(0, 0, 0, 0.03), 0 -4px 16px rgba(0, 0, 0, 0.04)' 
-          : '0 -1px 2px rgba(0, 0, 0, 0.2), 0 -4px 16px rgba(0, 0, 0, 0.3)'
+        borderColor={
+          colorMode === 'light'
+            ? 'rgba(229, 231, 235, 0.6)'
+            : 'rgba(55, 65, 81, 0.4)'
+        }
+        boxShadow={
+          colorMode === 'light'
+            ? '0 -1px 2px rgba(0, 0, 0, 0.03), 0 -4px 16px rgba(0, 0, 0, 0.04)'
+            : '0 -1px 2px rgba(0, 0, 0, 0.2), 0 -4px 16px rgba(0, 0, 0, 0.3)'
         }
         pb="env(safe-area-inset-bottom)"
       >
@@ -272,7 +285,7 @@ const BottomNavigation = () => {
             {allMenuItems.map((item, index) => (
               <NavItem key={index} item={item} />
             ))}
-            
+
             {/* Profile Menu Item - Pill Design */}
             <Flex
               direction="column"
@@ -302,13 +315,13 @@ const BottomNavigation = () => {
                   transform: 'scale(0.98)',
                 }}
               >
-                <MaterialIcon
-                  name="account_circle"
-                  size={24}
+                <Icon
+                  as={FiUser}
+                  boxSize={6}
                   color={colorMode === 'light' ? '#6B7280' : '#9CA3AF'}
                 />
               </Box>
-              
+
               <Text
                 fontSize="10px"
                 fontWeight="500"
@@ -339,13 +352,20 @@ const BottomNavigation = () => {
                 name={accountInfo?.name}
                 bgGradient="linear(to-r, blue.400, purple.500)"
                 color="white"
-                icon={<MaterialIcon name="person" size={40} />}
+                icon={<Icon as={FiUser} boxSize={10} />}
               />
               <VStack spacing={0}>
-                <Text fontSize="lg" fontWeight="bold" color={colorMode === 'light' ? 'gray.800' : 'white'}>
+                <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  color={colorMode === 'light' ? 'gray.800' : 'white'}
+                >
                   {accountInfo?.name || 'User'}
                 </Text>
-                <Text fontSize="sm" color={colorMode === 'light' ? 'gray.500' : 'gray.400'}>
+                <Text
+                  fontSize="sm"
+                  color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                >
                   {activeRoleName}
                 </Text>
               </VStack>
@@ -356,15 +376,21 @@ const BottomNavigation = () => {
             {/* Role Selector */}
             {accountInfo?.role && accountInfo.role.length > 1 && (
               <Box mb={4}>
-                <Text fontSize="sm" fontWeight="600" mb={2} color={colorMode === 'light' ? 'gray.700' : 'gray.300'}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="600"
+                  mb={2}
+                  color={colorMode === 'light' ? 'gray.700' : 'gray.300'}
+                >
                   Ganti Role:
                 </Text>
                 <VStack spacing={2} align="stretch">
                   {accountInfo.role.map((role) => {
                     const isActive = role.id === selectedRole;
-                    const activeColor = colorMode === 'light'
-                      ? `var(--chakra-colors-${colorPref}-600)`
-                      : `var(--chakra-colors-${colorPref}Dim-200)`;
+                    const activeColor =
+                      colorMode === 'light'
+                        ? `var(--chakra-colors-${colorPref}-600)`
+                        : `var(--chakra-colors-${colorPref}Dim-200)`;
 
                     return (
                       <Box
@@ -374,36 +400,53 @@ const BottomNavigation = () => {
                         px={4}
                         py={3}
                         borderRadius="md"
-                        bg={isActive
-                          ? (colorMode === 'light' ? `${colorPref}.50` : `${colorPref}Dim.900`)
-                          : 'transparent'
+                        bg={
+                          isActive
+                            ? colorMode === 'light'
+                              ? `${colorPref}.50`
+                              : `${colorPref}Dim.900`
+                            : 'transparent'
                         }
                         border="1px solid"
-                        borderColor={isActive
-                          ? activeColor
-                          : (colorMode === 'light' ? 'gray.300' : 'gray.600')
+                        borderColor={
+                          isActive
+                            ? activeColor
+                            : colorMode === 'light'
+                            ? 'gray.300'
+                            : 'gray.600'
                         }
                         transition="all 0.2s"
                         _hover={{
                           borderColor: activeColor,
                           bg: isActive
-                            ? (colorMode === 'light' ? `${colorPref}.50` : `${colorPref}Dim.900`)
-                            : (colorMode === 'light' ? 'gray.100' : 'gray.700'),
+                            ? colorMode === 'light'
+                              ? `${colorPref}.50`
+                              : `${colorPref}Dim.900`
+                            : colorMode === 'light'
+                            ? 'gray.100'
+                            : 'gray.700',
                         }}
                       >
                         <Flex align="center" justify="space-between">
                           <Text
                             fontSize="sm"
                             fontWeight={isActive ? '600' : '500'}
-                            color={isActive
-                              ? activeColor
-                              : (colorMode === 'light' ? 'gray.700' : 'gray.300')
+                            color={
+                              isActive
+                                ? activeColor
+                                : colorMode === 'light'
+                                ? 'gray.700'
+                                : 'gray.300'
                             }
                           >
                             {role.name}
                           </Text>
                           {isActive && (
-                            <MaterialIcon name="check_circle" size={20} color={activeColor} />
+                            <Icon
+                              as={FiCheckCircle}
+                              boxSize={5}
+                              color={activeColor}
+                            />
                           )}
                         </Flex>
                       </Box>
@@ -420,7 +463,7 @@ const BottomNavigation = () => {
                   width="100%"
                   colorScheme={colorPref}
                   onClick={handleSwitchRole}
-                  leftIcon={<MaterialIcon name="swap_horiz" size={18} />}
+                  leftIcon={<Icon as={FiRepeat} boxSize={4} />}
                 >
                   Ganti Role
                 </Button>
@@ -430,7 +473,7 @@ const BottomNavigation = () => {
                 variant="ghost"
                 color="red.500"
                 onClick={handleLogout}
-                leftIcon={<MaterialIcon name="logout" size={18} />}
+                leftIcon={<Icon as={FiLogOut} boxSize={4} />}
                 _hover={{
                   bg: 'red.50',
                   color: 'red.600',

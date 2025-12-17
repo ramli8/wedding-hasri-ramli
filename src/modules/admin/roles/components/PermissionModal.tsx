@@ -105,15 +105,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
         boxShadow="xl"
         p={2}
       >
-        <ModalHeader
-          fontSize="xl"
-          fontWeight="700"
-          pt={6}
-          pb={4}
-          px={6}
-          borderBottom={selectedUrls.length > 0 ? '1px solid' : 'none'}
-          borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
-        >
+        <ModalHeader fontSize="xl" fontWeight="700" pt={6} pb={2} px={6}>
           <VStack align="start" spacing={1}>
             <Text>Kelola Permissions</Text>
             <HStack>
@@ -267,15 +259,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
           )}
         </ModalBody>
 
-        <ModalFooter
-          borderTop="1px solid"
-          borderColor={colorMode === 'light' ? 'gray.100' : 'gray.700'}
-          pb={{ base: 6, md: 6 }}
-          px={6}
-          pt={4}
-          bg={colorMode === 'light' ? 'white' : 'gray.800'}
-          borderRadius={{ base: 0, md: '0 0 24px 24px' }}
-        >
+        <ModalFooter pb={6} px={6} pt={4}>
           <HStack spacing={3} width="full" justify="flex-end">
             <Button
               variant="ghost"

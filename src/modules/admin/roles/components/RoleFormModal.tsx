@@ -129,7 +129,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({
           </HStack>
         </ModalHeader>
         <ModalCloseButton top={6} right={6} />
-        <ModalBody py={4} px={6}>
+        <ModalBody py={6} px={6}>
           <Box as="form" id="role-form" onSubmit={handleSubmit}>
             <VStack spacing={6}>
               <FormControl isRequired>

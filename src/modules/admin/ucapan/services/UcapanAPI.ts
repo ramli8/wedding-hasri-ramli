@@ -1,5 +1,9 @@
 import supabase from '@/lib/supabaseClient';
-import { Ucapan, UcapanWithReplies, CreateUcapanData } from '../types/Ucapan.types';
+import {
+  Ucapan,
+  UcapanWithReplies,
+  CreateUcapanData,
+} from '../types/Ucapan.types';
 
 export interface UcapanApiResponse {
   data: UcapanWithReplies[];
@@ -16,9 +20,9 @@ class UcapanAPI {
    * Get all ucapan with replies (threaded), including soft-deleted
    */
   async getUcapan(
-    page?: number, 
+    page?: number,
     limit?: number,
-    filters?: { status?: 'all' | 'active' | 'inactive' }
+    filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
   ): Promise<UcapanApiResponse> {
     try {
       // Get all parent messages (where parent_id is null), including deleted
@@ -34,6 +38,13 @@ class UcapanAPI {
         query = query.is('deleted_at', null);
       } else if (filters?.status === 'inactive') {
         query = query.not('deleted_at', 'is', null);
+      }
+
+      // Apply search filter
+      if (filters?.search) {
+        query = query.or(
+          `nama.ilike.%${filters.search}%,pesan.ilike.%${filters.search}%`
+        );
       }
 
       // Apply pagination if provided
@@ -57,45 +68,53 @@ class UcapanAPI {
       if (repliesError) throw repliesError;
 
       // For each parent, collect ALL replies in its thread
-      const ucapanWithReplies: UcapanWithReplies[] = (parents || []).map((parent) => {
-        // Find all replies that belong to this thread
-        const threadReplies: any[] = [];
-        const replyMap = new Map();
-        
-        // Build a map of all replies
-        (allReplies || []).forEach(reply => {
-          replyMap.set(reply.id, reply);
-        });
-        
-        // Collect all replies in this thread (recursively find all descendants)
-        const collectReplies = (parentId: string) => {
-          (allReplies || []).forEach(reply => {
-            if (reply.parent_id === parentId && !threadReplies.find(r => r.id === reply.id)) {
-              threadReplies.push(reply);
-              // Recursively collect replies to this reply
-              collectReplies(reply.id);
-            }
+      const ucapanWithReplies: UcapanWithReplies[] = (parents || []).map(
+        (parent) => {
+          // Find all replies that belong to this thread
+          const threadReplies: any[] = [];
+          const replyMap = new Map();
+
+          // Build a map of all replies
+          (allReplies || []).forEach((reply) => {
+            replyMap.set(reply.id, reply);
           });
-        };
-        
-        collectReplies(parent.id);
-        
-        return {
-          ...parent,
-          replies: threadReplies,
-        };
-      });
+
+          // Collect all replies in this thread (recursively find all descendants)
+          const collectReplies = (parentId: string) => {
+            (allReplies || []).forEach((reply) => {
+              if (
+                reply.parent_id === parentId &&
+                !threadReplies.find((r) => r.id === reply.id)
+              ) {
+                threadReplies.push(reply);
+                // Recursively collect replies to this reply
+                collectReplies(reply.id);
+              }
+            });
+          };
+
+          collectReplies(parent.id);
+
+          return {
+            ...parent,
+            replies: threadReplies,
+          };
+        }
+      );
 
       const totalPages = count && limit ? Math.ceil(count / limit) : 0;
 
       return {
         data: ucapanWithReplies,
-        pagination: page && limit ? {
-          page,
-          limit,
-          total: count || 0,
-          totalPages,
-        } : undefined,
+        pagination:
+          page && limit
+            ? {
+                page,
+                limit,
+                total: count || 0,
+                totalPages,
+              }
+            : undefined,
       };
     } catch (error: any) {
       console.error('Error fetching ucapan:', error);
@@ -129,28 +148,33 @@ class UcapanAPI {
       if (repliesError) throw repliesError;
 
       // For each parent, collect ALL replies in its thread
-      const ucapanWithReplies: UcapanWithReplies[] = (parents || []).map((parent) => {
-        // Find all replies that belong to this thread
-        const threadReplies: any[] = [];
-        
-        // Collect all replies in this thread (recursively find all descendants)
-        const collectReplies = (parentId: string) => {
-          (allReplies || []).forEach(reply => {
-            if (reply.parent_id === parentId && !threadReplies.find(r => r.id === reply.id)) {
-              threadReplies.push(reply);
-              // Recursively collect replies to this reply
-              collectReplies(reply.id);
-            }
-          });
-        };
-        
-        collectReplies(parent.id);
-        
-        return {
-          ...parent,
-          replies: threadReplies,
-        };
-      });
+      const ucapanWithReplies: UcapanWithReplies[] = (parents || []).map(
+        (parent) => {
+          // Find all replies that belong to this thread
+          const threadReplies: any[] = [];
+
+          // Collect all replies in this thread (recursively find all descendants)
+          const collectReplies = (parentId: string) => {
+            (allReplies || []).forEach((reply) => {
+              if (
+                reply.parent_id === parentId &&
+                !threadReplies.find((r) => r.id === reply.id)
+              ) {
+                threadReplies.push(reply);
+                // Recursively collect replies to this reply
+                collectReplies(reply.id);
+              }
+            });
+          };
+
+          collectReplies(parent.id);
+
+          return {
+            ...parent,
+            replies: threadReplies,
+          };
+        }
+      );
 
       return ucapanWithReplies;
     } catch (error: any) {
@@ -197,15 +221,31 @@ class UcapanAPI {
   /**
    * Create new ucapan (guest or admin)
    */
-  async getCounts(): Promise<{ all: number; active: number; inactive: number }> {
-    const buildQuery = () => supabase.from('ucapan').select('*', { count: 'exact', head: true }).is('parent_id', null);
-    
+  async getCounts(): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    const buildQuery = () =>
+      supabase
+        .from('ucapan')
+        .select('*', { count: 'exact', head: true })
+        .is('parent_id', null);
+
     try {
       const { count: allCount } = await buildQuery();
       const { count: activeCount } = await buildQuery().is('deleted_at', null);
-      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
-      
-      return { all: allCount || 0, active: activeCount || 0, inactive: inactiveCount || 0 };
+      const { count: inactiveCount } = await buildQuery().not(
+        'deleted_at',
+        'is',
+        null
+      );
+
+      return {
+        all: allCount || 0,
+        active: activeCount || 0,
+        inactive: inactiveCount || 0,
+      };
     } catch (error: any) {
       console.error('Error fetching ucapan counts:', error);
       return { all: 0, active: 0, inactive: 0 };
@@ -240,7 +280,10 @@ class UcapanAPI {
   /**
    * Reply to existing ucapan
    */
-  async replyToUcapan(parentId: string, data: CreateUcapanData): Promise<Ucapan> {
+  async replyToUcapan(
+    parentId: string,
+    data: CreateUcapanData
+  ): Promise<Ucapan> {
     return this.createUcapan({
       ...data,
       parent_id: parentId,
@@ -254,9 +297,9 @@ class UcapanAPI {
     try {
       const { error } = await supabase
         .from('ucapan')
-        .update({ 
+        .update({
           pesan,
-          updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id);
 
@@ -327,8 +370,12 @@ class UcapanAPI {
       if (repliesError) throw repliesError;
 
       // Filter out parents that have admin replies
-      const repliedParentIds = new Set((adminReplies || []).map((r) => r.parent_id));
-      const unanswered = (parents || []).filter((p) => !repliedParentIds.has(p.id));
+      const repliedParentIds = new Set(
+        (adminReplies || []).map((r) => r.parent_id)
+      );
+      const unanswered = (parents || []).filter(
+        (p) => !repliedParentIds.has(p.id)
+      );
 
       return unanswered;
     } catch (error: any) {

@@ -16,10 +16,74 @@ END $$;
 -- 1. CREATE MASTER TABLES
 -- ============================================
 
+-- Create pengaturan_pernikahan table (singleton - only 1 row)
+CREATE TABLE IF NOT EXISTS pengaturan_pernikahan (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  
+  -- Data Mempelai Pria
+  nama_lengkap_pria VARCHAR(100) NOT NULL,
+  nama_panggilan_pria VARCHAR(50) NOT NULL,
+  nama_ayah_pria VARCHAR(100),
+  nama_ibu_pria VARCHAR(100),
+  anak_ke_pria VARCHAR(20),
+  
+  -- Data Mempelai Wanita
+  nama_lengkap_wanita VARCHAR(100) NOT NULL,
+  nama_panggilan_wanita VARCHAR(50) NOT NULL,
+  nama_ayah_wanita VARCHAR(100),
+  nama_ibu_wanita VARCHAR(100),
+  anak_ke_wanita VARCHAR(20),
+  
+  -- Acara Akad/Pemberkatan
+  tanggal_akad DATE NOT NULL,
+  jam_mulai_akad TIME NOT NULL,
+  jam_selesai_akad TIME,
+  nama_tempat_akad VARCHAR(150) NOT NULL,
+  alamat_akad TEXT NOT NULL,
+  link_maps_akad TEXT,
+  
+  -- Acara Resepsi (waktu resepsi diambil dari kategori_tamu)
+  tanggal_resepsi DATE NOT NULL,
+  nama_tempat_resepsi VARCHAR(150) NOT NULL,
+  alamat_resepsi TEXT NOT NULL,
+  link_maps_resepsi TEXT,
+  
+  -- Media
+  musik_latar VARCHAR(255),
+  
+  -- Fitur Digital
+  link_streaming VARCHAR(255),
+  
+  -- Gift/Amplop Digital - Bank 1
+  bank_1 VARCHAR(50),
+  nomor_rekening_1 VARCHAR(50),
+  atas_nama_1 VARCHAR(100),
+  
+  -- Gift/Amplop Digital - Bank 2 (Opsional)
+  bank_2 VARCHAR(50),
+  nomor_rekening_2 VARCHAR(50),
+  atas_nama_2 VARCHAR(100),
+  
+  -- Template WhatsApp
+  text_undangan TEXT,
+  text_pengingat_qr_code TEXT,
+  
+  -- SEO & Sharing
+  meta_title VARCHAR(100),
+  meta_description VARCHAR(200),
+  og_image VARCHAR(255),
+  
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create kategori_tamu master table
 CREATE TABLE IF NOT EXISTS kategori_tamu (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nama VARCHAR(100) NOT NULL UNIQUE,
+  jam_mulai TIME NOT NULL,
+  jam_selesai TIME NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE
@@ -161,12 +225,89 @@ CREATE INDEX idx_ucapan_user_id ON ucapan(user_id);
 -- 5. INSERT DUMMY DATA - MASTER TABLES
 -- ============================================
 
+-- Insert pengaturan_pernikahan dummy data (singleton)
+INSERT INTO pengaturan_pernikahan (
+  -- Data Mempelai Pria
+  nama_lengkap_pria, nama_panggilan_pria, nama_ayah_pria, nama_ibu_pria, anak_ke_pria,
+  -- Data Mempelai Wanita
+  nama_lengkap_wanita, nama_panggilan_wanita, nama_ayah_wanita, nama_ibu_wanita, anak_ke_wanita,
+  -- Acara Akad
+  tanggal_akad, jam_mulai_akad, jam_selesai_akad, nama_tempat_akad, alamat_akad, link_maps_akad,
+  -- Acara Resepsi (waktu dari kategori_tamu)
+  tanggal_resepsi, nama_tempat_resepsi, alamat_resepsi, link_maps_resepsi,
+  -- Media & Fitur Digital
+  musik_latar, link_streaming,
+  -- Gift Bank 1
+  bank_1, nomor_rekening_1, atas_nama_1,
+  -- Gift Bank 2
+  bank_2, nomor_rekening_2, atas_nama_2,
+  -- Template WhatsApp
+  text_undangan, text_pengingat_qr_code,
+  -- SEO
+  meta_title, meta_description, og_image
+) VALUES (
+  -- Data Mempelai Pria
+  'Muhammad Ramli Saputra', 'Ramli', 'H. Ahmad Saputra', 'Hj. Siti Aminah', 'Pertama',
+  -- Data Mempelai Wanita
+  'Hasri Nur Fadillah', 'Hasri', 'H. Budi Santoso', 'Hj. Fatimah', 'Kedua',
+  -- Acara Akad
+  '2025-02-14', '08:00', '10:00', 'Masjid Agung Al-Azhar', 'Jl. Sisingamangaraja, Kebayoran Baru, Jakarta Selatan', 'https://maps.google.com/?q=Masjid+Agung+Al-Azhar',
+  -- Acara Resepsi (waktu dari kategori_tamu)
+  '2025-02-14', 'Balai Kartini', 'Jl. Gatot Subroto Kav. 37, Jakarta Selatan', 'https://maps.google.com/?q=Balai+Kartini+Jakarta',
+  -- Media & Fitur Digital
+  '/audio/wedding-music.mp3', 'https://youtube.com/live/example',
+  -- Gift Bank 1
+  'BCA', '1234567890', 'Muhammad Ramli Saputra',
+  -- Gift Bank 2
+  'Mandiri', '0987654321', 'Hasri Nur Fadillah',
+  -- Template WhatsApp
+  'Kepada Yth.
+Bapak/Ibu/Saudara/i
+*{{nama_tamu}}*
+_______
+
+Assalamualaikum Warahmatullahi Wabarakatuh
+
+Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i, teman sekaligus sahabat, untuk menghadiri acara pernikahan kami.
+
+Berikut link undangan kami, untuk info lengkap dari acara, bisa kunjungi :
+
+{{link_undangan}}
+
+Merupakan suatu kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan untuk hadir dan memberikan doa restu.
+
+Wassalamualaikum Warahmatullahi Wabarakatuh
+
+Terima Kasih
+
+Hormat kami,
+*{{nama_pria}} & {{nama_wanita}}*',
+  'Kepada Yth.
+Bapak/Ibu/Saudara/i
+*{{nama_tamu}}*
+_______
+
+Assalamualaikum Warahmatullahi Wabarakatuh
+
+Untuk mengecek QR Code undangan Anda, silakan kunjungi link berikut:
+{{link_qr_code}}
+
+Harap tunjukkan QR Code ini saat registrasi di lokasi acara.
+
+Wassalamualaikum Warahmatullahi Wabarakatuh
+
+Hormat kami,
+*{{nama_pria}} & {{nama_wanita}}*',
+  -- SEO
+  'Pernikahan Hasri & Ramli', 'Kami mengundang Anda untuk hadir di acara pernikahan kami. Hasri & Ramli - 14 Februari 2025', '/images/og-wedding.jpg'
+);
+
 -- Insert kategori_tamu dummy data
-INSERT INTO kategori_tamu (nama) VALUES
-  ('Tamu Hasri'),
-  ('Tamu Ramli'),
-  ('Tamu Ayah'),
-  ('Tamu Ibu')
+INSERT INTO kategori_tamu (nama, jam_mulai, jam_selesai) VALUES
+  ('Tamu Hasri', '08:00', '10:00'),
+  ('Tamu Ramli', '10:00', '12:00'),
+  ('Tamu Ayah', '13:00', '15:00'),
+  ('Tamu Ibu', '15:00', '17:00')
 ON CONFLICT (nama) DO NOTHING;
 
 -- Insert hubungan_tamu dummy data
@@ -235,6 +376,7 @@ SELECT r.id, url, desc_text
 FROM roles r,
 (VALUES 
   ('/admin/dashboard', 'Access to Admin Dashboard'),
+  ('/admin/pengaturan_pernikahan', 'Manage wedding settings'),
   ('/admin/tamu', 'Manage guests'),
   ('/admin/users', 'Manage users'),
   ('/admin/kategori_tamu', 'Manage guest categories'),

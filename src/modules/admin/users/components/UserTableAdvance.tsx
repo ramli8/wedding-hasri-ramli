@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useCallback, useContext } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useContext,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   Box,
   IconButton,
@@ -20,7 +26,6 @@ import {
   Icon,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnFiltersState } from '@tanstack/react-table';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
 import { showConfirmationAlert } from '@/utils/sweetalert';
 import AppSettingContext from '@/providers/AppSettingProvider';
@@ -47,11 +52,13 @@ interface UserTableAdvanceProps {
   onEdit: (user: User) => void;
   onDelete: (id: string) => void;
   onRestore: (id: string) => void;
-  onAddNew?: () => void; // Deprecated, use headerAction
+  onAddNew?: () => void;
   onCopyMagicLink?: (user: User) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
   headerAction?: React.ReactNode;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 const UserTableAdvance: React.FC<UserTableAdvanceProps> = ({
@@ -64,10 +71,34 @@ const UserTableAdvance: React.FC<UserTableAdvanceProps> = ({
   onLoadMore,
   hasMore = false,
   headerAction,
+  onSearch,
+  searchTerm = '',
 }) => {
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [localSearchValue, setLocalSearchValue] = useState(searchTerm);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalSearchValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearchValue(value);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (onSearch) onSearch(value);
+      }, 300);
+    },
+    [onSearch]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -86,18 +117,7 @@ const UserTableAdvance: React.FC<UserTableAdvanceProps> = ({
     [colorMode, onDelete]
   );
 
-  // Filtering logic
-  const globalFilterValue =
-    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
-
-  const filteredData = useMemo(() => {
-    if (!globalFilterValue) return initialData;
-    return initialData.filter(
-      (item) =>
-        item.name.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
-        item.username.toLowerCase().includes(globalFilterValue.toLowerCase())
-    );
-  }, [initialData, globalFilterValue]);
+  const filteredData = initialData;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
@@ -169,10 +189,9 @@ const UserTableAdvance: React.FC<UserTableAdvanceProps> = ({
               />
             </InputLeftElement>
             <Input
-              value={globalFilterValue}
+              value={localSearchValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                setColumnFilters(value ? [{ id: 'global', value }] : []);
+                handleSearchChange(e.target.value);
               }}
               h="48px"
               variant="filled"

@@ -1,4 +1,10 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, {
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   VStack,
   Flex,
@@ -14,7 +20,6 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { NextPageWithLayout } from '@/pages/_app';
 import PageRow from '@/components/atoms/PageRow';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
-import UcapanAPI from '../services/UcapanAPI';
 import { UcapanWithReplies } from '../types/Ucapan.types';
 import UcapanTableAdvance from '../components/UcapanTableAdvance';
 import UcapanDetailModal from '../components/UcapanDetailModal';
@@ -22,10 +27,20 @@ import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
 import FilterTabs from '@/components/molecules/FilterTabs';
 import AppSettingContext from '@/providers/AppSettingProvider';
+import { useUcapan } from '../utils/hooks/useUcapan';
 
 const UcapanListPage: NextPageWithLayout = () => {
-  const [ucapanList, setUcapanList] = useState<UcapanWithReplies[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    ucapanList,
+    loading,
+    hasMore,
+    api,
+    fetchUcapan,
+    loadMore,
+    deleteUcapan,
+    restoreUcapan,
+  } = useUcapan();
+
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'active' | 'inactive'
   >('all');
@@ -40,19 +55,13 @@ const UcapanListPage: NextPageWithLayout = () => {
   const [selectedUcapan, setSelectedUcapan] =
     useState<UcapanWithReplies | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-  });
-  const [hasMore, setHasMore] = useState(true);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const api = React.useMemo(() => new UcapanAPI(), []);
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
 
   const fetchCounts = async () => {
+    if (!api) return;
     try {
       const counts = await api.getCounts();
       setStatusCounts(counts);
@@ -61,74 +70,24 @@ const UcapanListPage: NextPageWithLayout = () => {
     }
   };
 
-  const fetchData = React.useCallback(
-    async (resetPagination = true) => {
-      try {
-        setLoading(true);
-        const page = resetPagination ? 1 : pagination.page;
-        const response = await api.getUcapan(page, pagination.limit, {
-          status: filterStatus,
-        });
-
-        if (resetPagination) {
-          setUcapanList(response.data);
-        } else {
-          setUcapanList((prev) => [...prev, ...response.data]);
-        }
-
-        if (response.pagination) {
-          setPagination(response.pagination);
-          setHasMore(
-            response.pagination.page < response.pagination.totalPages &&
-              response.data.length === response.pagination.limit
-          );
-        } else {
-          setHasMore(false);
-        }
-      } catch (error: any) {
-        showErrorAlert('Gagal memuat data ucapan', error.message, colorMode);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [api, colorMode, pagination.page, pagination.limit]
-  );
-
-  const loadMore = React.useCallback(async () => {
-    if (!hasMore || loading) return;
-
-    try {
-      setLoading(true);
-      const nextPage = pagination.page + 1;
-      const response = await api.getUcapan(nextPage, pagination.limit);
-
-      setUcapanList((prev) => [...prev, ...response.data]);
-
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setHasMore(
-          response.pagination.page < response.pagination.totalPages &&
-            response.data.length === response.pagination.limit
-        );
-      }
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, pagination, hasMore, loading, colorMode, filterStatus]);
-
   useEffect(() => {
-    fetchData(true);
+    fetchUcapan(true, {
+      status: filterStatus,
+      search: searchTerm || undefined,
+    });
     fetchCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, searchTerm]);
+
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
 
   // Use server-side counts for status filter
   const counts = statusCounts;
 
   // Calculate counts for reply filter (client-side since server doesn't have this)
-  const replyCounts = React.useMemo(() => {
+  const replyCounts = useMemo(() => {
     return {
       all: ucapanList.length,
       replied: ucapanList.filter((u) => u.replies && u.replies.length > 0)
@@ -139,7 +98,7 @@ const UcapanListPage: NextPageWithLayout = () => {
   }, [ucapanList]);
 
   // Apply reply filter only (status already filtered by server)
-  const filteredUcapan = React.useMemo(() => {
+  const filteredUcapan = useMemo(() => {
     let result = ucapanList;
 
     // Apply reply filter (client-side)
@@ -154,9 +113,12 @@ const UcapanListPage: NextPageWithLayout = () => {
 
   const handleDeleteUcapan = async (id: string) => {
     try {
-      await api.deleteUcapan(id);
+      await deleteUcapan(id);
       showSuccessAlert('Ucapan berhasil dihapus', colorMode);
-      fetchData(true);
+      fetchUcapan(true, {
+        status: filterStatus,
+        search: searchTerm || undefined,
+      });
       fetchCounts();
     } catch (error: any) {
       showErrorAlert('Gagal menghapus ucapan', error.message, colorMode);
@@ -165,9 +127,12 @@ const UcapanListPage: NextPageWithLayout = () => {
 
   const handleRestoreUcapan = async (id: string) => {
     try {
-      await api.restoreUcapan(id);
+      await restoreUcapan(id);
       showSuccessAlert('Ucapan berhasil dipulihkan', colorMode);
-      fetchData(true);
+      fetchUcapan(true, {
+        status: filterStatus,
+        search: searchTerm || undefined,
+      });
       fetchCounts();
     } catch (error: any) {
       showErrorAlert('Gagal memulihkan ucapan', error.message, colorMode);
@@ -180,26 +145,34 @@ const UcapanListPage: NextPageWithLayout = () => {
   };
 
   const handleDeleteReply = async (id: string) => {
+    if (!api) return;
     try {
       await api.deleteUcapan(id);
       showSuccessAlert('Balasan berhasil dihapus', colorMode);
       // Close modal and refresh data
       setShowDetailModal(false);
       setSelectedUcapan(null);
-      await fetchData();
+      await fetchUcapan(true, {
+        status: filterStatus,
+        search: searchTerm || undefined,
+      });
     } catch (error: any) {
       showErrorAlert('Gagal menghapus balasan', error.message, colorMode);
     }
   };
 
   const handleRestoreReply = async (id: string) => {
+    if (!api) return;
     try {
       await api.restoreUcapan(id);
       showSuccessAlert('Balasan berhasil dipulihkan', colorMode);
       // Close modal and refresh data
       setShowDetailModal(false);
       setSelectedUcapan(null);
-      await fetchData();
+      await fetchUcapan(true, {
+        status: filterStatus,
+        search: searchTerm || undefined,
+      });
     } catch (error: any) {
       showErrorAlert('Gagal memulihkan balasan', error.message, colorMode);
     }
@@ -211,7 +184,6 @@ const UcapanListPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section - Clean Typography */}
               {/* Header Section - Minimalist & Modern */}
               <Flex justify="space-between" align="center" mb={6} gap={4}>
                 <Box>
@@ -417,10 +389,17 @@ const UcapanListPage: NextPageWithLayout = () => {
                 loading={loading}
                 onDelete={handleDeleteUcapan}
                 onRestore={handleRestoreUcapan}
-                onAddNew={() => {}} // Not used for ucapan
+                onAddNew={() => {}}
                 onViewDetail={handleViewDetail}
-                onLoadMore={loadMore}
+                onLoadMore={() =>
+                  loadMore({
+                    status: filterStatus,
+                    search: searchTerm || undefined,
+                  })
+                }
                 hasMore={hasMore}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
               />
             </VStack>
           </ContainerQuery>

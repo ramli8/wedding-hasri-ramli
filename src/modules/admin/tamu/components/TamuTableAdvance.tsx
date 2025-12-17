@@ -1,4 +1,11 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   Box,
   IconButton,
@@ -17,7 +24,6 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { FaSearch, FaWhatsapp, FaInstagram } from 'react-icons/fa';
-import { ColumnFiltersState } from '@tanstack/react-table';
 import { Tamu } from '../types/Tamu.types';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
@@ -39,6 +45,8 @@ interface TamuTableAdvanceProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   headerAction?: React.ReactNode;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
@@ -56,10 +64,47 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
   onLoadMore,
   hasMore = false,
   headerAction,
+  onSearch,
+  searchTerm = '',
 }) => {
   const { colorMode } = useColorMode();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [localSearchValue, setLocalSearchValue] = useState(searchTerm);
   const { colorPref } = useContext(AppSettingContext);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync local search value with prop
+  useEffect(() => {
+    setLocalSearchValue(searchTerm);
+  }, [searchTerm]);
+
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearchValue(value);
+
+      // Clear previous timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Set new timer for debounced search
+      debounceTimerRef.current = setTimeout(() => {
+        if (onSearch) {
+          onSearch(value);
+        }
+      }, 300); // 300ms debounce
+    },
+    [onSearch]
+  );
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
     const result = await showConfirmationAlert(
@@ -75,18 +120,8 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
     }
   };
 
-  // Filtering logic - now only for display filter, not data filter
-  const globalFilterValue =
-    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
-
-  const filteredData = useMemo(() => {
-    if (!globalFilterValue) return initialTamu;
-    return initialTamu.filter((item) =>
-      `${item.nama} ${item.kategori} ${item.hubungan} ${item.nomor_hp}`
-        .toLowerCase()
-        .includes(globalFilterValue.toLowerCase())
-    );
-  }, [initialTamu, globalFilterValue]);
+  // Data comes filtered from server, no client-side filtering needed
+  const filteredData = initialTamu;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
@@ -196,10 +231,9 @@ const TamuTableAdvance: React.FC<TamuTableAdvanceProps> = ({
               />
             </InputLeftElement>
             <Input
-              value={globalFilterValue}
+              value={localSearchValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                setColumnFilters(value ? [{ id: 'global', value }] : []);
+                handleSearchChange(e.target.value);
               }}
               h="48px"
               variant="filled"

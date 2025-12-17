@@ -1,16 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  KategoriTamu,
-  CreateKategoriTamuInput,
-  UpdateKategoriTamuInput,
-} from '../../types/KategoriTamu.types';
-import KategoriTamuAPI from '../../services/KategoriTamuAPI';
+import UserAPI, { User, Role, CreateUserInput } from '../../services/UserAPI';
 
-export const useKategoriTamu = () => {
-  const [kategoriTamu, setKategoriTamu] = useState<KategoriTamu[]>([]);
+export const useUsers = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [api, setApi] = useState<KategoriTamuAPI | null>(null);
+  const [api, setApi] = useState<UserAPI | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -18,11 +14,11 @@ export const useKategoriTamu = () => {
   useEffect(() => {
     setIsClient(true);
     try {
-      const apiInstance = new KategoriTamuAPI();
+      const apiInstance = new UserAPI();
       setApi(apiInstance);
     } catch (err: any) {
-      console.error('Failed to initialize KategoriTamuAPI:', err);
-      setError(err.message || 'Gagal menginisialisasi API kategori tamu');
+      console.error('Failed to initialize UserAPI:', err);
+      setError(err.message || 'Gagal menginisialisasi API users');
     }
   }, []);
 
@@ -33,28 +29,37 @@ export const useKategoriTamu = () => {
     totalPages: 0,
   });
 
-  const fetchKategoriTamu = async (
+  const fetchUsers = async (
     resetPagination: boolean = true,
-    filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
+    filters?: {
+      status?: 'all' | 'active' | 'inactive';
+      search?: string;
+      roleId?: string;
+    }
   ) => {
     if (!api) return;
     try {
       setLoading(true);
       const page = resetPagination ? 1 : pagination.page;
-      const response = await api.getAll(page, pagination.limit, filters);
+      const [usersResponse, rolesData] = await Promise.all([
+        api.getUsers(page, pagination.limit, filters),
+        api.getRoles(),
+      ]);
 
       if (resetPagination) {
-        setKategoriTamu(response.data);
+        setUsers(usersResponse.data);
       } else {
-        setKategoriTamu((prev) => [...prev, ...response.data]);
+        setUsers((prev) => [...prev, ...usersResponse.data]);
       }
 
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setTotalCount(response.pagination.total);
+      setRoles(rolesData);
+
+      if (usersResponse.pagination) {
+        setPagination(usersResponse.pagination);
+        setTotalCount(usersResponse.pagination.total);
         setHasMore(
-          response.pagination.page < response.pagination.totalPages &&
-            response.data.length === response.pagination.limit
+          usersResponse.pagination.page < usersResponse.pagination.totalPages &&
+            usersResponse.data.length === usersResponse.pagination.limit
         );
       } else {
         setHasMore(false);
@@ -62,8 +67,8 @@ export const useKategoriTamu = () => {
 
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching kategori tamu:', err);
-      setError(err.message || 'Gagal memuat data kategori tamu');
+      console.error('Error fetching users:', err);
+      setError(err.message || 'Gagal memuat data users');
     } finally {
       setLoading(false);
     }
@@ -73,15 +78,20 @@ export const useKategoriTamu = () => {
     async (filters?: {
       status?: 'all' | 'active' | 'inactive';
       search?: string;
+      roleId?: string;
     }) => {
       if (!api || !hasMore || loading) return;
 
       try {
         setLoading(true);
         const nextPage = pagination.page + 1;
-        const response = await api.getAll(nextPage, pagination.limit, filters);
+        const response = await api.getUsers(
+          nextPage,
+          pagination.limit,
+          filters
+        );
 
-        setKategoriTamu((prev) => [...prev, ...response.data]);
+        setUsers((prev) => [...prev, ...response.data]);
 
         if (response.pagination) {
           setPagination(response.pagination);
@@ -93,7 +103,7 @@ export const useKategoriTamu = () => {
 
         setError(null);
       } catch (err: any) {
-        console.error('Error loading more kategori tamu:', err);
+        console.error('Error loading more users:', err);
         setError(err.message || 'Gagal memuat data');
       } finally {
         setLoading(false);
@@ -102,79 +112,77 @@ export const useKategoriTamu = () => {
     [api, pagination, hasMore, loading]
   );
 
-  const createKategoriTamu = async (input: CreateKategoriTamuInput) => {
+  const createUser = async (input: CreateUserInput) => {
     if (!api) throw new Error('API belum siap');
     try {
       setLoading(true);
-      const newData = await api.create(input);
-      setKategoriTamu((prev) => [...prev, newData]);
+      const newUser = await api.createUser(input);
+      setUsers((prev) => [newUser, ...prev]);
       setTotalCount((prev) => prev + 1);
       setError(null);
-      return newData;
+      return newUser;
     } catch (err: any) {
-      console.error('Error creating kategori tamu:', err);
-      setError(err.message || 'Gagal menambah kategori tamu');
+      console.error('Error creating user:', err);
+      setError(err.message || 'Gagal membuat user');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateKategoriTamu = async (
-    id: string,
-    input: UpdateKategoriTamuInput
-  ) => {
+  const updateUser = async (id: string, input: Partial<CreateUserInput>) => {
     if (!api) throw new Error('API belum siap');
     try {
       setLoading(true);
-      const updatedData = await api.update(id, input);
-      setKategoriTamu((prev) =>
-        prev.map((item) => (item.id === id ? updatedData : item))
-      );
+      await api.updateUser(id, input);
+      // Refetch to get updated data with roles
+      await fetchUsers(true);
       setError(null);
-      return updatedData;
     } catch (err: any) {
-      console.error('Error updating kategori tamu:', err);
-      setError(err.message || 'Gagal memperbarui kategori tamu');
+      console.error('Error updating user:', err);
+      setError(err.message || 'Gagal update user');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteKategoriTamu = async (id: string) => {
+  const deleteUser = async (id: string) => {
     if (!api) throw new Error('API belum siap');
     try {
       setLoading(true);
-      await api.delete(id);
-      setKategoriTamu((prev) =>
+      await api.deleteUser(id);
+      setUsers((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, deleted_at: new Date() } : item
+          item.id === id
+            ? { ...item, deleted_at: new Date().toISOString() }
+            : item
         )
       );
       setError(null);
     } catch (err: any) {
-      console.error('Error deleting kategori tamu:', err);
-      setError(err.message || 'Gagal menghapus kategori tamu');
+      console.error('Error deleting user:', err);
+      setError(err.message || 'Gagal menghapus user');
       throw err;
     } finally {
       setLoading(false);
     }
   };
-  const restoreKategoriTamu = async (id: string) => {
+
+  const restoreUser = async (id: string) => {
     if (!api) throw new Error('API belum siap');
     try {
       setLoading(true);
-      await api.restore(id);
-      setKategoriTamu((prev) =>
+      await api.restoreUser(id);
+      setUsers((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, deleted_at: undefined } : item
         )
       );
       setError(null);
     } catch (err: any) {
-      console.error('Error restoring kategori tamu:', err);
-      setError(err.message || 'Gagal memulihkan kategori tamu');
+      console.error('Error restoring user:', err);
+      setError(err.message || 'Gagal memulihkan user');
       throw err;
     } finally {
       setLoading(false);
@@ -183,21 +191,23 @@ export const useKategoriTamu = () => {
 
   useEffect(() => {
     if (api && isClient) {
-      fetchKategoriTamu();
+      fetchUsers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, isClient]);
 
   return {
-    kategoriTamu,
+    users,
+    roles,
     loading,
     error,
     hasMore,
     totalCount,
-    fetchKategoriTamu,
+    fetchUsers,
     loadMore,
-    createKategoriTamu,
-    updateKategoriTamu,
-    deleteKategoriTamu,
-    restoreKategoriTamu,
+    createUser,
+    updateUser,
+    deleteUser,
+    restoreUser,
   };
 };

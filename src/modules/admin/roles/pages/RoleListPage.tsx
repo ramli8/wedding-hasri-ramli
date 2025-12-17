@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
 import {
   VStack,
   Text,
@@ -47,6 +53,7 @@ const RoleListPage: NextPageWithLayout = () => {
     active: 0,
     inactive: 0,
   });
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
@@ -72,13 +79,17 @@ const RoleListPage: NextPageWithLayout = () => {
   };
 
   useEffect(() => {
-    fetchRoles(true, { status: filterStatus });
+    fetchRoles(true, { status: filterStatus, search: searchTerm || undefined });
     fetchCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, searchTerm]);
+
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
 
   const handleSaveSuccess = () => {
-    fetchRoles(true, { status: filterStatus });
+    fetchRoles(true, { status: filterStatus, search: searchTerm || undefined });
     fetchCounts();
   };
 
@@ -164,8 +175,15 @@ const RoleListPage: NextPageWithLayout = () => {
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
                 onManagePermissions={handleManagePermissions}
-                onLoadMore={() => loadMore({ status: filterStatus })}
+                onLoadMore={() =>
+                  loadMore({
+                    status: filterStatus,
+                    search: searchTerm || undefined,
+                  })
+                }
                 hasMore={hasMore}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
                 headerAction={
                   <PrimaryButton
                     onClick={() => handleOpenModal()}

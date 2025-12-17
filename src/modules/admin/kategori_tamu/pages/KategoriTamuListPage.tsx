@@ -1,4 +1,10 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   VStack,
   Box,
@@ -88,6 +94,7 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
     active: 0,
     inactive: 0,
   });
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const fetchCounts = async () => {
     try {
@@ -99,14 +106,25 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
   };
 
   useEffect(() => {
-    fetchKategoriTamu(true, { status: filterStatus });
+    fetchKategoriTamu(true, {
+      status: filterStatus,
+      search: searchTerm || undefined,
+    });
     fetchCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, searchTerm]);
+
+  // Handle server-side search
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
 
   const handleSaveSuccess = () => {
     setShowFormModal(false);
-    fetchKategoriTamu(true, { status: filterStatus });
+    fetchKategoriTamu(true, {
+      status: filterStatus,
+      search: searchTerm || undefined,
+    });
     fetchCounts();
   };
 
@@ -176,8 +194,15 @@ const KategoriTamuListPage: NextPageWithLayout = () => {
                 onDelete={handleDelete}
                 onRestore={handleRestore}
                 onAddNew={handleAddNew}
-                onLoadMore={() => loadMore({ status: filterStatus })}
+                onLoadMore={() =>
+                  loadMore({
+                    status: filterStatus,
+                    search: searchTerm || undefined,
+                  })
+                }
                 hasMore={hasMore}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
                 headerAction={
                   <PrimaryButton
                     onClick={handleAddNew}

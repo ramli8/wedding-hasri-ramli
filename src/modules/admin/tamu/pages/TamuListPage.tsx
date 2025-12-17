@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
 import {
   Text,
   Box,
@@ -41,6 +47,8 @@ import PageRow from '@/components/atoms/PageRow';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import AppSettingContext from '@/providers/AppSettingProvider';
 import Head from 'next/head';
+import PengaturanPernikahanAPI from '@/modules/admin/pengaturan_pernikahan/services/PengaturanPernikahanAPI';
+import { PengaturanPernikahan } from '@/modules/admin/pengaturan_pernikahan/types/PengaturanPernikahan.types';
 
 const TamuListPage: NextPageWithLayout = () => {
   const {
@@ -89,6 +97,7 @@ const TamuListPage: NextPageWithLayout = () => {
   );
   const [selectedStatusBelum, setSelectedStatusBelum] =
     useState<StatusBelumType>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusBelumCounts, setStatusBelumCounts] = useState<
     Record<StatusBelumType, number>
   >({
@@ -107,6 +116,20 @@ const TamuListPage: NextPageWithLayout = () => {
   const api = useMemo(() => new TamuAPI(), []);
   const kategoriAPI = useMemo(() => new KategoriTamuAPI(), []);
   const hubunganAPI = useMemo(() => new HubunganTamuAPI(), []);
+  const pengaturanAPI = useMemo(() => new PengaturanPernikahanAPI(), []);
+  const [pengaturan, setPengaturan] = useState<PengaturanPernikahan | null>(
+    null
+  );
+
+  // Fetch pengaturan pernikahan for templates
+  const fetchPengaturan = async () => {
+    try {
+      const data = await pengaturanAPI.get();
+      setPengaturan(data);
+    } catch (error) {
+      console.error('Error fetching pengaturan:', error);
+    }
+  };
 
   // Fetch counts from server
   const fetchCounts = async () => {
@@ -216,14 +239,37 @@ const TamuListPage: NextPageWithLayout = () => {
         ? window.location.origin
         : 'https://yourdomain.com';
     const invitationUrl = `${baseUrl}/?to=${tamu.id}`;
-    const qrCodeUrl = `${baseUrl}/cek-qrcode?id=${tamu.id}`;
+    const qrCodeUrl = `${baseUrl}/cek-qrcode`;
 
-    // Create message based on type
+    // Helper function to replace template variables
+    const replaceTemplateVariables = (template: string): string => {
+      return template
+        .replace(/\{\{nama_tamu\}\}/g, tamu.nama)
+        .replace(/\{\{link_undangan\}\}/g, invitationUrl)
+        .replace(/\{\{link_qr_code\}\}/g, qrCodeUrl)
+        .replace(/\{\{nama_pria\}\}/g, pengaturan?.nama_panggilan_pria || '')
+        .replace(
+          /\{\{nama_wanita\}\}/g,
+          pengaturan?.nama_panggilan_wanita || ''
+        );
+    };
+
+    // Create message based on type using templates from pengaturan
     let message = '';
     if (type === 'undangan') {
-      message = `Assalamualaikum ${tamu.nama},\n\nKami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.\n\nBuka undangan di:\n${invitationUrl}\n\nTerima kasih.\n\nHasri & Ramli`;
+      if (pengaturan?.text_undangan) {
+        message = replaceTemplateVariables(pengaturan.text_undangan);
+      } else {
+        // Fallback message jika template belum diset
+        message = `Kepada Yth.\nBapak/Ibu/Saudara/i\n*${tamu.nama}*\n_______\n\nAssalamualaikum Warahmatullahi Wabarakatuh\n\nKami mengundang Anda untuk menghadiri acara pernikahan kami.\n\nBuka undangan di:\n${invitationUrl}\n\nTerima kasih.`;
+      }
     } else {
-      message = `Assalamualaikum ${tamu.nama},\n\nIni adalah pengingat untuk acara pernikahan kami.\n\nSilakan cek QR Code Anda di:\n${qrCodeUrl}\n\nJangan lupa membawa QR Code saat hadir ya!\n\nTerima kasih.\n\nHasri & Ramli`;
+      if (pengaturan?.text_pengingat_qr_code) {
+        message = replaceTemplateVariables(pengaturan.text_pengingat_qr_code);
+      } else {
+        // Fallback message jika template belum diset
+        message = `Kepada Yth.\nBapak/Ibu/Saudara/i\n*${tamu.nama}*\n_______\n\nAssalamualaikum Warahmatullahi Wabarakatuh\n\nUntuk mengecek QR Code undangan Anda, silakan kunjungi:\n${qrCodeUrl}\n\nHarap tunjukkan QR Code ini saat registrasi.\n\nTerima kasih.`;
+      }
     }
 
     // Format phone number for WhatsApp (remove leading 0, add 62)
@@ -273,34 +319,37 @@ const TamuListPage: NextPageWithLayout = () => {
         ? window.location.origin
         : 'https://yourdomain.com';
     const invitationUrl = `${baseUrl}/?to=${tamu.id}`;
-    const qrCodeUrl = `${baseUrl}/cek-qrcode?id=${tamu.id}`;
+    const qrCodeUrl = `${baseUrl}/cek-qrcode`;
 
-    // Create message based on type
+    // Helper function to replace template variables
+    const replaceTemplateVariables = (template: string): string => {
+      return template
+        .replace(/\{\{nama_tamu\}\}/g, tamu.nama)
+        .replace(/\{\{link_undangan\}\}/g, invitationUrl)
+        .replace(/\{\{link_qr_code\}\}/g, qrCodeUrl)
+        .replace(/\{\{nama_pria\}\}/g, pengaturan?.nama_panggilan_pria || '')
+        .replace(
+          /\{\{nama_wanita\}\}/g,
+          pengaturan?.nama_panggilan_wanita || ''
+        );
+    };
+
+    // Create message based on type using templates from pengaturan
     let message = '';
     if (type === 'undangan') {
-      message = `Assalamualaikum ${tamu.nama},
-
-Kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami.
-
-Buka undangan di:
-${invitationUrl}
-
-Terima kasih.
-
-Hasri & Ramli`;
+      if (pengaturan?.text_undangan) {
+        message = replaceTemplateVariables(pengaturan.text_undangan);
+      } else {
+        // Fallback message jika template belum diset
+        message = `Kepada Yth.\nBapak/Ibu/Saudara/i\n*${tamu.nama}*\n_______\n\nAssalamualaikum Warahmatullahi Wabarakatuh\n\nKami mengundang Anda untuk menghadiri acara pernikahan kami.\n\nBuka undangan di:\n${invitationUrl}\n\nTerima kasih.`;
+      }
     } else {
-      message = `Assalamualaikum ${tamu.nama},
-
-Ini adalah pengingat untuk acara pernikahan kami.
-
-Silakan cek QR Code Anda di:
-${qrCodeUrl}
-
-Jangan lupa membawa QR Code saat hadir ya!
-
-Terima kasih.
-
-Hasri & Ramli`;
+      if (pengaturan?.text_pengingat_qr_code) {
+        message = replaceTemplateVariables(pengaturan.text_pengingat_qr_code);
+      } else {
+        // Fallback message jika template belum diset
+        message = `Kepada Yth.\nBapak/Ibu/Saudara/i\n*${tamu.nama}*\n_______\n\nAssalamualaikum Warahmatullahi Wabarakatuh\n\nUntuk mengecek QR Code undangan Anda, silakan kunjungi:\n${qrCodeUrl}\n\nHarap tunjukkan QR Code ini saat registrasi.\n\nTerima kasih.`;
+      }
     }
 
     // Copy message to clipboard FIRST (before opening new window)
@@ -382,6 +431,11 @@ Hasri & Ramli`;
     setFilter((prev) => ({ ...prev, ...newFilter } as TamuFilter));
   };
 
+  // Handle server-side search
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
+
   const handleImportExcel = async (data: CreateTamuInput[]) => {
     try {
       // Import data satu per satu
@@ -425,17 +479,20 @@ Hasri & Ramli`;
       status: filterStatus,
       kategori_id: selectedCategoryId || undefined,
       status_belum: selectedStatusBelum || undefined,
+      search: searchTerm || undefined,
     };
     refetchTamu(newFilter, true);
     fetchCounts();
     fetchCategoryCounts();
     fetchStatusBelumCounts();
     fetchOptionsForImport();
+    fetchPengaturan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filterStatus,
     selectedCategoryId,
     selectedStatusBelum,
+    searchTerm,
     filter?.kategori,
     filter?.hubungan,
     isApiReady,
@@ -632,6 +689,8 @@ Hasri & Ramli`;
                 }}
                 onLoadMore={loadMore}
                 hasMore={hasMore}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
                 headerAction={
                   <Stack
                     direction={{ base: 'column', sm: 'row' }}

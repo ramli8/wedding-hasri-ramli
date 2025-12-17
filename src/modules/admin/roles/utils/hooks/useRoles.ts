@@ -19,12 +19,17 @@ export const useRoles = () => {
   const fetchRoles = useCallback(
     async (
       resetPagination: boolean = true,
-      filters?: { status?: 'all' | 'active' | 'inactive' }
+      filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
     ) => {
       try {
         setLoading(true);
         const page = resetPagination ? 1 : pagination.page;
-        const response = await api.getRoles(true, page, pagination.limit, filters);
+        const response = await api.getRoles(
+          true,
+          page,
+          pagination.limit,
+          filters
+        );
 
         if (resetPagination) {
           setRoles(response.data);
@@ -37,7 +42,7 @@ export const useRoles = () => {
           setTotalCount(response.pagination.total);
           setHasMore(
             response.pagination.page < response.pagination.totalPages &&
-            response.data.length === response.pagination.limit
+              response.data.length === response.pagination.limit
           );
         } else {
           setHasMore(false);
@@ -55,23 +60,31 @@ export const useRoles = () => {
   );
 
   const loadMore = useCallback(
-    async (filters?: { status?: 'all' | 'active' | 'inactive' }) => {
+    async (filters?: {
+      status?: 'all' | 'active' | 'inactive';
+      search?: string;
+    }) => {
       if (!hasMore || loading) return;
 
       try {
         setLoading(true);
         const nextPage = pagination.page + 1;
-        const response = await api.getRoles(true, nextPage, pagination.limit, filters);
-
-      setRoles((prev) => [...prev, ...response.data]);
-
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setHasMore(
-          response.pagination.page < response.pagination.totalPages &&
-          response.data.length === response.pagination.limit
+        const response = await api.getRoles(
+          true,
+          nextPage,
+          pagination.limit,
+          filters
         );
-      }
+
+        setRoles((prev) => [...prev, ...response.data]);
+
+        if (response.pagination) {
+          setPagination(response.pagination);
+          setHasMore(
+            response.pagination.page < response.pagination.totalPages &&
+              response.data.length === response.pagination.limit
+          );
+        }
 
         setError(null);
       } catch (err: any) {

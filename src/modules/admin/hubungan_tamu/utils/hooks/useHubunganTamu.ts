@@ -35,7 +35,7 @@ export const useHubunganTamu = () => {
 
   const fetchHubunganTamu = async (
     resetPagination: boolean = true,
-    filters?: { status?: 'all' | 'active' | 'inactive' }
+    filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
   ) => {
     if (!api) return;
     try {
@@ -54,7 +54,7 @@ export const useHubunganTamu = () => {
         setTotalCount(response.pagination.total);
         setHasMore(
           response.pagination.page < response.pagination.totalPages &&
-          response.data.length === response.pagination.limit
+            response.data.length === response.pagination.limit
         );
       } else {
         setHasMore(false);
@@ -70,7 +70,10 @@ export const useHubunganTamu = () => {
   };
 
   const loadMore = useCallback(
-    async (filters?: { status?: 'all' | 'active' | 'inactive' }) => {
+    async (filters?: {
+      status?: 'all' | 'active' | 'inactive';
+      search?: string;
+    }) => {
       if (!api || !hasMore || loading) return;
 
       try {
@@ -78,19 +81,19 @@ export const useHubunganTamu = () => {
         const nextPage = pagination.page + 1;
         const response = await api.getAll(nextPage, pagination.limit, filters);
 
-      setHubunganTamu((prev) => [...prev, ...response.data]);
+        setHubunganTamu((prev) => [...prev, ...response.data]);
 
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setHasMore(
-          response.pagination.page < response.pagination.totalPages &&
-          response.data.length === response.pagination.limit
-        );
-      }
+        if (response.pagination) {
+          setPagination(response.pagination);
+          setHasMore(
+            response.pagination.page < response.pagination.totalPages &&
+              response.data.length === response.pagination.limit
+          );
+        }
 
-      setError(null);
-    } catch (err: any) {
-      console.error('Error loading more hubungan tamu:', err);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error loading more hubungan tamu:', err);
         setError(err.message || 'Gagal memuat data');
       } finally {
         setLoading(false);

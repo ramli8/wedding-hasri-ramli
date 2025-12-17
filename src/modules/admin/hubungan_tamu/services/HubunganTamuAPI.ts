@@ -32,9 +32,9 @@ class HubunganTamuAPI {
   }
 
   async getAll(
-    page?: number, 
+    page?: number,
     limit?: number,
-    filters?: { status?: 'all' | 'active' | 'inactive' }
+    filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
   ): Promise<HubunganTamuApiResponse> {
     try {
       let query = this.supabase
@@ -48,6 +48,11 @@ class HubunganTamuAPI {
         query = query.is('deleted_at', null);
       } else if (filters?.status === 'inactive') {
         query = query.not('deleted_at', 'is', null);
+      }
+
+      // Apply search filter
+      if (filters?.search) {
+        query = query.ilike('nama', `%${filters.search}%`);
       }
 
       // Apply pagination if provided
@@ -64,12 +69,15 @@ class HubunganTamuAPI {
 
       return {
         data: data as HubunganTamu[],
-        pagination: page && limit ? {
-          page,
-          limit,
-          total: count || 0,
-          totalPages,
-        } : undefined,
+        pagination:
+          page && limit
+            ? {
+                page,
+                limit,
+                total: count || 0,
+                totalPages,
+              }
+            : undefined,
       };
     } catch (error: any) {
       console.error('Error in getAll:', error);
@@ -112,15 +120,30 @@ class HubunganTamuAPI {
     }
   }
 
-  async getCounts(): Promise<{ all: number; active: number; inactive: number }> {
-    const buildQuery = () => this.supabase.from('hubungan_tamu').select('*', { count: 'exact', head: true });
-    
+  async getCounts(): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    const buildQuery = () =>
+      this.supabase
+        .from('hubungan_tamu')
+        .select('*', { count: 'exact', head: true });
+
     try {
       const { count: allCount } = await buildQuery();
       const { count: activeCount } = await buildQuery().is('deleted_at', null);
-      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
-      
-      return { all: allCount || 0, active: activeCount || 0, inactive: inactiveCount || 0 };
+      const { count: inactiveCount } = await buildQuery().not(
+        'deleted_at',
+        'is',
+        null
+      );
+
+      return {
+        all: allCount || 0,
+        active: activeCount || 0,
+        inactive: inactiveCount || 0,
+      };
     } catch (error: any) {
       console.error('Error fetching hubungan counts:', error);
       return { all: 0, active: 0, inactive: 0 };

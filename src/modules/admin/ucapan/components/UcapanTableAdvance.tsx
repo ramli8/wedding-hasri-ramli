@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, {
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   Box,
   IconButton,
@@ -16,7 +22,6 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnFiltersState } from '@tanstack/react-table';
 import { UcapanWithReplies } from '../types/Ucapan.types';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import { MaterialIcon } from '@/components/atoms/MaterialIcon';
@@ -32,6 +37,8 @@ interface UcapanTableAdvanceProps {
   onViewDetail: (ucapan: UcapanWithReplies) => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
@@ -43,10 +50,34 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
   onViewDetail,
   onLoadMore,
   hasMore = false,
+  onSearch,
+  searchTerm = '',
 }) => {
   const { colorMode } = useColorMode();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [localSearchValue, setLocalSearchValue] = useState(searchTerm);
   const { colorPref } = useContext(AppSettingContext);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalSearchValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearchValue(value);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (onSearch) onSearch(value);
+      }, 300);
+    },
+    [onSearch]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
     const result = await showConfirmationAlert(
@@ -62,18 +93,7 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
     }
   };
 
-  // Filtering logic
-  const globalFilterValue =
-    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
-
-  const filteredData = useMemo(() => {
-    if (!globalFilterValue) return initialData;
-    return initialData.filter(
-      (item) =>
-        item.nama.toLowerCase().includes(globalFilterValue.toLowerCase()) ||
-        item.pesan.toLowerCase().includes(globalFilterValue.toLowerCase())
-    );
-  }, [initialData, globalFilterValue]);
+  const filteredData = initialData;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
@@ -139,10 +159,9 @@ const UcapanTableAdvance: React.FC<UcapanTableAdvanceProps> = ({
               />
             </InputLeftElement>
             <Input
-              value={globalFilterValue}
+              value={localSearchValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                setColumnFilters(value ? [{ id: 'global', value }] : []);
+                handleSearchChange(e.target.value);
               }}
               h="48px"
               variant="filled"

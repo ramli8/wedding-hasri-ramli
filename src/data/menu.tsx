@@ -19,6 +19,7 @@ import {
   FiKey,
   FiShield,
   FiSettings,
+  FiHeart,
 } from 'react-icons/fi';
 
 // Transaksi Section - Main operational menus
@@ -52,6 +53,11 @@ const menuItem: Array<MenuItem> = [
 
 // Master Section - Data management menus
 const menuItemMaster: Array<MenuItem> = [
+  {
+    name: 'pengaturan_pernikahan',
+    url: '/admin/pengaturan_pernikahan',
+    icon: FiHeart,
+  },
   {
     name: 'kategori_tamu',
     url: '/admin/kategori_tamu',

@@ -34,16 +34,18 @@ export interface UserApiResponse {
 
 class UserAPI {
   async getUsers(
-    page?: number, 
+    page?: number,
     limit?: number,
     filters?: {
       status?: 'all' | 'active' | 'inactive';
       roleId?: string;
+      search?: string;
     }
   ): Promise<UserApiResponse> {
     let query = supabase
       .from('users')
-      .select(`
+      .select(
+        `
         *,
         user_roles (
           roles (
@@ -51,7 +53,9 @@ class UserAPI {
             name
           )
         )
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' }
+      )
       .order('created_at', { ascending: false });
 
     // Apply status filter
@@ -59,6 +63,13 @@ class UserAPI {
       query = query.is('deleted_at', null);
     } else if (filters?.status === 'inactive') {
       query = query.not('deleted_at', 'is', null);
+    }
+
+    // Apply search filter
+    if (filters?.search) {
+      query = query.or(
+        `name.ilike.%${filters.search}%,username.ilike.%${filters.search}%`
+      );
     }
 
     // Apply pagination if provided
@@ -70,16 +81,16 @@ class UserAPI {
     const { data, error, count } = await query;
 
     if (error) throw error;
-    
+
     // Transform data to flatten roles
     let transformedData = (data || []).map((user: any) => ({
       ...user,
-      roles: user.user_roles.map((ur: any) => ur.roles)
+      roles: user.user_roles.map((ur: any) => ur.roles),
     }));
 
     // Client-side filter by role if needed (because of join complexity)
     if (filters?.roleId) {
-      transformedData = transformedData.filter(user => 
+      transformedData = transformedData.filter((user) =>
         user.roles.some((role: any) => role.id === filters.roleId)
       );
     }
@@ -88,12 +99,15 @@ class UserAPI {
 
     return {
       data: transformedData,
-      pagination: page && limit ? {
-        page,
-        limit,
-        total: count || 0,
-        totalPages,
-      } : undefined,
+      pagination:
+        page && limit
+          ? {
+              page,
+              limit,
+              total: count || 0,
+              totalPages,
+            }
+          : undefined,
     };
   }
 
@@ -103,14 +117,20 @@ class UserAPI {
     inactive: number;
   }> {
     const buildQuery = () => {
-      let q = supabase.from('users').select('*', { count: 'exact', head: true });
+      let q = supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
       return q;
     };
 
     try {
       const { count: allCount } = await buildQuery();
       const { count: activeCount } = await buildQuery().is('deleted_at', null);
-      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
+      const { count: inactiveCount } = await buildQuery().not(
+        'deleted_at',
+        'is',
+        null
+      );
 
       return {
         all: allCount || 0,
@@ -129,7 +149,7 @@ class UserAPI {
       .select('*')
       .is('deleted_at', null)
       .order('name');
-    
+
     if (error) throw error;
     return data;
   }
@@ -141,7 +161,7 @@ class UserAPI {
       .insert({
         username: input.username,
         name: input.name,
-        password_hash: input.password_hash
+        password_hash: input.password_hash,
       })
       .select()
       .single();
@@ -150,9 +170,9 @@ class UserAPI {
 
     // 2. Assign Roles
     if (input.role_ids.length > 0) {
-      const roleInserts = input.role_ids.map(roleId => ({
+      const roleInserts = input.role_ids.map((roleId) => ({
         user_id: user.id,
-        role_id: roleId
+        role_id: roleId,
       }));
 
       const { error: roleError } = await supabase
@@ -184,16 +204,13 @@ class UserAPI {
     // 2. Update Roles if provided
     if (input.role_ids !== undefined) {
       // Delete existing roles
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', id);
+      await supabase.from('user_roles').delete().eq('user_id', id);
 
       // Insert new roles
       if (input.role_ids.length > 0) {
-        const roleInserts = input.role_ids.map(roleId => ({
+        const roleInserts = input.role_ids.map((roleId) => ({
           user_id: id,
-          role_id: roleId
+          role_id: roleId,
         }));
 
         const { error: roleError } = await supabase
@@ -210,7 +227,7 @@ class UserAPI {
       .from('users')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
-    
+
     if (error) throw error;
   }
 
@@ -219,7 +236,7 @@ class UserAPI {
       .from('users')
       .update({ deleted_at: null })
       .eq('id', id);
-    
+
     if (error) throw error;
   }
 }

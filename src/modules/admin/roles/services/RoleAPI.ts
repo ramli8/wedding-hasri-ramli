@@ -16,7 +16,7 @@ class RoleAPI {
     includeDeleted: boolean = false,
     page?: number,
     limit?: number,
-    filters?: { status?: 'all' | 'active' | 'inactive' }
+    filters?: { status?: 'all' | 'active' | 'inactive'; search?: string }
   ): Promise<RoleApiResponse> {
     let query = supabase
       .from('roles')
@@ -33,6 +33,11 @@ class RoleAPI {
       query = query.is('deleted_at', null);
     }
 
+    // Apply search filter
+    if (filters?.search) {
+      query = query.ilike('name', `%${filters.search}%`);
+    }
+
     // Apply pagination if provided
     if (page && limit) {
       const offset = (page - 1) * limit;
@@ -47,12 +52,15 @@ class RoleAPI {
 
     return {
       data: data as Role[],
-      pagination: page && limit ? {
-        page,
-        limit,
-        total: count || 0,
-        totalPages,
-      } : undefined,
+      pagination:
+        page && limit
+          ? {
+              page,
+              limit,
+              total: count || 0,
+              totalPages,
+            }
+          : undefined,
     };
   }
 
@@ -65,15 +73,28 @@ class RoleAPI {
     return count || 0;
   }
 
-  async getCounts(): Promise<{ all: number; active: number; inactive: number }> {
-    const buildQuery = () => supabase.from('roles').select('*', { count: 'exact', head: true });
-    
+  async getCounts(): Promise<{
+    all: number;
+    active: number;
+    inactive: number;
+  }> {
+    const buildQuery = () =>
+      supabase.from('roles').select('*', { count: 'exact', head: true });
+
     try {
       const { count: allCount } = await buildQuery();
       const { count: activeCount } = await buildQuery().is('deleted_at', null);
-      const { count: inactiveCount } = await buildQuery().not('deleted_at', 'is', null);
-      
-      return { all: allCount || 0, active: activeCount || 0, inactive: inactiveCount || 0 };
+      const { count: inactiveCount } = await buildQuery().not(
+        'deleted_at',
+        'is',
+        null
+      );
+
+      return {
+        all: allCount || 0,
+        active: activeCount || 0,
+        inactive: inactiveCount || 0,
+      };
     } catch (error: any) {
       console.error('Error fetching role counts:', error);
       return { all: 0, active: 0, inactive: 0 };

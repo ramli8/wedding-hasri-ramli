@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, {
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   Box,
   IconButton,
@@ -16,7 +22,6 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnFiltersState } from '@tanstack/react-table';
 import { KategoriTamu } from '../types/KategoriTamu.types';
 
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
@@ -34,6 +39,8 @@ interface KategoriTableAdvanceProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   headerAction?: React.ReactNode;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
@@ -46,10 +53,45 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
   onLoadMore,
   hasMore = false,
   headerAction,
+  onSearch,
+  searchTerm = '',
 }) => {
   const { colorMode } = useColorMode();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [localSearchValue, setLocalSearchValue] = useState(searchTerm);
   const { colorPref } = useContext(AppSettingContext);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync local search value with prop
+  useEffect(() => {
+    setLocalSearchValue(searchTerm);
+  }, [searchTerm]);
+
+  // Debounced search handler
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearchValue(value);
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        if (onSearch) {
+          onSearch(value);
+        }
+      }, 300);
+    },
+    [onSearch]
+  );
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
     const result = await showConfirmationAlert(
@@ -65,16 +107,8 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
     }
   };
 
-  // Filtering logic
-  const globalFilterValue =
-    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
-
-  const filteredData = useMemo(() => {
-    if (!globalFilterValue) return initialData;
-    return initialData.filter((item) =>
-      item.nama.toLowerCase().includes(globalFilterValue.toLowerCase())
-    );
-  }, [initialData, globalFilterValue]);
+  // Data comes filtered from server, no client-side filtering needed
+  const filteredData = initialData;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
@@ -146,10 +180,9 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
               />
             </InputLeftElement>
             <Input
-              value={globalFilterValue}
+              value={localSearchValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                setColumnFilters(value ? [{ id: 'global', value }] : []);
+                handleSearchChange(e.target.value);
               }}
               h="48px"
               variant="filled"
@@ -228,6 +261,38 @@ const KategoriTableAdvance: React.FC<KategoriTableAdvanceProps> = ({
                     {isDeleted ? 'Dihapus' : 'Aktif'}
                   </Badge>
                 </Flex>
+
+                {/* Time Info */}
+                <VStack align="start" spacing={1} mb={4}>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="600"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                  >
+                    Waktu Kunjungan
+                  </Text>
+                  <HStack spacing={2}>
+                    <Badge
+                      colorScheme={colorPref}
+                      variant="soft"
+                      borderRadius="md"
+                    >
+                      {(kategori.jam_mulai || '').slice(0, 5) || '--:--'}
+                    </Badge>
+                    <Text fontSize="sm" color="gray.500">
+                      -
+                    </Text>
+                    <Badge
+                      colorScheme={colorPref}
+                      variant="soft"
+                      borderRadius="md"
+                    >
+                      {(kategori.jam_selesai || '').slice(0, 5) || '--:--'}
+                    </Badge>
+                  </HStack>
+                </VStack>
 
                 <HStack
                   justify="flex-end"

@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useContext } from 'react';
+import React, {
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   Box,
   IconButton,
@@ -16,7 +22,6 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { FaSearch } from 'react-icons/fa';
-import { ColumnFiltersState } from '@tanstack/react-table';
 import { Role } from '../types/Role.types';
 
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
@@ -35,6 +40,8 @@ interface RoleTableAdvanceProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   headerAction?: React.ReactNode;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
@@ -48,10 +55,34 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
   onLoadMore,
   hasMore = false,
   headerAction,
+  onSearch,
+  searchTerm = '',
 }) => {
   const { colorMode } = useColorMode();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [localSearchValue, setLocalSearchValue] = useState(searchTerm);
   const { colorPref } = useContext(AppSettingContext);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setLocalSearchValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearchValue(value);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (onSearch) onSearch(value);
+      }, 300);
+    },
+    [onSearch]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
     const result = await showConfirmationAlert(
@@ -67,16 +98,7 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
     }
   };
 
-  // Filtering logic
-  const globalFilterValue =
-    (columnFilters.find((f) => f.id === 'global')?.value as string) ?? '';
-
-  const filteredData = useMemo(() => {
-    if (!globalFilterValue) return initialData;
-    return initialData.filter((item) =>
-      item.name.toLowerCase().includes(globalFilterValue.toLowerCase())
-    );
-  }, [initialData, globalFilterValue]);
+  const filteredData = initialData;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
@@ -148,10 +170,9 @@ const RoleTableAdvance: React.FC<RoleTableAdvanceProps> = ({
               />
             </InputLeftElement>
             <Input
-              value={globalFilterValue}
+              value={localSearchValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                setColumnFilters(value ? [{ id: 'global', value }] : []);
+                handleSearchChange(e.target.value);
               }}
               h="48px"
               variant="filled"

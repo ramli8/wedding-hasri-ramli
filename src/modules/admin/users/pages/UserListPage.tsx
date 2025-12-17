@@ -1,42 +1,36 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
-import {
-  VStack,
-  Flex,
-  Box,
-  useColorMode,
-  Text,
-  Icon,
-  HStack,
-  Badge,
-} from '@chakra-ui/react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { VStack, Flex, Box, useColorMode, Text } from '@chakra-ui/react';
 import Head from 'next/head';
 import { NextPageWithLayout } from '@/pages/_app';
 import ContainerQuery from '@/components/atoms/ContainerQuery';
 import PageRow from '@/components/atoms/PageRow';
-import UserAPI, { User, Role } from '../services/UserAPI';
+import { User, Role } from '../services/UserAPI';
 import UserTableAdvance from '../components/UserTableAdvance';
 import UserFormModal from '../components/UserFormModal';
 import { showSuccessAlert, showErrorAlert } from '@/utils/sweetalert';
 import UserProfileActions from '@/components/molecules/UserProfileActions';
 import { PrimaryButton } from '@/components/atoms/Buttons/PrimaryButton';
 import FilterTabs from '@/components/molecules/FilterTabs';
-import { FaUsers } from 'react-icons/fa';
 import AppSettingContext from '@/providers/AppSettingProvider';
+import { useUsers } from '../utils/hooks/useUsers';
 
 const UserListPage: NextPageWithLayout = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    users,
+    roles,
+    loading,
+    hasMore,
+    fetchUsers,
+    loadMore,
+    createUser,
+    updateUser,
+    deleteUser,
+    restoreUser,
+  } = useUsers();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-  });
-  const [hasMore, setHasMore] = useState(true);
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'active' | 'inactive'
   >('all');
@@ -45,70 +39,14 @@ const UserListPage: NextPageWithLayout = () => {
     active: 0,
     inactive: 0,
   });
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const api = React.useMemo(() => new UserAPI(), []);
   const { colorMode } = useColorMode();
   const { colorPref } = useContext(AppSettingContext);
 
-  const fetchData = React.useCallback(
-    async (resetPagination = true) => {
-      try {
-        setLoading(true);
-        const page = resetPagination ? 1 : pagination.page;
-        const [usersResponse, rolesData] = await Promise.all([
-          api.getUsers(page, pagination.limit),
-          api.getRoles(),
-        ]);
-
-        if (resetPagination) {
-          setUsers(usersResponse.data);
-        } else {
-          setUsers((prev) => [...prev, ...usersResponse.data]);
-        }
-
-        if (usersResponse.pagination) {
-          setPagination(usersResponse.pagination);
-          setHasMore(
-            usersResponse.pagination.page <
-              usersResponse.pagination.totalPages &&
-              usersResponse.data.length === usersResponse.pagination.limit
-          );
-        } else {
-          setHasMore(false);
-        }
-
-        setRoles(rolesData);
-      } catch (error: any) {
-        showErrorAlert('Gagal memuat data user', error.message, colorMode);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [api, colorMode, pagination.page, pagination.limit]
-  );
-
-  const loadMore = React.useCallback(async () => {
-    if (!hasMore || loading) return;
-
-    try {
-      setLoading(true);
-      const nextPage = pagination.page + 1;
-      const response = await api.getUsers(nextPage, pagination.limit, {
-        status: filterStatus,
-      });
-
-      setUsers((prev) => [...prev, ...response.data]);
-
-      if (response.pagination) {
-        setPagination(response.pagination);
-        setHasMore(response.pagination.page < response.pagination.totalPages);
-      }
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  }, [api, pagination, hasMore, loading, colorMode, filterStatus]);
+  // Import API for getCounts only
+  const UserAPI = require('../services/UserAPI').default;
+  const api = React.useMemo(() => new UserAPI(), [UserAPI]);
 
   const fetchCounts = async () => {
     try {
@@ -120,39 +58,16 @@ const UserListPage: NextPageWithLayout = () => {
   };
 
   useEffect(() => {
-    fetchDataWithFilter();
+    fetchUsers(true, { status: filterStatus, search: searchTerm || undefined });
     fetchCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, searchTerm]);
 
-  const fetchDataWithFilter = async () => {
-    try {
-      setLoading(true);
-      const [usersResponse, rolesData] = await Promise.all([
-        api.getUsers(1, pagination.limit, { status: filterStatus }),
-        api.getRoles(),
-      ]);
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
 
-      setUsers(usersResponse.data);
-
-      if (usersResponse.pagination) {
-        setPagination(usersResponse.pagination);
-        setHasMore(
-          usersResponse.pagination.page < usersResponse.pagination.totalPages
-        );
-      } else {
-        setHasMore(false);
-      }
-
-      setRoles(rolesData);
-    } catch (error: any) {
-      showErrorAlert('Gagal memuat data user', error.message, colorMode);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredUsers = users; // No client-side filtering
+  const filteredUsers = users;
   const counts = statusCounts;
 
   const handleOpenModal = (user?: User) => {
@@ -169,7 +84,7 @@ const UserListPage: NextPageWithLayout = () => {
     try {
       setIsSubmitting(true);
       if (editingUser) {
-        await api.updateUser(editingUser.id, {
+        await updateUser(editingUser.id, {
           username: formData.username,
           name: formData.name,
           password_hash: formData.password || undefined,
@@ -177,8 +92,7 @@ const UserListPage: NextPageWithLayout = () => {
         });
         showSuccessAlert('User berhasil diupdate', colorMode);
       } else {
-        // Create new user
-        await api.createUser({
+        await createUser({
           username: formData.username,
           name: formData.name,
           password_hash: formData.password || 'default123',
@@ -187,7 +101,11 @@ const UserListPage: NextPageWithLayout = () => {
         showSuccessAlert('User berhasil dibuat', colorMode);
       }
       handleCloseModal();
-      fetchData();
+      fetchUsers(true, {
+        status: filterStatus,
+        search: searchTerm || undefined,
+      });
+      fetchCounts();
     } catch (error: any) {
       showErrorAlert(
         editingUser ? 'Gagal update user' : 'Gagal membuat user',
@@ -201,9 +119,9 @@ const UserListPage: NextPageWithLayout = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.deleteUser(id);
+      await deleteUser(id);
       showSuccessAlert('Data berhasil dihapus', colorMode);
-      fetchData();
+      fetchCounts();
     } catch (error: any) {
       showErrorAlert('Gagal menghapus', error.message, colorMode);
     }
@@ -211,9 +129,9 @@ const UserListPage: NextPageWithLayout = () => {
 
   const handleRestore = async (id: string) => {
     try {
-      await api.restoreUser(id);
+      await restoreUser(id);
       showSuccessAlert('Data berhasil dipulihkan', colorMode);
-      fetchData();
+      fetchCounts();
     } catch (error: any) {
       showErrorAlert('Gagal memulihkan', error.message, colorMode);
     }
@@ -235,7 +153,6 @@ const UserListPage: NextPageWithLayout = () => {
         <PageRow>
           <ContainerQuery>
             <VStack spacing={6} align="stretch">
-              {/* Header Section - Clean Typography */}
               {/* Header Section - Minimalist & Modern */}
               <Flex justify="space-between" align="center" mb={6} gap={4}>
                 <Box>
@@ -280,8 +197,15 @@ const UserListPage: NextPageWithLayout = () => {
                 onRestore={handleRestore}
                 onAddNew={() => handleOpenModal()}
                 onCopyMagicLink={handleCopyMagicLink}
-                onLoadMore={loadMore}
+                onLoadMore={() =>
+                  loadMore({
+                    status: filterStatus,
+                    search: searchTerm || undefined,
+                  })
+                }
                 hasMore={hasMore}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
                 headerAction={
                   <PrimaryButton
                     onClick={() => handleOpenModal()}

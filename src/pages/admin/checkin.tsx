@@ -21,7 +21,10 @@ import {
   FaInfoCircle,
   FaTimesCircle,
   FaUser,
+  FaImage,
 } from 'react-icons/fa';
+import { Html5Qrcode } from 'html5-qrcode';
+import { useRef } from 'react';
 import Head from 'next/head';
 import QRScanner from '@/components/QRScanner';
 import TamuAPI from '@/modules/admin/tamu/services/TamuAPI';
@@ -146,6 +149,44 @@ const CheckInPage = () => {
     // Silent error handling, no toast needed
   }, []);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTriggerFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+
+      // Don't set loading yet, let handleScan handle it if successful,
+      // but scanning file takes time so maybe show loading?
+      // handleScan checks if loading is true.
+
+      try {
+        const html5QrCode = new Html5Qrcode('qr-file-reader');
+        const result = await html5QrCode.scanFile(file, false);
+        // html5QrCode.clear(); // clear() returns promise but we don't strictly need to await it here for the next step?
+        // Actually clear() clears the element.
+
+        // Pass to handleScan
+        handleScan(result);
+      } catch (err) {
+        console.error('Error scanning file:', err);
+        // Show error manually since handleScan isn't called
+        setResultType('error');
+        setResultMessage(
+          'Gagal membaca QR Code dari gambar. Pastikan gambar jelas.'
+        );
+      }
+
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const resetScan = () => {
     setData(null);
     setScannedGuest(null);
@@ -235,82 +276,128 @@ const CheckInPage = () => {
 
               {/* Switch Button Below Scanner */}
               {!scannedGuest && !loading && (
-                <Flex justify="center" mb={{ base: 24, md: 12 }}>
+                <Flex
+                  direction="column"
+                  align="center"
+                  mb={{ base: 24, md: 12 }}
+                >
                   <HStack
-                    spacing={2}
-                    bg={colorMode === 'light' ? 'white' : 'gray.800'}
+                    spacing={1}
+                    bg={colorMode === 'light' ? 'gray.100' : 'whiteAlpha.200'}
                     borderRadius="full"
-                    p={1.5}
-                    boxShadow="lg"
-                    border="1px solid"
-                    borderColor={borderColor}
+                    p={1}
+                    mb={6}
+                    width="fit-content"
                   >
                     <Button
-                      size="md"
+                      size="sm"
                       bg={
                         facingMode === 'environment'
-                          ? activeButtonBg
+                          ? colorMode === 'light'
+                            ? 'white'
+                            : 'gray.700'
                           : 'transparent'
                       }
                       color={
                         facingMode === 'environment'
-                          ? activeButtonColor
-                          : inactiveButtonColor
+                          ? colorMode === 'light'
+                            ? 'gray.900'
+                            : 'white'
+                          : 'gray.500'
                       }
+                      shadow={facingMode === 'environment' ? 'sm' : 'none'}
                       variant="ghost"
                       borderRadius="full"
                       onClick={() => setFacingMode('environment')}
-                      fontSize="sm"
+                      fontSize="xs"
                       fontWeight="600"
-                      h="40px"
-                      px={5}
-                      leftIcon={<FaCamera size={14} />}
+                      h="32px"
+                      px={6}
+                      leftIcon={<FaCamera size={12} />}
                       _hover={{
-                        bg:
-                          facingMode === 'environment'
-                            ? activeButtonHoverBg
-                            : inactiveButtonHoverBg,
-                        transform: 'scale(1.02)',
+                        color:
+                          facingMode !== 'environment'
+                            ? colorMode === 'light'
+                              ? 'gray.900'
+                              : 'white'
+                            : undefined,
                       }}
+                      _active={{ bg: 'transparent' }}
                       transition="all 0.2s"
                     >
                       Belakang
                     </Button>
                     <Button
-                      size="md"
+                      size="sm"
                       bg={
-                        facingMode === 'user' ? activeButtonBg : 'transparent'
+                        facingMode === 'user'
+                          ? colorMode === 'light'
+                            ? 'white'
+                            : 'gray.700'
+                          : 'transparent'
                       }
                       color={
                         facingMode === 'user'
-                          ? activeButtonColor
-                          : inactiveButtonColor
+                          ? colorMode === 'light'
+                            ? 'gray.900'
+                            : 'white'
+                          : 'gray.500'
                       }
+                      shadow={facingMode === 'user' ? 'sm' : 'none'}
                       variant="ghost"
                       borderRadius="full"
                       onClick={() => setFacingMode('user')}
-                      fontSize="sm"
+                      fontSize="xs"
                       fontWeight="600"
-                      h="40px"
-                      px={5}
-                      leftIcon={<FaCamera size={14} />}
+                      h="32px"
+                      px={6}
+                      leftIcon={<FaCamera size={12} />}
                       _hover={{
-                        bg:
-                          facingMode === 'user'
-                            ? activeButtonHoverBg
-                            : inactiveButtonHoverBg,
-                        transform: 'scale(1.02)',
+                        color:
+                          facingMode !== 'user'
+                            ? colorMode === 'light'
+                              ? 'gray.900'
+                              : 'white'
+                            : undefined,
                       }}
+                      _active={{ bg: 'transparent' }}
                       transition="all 0.2s"
                     >
                       Depan
                     </Button>
                   </HStack>
+
+                  <Button
+                    size="sm"
+                    variant="link"
+                    color={colorMode === 'light' ? 'gray.500' : 'gray.400'}
+                    onClick={handleTriggerFile}
+                    fontSize="xs"
+                    fontWeight="500"
+                    leftIcon={<FaImage size={12} />}
+                    _hover={{
+                      color: colorMode === 'light' ? 'blue.500' : 'blue.300',
+                      textDecoration: 'none',
+                    }}
+                    transition="all 0.2s"
+                  >
+                    Ambil QR dari Galeri
+                  </Button>
                 </Flex>
               )}
             </Box>
           </PageRow>
         </ContainerQuery>
+
+        {/* Hidden Elements for File Scan */}
+        <div id="qr-file-reader" style={{ display: 'none' }}></div>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileSelect}
+        />
 
         {/* Modern Result Overlay */}
         {(scannedGuest || loading || resultType) && (

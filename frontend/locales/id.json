@@ -1,0 +1,176 @@
+{
+  "common": {
+    "appName": "GNS",
+    "welcome": "Selamat Datang",
+    "loading": "Memuat...",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "close": "Tutup",
+    "back": "Kembali",
+    "next": "Selanjutnya",
+    "submit": "Kirim",
+    "search": "Cari",
+    "filter": "Filter",
+    "reset": "Reset",
+    "apply": "Terapkan",
+    "confirm": "Konfirmasi",
+    "yes": "Ya",
+    "no": "Tidak",
+    "optional": "Opsional",
+    "required": "Wajib"
+  },
+  "nav": {
+    "home": "Beranda",
+    "settings": "Pengaturan",
+    "login": "Masuk",
+    "logout": "Keluar",
+    "register": "Daftar",
+    "profile": "Profil",
+    "preferences": "Preferensi",
+    "admin": "Admin"
+  },
+  "landing": {
+    "badge": "Proyek Open Source",
+    "hero": {
+      "title1": "Bangun lebih cepat dengan",
+      "title2": "dan",
+      "description": "Starter kit siap produksi dengan autentikasi, manajemen peran, i18n, dan arsitektur bersih — agar Anda fokus membangun yang penting."
+    },
+    "nav": {
+      "features": "Fitur",
+      "stack": "Teknologi",
+      "architecture": "Arsitektur",
+      "signIn": "Masuk",
+      "getStarted": "Mulai Sekarang"
+    },
+    "stack": {
+      "label": "Teknologi",
+      "title": "Ditenagai oleh alat modern",
+      "description": "Setiap teknologi dipilih untuk performa, pengalaman pengembang, dan kesiapan produksi."
+    },
+    "features": {
+      "label": "Fitur",
+      "title": "Semua yang Anda butuhkan, sudah terkonfigurasi",
+      "description": "Berhenti mengatur boilerplate. Mulai bangun produk Anda dengan fitur lengkap."
+    },
+    "architecture": {
+      "label": "Arsitektur",
+      "title": "Arsitektur bersih, depan sampai belakang",
+      "description": "Struktur folder konsisten di kedua sisi untuk kode yang mudah dipelihara dan skalabel."
+    },
+    "cta": {
+      "title": "Siap mulai membangun?",
+      "description": "Clone repo, siapkan environment, dan mulai kirim fitur dalam hitungan menit — bukan hari.",
+      "button": "Mulai Gratis",
+      "github": "Star di GitHub"
+    },
+    "footer": {
+      "copyright": "GNS © 2024",
+      "privacy": "Privasi",
+      "terms": "Syarat",
+      "contact": "Kontak"
+    }
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "profile": {
+      "title": "Pengaturan Profil",
+      "personalInfo": "Informasi Pribadi",
+      "name": "Nama",
+      "email": "Email",
+      "phone": "Telepon",
+      "bio": "Bio",
+      "avatar": "Avatar",
+      "updateProfile": "Perbarui Profil",
+      "changePassword": "Ubah Kata Sandi",
+      "currentPassword": "Kata Sandi Saat Ini",
+      "newPassword": "Kata Sandi Baru",
+      "confirmPassword": "Konfirmasi Kata Sandi"
+    },
+    "preferences": {
+      "title": "Preferensi",
+      "language": {
+        "title": "Bahasa",
+        "description": "Pilih bahasa pilihan Anda",
+        "english": "English (Inggris)",
+        "indonesian": "Bahasa Indonesia"
+      },
+      "theme": {
+        "title": "Tema",
+        "description": "Pilih tema antarmuka",
+        "light": "Terang",
+        "dark": "Gelap",
+        "system": "Sistem"
+      },
+      "dateFormat": {
+        "title": "Format Tanggal",
+        "description": "Pilih cara tanggal ditampilkan"
+      },
+      "timezone": {
+        "title": "Zona Waktu",
+        "description": "Atur zona waktu lokal Anda"
+      },
+      "saveChanges": "Simpan Perubahan",
+      "changesSaved": "Preferensi Anda berhasil disimpan"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Masuk ke Akun Anda",
+      "email": "Email",
+      "password": "Kata Sandi",
+      "rememberMe": "Ingat saya",
+      "forgotPassword": "Lupa kata sandi?",
+      "submit": "Masuk",
+      "orContinueWith": "Atau lanjutkan dengan",
+      "google": "Lanjutkan dengan Google",
+      "noAccount": "Belum punya akun?",
+      "signUp": "Daftar"
+    },
+    "register": {
+      "title": "Buat Akun Anda",
+      "name": "Nama Lengkap",
+      "email": "Email",
+      "password": "Kata Sandi",
+      "confirmPassword": "Konfirmasi Kata Sandi",
+      "agreeToTerms": "Saya setuju dengan Syarat dan Ketentuan",
+      "submit": "Buat Akun",
+      "orContinueWith": "Atau lanjutkan dengan",
+      "google": "Lanjutkan dengan Google",
+      "haveAccount": "Sudah punya akun?",
+      "signIn": "Masuk"
+    },
+    "validation": {
+      "emailRequired": "Email wajib diisi",
+      "emailInvalid": "Alamat email tidak valid",
+      "passwordRequired": "Kata sandi wajib diisi",
+      "passwordMinLength": "Kata sandi minimal 8 karakter",
+      "passwordsNotMatch": "Kata sandi tidak cocok",
+      "nameRequired": "Nama wajib diisi",
+      "termsRequired": "Anda harus menyetujui syarat"
+    }
+  },
+  "admin": {
+    "title": "Panel Admin",
+    "users": "Pengguna",
+    "roles": "Peran",
+    "permissions": "Izin",
+    "settings": "Pengaturan"
+  },
+  "errors": {
+    "generic": "Terjadi kesalahan",
+    "networkError": "Kesalahan jaringan. Silakan periksa koneksi Anda.",
+    "unauthorized": "Akses tidak diizinkan",
+    "notFound": "Halaman tidak ditemukan",
+    "serverError": "Kesalahan server. Silakan coba lagi nanti."
+  },
+  "messages": {
+    "success": "Berhasil!",
+    "saved": "Perubahan berhasil disimpan",
+    "deleted": "Berhasil dihapus",
+    "updated": "Berhasil diperbarui",
+    "created": "Berhasil dibuat"
+  }
+}

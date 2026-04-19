@@ -1,0 +1,27 @@
+app:
+  name: gns-backend
+  version: 1.0.0
+  description: Backend service for gns application
+  port: ${APP_PORT}
+  burst: ${RATELIMIT_BURST}
+  request_per_second: ${RATELIMIT_REQUEST_PER_SECOND}
+auth:
+  jwt_secret: ${JWT_SECRET}
+  refresh_token_secret: ${JWT_REFRESH_SECRET}
+  token_expiration: ${JWT_ACCESS_TOKEN_EXPIRATION} # in seconds
+  refresh_token_expiration: ${JWT_REFRESH_TOKEN_EXPIRATION} # in seconds
+  enforcer_duration_seconds: ${ENFORCER_DURATION_SECONDS}
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  name: ${DB_NAME}
+  sslmode: ${DB_SSLMODE}
+  max_idle_conns: ${DB_MAX_IDLE_CONNS}
+  max_open_conns: ${DB_MAX_OPEN_CONNS}
+  conn_max_lifetime: ${DB_CONN_MAX_LIFETIME} # in minutes
+cache:
+  host: ${CACHE_HOST}
+  port: ${CACHE_PORT}
+  db: ${CACHE_DB}

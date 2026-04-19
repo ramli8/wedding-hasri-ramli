@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gns-postgres-dev
+    environment:
+      POSTGRES_USER: ${DB_USER:-gns_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gns_password}
+      POSTGRES_DB: ${DB_NAME:-gns_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gns_user} -d ${DB_NAME:-gns_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gns-redis-dev
+    ports:
+      - "${CACHE_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: gns-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app:delegated
+      - go-mod-cache:/go/pkg/mod
+    env_file:
+      - .env
+    working_dir: /app
+    networks:
+      - app-network
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  go-mod-cache:
+  postgres-data:
+  redis-data:

@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gns-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - proxy-tier
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gns-redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - proxy-tier
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gns
+    restart: unless-stopped
+    expose:
+      - "8083"
+    networks:
+      - proxy-tier
+    environment:
+      - VIRTUAL_HOST=api.gns.id
+      - VIRTUAL_PORT=8083
+      - LETSENCRYPT_HOST=api.gns.id
+      - LETSENCRYPT_EMAIL=system@gns.id
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  nginx_certs:
+  nginx_vhost:
+  nginx_html:
+  postgres-data:
+  redis-data:
+
+networks:
+  proxy-tier:
+    external: true

@@ -1,0 +1,8 @@
+./main
+.idea
+/config/config.development.yaml
+/config/config.staging.yaml
+/config/config.production.yaml
+.env
+*DS_Store
+tmp/*

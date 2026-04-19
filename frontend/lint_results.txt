@@ -1,0 +1,450 @@
+$ eslint
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/roles/page.tsx
+   17:68  warning  'Users' is defined but never used                        @typescript-eslint/no-unused-vars
+   59:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   83:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  103:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  120:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  139:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  163:23  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  184:11  warning  'getPermissionCount' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx
+  104:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  122:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  134:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  145:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  153:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  168:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  306:73  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:306:73
+  304 |                                                     <TableHeader>
+  305 |                                                         <TableRow>
+> 306 |                                                             <TableHead><SortButton field="name">Name</SortButton></TableHead>
+      |                                                                         ^^^^^^^^^^ This component is created during render
+  307 |                                                             <TableHead><SortButton field="email">Email</SortButton></TableHead>
+  308 |                                                             <TableHead>Roles</TableHead>
+  309 |                                                             <TableHead><SortButton field="is_active">Status</SortButton></TableHead>
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:207:24
+  205 |     };
+  206 |
+> 207 |     const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 208 |         <button
+      | ^^^^^^^^^^^^^^^
+> 209 |             className="flex items-center gap-1 hover:text-foreground"
+      | ^^^^^^^^^^^^^^^
+> 210 |             onClick={() => handleSort(field)}
+      | ^^^^^^^^^^^^^^^
+> 211 |         >
+      | ^^^^^^^^^^^^^^^
+> 212 |             {children}
+      | ^^^^^^^^^^^^^^^
+> 213 |             <ArrowUpDown className="h-3 w-3" />
+      | ^^^^^^^^^^^^^^^
+> 214 |         </button>
+      | ^^^^^^^^^^^^^^^
+> 215 |     );
+      | ^^^^^^ The component is created during render here
+  216 |
+  217 |     return (
+  218 |         <ProtectedRoute>                         react-hooks/static-components
+  307:73  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:307:73
+  305 |                                                         <TableRow>
+  306 |                                                             <TableHead><SortButton field="name">Name</SortButton></TableHead>
+> 307 |                                                             <TableHead><SortButton field="email">Email</SortButton></TableHead>
+      |                                                                         ^^^^^^^^^^ This component is created during render
+  308 |                                                             <TableHead>Roles</TableHead>
+  309 |                                                             <TableHead><SortButton field="is_active">Status</SortButton></TableHead>
+  310 |                                                             <TableHead>OAuth</TableHead>
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:207:24
+  205 |     };
+  206 |
+> 207 |     const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 208 |         <button
+      | ^^^^^^^^^^^^^^^
+> 209 |             className="flex items-center gap-1 hover:text-foreground"
+      | ^^^^^^^^^^^^^^^
+> 210 |             onClick={() => handleSort(field)}
+      | ^^^^^^^^^^^^^^^
+> 211 |         >
+      | ^^^^^^^^^^^^^^^
+> 212 |             {children}
+      | ^^^^^^^^^^^^^^^
+> 213 |             <ArrowUpDown className="h-3 w-3" />
+      | ^^^^^^^^^^^^^^^
+> 214 |         </button>
+      | ^^^^^^^^^^^^^^^
+> 215 |     );
+      | ^^^^^^ The component is created during render here
+  216 |
+  217 |     return (
+  218 |         <ProtectedRoute>  react-hooks/static-components
+  309:73  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:309:73
+  307 |                                                             <TableHead><SortButton field="email">Email</SortButton></TableHead>
+  308 |                                                             <TableHead>Roles</TableHead>
+> 309 |                                                             <TableHead><SortButton field="is_active">Status</SortButton></TableHead>
+      |                                                                         ^^^^^^^^^^ This component is created during render
+  310 |                                                             <TableHead>OAuth</TableHead>
+  311 |                                                             <TableHead className="text-right">Actions</TableHead>
+  312 |                                                         </TableRow>
+
+/home/pamungkas/Job/gns-base/frontend/app/admin/users/page.tsx:207:24
+  205 |     };
+  206 |
+> 207 |     const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 208 |         <button
+      | ^^^^^^^^^^^^^^^
+> 209 |             className="flex items-center gap-1 hover:text-foreground"
+      | ^^^^^^^^^^^^^^^
+> 210 |             onClick={() => handleSort(field)}
+      | ^^^^^^^^^^^^^^^
+> 211 |         >
+      | ^^^^^^^^^^^^^^^
+> 212 |             {children}
+      | ^^^^^^^^^^^^^^^
+> 213 |             <ArrowUpDown className="h-3 w-3" />
+      | ^^^^^^^^^^^^^^^
+> 214 |         </button>
+      | ^^^^^^^^^^^^^^^
+> 215 |     );
+      | ^^^^^^ The component is created during render here
+  216 |
+  217 |     return (
+  218 |         <ProtectedRoute>             react-hooks/static-components
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/login/page.tsx
+   16:20  warning  'loginWithGoogle' is assigned a value but never used             @typescript-eslint/no-unused-vars
+   29:23  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  148:28  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx
+   70:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  158:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:158:30
+  156 |                         <div className="space-y-2 p-3 bg-muted/50 rounded-md">
+  157 |                             <p className="text-sm font-medium">Password Requirements:</p>
+> 158 |                             <ValidationItem valid={validations.minLength} text="At least 8 characters" />
+      |                              ^^^^^^^^^^^^^^ This component is created during render
+  159 |                             <ValidationItem valid={validations.hasNumber} text="Contains a number" />
+  160 |                             <ValidationItem valid={validations.hasSpecial} text="Contains a special character" />
+  161 |                             <ValidationItem valid={validations.match} text="Passwords match" />
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:75:28
+  73 |     };
+  74 |
+> 75 |     const ValidationItem = ({ valid, text }: { valid: boolean; text: string }) => (
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |         <div className="flex items-center gap-2 text-sm">
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |             {valid ? (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 78 |                 <Check className="h-4 w-4 text-green-500" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 79 |             ) : (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 80 |                 <X className="h-4 w-4 text-gray-300" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 81 |             )}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |             <span className={valid ? 'text-green-600' : 'text-gray-500'}>{text}</span>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |         </div>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 84 |     );
+     | ^^^^^^ The component is created during render here
+  85 |
+  86 |     return (
+  87 |         <div className="min-h-screen flex items-center justify-center p-4">  react-hooks/static-components
+  159:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:159:30
+  157 |                             <p className="text-sm font-medium">Password Requirements:</p>
+  158 |                             <ValidationItem valid={validations.minLength} text="At least 8 characters" />
+> 159 |                             <ValidationItem valid={validations.hasNumber} text="Contains a number" />
+      |                              ^^^^^^^^^^^^^^ This component is created during render
+  160 |                             <ValidationItem valid={validations.hasSpecial} text="Contains a special character" />
+  161 |                             <ValidationItem valid={validations.match} text="Passwords match" />
+  162 |                         </div>
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:75:28
+  73 |     };
+  74 |
+> 75 |     const ValidationItem = ({ valid, text }: { valid: boolean; text: string }) => (
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |         <div className="flex items-center gap-2 text-sm">
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |             {valid ? (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 78 |                 <Check className="h-4 w-4 text-green-500" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 79 |             ) : (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 80 |                 <X className="h-4 w-4 text-gray-300" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 81 |             )}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |             <span className={valid ? 'text-green-600' : 'text-gray-500'}>{text}</span>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |         </div>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 84 |     );
+     | ^^^^^^ The component is created during render here
+  85 |
+  86 |     return (
+  87 |         <div className="min-h-screen flex items-center justify-center p-4">                                                  react-hooks/static-components
+  160:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:160:30
+  158 |                             <ValidationItem valid={validations.minLength} text="At least 8 characters" />
+  159 |                             <ValidationItem valid={validations.hasNumber} text="Contains a number" />
+> 160 |                             <ValidationItem valid={validations.hasSpecial} text="Contains a special character" />
+      |                              ^^^^^^^^^^^^^^ This component is created during render
+  161 |                             <ValidationItem valid={validations.match} text="Passwords match" />
+  162 |                         </div>
+  163 |
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:75:28
+  73 |     };
+  74 |
+> 75 |     const ValidationItem = ({ valid, text }: { valid: boolean; text: string }) => (
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |         <div className="flex items-center gap-2 text-sm">
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |             {valid ? (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 78 |                 <Check className="h-4 w-4 text-green-500" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 79 |             ) : (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 80 |                 <X className="h-4 w-4 text-gray-300" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 81 |             )}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |             <span className={valid ? 'text-green-600' : 'text-gray-500'}>{text}</span>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |         </div>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 84 |     );
+     | ^^^^^^ The component is created during render here
+  85 |
+  86 |     return (
+  87 |         <div className="min-h-screen flex items-center justify-center p-4">                                                                                                                                            react-hooks/static-components
+  161:30  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:161:30
+  159 |                             <ValidationItem valid={validations.hasNumber} text="Contains a number" />
+  160 |                             <ValidationItem valid={validations.hasSpecial} text="Contains a special character" />
+> 161 |                             <ValidationItem valid={validations.match} text="Passwords match" />
+      |                              ^^^^^^^^^^^^^^ This component is created during render
+  162 |                         </div>
+  163 |
+  164 |                         <Button
+
+/home/pamungkas/Job/gns-base/frontend/app/auth/register/page.tsx:75:28
+  73 |     };
+  74 |
+> 75 |     const ValidationItem = ({ valid, text }: { valid: boolean; text: string }) => (
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |         <div className="flex items-center gap-2 text-sm">
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |             {valid ? (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 78 |                 <Check className="h-4 w-4 text-green-500" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 79 |             ) : (
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 80 |                 <X className="h-4 w-4 text-gray-300" />
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 81 |             )}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |             <span className={valid ? 'text-green-600' : 'text-gray-500'}>{text}</span>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |         </div>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 84 |     );
+     | ^^^^^^ The component is created during render here
+  85 |
+  86 |     return (
+  87 |         <div className="min-h-screen flex items-center justify-center p-4">                                                                                                                                                                                                                      react-hooks/static-components
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/admin/permissions/page.tsx
+  35:38  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  42:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  59:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  76:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  86:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/admin/roles/page.tsx
+   41:38  warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   52:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   73:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   88:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  103:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  118:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  142:23  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/admin/users/page.tsx
+   75:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   87:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   96:8   warning  React Hook useEffect has a missing dependency: 'rbacService'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+   98:39  warning  React Hook useEffect has a missing dependency: 'loadUsers'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+   99:46  warning  React Hook useEffect has a missing dependency: 'loadDeletedUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  128:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  147:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  163:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  179:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  190:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  204:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/auth/login/page.tsx
+  31:18  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  31:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/docs/page.tsx
+  3:10  warning  'DemoMainLayout' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/settings/preference/page.tsx
+   4:10  warning  'Globe' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  25:23  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/settings/preference/page.tsx:25:23
+  23 |     const [mounted, setMounted] = useState(false);
+  24 |
+> 25 |     useEffect(() => { setMounted(true); }, []);
+     |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |     useEffect(() => { if (isReady) setSelectedLocale(locale); }, [locale, isReady]);
+  27 |     useEffect(() => { if (theme) setSelectedTheme(theme); }, [theme]);
+  28 |                                                             react-hooks/set-state-in-effect
+  26:36  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/settings/preference/page.tsx:26:36
+  24 |
+  25 |     useEffect(() => { setMounted(true); }, []);
+> 26 |     useEffect(() => { if (isReady) setSelectedLocale(locale); }, [locale, isReady]);
+     |                                    ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  27 |     useEffect(() => { if (theme) setSelectedTheme(theme); }, [theme]);
+  28 |
+  29 |     const handleSave = () => {                                                             react-hooks/set-state-in-effect
+  27:34  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/pamungkas/Job/gns-base/frontend/app/demo/settings/preference/page.tsx:27:34
+  25 |     useEffect(() => { setMounted(true); }, []);
+  26 |     useEffect(() => { if (isReady) setSelectedLocale(locale); }, [locale, isReady]);
+> 27 |     useEffect(() => { if (theme) setSelectedTheme(theme); }, [theme]);
+     |                                  ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |
+  29 |     const handleSave = () => {
+  30 |         if (selectedTheme !== theme) setTheme(selectedTheme);  react-hooks/set-state-in-effect
+
+/home/pamungkas/Job/gns-base/frontend/app/providers.tsx
+  12:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  50:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  52:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/pamungkas/Job/gns-base/frontend/src/domain/services/api-client.ts
+  30:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  40:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/src/lib/demo/demo-sidebar.tsx
+   6:56  warning  'AlertTriangle' is defined but never used  @typescript-eslint/no-unused-vars
+  30:11  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+/home/pamungkas/Job/gns-base/frontend/src/lib/demo/mock-services.ts
+   33:15  warning  '_data' is defined but never used         @typescript-eslint/no-unused-vars
+   53:25  warning  '_data' is defined but never used         @typescript-eslint/no-unused-vars
+   63:22  warning  '_data' is defined but never used         @typescript-eslint/no-unused-vars
+   87:24  warning  '_data' is defined but never used         @typescript-eslint/no-unused-vars
+  111:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  314:27  warning  '_userId' is defined but never used       @typescript-eslint/no-unused-vars
+  314:44  warning  '_data' is defined but never used         @typescript-eslint/no-unused-vars
+  318:22  warning  '_userId' is defined but never used       @typescript-eslint/no-unused-vars
+  338:31  warning  '_roleId' is defined but never used       @typescript-eslint/no-unused-vars
+  343:25  warning  '_permission' is defined but never used   @typescript-eslint/no-unused-vars
+  348:27  warning  '_module' is defined but never used       @typescript-eslint/no-unused-vars
+  348:44  warning  '_action' is defined but never used       @typescript-eslint/no-unused-vars
+
+/home/pamungkas/Job/gns-base/frontend/src/presentation/components/admin/permissions-container.tsx
+  33:9   error  Error: Cannot access variable before it is declared
+
+`loadData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/home/pamungkas/Job/gns-base/frontend/src/presentation/components/admin/permissions-container.tsx:33:9
+  31 |
+  32 |     useEffect(() => {
+> 33 |         loadData();
+     |         ^^^^^^^^ `loadData` accessed before it is declared
+  34 |     }, []);
+  35 |
+  36 |     const loadData = async () => {
+
+/home/pamungkas/Job/gns-base/frontend/src/presentation/components/admin/permissions-container.tsx:36:5
+  34 |     }, []);
+  35 |
+> 36 |     const loadData = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 37 |         try {
+     | ^^^^^^^^^^^^^
+> 38 |             setLoading(true);
+     …
+     | ^^^^^^^^^^^^^
+> 45 |         }
+     | ^^^^^^^^^^^^^
+> 46 |     };
+     | ^^^^^^^ `loadData` is declared here
+  47 |
+  48 |     const handleCreatePermission = async () => {
+  49 |         try {  react-hooks/immutability
+  42:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  59:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  78:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  91:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+
+✖ 81 problems (56 errors, 25 warnings)
+
+error: script "lint" exited with code 1

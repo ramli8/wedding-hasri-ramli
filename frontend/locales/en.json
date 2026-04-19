@@ -1,0 +1,175 @@
+{
+  "common": {
+    "appName": "GNS",
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "apply": "Apply",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "optional": "Optional",
+    "required": "Required"
+  },
+  "nav": {
+    "home": "Home",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "admin": "Admin"
+  },
+  "landing": {
+    "badge": "Open Source Base Project",
+    "hero": {
+      "title1": "Build faster with",
+      "title2": "and",
+      "description": "A production-ready starter kit with authentication, role management, i18n, and a clean architecture — so you can focus on building what matters."
+    },
+    "nav": {
+      "features": "Features",
+      "stack": "Stack",
+      "architecture": "Architecture",
+      "signIn": "Sign In",
+      "getStarted": "Get Started"
+    },
+    "stack": {
+      "label": "Tech Stack",
+      "title": "Powered by modern tools",
+      "description": "Each technology chosen for performance, developer experience, and production readiness."
+    },
+    "features": {
+      "label": "Features",
+      "title": "Everything you need, pre-configured",
+      "description": "Stop setting up boilerplate. Start building your product with batteries included."
+    },
+    "architecture": {
+      "label": "Architecture",
+      "title": "Clean architecture, front to back",
+      "description": "Consistent folder structure on both sides for maintainable, scalable code."
+    },
+    "cta": {
+      "title": "Ready to start building?",
+      "description": "Clone the repo, set up your environment, and start shipping features in minutes — not days.",
+      "button": "Get Started Free",
+      "github": "Star on GitHub"
+    },
+    "footer": {
+      "copyright": "GNS © 2024",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": {
+      "title": "Profile Settings",
+      "personalInfo": "Personal Information",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "bio": "Bio",
+      "avatar": "Avatar",
+      "updateProfile": "Update Profile",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "language": {
+        "title": "Language",
+        "description": "Select your preferred language",
+        "english": "English",
+        "indonesian": "Indonesian (Bahasa Indonesia)"
+      },
+      "theme": {
+        "title": "Theme",
+        "description": "Choose your interface theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "dateFormat": {
+        "title": "Date Format",
+        "description": "Choose how dates are displayed"
+      },
+      "timezone": {
+        "title": "Timezone",
+        "description": "Set your local timezone"
+      },
+      "saveChanges": "Save Changes",
+      "changesSaved": "Your preferences have been saved successfully"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login to Your Account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Login",
+      "orContinueWith": "Or continue with",
+      "google": "Continue with Google",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create Your Account",
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "agreeToTerms": "I agree to the Terms and Conditions",
+      "submit": "Create Account",
+      "orContinueWith": "Or continue with",
+      "google": "Continue with Google",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email address",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordsNotMatch": "Passwords do not match",
+      "nameRequired": "Name is required",
+      "termsRequired": "You must agree to the terms"
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "settings": "Settings"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "networkError": "Network error. Please check your connection.",
+    "unauthorized": "Unauthorized access",
+    "notFound": "Page not found",
+    "serverError": "Server error. Please try again later."
+  },
+  "messages": {
+    "success": "Success!",
+    "saved": "Changes saved successfully",
+    "deleted": "Deleted successfully",
+    "updated": "Updated successfully",
+    "created": "Created successfully"
+  }
+}

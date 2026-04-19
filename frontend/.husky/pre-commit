@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Ensure local bin paths are included in Husky's environment
+export PATH="$PATH:$HOME/go/bin:/usr/local/go/bin:$HOME/.bun/bin"
+
+# Colors for clearer output
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo "${CYAN}[Husky] Running pre-commit checks...${NC}"
+
+# Backend Lint & Test
+echo "${GREEN}→ Running Backend Lint (golangci-lint)...${NC}"
+if ! command -v golangci-lint > /dev/null 2>&1; then
+  echo "${RED}❌ golangci-lint could not be found. Please install it to run backend linting.${NC}"
+  echo "${CYAN}See: https://golangci-lint.run/docs/welcome/install"
+  exit 1
+fi
+
+cd backend
+golangci-lint run
+if [ $? -ne 0 ]; then
+  echo "${RED}❌ Backend linting failed! Fix errors before committing.${NC}"
+  exit 1
+fi
+cd ..
+
+# Frontend Lint & Build
+echo "${GREEN}→ Running Frontend Lint & Build...${NC}"
+if ! command -v bun > /dev/null 2>&1; then
+  echo "${RED}❌ bun could not be found. Please install it to run frontend checks.${NC}"
+  echo "${CYAN}See: https://bun.sh/docs/installation${NC}"
+  exit 1
+fi
+
+cd frontend
+echo "  - bun run lint"
+bun run lint
+if [ $? -ne 0 ]; then
+  echo "${RED}❌ Frontend linting failed! Fix errors before committing.${NC}"
+  exit 1
+fi
+
+echo "  - bun run build"
+bun run build
+if [ $? -ne 0 ]; then
+  echo "${RED}❌ Frontend build failed! Fix errors before committing.${NC}"
+  exit 1
+fi
+cd ..
+
+echo "${GREEN}✅ All checks passed! Proceeding with commit.${NC}"
+exit 0

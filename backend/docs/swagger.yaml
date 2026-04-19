@@ -1,0 +1,1327 @@
+basePath: /v1
+definitions:
+  internal_auth.AdminUpdateUserRequest:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        minLength: 2
+        type: string
+      role_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  internal_auth.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/internal_auth.UserResponse'
+    type: object
+  internal_auth.ChangePasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  internal_auth.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - email
+    - name
+    - password
+    type: object
+  internal_auth.GoogleOAuthRequest:
+    properties:
+      id_token:
+        type: string
+    required:
+    - id_token
+    type: object
+  internal_auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  internal_auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  internal_auth.UpdateProfileRequest:
+    properties:
+      avatar_url:
+        type: string
+      name:
+        minLength: 2
+        type: string
+    type: object
+  internal_auth.UserListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_auth.UserResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_auth.UserResponse:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      is_active:
+        type: boolean
+      is_oauth:
+        type: boolean
+      name:
+        type: string
+      oauth_provider:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_rbac.AssignPermissionsToRoleRequest:
+    properties:
+      permission_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - permission_ids
+    type: object
+  internal_rbac.AssignRolesToUserRequest:
+    properties:
+      role_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - role_ids
+    type: object
+  internal_rbac.CheckModuleAccessRequest:
+    properties:
+      action:
+        enum:
+        - view
+        - create
+        - edit
+        - delete
+        type: string
+      module:
+        type: string
+    required:
+    - action
+    - module
+    type: object
+  internal_rbac.CheckModuleAccessResponse:
+    properties:
+      has_access:
+        type: boolean
+    type: object
+  internal_rbac.CheckPermissionRequest:
+    properties:
+      permission:
+        type: string
+    required:
+    - permission
+    type: object
+  internal_rbac.CheckPermissionResponse:
+    properties:
+      has_permission:
+        type: boolean
+    type: object
+  internal_rbac.CreatePermissionRequest:
+    properties:
+      description:
+        type: string
+      module:
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - module
+    - name
+    type: object
+  internal_rbac.CreateRoleRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  internal_rbac.ModuleAccessResponse:
+    properties:
+      can_create:
+        type: boolean
+      can_delete:
+        type: boolean
+      can_edit:
+        type: boolean
+      can_view:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      module_name:
+        type: string
+      role_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  internal_rbac.PermissionResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      module:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_rbac.PermissionsByModuleResponse:
+    properties:
+      module:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/internal_rbac.PermissionResponse'
+        type: array
+    type: object
+  internal_rbac.RoleResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      is_system:
+        type: boolean
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_rbac.UpdateModuleAccessRequest:
+    properties:
+      can_create:
+        type: boolean
+      can_delete:
+        type: boolean
+      can_edit:
+        type: boolean
+      can_view:
+        type: boolean
+      module_name:
+        type: string
+    required:
+    - module_name
+    type: object
+  internal_rbac.UpdatePermissionRequest:
+    properties:
+      description:
+        type: string
+      module:
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
+  internal_rbac.UpdateRoleRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
+  internal_rbac.UserRoleResponse:
+    properties:
+      roles:
+        items:
+          $ref: '#/definitions/internal_rbac.RoleResponse'
+        type: array
+      user_email:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is GNS Backend API server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: GNS Backend API
+  version: "1.0"
+paths:
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the password for the currently logged-in user
+      parameters:
+      - description: Change password request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change user password
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password to get JWT token
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.AuthResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout the current user and invalidate tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/oauth/google:
+    post:
+      consumes:
+      - application/json
+      description: Login using Google OAuth ID Token
+      parameters:
+      - description: Google OAuth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.GoogleOAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.AuthResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid Google token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login with Google
+      tags:
+      - Auth
+  /auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the currently logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Auth
+    put:
+      consumes:
+      - application/json
+      description: Update the profile information for the current user
+      parameters:
+      - description: Update profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a refresh token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.AuthResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email and password
+      parameters:
+      - description: Register request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_auth.AuthResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: User already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - Auth
+  /rbac/check-module-access:
+    post:
+      consumes:
+      - application/json
+      description: Check if the user has access to a specific action on a module
+      parameters:
+      - description: Check module access request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.CheckModuleAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.CheckModuleAccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Check module access
+      tags:
+      - RBAC - Permission Checking
+  /rbac/check-permission:
+    post:
+      consumes:
+      - application/json
+      description: Check if the currently logged-in user has a specific permission
+      parameters:
+      - description: Check permission request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.CheckPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.CheckPermissionResponse'
+      security:
+      - BearerAuth: []
+      summary: Check user permission
+      tags:
+      - RBAC - Permission Checking
+  /rbac/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all existing permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_rbac.PermissionResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get all permissions
+      tags:
+      - RBAC - Permissions
+    post:
+      consumes:
+      - application/json
+      description: Create a new permission for a module
+      parameters:
+      - description: Create permission request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_rbac.PermissionResponse'
+      security:
+      - BearerAuth: []
+      summary: Create permission
+      tags:
+      - RBAC - Permissions
+  /rbac/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a permission
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permission deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete permission
+      tags:
+      - RBAC - Permissions
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a permission
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.PermissionResponse'
+      security:
+      - BearerAuth: []
+      summary: Get permission by ID
+      tags:
+      - RBAC - Permissions
+    put:
+      consumes:
+      - application/json
+      description: Update permission information
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update permission request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.PermissionResponse'
+      security:
+      - BearerAuth: []
+      summary: Update permission
+      tags:
+      - RBAC - Permissions
+  /rbac/permissions/by-module:
+    get:
+      consumes:
+      - application/json
+      description: Get all permissions grouped by their respective modules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_rbac.PermissionsByModuleResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get permissions grouped by module
+      tags:
+      - RBAC - Permissions
+  /rbac/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all existing roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_rbac.RoleResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get all roles
+      tags:
+      - RBAC - Roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role
+      parameters:
+      - description: Create role request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_rbac.RoleResponse'
+      security:
+      - BearerAuth: []
+      summary: Create role
+      tags:
+      - RBAC - Roles
+  /rbac/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a role (non-system roles only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete role
+      tags:
+      - RBAC - Roles
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.RoleResponse'
+      security:
+      - BearerAuth: []
+      summary: Get role by ID
+      tags:
+      - RBAC - Roles
+    put:
+      consumes:
+      - application/json
+      description: Update role information
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update role request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.RoleResponse'
+      security:
+      - BearerAuth: []
+      summary: Update role
+      tags:
+      - RBAC - Roles
+  /rbac/roles/{id}/module-access:
+    get:
+      consumes:
+      - application/json
+      description: Get all module access configurations for a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_rbac.ModuleAccessResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get module access for role
+      tags:
+      - RBAC - Module Access
+    post:
+      consumes:
+      - application/json
+      description: Update specific module permissions (view, create, edit, delete)
+        for a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update module access request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.UpdateModuleAccessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.ModuleAccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Update module access for role
+      tags:
+      - RBAC - Module Access
+  /rbac/roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all permissions assigned to a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_rbac.PermissionResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get role permissions
+      tags:
+      - RBAC - Role Permissions
+    post:
+      consumes:
+      - application/json
+      description: Assign multiple permissions to a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Assign permissions request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.AssignPermissionsToRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permissions assigned successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Assign permissions to role
+      tags:
+      - RBAC - Role Permissions
+  /rbac/users/{userId}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles assigned to a user
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_rbac.UserRoleResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user roles
+      tags:
+      - RBAC - User Roles
+    post:
+      consumes:
+      - application/json
+      description: Assign multiple roles to a user
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Assign roles request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_rbac.AssignRolesToUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Roles assigned successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Assign roles to user
+      tags:
+      - RBAC - User Roles
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of users (Admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Sort field
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort direction
+        in: query
+        name: sort_dir
+        type: string
+      - description: Filter by active status
+        in: query
+        name: is_active
+        type: boolean
+      - description: Filter by role ID
+        in: query
+        name: role_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - User Management
+    post:
+      consumes:
+      - application/json
+      description: Create a new user by an admin
+      parameters:
+      - description: Create user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create user
+      tags:
+      - User Management
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a user
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - User Management
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information for a specific user
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - User Management
+    put:
+      consumes:
+      - application/json
+      description: Update user information by an admin
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.AdminUpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - User Management
+  /users/{id}/restore:
+    post:
+      consumes:
+      - application/json
+      description: Restore a soft-deleted user
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+      security:
+      - BearerAuth: []
+      summary: Restore deleted user
+      tags:
+      - User Management
+  /users/{id}/toggle-status:
+    post:
+      consumes:
+      - application/json
+      description: Toggle user active/inactive status
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserResponse'
+      security:
+      - BearerAuth: []
+      summary: Toggle user status
+      tags:
+      - User Management
+  /users/deleted:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of soft-deleted users
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.UserListResponse'
+      security:
+      - BearerAuth: []
+      summary: List deleted users
+      tags:
+      - User Management
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

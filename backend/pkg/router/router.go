@@ -11,6 +11,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	cmiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/unrolled/secure"
+
+	_ "github.com/base-go/backend/docs"
+	"github.com/base-go/backend/pkg/config"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // SetupRoutes this function for centralize setup all route in this app.
@@ -31,7 +35,6 @@ func SetupRoutes(
 	mux.Use(cmiddleware.NoCache)
 	mux.Use(cmiddleware.GetHead)
 	mux.Use(cmiddleware.Compress(zlib.BestCompression))
-	mux.Use(cmiddleware.AllowContentType("application/json"))
 	mux.Use(secure.New(secure.Options{
 		FrameDeny:            true,
 		ContentTypeNosniff:   true,
@@ -58,6 +61,8 @@ func SetupRoutes(
 
 	// set prefix v1
 	mux.Route("/v1", func(r chi.Router) {
+		r.Use(cmiddleware.AllowContentType("application/json"))
+
 
 		// Authentication routes (public)
 		r.Route("/auth", func(r chi.Router) {
@@ -145,6 +150,14 @@ func SetupRoutes(
 			})
 		})
 	})
+
+	// Swagger documentation (only in development/staging)
+	cfg := config.GetConfig()
+	if cfg.App.Env == "development" || cfg.App.Env == "staging" {
+		mux.Get("/swagger/*", httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"), // The url pointing to API definition
+		))
+	}
 
 	return mux
 }

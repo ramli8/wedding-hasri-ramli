@@ -48,7 +48,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// split token from bearer
-		parts := strings.Split(authHeader, " ")
+		parts := strings.Fields(authHeader)
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
 			res.Code = http.StatusUnauthorized
 			res.Message = "Invalid Authorization header format"

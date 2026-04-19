@@ -3,6 +3,7 @@ app:
   version: 1.0.0
   description: Backend service for gns application
   port: ${APP_PORT}
+  env: ${APP_ENV}
   burst: ${RATELIMIT_BURST}
   request_per_second: ${RATELIMIT_REQUEST_PER_SECOND}
 auth:

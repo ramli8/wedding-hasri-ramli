@@ -62,6 +62,10 @@ migrate-force:
 db-shell:
 	docker exec -it gns-postgres-dev psql -U $(DB_USER) -d $(DB_NAME)
 
+### Generate Swagger documentation
+swagger:
+	swag init -g cmd/api/main.go --parseDependency --parseInternal
+
 ### Dev with environment variables support
 dev:
 	docker compose -f $(DEV_COMPOSE_FILE) up --build
@@ -92,5 +96,6 @@ help:
 	@echo "  migrate-down             - Rollback database migrations"
 	@echo "  migrate-force version=X  - Force migration to specific version"
 	@echo "  db-shell                 - Access PostgreSQL shell"
+	@echo "  swagger                  - Generate Swagger documentation"
 
 .PHONY: init up down run build create-migration migrate-up migrate-down migrate-force db-shell dev dev-down dev-clean help

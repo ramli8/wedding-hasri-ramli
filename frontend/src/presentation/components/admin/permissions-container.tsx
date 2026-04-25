@@ -1,5 +1,7 @@
 'use client';
 
+import { Plus, Edit, Trash2 } from 'lucide-react';
+
 import { useEffect, useState } from 'react';
 import { Button } from '@/src/presentation/components/ui/button';
 import { Input } from '@/src/presentation/components/ui/input';
@@ -10,8 +12,9 @@ import { Textarea } from '@/src/presentation/components/ui/textarea';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Badge } from '@/src/presentation/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/presentation/components/ui/table';
-import { Plus, Edit, Trash2, Key, Loader2, Search } from 'lucide-react';
+import { Key, Loader2, Search } from 'lucide-react';
 import { rbacService, type Permission, type PermissionsByModule } from '@/src/domain/services/rbac.service';
+import { ProtectedFeature } from '@/src/presentation/components/layout/protected-feature';
 
 export function PermissionsContainer() {
     const [permissionsByModule, setPermissionsByModule] = useState<PermissionsByModule[]>([]);
@@ -130,10 +133,12 @@ export function PermissionsContainer() {
                                 Manage system permissions and organize them by module
                             </CardDescription>
                         </div>
-                        <Button onClick={() => setIsCreateDialogOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Permission
-                        </Button>
+                        <ProtectedFeature permission="permissions.create">
+                            <Button onClick={() => setIsCreateDialogOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Permission
+                            </Button>
+                        </ProtectedFeature>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -225,20 +230,24 @@ export function PermissionsContainer() {
                                                             </TableCell>
                                                             <TableCell className="text-right">
                                                                 <div className="flex justify-end gap-2">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => openEditDialog(permission)}
-                                                                    >
-                                                                        <Edit className="h-4 w-4" />
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => handleDeletePermission(permission.id)}
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
+                                                                    <ProtectedFeature permission="permissions.update">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => openEditDialog(permission)}
+                                                                        >
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </ProtectedFeature>
+                                                                    <ProtectedFeature permission="permissions.delete">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => handleDeletePermission(permission.id)}
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </ProtectedFeature>
                                                                 </div>
                                                             </TableCell>
                                                         </TableRow>

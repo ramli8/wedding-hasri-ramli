@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { MainLayout } from '@/src/presentation/components/layout/main-layout';
 import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route';
-import { ProtectedModule } from '@/src/presentation/components/layout/protected-feature';
+import { ProtectedModule, ProtectedFeature } from '@/src/presentation/components/layout/protected-feature';
 import { Button } from '@/src/presentation/components/ui/button';
 import { Input } from '@/src/presentation/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/presentation/components/ui/card';
@@ -222,10 +222,12 @@ export default function RolesPage() {
                                         Create and manage roles with specific permissions for access control
                                     </CardDescription>
                                 </div>
-                                <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Role
-                                </Button>
+                                <ProtectedFeature permission="roles.create">
+                                    <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create Role
+                                    </Button>
+                                </ProtectedFeature>
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -335,32 +337,38 @@ export default function RolesPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => openPermissionsDialog(role)}
-                                                                title="Manage Permissions"
-                                                            >
-                                                                <Key className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => openEditDialog(role)}
-                                                                disabled={role.is_system}
-                                                                title={role.is_system ? 'System roles cannot be edited' : 'Edit Role'}
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => openDeleteDialog(role)}
-                                                                disabled={role.is_system}
-                                                                title={role.is_system ? 'System roles cannot be deleted' : 'Delete Role'}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            <ProtectedFeature permission="permissions.assign">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => openPermissionsDialog(role)}
+                                                                    title="Manage Permissions"
+                                                                >
+                                                                    <Key className="h-4 w-4" />
+                                                                </Button>
+                                                            </ProtectedFeature>
+                                                            <ProtectedFeature permission="roles.update">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => openEditDialog(role)}
+                                                                    disabled={role.is_system}
+                                                                    title={role.is_system ? 'System roles cannot be edited' : 'Edit Role'}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </ProtectedFeature>
+                                                            <ProtectedFeature permission="roles.delete">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => openDeleteDialog(role)}
+                                                                    disabled={role.is_system}
+                                                                    title={role.is_system ? 'System roles cannot be deleted' : 'Delete Role'}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </ProtectedFeature>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>

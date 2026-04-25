@@ -148,6 +148,58 @@ definitions:
           type: string
         type: array
     type: object
+  internal_guest.CategoryListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_guest.CategoryResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_guest.CategoryResponse:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      start_time:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_guest.CreateCategoryRequest:
+    properties:
+      end_time:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      start_time:
+        type: string
+    required:
+    - name
+    type: object
+  internal_guest.UpdateCategoryRequest:
+    properties:
+      end_time:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      start_time:
+        type: string
+    type: object
   internal_rbac.AssignPermissionsToRoleRequest:
     properties:
       permission_ids:
@@ -602,6 +654,160 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /guests/categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of guest categories with optional search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.CategoryListResponse'
+      summary: List all guest categories
+      tags:
+      - Guest
+    post:
+      consumes:
+      - application/json
+      description: Create a new guest category with name and optional start/end times
+      parameters:
+      - description: Create guest category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_guest.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_guest.CategoryResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Category already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new guest category
+      tags:
+      - Guest
+  /guests/categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a guest category by its ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete guest category
+      tags:
+      - Guest
+    get:
+      consumes:
+      - application/json
+      description: Get a single guest category by its ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.CategoryResponse'
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get guest category by ID
+      tags:
+      - Guest
+    put:
+      consumes:
+      - application/json
+      description: Update an existing guest category by its ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update guest category request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_guest.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.CategoryResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update guest category
+      tags:
+      - Guest
   /rbac/check-module-access:
     post:
       consumes:

@@ -1,0 +1,8 @@
+CREATE TABLE guest_categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    start_time TIMESTAMP DEFAULT NULL,
+    end_time TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

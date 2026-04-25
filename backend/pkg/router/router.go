@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/base-go/backend/internal/auth"
+	"github.com/base-go/backend/internal/guest"
 	"github.com/base-go/backend/internal/rbac"
 	"github.com/base-go/backend/pkg/middleware"
 	"github.com/base-go/backend/pkg/response"
@@ -25,6 +26,7 @@ func SetupRoutes(
 	authHandler auth.Handler,
 	rbacHandler rbac.Handler,
 	rbacRepo rbac.Repository,
+	guestHandler guest.Handler,
 ) *chi.Mux {
 	mux := chi.NewRouter()
 
@@ -88,40 +90,40 @@ func SetupRoutes(
 
 			// Roles
 			r.Route("/roles", func(r chi.Router) {
-				r.Post("/", rbacHandler.CreateRole)
+				r.With(middleware.RequirePermission(rbacRepo, "roles.create")).Post("/", rbacHandler.CreateRole)
 				r.Get("/", rbacHandler.GetAllRoles)
 
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", rbacHandler.GetRoleByID)
-					r.Put("/", rbacHandler.UpdateRole)
-					r.Delete("/", rbacHandler.DeleteRole)
+					r.With(middleware.RequirePermission(rbacRepo, "roles.update")).Put("/", rbacHandler.UpdateRole)
+					r.With(middleware.RequirePermission(rbacRepo, "roles.delete")).Delete("/", rbacHandler.DeleteRole)
 
 					// Role permissions
-					r.Post("/permissions", rbacHandler.AssignPermissionsToRole)
+					r.With(middleware.RequirePermission(rbacRepo, "permissions.assign")).Post("/permissions", rbacHandler.AssignPermissionsToRole)
 					r.Get("/permissions", rbacHandler.GetRolePermissions)
 
 					// Module access
-					r.Post("/module-access", rbacHandler.UpdateModuleAccess)
+					r.With(middleware.RequirePermission(rbacRepo, "permissions.assign")).Post("/module-access", rbacHandler.UpdateModuleAccess)
 					r.Get("/module-access", rbacHandler.GetModuleAccessByRole)
 				})
 			})
 
 			// Permissions
 			r.Route("/permissions", func(r chi.Router) {
-				r.Post("/", rbacHandler.CreatePermission)
+				r.With(middleware.RequirePermission(rbacRepo, "permissions.create")).Post("/", rbacHandler.CreatePermission)
 				r.Get("/", rbacHandler.GetAllPermissions)
 				r.Get("/by-module", rbacHandler.GetPermissionsByModule)
 
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", rbacHandler.GetPermissionByID)
-					r.Put("/", rbacHandler.UpdatePermission)
-					r.Delete("/", rbacHandler.DeletePermission)
+					r.With(middleware.RequirePermission(rbacRepo, "permissions.update")).Put("/", rbacHandler.UpdatePermission)
+					r.With(middleware.RequirePermission(rbacRepo, "permissions.delete")).Delete("/", rbacHandler.DeletePermission)
 				})
 			})
 
 			// User roles
 			r.Route("/users/{userId}/roles", func(r chi.Router) {
-				r.Post("/", rbacHandler.AssignRolesToUser)
+				r.With(middleware.RequirePermission(rbacRepo, "roles.assign")).Post("/", rbacHandler.AssignRolesToUser)
 				r.Get("/", rbacHandler.GetUserRoles)
 			})
 
@@ -138,15 +140,31 @@ func SetupRoutes(
 			r.Use(middleware.RequireRole("Super Admin", "Admin"))
 
 			r.Get("/", authHandler.ListUsers)
-			r.Post("/", authHandler.CreateUser)
+			r.With(middleware.RequirePermission(rbacRepo, "users.create")).Post("/", authHandler.CreateUser)
 			r.Get("/deleted", authHandler.ListDeletedUsers)
 
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", authHandler.GetUserByID)
-				r.Put("/", authHandler.UpdateUser)
-				r.Delete("/", authHandler.DeleteUser)
-				r.Post("/toggle-status", authHandler.ToggleUserStatus)
-				r.Post("/restore", authHandler.RestoreUser)
+				r.With(middleware.RequirePermission(rbacRepo, "users.update")).Put("/", authHandler.UpdateUser)
+				r.With(middleware.RequirePermission(rbacRepo, "users.delete")).Delete("/", authHandler.DeleteUser)
+				r.With(middleware.RequirePermission(rbacRepo, "users.manage_status")).Post("/toggle-status", authHandler.ToggleUserStatus)
+				r.With(middleware.RequirePermission(rbacRepo, "users.manage_status")).Post("/restore", authHandler.RestoreUser)
+			})
+		})
+
+		// Guest management routes (protected - Admin only)
+		r.Route("/guests", func(r chi.Router) {
+			r.Use(middleware.JWTAuthMiddleware)
+			r.Use(middleware.RequireRole("Super Admin", "Admin"))
+
+			r.Route("/categories", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "guest_categories.create")).Post("/", guestHandler.CreateCategory)
+				r.Get("/", guestHandler.ListCategories)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", guestHandler.GetCategoryByID)
+					r.With(middleware.RequirePermission(rbacRepo, "guest_categories.update")).Put("/", guestHandler.UpdateCategory)
+					r.With(middleware.RequirePermission(rbacRepo, "guest_categories.delete")).Delete("/", guestHandler.DeleteCategory)
+				})
 			})
 		})
 	})

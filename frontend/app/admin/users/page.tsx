@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/src/presentation/components/layout/main-layout';
 import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route';
-import { ProtectedModule } from '@/src/presentation/components/layout/protected-feature';
+import { ProtectedModule, ProtectedFeature } from '@/src/presentation/components/layout/protected-feature';
 import { Button } from '@/src/presentation/components/ui/button';
 import { Input } from '@/src/presentation/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/presentation/components/ui/table';
@@ -278,10 +278,12 @@ export default function UsersPage() {
                                                 <SelectItem value="false">Inactive</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
-                                            <UserPlus className="mr-2 h-4 w-4" />
-                                            Add User
-                                        </Button>
+                                        <ProtectedFeature permission="users.create">
+                                            <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
+                                                <UserPlus className="mr-2 h-4 w-4" />
+                                                Add User
+                                            </Button>
+                                        </ProtectedFeature>
                                     </div>
 
                                     {/* Users Table */}
@@ -343,41 +345,49 @@ export default function UsersPage() {
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
                                                                     <div className="flex justify-end gap-2">
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() => openRoleDialog(user)}
-                                                                            title="Assign Roles"
-                                                                        >
-                                                                            <Shield className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() => handleToggleStatus(user)}
-                                                                            title={user.is_active ? 'Deactivate' : 'Activate'}
-                                                                        >
-                                                                            <Power className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() => openEditDialog(user)}
-                                                                            title="Edit"
-                                                                        >
-                                                                            <Edit className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() => {
-                                                                                setSelectedUser(user);
-                                                                                setIsDeleteDialogOpen(true);
-                                                                            }}
-                                                                            title="Delete"
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
+                                                                        <ProtectedFeature permission="roles.assign">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => openRoleDialog(user)}
+                                                                                title="Assign Roles"
+                                                                            >
+                                                                                <Shield className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </ProtectedFeature>
+                                                                        <ProtectedFeature permission="users.manage_status">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => handleToggleStatus(user)}
+                                                                                title={user.is_active ? 'Deactivate' : 'Activate'}
+                                                                            >
+                                                                                <Power className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </ProtectedFeature>
+                                                                        <ProtectedFeature permission="users.update">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => openEditDialog(user)}
+                                                                                title="Edit"
+                                                                            >
+                                                                                <Edit className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </ProtectedFeature>
+                                                                        <ProtectedFeature permission="users.delete">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    setSelectedUser(user);
+                                                                                    setIsDeleteDialogOpen(true);
+                                                                                }}
+                                                                                title="Delete"
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </ProtectedFeature>
                                                                     </div>
                                                                 </TableCell>
                                                             </TableRow>
@@ -471,18 +481,20 @@ export default function UsersPage() {
                                                                     )}
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => {
-                                                                            setSelectedUser(user);
-                                                                            setIsRestoreDialogOpen(true);
-                                                                        }}
-                                                                        title="Restore User"
-                                                                    >
-                                                                        <RotateCcw className="h-4 w-4 mr-1" />
-                                                                        Restore
-                                                                    </Button>
+                                                                    <ProtectedFeature permission="users.delete">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => {
+                                                                                setSelectedUser(user);
+                                                                                setIsRestoreDialogOpen(true);
+                                                                            }}
+                                                                            title="Restore User"
+                                                                        >
+                                                                            <RotateCcw className="h-4 w-4 mr-1" />
+                                                                            Restore
+                                                                        </Button>
+                                                                    </ProtectedFeature>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}

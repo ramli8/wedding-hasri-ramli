@@ -68,6 +68,19 @@ const menuItems: SidebarMenuItem[] = [
             },
         ],
     },
+    {
+        label: 'Guest Management',
+        icon: Users,
+        anyRole: ['Super Admin', 'Admin'],
+        children: [
+            {
+                label: 'Categories',
+                href: '/admin/guest-categories',
+                icon: BookOpen,
+                permission: 'guest_categories.read',
+            },
+        ],
+    },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {

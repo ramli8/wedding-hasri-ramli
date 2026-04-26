@@ -415,6 +415,108 @@ const docTemplate = `{
                 }
             }
         },
+        "/guests": {
+            "get": {
+                "description": "Get a paginated list of guests with filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "List all guests",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name or QR code",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by category ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by attending status",
+                        "name": "status_attending",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by sent status",
+                        "name": "status_sent",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new guest with auto-generated unique QR code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Create a new guest",
+                "parameters": [
+                    {
+                        "description": "Create guest request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.CreateGuestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/guests/categories": {
             "get": {
                 "description": "Get a paginated list of guest categories with optional search",
@@ -452,7 +554,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.CategoryListResponse"
+                            "$ref": "#/definitions/internal_guest.GuestCategoryListResponse"
                         }
                     }
                 }
@@ -476,7 +578,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.CreateCategoryRequest"
+                            "$ref": "#/definitions/internal_guest.CreateGuestCategoryRequest"
                         }
                     }
                 ],
@@ -484,7 +586,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.CategoryResponse"
+                            "$ref": "#/definitions/internal_guest.GuestCategoryResponse"
                         }
                     },
                     "400": {
@@ -534,7 +636,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.CategoryResponse"
+                            "$ref": "#/definitions/internal_guest.GuestCategoryResponse"
                         }
                     },
                     "404": {
@@ -574,7 +676,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.UpdateCategoryRequest"
+                            "$ref": "#/definitions/internal_guest.UpdateGuestCategoryRequest"
                         }
                     }
                 ],
@@ -582,7 +684,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_guest.CategoryResponse"
+                            "$ref": "#/definitions/internal_guest.GuestCategoryResponse"
                         }
                     },
                     "400": {
@@ -638,6 +740,146 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Category not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/{id}": {
+            "get": {
+                "description": "Get a single guest by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Get guest by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing guest's information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Update guest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update guest request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.UpdateGuestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a guest by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Delete guest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Guest deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2008,13 +2250,63 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_guest.CategoryListResponse": {
+        "internal_guest.CreateGuestCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "start_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_guest.CreateGuestRequest": {
+            "type": "object",
+            "required": [
+                "guest_category_id",
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "guest_category_id": {
+                    "type": "integer"
+                },
+                "instagram_username": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "note": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 20
+                }
+            }
+        },
+        "internal_guest.GuestCategoryListResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_guest.CategoryResponse"
+                        "$ref": "#/definitions/internal_guest.GuestCategoryResponse"
                     }
                 },
                 "page": {
@@ -2031,7 +2323,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_guest.CategoryResponse": {
+        "internal_guest.GuestCategoryResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -2054,17 +2346,88 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_guest.CreateCategoryRequest": {
+        "internal_guest.GuestListResponse": {
             "type": "object",
-            "required": [
-                "name"
-            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_guest.GuestResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_guest.GuestResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "check_in_at": {
+                    "type": "string"
+                },
+                "check_out_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "guest_category_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instagram_username": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "qr_code": {
+                    "type": "string"
+                },
+                "status_attending": {
+                    "type": "string"
+                },
+                "status_sent": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_guest.UpdateGuestCategoryRequest": {
+            "type": "object",
             "properties": {
                 "end_time": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string",
+                    "maxLength": 100,
                     "minLength": 2
                 },
                 "start_time": {
@@ -2072,18 +2435,51 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_guest.UpdateCategoryRequest": {
+        "internal_guest.UpdateGuestRequest": {
             "type": "object",
             "properties": {
-                "end_time": {
+                "address": {
                     "type": "string"
+                },
+                "check_in_at": {
+                    "type": "string"
+                },
+                "check_out_at": {
+                    "type": "string"
+                },
+                "guest_category_id": {
+                    "type": "integer"
+                },
+                "instagram_username": {
+                    "type": "string",
+                    "maxLength": 50
                 },
                 "name": {
                     "type": "string",
+                    "maxLength": 255,
                     "minLength": 2
                 },
-                "start_time": {
+                "note": {
                     "type": "string"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "status_attending": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "going",
+                        "not_going"
+                    ]
+                },
+                "status_sent": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "sent"
+                    ]
                 }
             }
         },

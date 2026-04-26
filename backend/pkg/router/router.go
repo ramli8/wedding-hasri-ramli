@@ -157,6 +157,10 @@ func SetupRoutes(
 			r.Use(middleware.JWTAuthMiddleware)
 			r.Use(middleware.RequireRole("Super Admin", "Admin"))
 
+			r.With(middleware.RequirePermission(rbacRepo, "guests.create")).Post("/", guestHandler.CreateGuest)
+			r.Get("/", guestHandler.ListGuests)
+			r.Get("/deleted", guestHandler.ListDeletedGuests)
+
 			r.Route("/categories", func(r chi.Router) {
 				r.With(middleware.RequirePermission(rbacRepo, "guest_categories.create")).Post("/", guestHandler.CreateCategory)
 				r.Get("/", guestHandler.ListCategories)
@@ -165,6 +169,14 @@ func SetupRoutes(
 					r.With(middleware.RequirePermission(rbacRepo, "guest_categories.update")).Put("/", guestHandler.UpdateCategory)
 					r.With(middleware.RequirePermission(rbacRepo, "guest_categories.delete")).Delete("/", guestHandler.DeleteCategory)
 				})
+			})
+
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", guestHandler.GetGuestByID)
+				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Put("/", guestHandler.UpdateGuest)
+				r.With(middleware.RequirePermission(rbacRepo, "guests.delete")).Delete("/", guestHandler.DeleteGuest)
+				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Post("/restore", guestHandler.RestoreGuest)
+				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Put("/status-sent", guestHandler.UpdateStatusSent)
 			})
 		})
 	})

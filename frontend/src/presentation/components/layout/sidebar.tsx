@@ -74,6 +74,12 @@ const menuItems: SidebarMenuItem[] = [
         anyRole: ['Super Admin', 'Admin'],
         children: [
             {
+                label: 'Guests',
+                href: '/admin/guests',
+                icon: User,
+                permission: 'guests.read',
+            },
+            {
                 label: 'Categories',
                 href: '/admin/guest-categories',
                 icon: BookOpen,

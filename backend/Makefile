@@ -43,12 +43,12 @@ create-migration:
 ### Run migrations up
 migrate-up:
 	@echo "Running migrations..."
-	migrate -path $(MIGRATE_DIR) -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" up
+	migrate -path $(MIGRATE_DIR) -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" up
 
 ### Run migrations down
 migrate-down:
 	@echo "Rolling back migrations..."
-	migrate -path $(MIGRATE_DIR) -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" down
+	migrate -path $(MIGRATE_DIR) -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" down
 
 ### Force migration version
 migrate-force:
@@ -56,7 +56,7 @@ migrate-force:
 		echo "Usage: make migrate-force version=1"; \
 		exit 1; \
 	fi
-	migrate -path $(MIGRATE_DIR) -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" force $(version)
+	migrate -path $(MIGRATE_DIR) -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)" force $(version)
 
 ### Access PostgreSQL shell
 db-shell:

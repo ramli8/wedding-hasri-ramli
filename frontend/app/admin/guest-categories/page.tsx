@@ -13,16 +13,19 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/src/presentation/components/ui/label';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Switch } from '@/src/presentation/components/ui/switch';
-import { Search, Plus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, Clock, ArrowUpDown } from 'lucide-react';
 import { useGuestCategories, useCreateGuestCategory, useUpdateGuestCategory, useDeleteGuestCategory } from '@/src/application/hooks/use-guest-query';
 import { GuestCategory } from '@/src/domain/services/guest.service';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function GuestCategoriesPage() {
     const [queryParams, setQueryParams] = useState({
         page: 1,
         page_size: 10,
         search: '',
+        sort_by: 'created_at',
+        sort_dir: 'desc',
     });
 
     const [searchInput, setSearchInput] = useState('');
@@ -38,8 +41,8 @@ export default function GuestCategoriesPage() {
     const [formData, setFormData] = useState({
         name: '',
         hasTime: false,
-        startTime: '', // format "HH:mm"
-        endTime: '',   // format "HH:mm"
+        startTime: '08:00',
+        endTime: '10:00',
     });
 
     // API hooks
@@ -71,6 +74,7 @@ export default function GuestCategoriesPage() {
             });
             setIsCreateDialogOpen(false);
             resetForm();
+            toast.success('Category created successfully');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to create category');
         }
@@ -89,6 +93,7 @@ export default function GuestCategoriesPage() {
             });
             setIsEditDialogOpen(false);
             resetForm();
+            toast.success('Category updated successfully');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to update category');
         }
@@ -100,6 +105,7 @@ export default function GuestCategoriesPage() {
             await deleteCategory.mutateAsync(selectedCategory.id);
             setIsDeleteDialogOpen(false);
             setSelectedCategory(null);
+            toast.success('Category deleted successfully');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to delete category');
         }
@@ -135,9 +141,27 @@ export default function GuestCategoriesPage() {
         }
     };
 
+    const handleSort = (field: string) => {
+        setQueryParams(prev => ({
+            ...prev,
+            sort_by: field,
+            sort_dir: prev.sort_by === field && prev.sort_dir === 'asc' ? 'desc' : 'asc',
+        }));
+    };
+
+    const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
+        <button
+            className="flex items-center gap-1 hover:text-foreground"
+            onClick={() => handleSort(field)}
+        >
+            {children}
+            <ArrowUpDown className="h-3 w-3" />
+        </button>
+    );
+
     return (
         <ProtectedRoute>
-            <ProtectedModule requiredRole={['Super Admin', 'Admin']} requiredPermission="guest_categories.read">
+            <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
                     <Card>
                         <CardHeader>
@@ -191,7 +215,7 @@ export default function GuestCategoriesPage() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead>Name</TableHead>
+                                                    <TableHead><SortButton field="name">Name</SortButton></TableHead>
                                                     <TableHead>Start Time</TableHead>
                                                     <TableHead>End Time</TableHead>
                                                     <TableHead className="text-right">Actions</TableHead>
@@ -210,6 +234,7 @@ export default function GuestCategoriesPage() {
                                                                         size="sm"
                                                                         variant="outline"
                                                                         onClick={() => openEditDialog(category)}
+                                                                        title="Edit"
                                                                     >
                                                                         <Edit className="h-4 w-4" />
                                                                     </Button>
@@ -222,6 +247,7 @@ export default function GuestCategoriesPage() {
                                                                             setSelectedCategory(category);
                                                                             setIsDeleteDialogOpen(true);
                                                                         }}
+                                                                        title="Delete"
                                                                     >
                                                                         <Trash2 className="h-4 w-4" />
                                                                     </Button>

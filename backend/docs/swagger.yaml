@@ -148,11 +148,46 @@ definitions:
           type: string
         type: array
     type: object
-  internal_guest.CategoryListResponse:
+  internal_guest.CreateGuestCategoryRequest:
+    properties:
+      end_time:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      start_time:
+        type: string
+    required:
+    - name
+    type: object
+  internal_guest.CreateGuestRequest:
+    properties:
+      address:
+        type: string
+      guest_category_id:
+        type: integer
+      instagram_username:
+        maxLength: 50
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      note:
+        type: string
+      phone_number:
+        maxLength: 20
+        type: string
+    required:
+    - guest_category_id
+    - name
+    type: object
+  internal_guest.GuestCategoryListResponse:
     properties:
       items:
         items:
-          $ref: '#/definitions/internal_guest.CategoryResponse'
+          $ref: '#/definitions/internal_guest.GuestCategoryResponse'
         type: array
       page:
         type: integer
@@ -163,7 +198,7 @@ definitions:
       total_pages:
         type: integer
     type: object
-  internal_guest.CategoryResponse:
+  internal_guest.GuestCategoryResponse:
     properties:
       created_at:
         type: string
@@ -178,26 +213,97 @@ definitions:
       updated_at:
         type: string
     type: object
-  internal_guest.CreateCategoryRequest:
+  internal_guest.GuestListResponse:
     properties:
-      end_time:
-        type: string
-      name:
-        minLength: 2
-        type: string
-      start_time:
-        type: string
-    required:
-    - name
+      items:
+        items:
+          $ref: '#/definitions/internal_guest.GuestResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
     type: object
-  internal_guest.UpdateCategoryRequest:
+  internal_guest.GuestResponse:
+    properties:
+      address:
+        type: string
+      category_name:
+        type: string
+      check_in_at:
+        type: string
+      check_out_at:
+        type: string
+      created_at:
+        type: string
+      guest_category_id:
+        type: integer
+      id:
+        type: string
+      instagram_username:
+        type: string
+      name:
+        type: string
+      note:
+        type: string
+      phone_number:
+        type: string
+      qr_code:
+        type: string
+      status_attending:
+        type: string
+      status_sent:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_guest.UpdateGuestCategoryRequest:
     properties:
       end_time:
         type: string
       name:
+        maxLength: 100
         minLength: 2
         type: string
       start_time:
+        type: string
+    type: object
+  internal_guest.UpdateGuestRequest:
+    properties:
+      address:
+        type: string
+      check_in_at:
+        type: string
+      check_out_at:
+        type: string
+      guest_category_id:
+        type: integer
+      instagram_username:
+        maxLength: 50
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      note:
+        type: string
+      phone_number:
+        maxLength: 20
+        type: string
+      status_attending:
+        enum:
+        - pending
+        - going
+        - not_going
+        type: string
+      status_sent:
+        enum:
+        - pending
+        - sent
         type: string
     type: object
   internal_rbac.AssignPermissionsToRoleRequest:
@@ -654,6 +760,166 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /guests:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of guests with filters
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      - description: Search by name or QR code
+        in: query
+        name: search
+        type: string
+      - description: Filter by category ID
+        in: query
+        name: category_id
+        type: integer
+      - description: Filter by attending status
+        in: query
+        name: status_attending
+        type: string
+      - description: Filter by sent status
+        in: query
+        name: status_sent
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.GuestListResponse'
+      summary: List all guests
+      tags:
+      - Guest
+    post:
+      consumes:
+      - application/json
+      description: Create a new guest with auto-generated unique QR code
+      parameters:
+      - description: Create guest request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_guest.CreateGuestRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_guest.GuestResponse'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new guest
+      tags:
+      - Guest
+  /guests/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a guest by its ID
+      parameters:
+      - description: Guest ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Guest deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete guest
+      tags:
+      - Guest
+    get:
+      consumes:
+      - application/json
+      description: Get a single guest by its ID
+      parameters:
+      - description: Guest ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.GuestResponse'
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get guest by ID
+      tags:
+      - Guest
+    put:
+      consumes:
+      - application/json
+      description: Update an existing guest's information
+      parameters:
+      - description: Guest ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update guest request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_guest.UpdateGuestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.GuestResponse'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update guest
+      tags:
+      - Guest
   /guests/categories:
     get:
       consumes:
@@ -678,7 +944,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_guest.CategoryListResponse'
+            $ref: '#/definitions/internal_guest.GuestCategoryListResponse'
       summary: List all guest categories
       tags:
       - Guest
@@ -692,14 +958,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_guest.CreateCategoryRequest'
+          $ref: '#/definitions/internal_guest.CreateGuestCategoryRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_guest.CategoryResponse'
+            $ref: '#/definitions/internal_guest.GuestCategoryResponse'
         "400":
           description: Invalid request body
           schema:
@@ -760,7 +1026,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_guest.CategoryResponse'
+            $ref: '#/definitions/internal_guest.GuestCategoryResponse'
         "404":
           description: Category not found
           schema:
@@ -785,14 +1051,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_guest.UpdateCategoryRequest'
+          $ref: '#/definitions/internal_guest.UpdateGuestCategoryRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_guest.CategoryResponse'
+            $ref: '#/definitions/internal_guest.GuestCategoryResponse'
         "400":
           description: Invalid request body
           schema:

@@ -2,6 +2,7 @@ package guest
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -255,6 +256,110 @@ func (h Handler) UpdateStatusSent(w http.ResponseWriter, r *http.Request) {
 	response.ResponseJSON(w, statusCode, response.JSON{
 		Code:    statusCode,
 		Message: "Status updated successfully",
+	})
+}
+
+// ExportGuests godoc
+// @Summary Export guests to Excel
+// @Description Export all guests data to an Excel file
+// @Tags Guest
+// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Success 200 {file} binary
+// @Router /guests/export [get]
+func (h Handler) ExportGuests(w http.ResponseWriter, r *http.Request) {
+	fileContent, err := h.service.ExportGuests(r.Context())
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=guests_export.xlsx")
+	w.Write(fileContent)
+}
+
+// GetImportTemplate godoc
+// @Summary Get guest import template
+// @Description Get an empty Excel template for importing guests
+// @Tags Guest
+// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Success 200 {file} binary
+// @Router /guests/template [get]
+func (h Handler) GetImportTemplate(w http.ResponseWriter, r *http.Request) {
+	fileContent, err := h.service.GetImportTemplate(r.Context())
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", "attachment; filename=guests_import_template.xlsx")
+	w.Write(fileContent)
+}
+
+// PreviewImport godoc
+// @Summary Preview guest import
+// @Description Upload an Excel file to preview and validate guest data before importing
+// @Tags Guest
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Excel file"
+// @Success 200 {object} GuestImportPreviewResponse
+// @Router /guests/import/preview [post]
+func (h Handler) PreviewImport(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20) // 10MB max
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, "Failed to parse form")
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		response.ResponseError(w, http.StatusBadRequest, "File is required")
+		return
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		response.ResponseError(w, http.StatusInternalServerError, "Failed to read file")
+		return
+	}
+
+	res, statusCode, err := h.service.PreviewImport(r.Context(), fileBytes)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// ExecuteImport godoc
+// @Summary Execute guest import
+// @Description Import a batch of validated guest data
+// @Tags Guest
+// @Accept json
+// @Produce json
+// @Param request body []CreateGuestRequest true "Batch guest data"
+// @Success 200 {object} map[string]string "Import successful"
+// @Router /guests/import/execute [post]
+func (h Handler) ExecuteImport(w http.ResponseWriter, r *http.Request) {
+	var req []CreateGuestRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.ResponseError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	statusCode, err := h.service.ExecuteImport(r.Context(), req)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+
+	response.ResponseJSON(w, statusCode, response.JSON{
+		Code:    statusCode,
+		Message: "Import successful",
 	})
 }
 

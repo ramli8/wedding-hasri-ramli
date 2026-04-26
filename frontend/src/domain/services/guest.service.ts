@@ -179,4 +179,49 @@ export const guestService = {
   async updateStatusSent(id: string, status: string = 'sent'): Promise<void> {
     await apiClient.put(`/v1/guests/${id}/status-sent?status=${status}`);
   },
+
+  // Excel
+  async exportGuests(): Promise<Blob> {
+    const response = await apiClient.get('/v1/guests/export', { responseType: 'blob' });
+    return response.data;
+  },
+
+  async getTemplate(): Promise<Blob> {
+    const response = await apiClient.get('/v1/guests/template', { responseType: 'blob' });
+    return response.data;
+  },
+
+  async previewImport(file: File): Promise<GuestImportPreviewResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<GuestImportPreviewResponse>('/v1/guests/import/preview', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  async executeImport(data: CreateGuestRequest[]): Promise<void> {
+    await apiClient.post('/v1/guests/import/execute', data);
+  },
 };
+
+export interface GuestImportRow {
+  guest_category_id: number;
+  category_name: string;
+  name: string;
+  phone_number: string | null;
+  instagram_username: string | null;
+  address: string | null;
+  note: string | null;
+  is_valid: boolean;
+  errors: string[];
+}
+
+export interface GuestImportPreviewResponse {
+  items: GuestImportRow[];
+  total: number;
+  valid_count: number;
+  error_count: number;
+}

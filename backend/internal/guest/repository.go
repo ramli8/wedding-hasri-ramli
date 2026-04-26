@@ -27,11 +27,13 @@ type Repository interface {
 	ListDeleted(ctx context.Context, req GuestListRequest) ([]models.Guest, int64, error)
 	IsQRCodeExists(ctx context.Context, qrCode string) (bool, error)
 	UpdateStatusSent(ctx context.Context, id string, status string) error
+	ListAll(ctx context.Context) ([]models.Guest, error)
 
 	// Guest Category operations
 	CreateCategory(ctx context.Context, category *models.GuestCategory) error
 	GetCategoryByID(ctx context.Context, id int) (*models.GuestCategory, error)
 	GetAllCategories(ctx context.Context, req GuestCategoryListRequest) ([]models.GuestCategory, int64, error)
+	ListAllCategories(ctx context.Context) ([]models.GuestCategory, error)
 	UpdateCategory(ctx context.Context, category *models.GuestCategory) error
 	DeleteCategory(ctx context.Context, id int) error
 }
@@ -166,6 +168,14 @@ func (r *repository) IsQRCodeExists(ctx context.Context, qrCode string) (bool, e
 	return count > 0, err
 }
 
+func (r *repository) ListAll(ctx context.Context) ([]models.Guest, error) {
+	var guests []models.Guest
+	if err := r.db.GetDB().WithContext(ctx).Preload("GuestCategory").Order("name asc").Find(&guests).Error; err != nil {
+		return nil, err
+	}
+	return guests, nil
+}
+
 // --- Guest Category Operations ---
 
 func (r *repository) UpdateStatusSent(ctx context.Context, id string, status string) error {
@@ -232,4 +242,11 @@ func (r *repository) DeleteCategory(ctx context.Context, id int) error {
 		return err
 	}
 	return nil
+}
+func (r *repository) ListAllCategories(ctx context.Context) ([]models.GuestCategory, error) {
+	var categories []models.GuestCategory
+	if err := r.db.GetDB().WithContext(ctx).Order("name asc").Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return categories, nil
 }

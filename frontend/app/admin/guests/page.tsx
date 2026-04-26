@@ -13,13 +13,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/src/presentation/components/ui/alert-dialog';
 import { Label } from '@/src/presentation/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/presentation/components/ui/select';
-import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/src/presentation/components/ui/alert';
 import { Textarea } from '@/src/presentation/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/presentation/components/ui/tabs';
 import { Checkbox } from '@/src/presentation/components/ui/checkbox';
-import { Search, UserPlus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, QrCode, RotateCcw, Users, UserX, User, ArrowUpDown, Instagram } from 'lucide-react';
-import { useGuests, useCreateGuest, useUpdateGuest, useDeleteGuest, useGuestCategories, useDeletedGuests, useRestoreGuest, useUpdateGuestStatusSent } from '@/src/application/hooks/use-guest-query';
-import { Guest, GuestListParams } from '@/src/domain/services/guest.service';
+import { Search, UserPlus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, QrCode, RotateCcw, Users, UserX, User, ArrowUpDown, Instagram, Download, Upload, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { useGuests, useCreateGuest, useUpdateGuest, useDeleteGuest, useGuestCategories, useDeletedGuests, useRestoreGuest, useUpdateGuestStatusSent, usePreviewImport, useExecuteImport } from '@/src/application/hooks/use-guest-query';
+import { guestService, Guest, GuestListParams } from '@/src/domain/services/guest.service';
+import { Progress } from '@/src/presentation/components/ui/progress';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -80,6 +81,13 @@ export default function GuestsPage() {
     const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
     const [messageType, setMessageType] = useState<'whatsapp' | 'instagram' | null>(null);
 
+    // Import states
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPreviewData, setImportPreviewData] = useState<any>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importProgress, setImportProgress] = useState(0);
+
     // Form states
     const [formData, setFormData] = useState({
         name: '',
@@ -101,6 +109,8 @@ export default function GuestsPage() {
     const deleteGuest = useDeleteGuest();
     const restoreGuest = useRestoreGuest();
     const updateStatusSent = useUpdateGuestStatusSent();
+    const previewImport = usePreviewImport();
+    const executeImport = useExecuteImport();
 
     // Debounced search for active guests
     useEffect(() => {
@@ -237,6 +247,124 @@ export default function GuestsPage() {
         setError('');
     };
 
+    const handleExport = async () => {
+        try {
+            const blob = await guestService.exportGuests();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `guests_export_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Guests exported successfully');
+        } catch (err) {
+            toast.error('Failed to export guests');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const blob = await guestService.getTemplate();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'guests_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            toast.error('Failed to download template');
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImportFile(file);
+    };
+
+    const handleAnalyzeFile = async () => {
+        if (!importFile) return;
+
+        setImportPreviewData(null);
+        setImportProgress(0);
+
+        try {
+            const preview = await previewImport.mutateAsync(importFile);
+            setImportPreviewData(preview);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to preview file');
+        }
+    };
+
+    const handleConfirmImport = async () => {
+        if (!importPreviewData) return;
+
+        const validItems = importPreviewData.items.filter((item: any) => item.is_valid);
+        if (validItems.length === 0) {
+            toast.error('No valid items to import');
+            return;
+        }
+
+        setIsImporting(true);
+        setImportProgress(0);
+
+        const chunkSize = 10;
+        const totalItems = validItems.length;
+        let processedCount = 0;
+
+        try {
+            for (let i = 0; i < totalItems; i += chunkSize) {
+                const chunk = validItems.slice(i, i + chunkSize);
+                await executeImport.mutateAsync(chunk.map((item: any) => ({
+                    name: item.name,
+                    guest_category_id: item.guest_category_id,
+                    phone_number: item.phone_number,
+                    instagram_username: item.instagram_username,
+                    address: item.address,
+                    note: item.note,
+                })));
+                
+                processedCount += chunk.length;
+                setImportProgress(Math.round((processedCount / totalItems) * 100));
+            }
+
+            toast.success(`Successfully imported ${processedCount} guests`);
+            setIsImportModalOpen(false);
+            resetImportState();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to import guests');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    const resetImportState = () => {
+        setImportFile(null);
+        setImportPreviewData(null);
+        setImportProgress(0);
+        setIsImporting(false);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files?.[0];
+        if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+            setImportFile(file);
+        } else {
+            toast.error('Please upload a valid Excel file (.xlsx or .xls)');
+        }
+    };
+
     const openEditDialog = (guest: Guest) => {
         setSelectedGuest(guest);
         setFormData({
@@ -350,11 +478,19 @@ export default function GuestsPage() {
                                                 </Button>
                                             )}
                                             <ProtectedFeature permission="guests.create">
+                                                <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                                                    <Upload className="mr-2 h-4 w-4" />
+                                                    Import
+                                                </Button>
                                                 <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
                                                     <UserPlus className="mr-2 h-4 w-4" />
                                                     Add Guest
                                                 </Button>
                                             </ProtectedFeature>
+                                            <Button variant="outline" onClick={handleExport}>
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Export
+                                            </Button>
                                         </div>
                                     </div>
 
@@ -880,7 +1016,197 @@ export default function GuestsPage() {
                     </Dialog>
 
                     {/* QR Code & Detail Dialog */}
-                    <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
+                    {/* Import Dialog */}
+            <Dialog open={isImportModalOpen} onOpenChange={(open) => {
+                if (!isImporting) {
+                    setIsImportModalOpen(open);
+                    if (!open) resetImportState();
+                }
+            }}>
+                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Import Guests from Excel</DialogTitle>
+                        <DialogDescription>
+                            Upload an Excel file to bulk add guests. Download the template first to ensure correct format.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-4 py-4 flex-1 overflow-hidden">
+                        <div className="flex justify-between items-center bg-muted/50 p-4 rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                                <span className="text-sm font-medium">Excel Template</span>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download Template
+                            </Button>
+                        </div>
+
+                        {!importPreviewData ? (
+                            <div 
+                                className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-12 transition-colors hover:bg-muted/50"
+                                onDragOver={handleDragOver}
+                                onDrop={handleDrop}
+                            >
+                                {previewImport.isPending ? (
+                                    <div className="flex flex-col items-center">
+                                        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                                        <p className="text-sm font-medium">Analyzing file...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                                        {importFile ? (
+                                            <div className="text-center">
+                                                <p className="text-sm font-medium text-primary mb-2">{importFile.name}</p>
+                                                <p className="text-xs text-muted-foreground mb-4">{(importFile.size / 1024).toFixed(2)} KB</p>
+                                                <div className="flex gap-2 justify-center">
+                                                    <Button size="sm" onClick={handleAnalyzeFile}>
+                                                        Analyze File
+                                                    </Button>
+                                                    <Button size="sm" variant="outline" onClick={() => setImportFile(null)}>
+                                                        Change
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-sm text-muted-foreground mb-4">Click or drag and drop your Excel file here</p>
+                                                <Input 
+                                                    type="file" 
+                                                    accept=".xlsx, .xls" 
+                                                    className="hidden" 
+                                                    id="excel-upload" 
+                                                    onChange={handleFileChange}
+                                                    onClick={(e) => (e.target as HTMLInputElement).value = ''}
+                                                />
+                                                <Button asChild>
+                                                    <label htmlFor="excel-upload" className="cursor-pointer">
+                                                        Select File
+                                                    </label>
+                                                </Button>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                                <div className="grid grid-cols-3 gap-4">
+                                    <Card className="p-3 bg-blue-50/50">
+                                        <div className="text-xs text-muted-foreground">Total Rows</div>
+                                        <div className="text-xl font-bold">{importPreviewData.total}</div>
+                                    </Card>
+                                    <Card className="p-3 bg-green-50/50">
+                                        <div className="text-xs text-muted-foreground">Valid</div>
+                                        <div className="text-xl font-bold text-green-600">{importPreviewData.valid_count}</div>
+                                    </Card>
+                                    <Card className="p-3 bg-red-50/50">
+                                        <div className="text-xs text-muted-foreground">Error</div>
+                                        <div className="text-xl font-bold text-red-600">{importPreviewData.error_count}</div>
+                                    </Card>
+                                </div>
+
+                                <div className="border rounded-md overflow-auto flex-1">
+                                    <Table>
+                                        <TableHeader className="sticky top-0 bg-white">
+                                            <TableRow>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Name</TableHead>
+                                                <TableHead>Category</TableHead>
+                                                <TableHead>Phone / IG</TableHead>
+                                                <TableHead>Error Messages</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {importPreviewData.items.map((item: any, idx: number) => (
+                                                <TableRow key={idx} className={!item.is_valid ? "bg-red-50/30" : ""}>
+                                                    <TableCell>
+                                                        {item.is_valid ? (
+                                                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">Valid</Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive">Error</Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{item.name || "-"}</TableCell>
+                                                    <TableCell>{item.category_name || `ID: ${item.guest_category_id}`}</TableCell>
+                                                    <TableCell>
+                                                        <div className="text-xs">
+                                                            {item.phone_number && <div>{item.phone_number}</div>}
+                                                            {item.instagram_username && <div>@{item.instagram_username}</div>}
+                                                            {!item.phone_number && !item.instagram_username && "-"}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.errors?.length > 0 ? (
+                                                            <ul className="text-xs text-red-600 list-disc list-inside">
+                                                                {item.errors.map((err: string, i: number) => (
+                                                                    <li key={i}>{err}</li>
+                                                                ))}
+                                                            </ul>
+                                                        ) : (
+                                                            <span className="text-xs text-muted-foreground">-</span>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                {isImporting && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-xs font-medium">
+                                            <span>Importing guests...</span>
+                                            <span>{importProgress}%</span>
+                                        </div>
+                                        <Progress value={importProgress} className="h-2" />
+                                    </div>
+                                )}
+                                {importPreviewData.error_count > 0 && (
+                                    <Alert variant="destructive" className="mt-4">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>Validation Error</AlertTitle>
+                                        <AlertDescription>
+                                            There are {importPreviewData.error_count} invalid rows. Please fix them in your Excel file and upload again.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(false)} disabled={isImporting}>
+                            Cancel
+                        </Button>
+                        {importPreviewData && (
+                            <>
+                                <Button variant="ghost" onClick={() => { setImportFile(null); setImportPreviewData(null); }} disabled={isImporting}>
+                                    Change File
+                                </Button>
+                                <Button 
+                                    onClick={handleConfirmImport} 
+                                    disabled={isImporting || importPreviewData.valid_count === 0 || importPreviewData.error_count > 0}
+                                    className="min-w-[120px]"
+                                >
+                                    {isImporting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Importing...
+                                        </>
+                                    ) : (
+                                        `Confirm Import (${importPreviewData.valid_count})`
+                                    )}
+                                </Button>
+                            </>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Guest Detail & QR Code</DialogTitle>
@@ -940,7 +1266,7 @@ export default function GuestsPage() {
                                 <AlertDialogTitle>Send Invitation</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     Are you sure you want to send the invitation to <strong>{selectedGuest?.name}</strong> via {messageType === 'whatsapp' ? 'WhatsApp' : 'Instagram'}? 
-                                    This will also mark their invitation status as <strong>"Sent"</strong>.
+                                    This will also mark their invitation status as <strong>&quot;Sent&quot;</strong>.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

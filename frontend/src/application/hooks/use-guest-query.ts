@@ -193,3 +193,26 @@ export function useUpdateGuestStatusSent() {
     },
   });
 }
+
+/**
+ * Hook to preview guest import
+ */
+export function usePreviewImport() {
+  return useMutation({
+    mutationFn: (file: File) => guestService.previewImport(file),
+  });
+}
+
+/**
+ * Hook to execute guest import
+ */
+export function useExecuteImport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateGuestRequest[]) => guestService.executeImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: guestKeys.guestLists() });
+    },
+  });
+}

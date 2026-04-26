@@ -63,7 +63,7 @@ func SetupRoutes(
 
 	// set prefix v1
 	mux.Route("/v1", func(r chi.Router) {
-		r.Use(cmiddleware.AllowContentType("application/json"))
+		r.Use(cmiddleware.AllowContentType("application/json", "multipart/form-data"))
 
 
 		// Authentication routes (public)
@@ -160,6 +160,10 @@ func SetupRoutes(
 			r.With(middleware.RequirePermission(rbacRepo, "guests.create")).Post("/", guestHandler.CreateGuest)
 			r.Get("/", guestHandler.ListGuests)
 			r.Get("/deleted", guestHandler.ListDeletedGuests)
+			r.Get("/export", guestHandler.ExportGuests)
+			r.Get("/template", guestHandler.GetImportTemplate)
+			r.Post("/import/preview", guestHandler.PreviewImport)
+			r.Post("/import/execute", guestHandler.ExecuteImport)
 
 			r.Route("/categories", func(r chi.Router) {
 				r.With(middleware.RequirePermission(rbacRepo, "guest_categories.create")).Post("/", guestHandler.CreateCategory)

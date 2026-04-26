@@ -96,3 +96,22 @@ type GuestListResponse struct {
 	PageSize   int             `json:"page_size"`
 	TotalPages int             `json:"total_pages"`
 }
+
+type GuestImportRow struct {
+	GuestCategoryID   int      `json:"guest_category_id"`
+	CategoryName      string   `json:"category_name"`
+	Name              string   `json:"name"`
+	PhoneNumber       *string  `json:"phone_number"`
+	InstagramUsername *string  `json:"instagram_username"`
+	Address           *string  `json:"address"`
+	Note              *string  `json:"note"`
+	IsValid           bool     `json:"is_valid"`
+	Errors            []string `json:"errors"`
+}
+
+type GuestImportPreviewResponse struct {
+	Items      []GuestImportRow `json:"items"`
+	Total      int              `json:"total"`
+	ValidCount int              `json:"valid_count"`
+	ErrorCount int              `json:"error_count"`
+}

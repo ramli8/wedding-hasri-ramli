@@ -1,15 +1,19 @@
 package guest
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"net/http"
+	"strings"
 
 	"github.com/base-go/backend/internal/shared/models"
 	"github.com/base-go/backend/pkg/validator"
+	"github.com/xuri/excelize/v2"
 )
 
 type Service interface {
@@ -29,6 +33,12 @@ type Service interface {
 	ListCategories(ctx context.Context, req GuestCategoryListRequest) (*GuestCategoryListResponse, int, error)
 	UpdateCategory(ctx context.Context, id int, req UpdateGuestCategoryRequest) (*GuestCategoryResponse, int, error)
 	DeleteCategory(ctx context.Context, id int) (int, error)
+
+	// Excel operations
+	ExportGuests(ctx context.Context) ([]byte, error)
+	GetImportTemplate(ctx context.Context) ([]byte, error)
+	PreviewImport(ctx context.Context, fileContent []byte) (GuestImportPreviewResponse, int, error)
+	ExecuteImport(ctx context.Context, rows []CreateGuestRequest) (int, error)
 }
 
 type service struct {
@@ -389,4 +399,212 @@ func (s *service) mapCategoryToResponse(category *models.GuestCategory) *GuestCa
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}
+}
+func (s *service) ListAllCategories(ctx context.Context) ([]models.GuestCategory, error) {
+	return s.repo.ListAllCategories(ctx)
+}
+
+// --- Excel Operations ---
+
+func (s *service) ExportGuests(ctx context.Context) ([]byte, error) {
+	guests, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheetName := "Guests"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{"Name", "Category", "Phone Number", "Instagram", "Address", "Note", "RSVP Status", "Invitation Status", "QR Code", "Check-in At"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, h)
+	}
+
+	for i, g := range guests {
+		rowIdx := i + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIdx), g.Name)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIdx), g.GuestCategory.Name)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIdx), getStringValue(g.PhoneNumber))
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIdx), getStringValue(g.InstagramUsername))
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIdx), getStringValue(g.Address))
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), getStringValue(g.Note))
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIdx), g.StatusAttending)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", rowIdx), g.StatusSent)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", rowIdx), g.QRCode)
+		if g.CheckInAt != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("J%d", rowIdx), g.CheckInAt.Format("2006-01-02 15:04:05"))
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (s *service) GetImportTemplate(ctx context.Context) ([]byte, error) {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheetName := "Template"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{"name", "category", "phone_number", "instagram_username", "address", "note"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, h)
+	}
+
+	// Add dummy data based on existing categories
+	categories, _ := s.repo.ListAllCategories(ctx)
+	for i, cat := range categories {
+		rowIdx := i + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("Contoh Tamu %s", cat.Name))
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIdx), cat.Name)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIdx), "08123456789")
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIdx), "dummy_ig")
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIdx), "Alamat Dummy")
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), "Catatan dummy")
+	}
+
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (s *service) PreviewImport(ctx context.Context, fileContent []byte) (GuestImportPreviewResponse, int, error) {
+	f, err := excelize.OpenReader(bytes.NewReader(fileContent))
+	if err != nil {
+		return GuestImportPreviewResponse{}, http.StatusBadRequest, err
+	}
+	defer f.Close()
+
+	sheetName := f.GetSheetName(0)
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return GuestImportPreviewResponse{}, http.StatusBadRequest, err
+	}
+
+	if len(rows) < 1 {
+		return GuestImportPreviewResponse{}, http.StatusBadRequest, errors.New("excel file is empty")
+	}
+
+	// Map categories for lookup (Name -> ID)
+	categories, _ := s.repo.ListAllCategories(ctx)
+	catNameToId := make(map[string]int)
+	for _, cat := range categories {
+		catNameToId[cat.Name] = cat.ID
+	}
+
+	var items []GuestImportRow
+	validCount := 0
+	errorCount := 0
+
+	// Assume first row is header
+	for i := 1; i < len(rows); i++ {
+		row := rows[i]
+		if len(row) == 0 {
+			continue
+		}
+
+		importRow := GuestImportRow{
+			IsValid: true,
+			Errors:  []string{},
+		}
+
+		// Fill data (handling varying row lengths)
+		if len(row) > 0 {
+			importRow.Name = row[0]
+		}
+		if len(row) > 1 {
+			catName := row[1]
+			importRow.CategoryName = catName
+			if id, ok := catNameToId[catName]; ok {
+				importRow.GuestCategoryID = id
+			}
+		}
+		if len(row) > 2 {
+			val := row[2]
+			if val != "" {
+				phone := val
+				phone = strings.ReplaceAll(phone, " ", "")
+				phone = strings.ReplaceAll(phone, "-", "")
+				phone = strings.ReplaceAll(phone, "+", "")
+				if strings.HasPrefix(phone, "0") {
+					phone = "62" + strings.TrimPrefix(phone, "0")
+				} else if !strings.HasPrefix(phone, "62") {
+					phone = "62" + phone
+				}
+				importRow.PhoneNumber = &phone
+			} else {
+				importRow.PhoneNumber = nil
+			}
+		}
+		if len(row) > 3 {
+			val := row[3]
+			importRow.InstagramUsername = &val
+		}
+		if len(row) > 4 {
+			val := row[4]
+			importRow.Address = &val
+		}
+		if len(row) > 5 {
+			val := row[5]
+			importRow.Note = &val
+		}
+
+		// Validations
+		if importRow.Name == "" {
+			importRow.IsValid = false
+			importRow.Errors = append(importRow.Errors, "Name is required")
+		}
+		if importRow.GuestCategoryID == 0 {
+			importRow.IsValid = false
+			importRow.Errors = append(importRow.Errors, fmt.Sprintf("Category '%s' not found", importRow.CategoryName))
+		}
+		if (importRow.PhoneNumber == nil || *importRow.PhoneNumber == "") && (importRow.InstagramUsername == nil || *importRow.InstagramUsername == "") {
+			importRow.IsValid = false
+			importRow.Errors = append(importRow.Errors, "Either Phone Number or Instagram Username must be filled")
+		}
+
+		if importRow.IsValid {
+			validCount++
+		} else {
+			errorCount++
+		}
+		items = append(items, importRow)
+	}
+
+	return GuestImportPreviewResponse{
+		Items:      items,
+		Total:      len(items),
+		ValidCount: validCount,
+		ErrorCount: errorCount,
+	}, http.StatusOK, nil
+}
+
+func (s *service) ExecuteImport(ctx context.Context, rows []CreateGuestRequest) (int, error) {
+	for _, row := range rows {
+		_, statusCode, err := s.CreateGuest(ctx, row)
+		if err != nil {
+			return statusCode, err
+		}
+	}
+	return http.StatusOK, nil
+}
+
+func getStringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

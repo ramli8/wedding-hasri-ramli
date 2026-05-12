@@ -339,34 +339,35 @@ export default function RolesPage() {
                                                         <div className="flex justify-end gap-2">
                                                             <ProtectedFeature permission="permissions.assign">
                                                                 <Button
-                                                                    size="sm"
-                                                                    variant="outline"
+                                                                    size="action"
+                                                                    variant="soft"
                                                                     onClick={() => openPermissionsDialog(role)}
                                                                     title="Manage Permissions"
                                                                 >
-                                                                    <Key className="h-4 w-4" />
+                                                                    <Key /> Permissions
                                                                 </Button>
                                                             </ProtectedFeature>
                                                             <ProtectedFeature permission="roles.update">
                                                                 <Button
-                                                                    size="sm"
-                                                                    variant="outline"
+                                                                    size="action"
+                                                                    variant="soft-accent"
                                                                     onClick={() => openEditDialog(role)}
                                                                     disabled={role.is_system}
-                                                                    title={role.is_system ? 'System roles cannot be edited' : 'Edit Role'}
+                                                                    title={role.is_system ? 'System roles cannot be edited' : 'Edit'}
                                                                 >
-                                                                    <Edit className="h-4 w-4" />
+                                                                    <Edit /> Edit
                                                                 </Button>
                                                             </ProtectedFeature>
                                                             <ProtectedFeature permission="roles.delete">
                                                                 <Button
-                                                                    size="sm"
+                                                                    size="action"
                                                                     variant="outline"
+                                                                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                     onClick={() => openDeleteDialog(role)}
                                                                     disabled={role.is_system}
-                                                                    title={role.is_system ? 'System roles cannot be deleted' : 'Delete Role'}
+                                                                    title={role.is_system ? 'System roles cannot be deleted' : 'Delete'}
                                                                 >
-                                                                    <Trash2 className="h-4 w-4" />
+                                                                    <Trash2 /> Delete
                                                                 </Button>
                                                             </ProtectedFeature>
                                                         </div>
@@ -442,6 +443,13 @@ export default function RolesPage() {
                                         id="edit-name"
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onFocus={(e) => {
+                                            const val = e.target.value;
+                                            e.target.setSelectionRange(val.length, val.length);
+                                            setTimeout(() => {
+                                                e.target.setSelectionRange(val.length, val.length);
+                                            }, 0);
+                                        }}
                                     />
                                 </div>
 

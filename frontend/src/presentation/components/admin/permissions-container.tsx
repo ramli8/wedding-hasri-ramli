@@ -232,20 +232,21 @@ export function PermissionsContainer() {
                                                                 <div className="flex justify-end gap-2">
                                                                     <ProtectedFeature permission="permissions.update">
                                                                         <Button
-                                                                            size="sm"
-                                                                            variant="outline"
+                                                                            size="action"
+                                                                            variant="soft-accent"
                                                                             onClick={() => openEditDialog(permission)}
                                                                         >
-                                                                            <Edit className="h-4 w-4" />
+                                                                            <Edit /> Edit
                                                                         </Button>
                                                                     </ProtectedFeature>
                                                                     <ProtectedFeature permission="permissions.delete">
                                                                         <Button
-                                                                            size="sm"
+                                                                            size="action"
                                                                             variant="outline"
+                                                                            className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                             onClick={() => handleDeletePermission(permission.id)}
                                                                         >
-                                                                            <Trash2 className="h-4 w-4" />
+                                                                            <Trash2 /> Delete
                                                                         </Button>
                                                                     </ProtectedFeature>
                                                                 </div>
@@ -347,6 +348,13 @@ export function PermissionsContainer() {
                                 id="edit-name"
                                 value={permissionName}
                                 onChange={(e) => setPermissionName(e.target.value)}
+                                onFocus={(e) => {
+                                    const val = e.target.value;
+                                    e.target.setSelectionRange(val.length, val.length);
+                                    setTimeout(() => {
+                                        e.target.setSelectionRange(val.length, val.length);
+                                    }, 0);
+                                }}
                                 placeholder="e.g., users.create"
                             />
                         </div>

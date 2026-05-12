@@ -95,15 +95,17 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
         <div
             className={cn(
                 'flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                'hover:bg-accent hover:text-accent-foreground',
-                isActive && 'bg-accent text-accent-foreground shadow-sm',
+                // Active: solid fill primary, text putih
+                isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent',
                 level > 0 && 'ml-4'
             )}
         >
             <div className="flex items-center gap-3">
-                <Icon className={cn(
+                <Icon strokeWidth={1.5} className={cn(
                     'h-5 w-5 shrink-0 transition-colors',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    isActive ? 'text-sidebar-primary-foreground' : 'text-muted-foreground'
                 )} />
                 <span className="truncate">{item.label}</span>
             </div>

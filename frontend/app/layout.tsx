@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "GNS - (Go, NextJS, ShadCn)",
-  description: "Base project build with Go, NextJS, ShadCn",
+  title: "Wedding Hasri & Ramli",
+  description: "Wedding Management System — Hasri & Ramli",
 };
 
 export default function RootLayout({
@@ -20,12 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en"
-      className="dark"
-      style={{ colorScheme: "dark" }}
+    <html lang="en" suppressHydrationWarning
+      style={{ colorScheme: "light" }}
     >
       <body
-        className={`${poppins.variable} antialiased`}
+        className={`${jakarta.variable} antialiased`}
       >
         <Providers>
           {children}

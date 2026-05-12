@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/src/presentation/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/src/presentation/components/ui/alert-dialog';
 import { Label } from '@/src/presentation/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/presentation/components/ui/select';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Switch } from '@/src/presentation/components/ui/switch';
 import { Search, Plus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, Clock, ArrowUpDown } from 'lucide-react';
@@ -136,7 +137,7 @@ export default function GuestCategoriesPage() {
         if (!isoString) return '-';
         try {
             return format(new Date(isoString), 'HH:mm');
-        } catch (e) {
+        } catch {
             return '-';
         }
     };
@@ -179,14 +180,40 @@ export default function GuestCategoriesPage() {
 
                             {/* Search and Actions */}
                             <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                    <Input
-                                        placeholder="Search categories..."
-                                        value={searchInput}
-                                        onChange={(e) => setSearchInput(e.target.value)}
-                                        className="pl-10"
-                                    />
+                                <div className="flex gap-2 flex-1">
+                                    <Select
+                                        value={queryParams.page_size?.toString() || '10'}
+                                        onValueChange={(value) =>
+                                            setQueryParams(prev => ({
+                                                ...prev,
+                                                page: 1,
+                                                page_size: parseInt(value),
+                                            }))
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[110px]">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground">Show:</span>
+                                                <SelectValue placeholder="10" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="10">10</SelectItem>
+                                            <SelectItem value="25">25</SelectItem>
+                                            <SelectItem value="50">50</SelectItem>
+                                            <SelectItem value="100">100</SelectItem>
+                                            <SelectItem value="99999">All</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                        <Input
+                                            placeholder="Search categories..."
+                                            value={searchInput}
+                                            onChange={(e) => setSearchInput(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
                                 </div>
                                 <ProtectedFeature permission="guest_categories.create">
                                     <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
@@ -231,25 +258,26 @@ export default function GuestCategoriesPage() {
                                                             <div className="flex justify-end gap-2">
                                                                 <ProtectedFeature permission="guest_categories.update">
                                                                     <Button
-                                                                        size="sm"
-                                                                        variant="outline"
+                                                                        size="action"
+                                                                        variant="soft-accent"
                                                                         onClick={() => openEditDialog(category)}
                                                                         title="Edit"
                                                                     >
-                                                                        <Edit className="h-4 w-4" />
+                                                                        <Edit /> Edit
                                                                     </Button>
                                                                 </ProtectedFeature>
                                                                 <ProtectedFeature permission="guest_categories.delete">
                                                                     <Button
-                                                                        size="sm"
+                                                                        size="action"
                                                                         variant="outline"
+                                                                        className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                         onClick={() => {
                                                                             setSelectedCategory(category);
                                                                             setIsDeleteDialogOpen(true);
                                                                         }}
                                                                         title="Delete"
                                                                     >
-                                                                        <Trash2 className="h-4 w-4" />
+                                                                        <Trash2 /> Delete
                                                                     </Button>
                                                                 </ProtectedFeature>
                                                             </div>
@@ -362,6 +390,13 @@ export default function GuestCategoriesPage() {
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onFocus={(e) => {
+                                            const val = e.target.value;
+                                            e.target.setSelectionRange(val.length, val.length);
+                                            setTimeout(() => {
+                                                e.target.setSelectionRange(val.length, val.length);
+                                            }, 0);
+                                        }}
                                     />
                                 </div>
                                 <div className="flex items-center space-x-2 py-2">

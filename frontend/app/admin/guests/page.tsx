@@ -227,7 +227,7 @@ export default function GuestsPage() {
             setSelectedGuest(null);
             setMessageType(null);
             toast.success('Invitation status updated to Sent');
-        } catch (err: any) {
+        } catch {
             toast.error('Failed to update invitation status');
         }
     };
@@ -259,7 +259,7 @@ export default function GuestsPage() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             toast.success('Guests exported successfully');
-        } catch (err) {
+        } catch {
             toast.error('Failed to export guests');
         }
     };
@@ -275,7 +275,7 @@ export default function GuestsPage() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-        } catch (err) {
+        } catch {
             toast.error('Failed to download template');
         }
     };
@@ -461,14 +461,40 @@ export default function GuestsPage() {
                                 <TabsContent value="active">
                                     {/* Primary Filter Row */}
                                     <div className="flex flex-col md:flex-row gap-4 mb-4">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                            <Input
-                                                placeholder="Search by name or QR code..."
-                                                value={searchInput}
-                                                onChange={(e) => setSearchInput(e.target.value)}
-                                                className="pl-10"
-                                            />
+                                        <div className="flex gap-2 flex-1">
+                                            <Select
+                                                value={queryParams.page_size?.toString() || '10'}
+                                                onValueChange={(value) =>
+                                                    setQueryParams(prev => ({
+                                                        ...prev,
+                                                        page: 1,
+                                                        page_size: parseInt(value),
+                                                    }))
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[110px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <SelectValue placeholder="10" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="10">10</SelectItem>
+                                                    <SelectItem value="25">25</SelectItem>
+                                                    <SelectItem value="50">50</SelectItem>
+                                                    <SelectItem value="100">100</SelectItem>
+                                                    <SelectItem value="99999">All</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                <Input
+                                                    placeholder="Search by name or QR code..."
+                                                    value={searchInput}
+                                                    onChange={(e) => setSearchInput(e.target.value)}
+                                                    className="pl-10"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             {selectedGuestIds.length > 0 && (
@@ -477,6 +503,10 @@ export default function GuestsPage() {
                                                     Blast ({selectedGuestIds.length})
                                                 </Button>
                                             )}
+                                            <Button variant="outline" onClick={handleExport}>
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Export
+                                            </Button>
                                             <ProtectedFeature permission="guests.create">
                                                 <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                                                     <Upload className="mr-2 h-4 w-4" />
@@ -487,10 +517,6 @@ export default function GuestsPage() {
                                                     Add Guest
                                                 </Button>
                                             </ProtectedFeature>
-                                            <Button variant="outline" onClick={handleExport}>
-                                                <Download className="mr-2 h-4 w-4" />
-                                                Export
-                                            </Button>
                                         </div>
                                     </div>
 
@@ -656,20 +682,21 @@ export default function GuestsPage() {
                                                                     )}
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
-                                                                    <div className="flex justify-end gap-1">
+                                                                    <div className="flex justify-end gap-1 flex-wrap">
                                                                         <Button
-                                                                            size="sm"
-                                                                            variant="outline"
+                                                                            size="action"
+                                                                            variant="soft"
                                                                             onClick={() => { setSelectedGuest(guest); setIsQRDialogOpen(true); }}
                                                                             title="Detail"
                                                                         >
-                                                                            <QrCode className="h-4 w-4" />
+                                                                            <QrCode /> Detail
                                                                         </Button>
                                                                         <ProtectedFeature permission="guests.send_message">
                                                                             {guest.phone_number && (
                                                                                 <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
+                                                                                    size="action"
+                                                                                    variant="soft"
+                                                                                    className="text-green-600 hover:bg-green-600/10"
                                                                                     title="WA Message"
                                                                                     onClick={() => {
                                                                                         setSelectedGuest(guest);
@@ -677,13 +704,14 @@ export default function GuestsPage() {
                                                                                         setIsSendMessageDialogOpen(true);
                                                                                     }}
                                                                                 >
-                                                                                    <Whatsapp className="h-4 w-4" />
+                                                                                    <Whatsapp /> WA
                                                                                 </Button>
                                                                             )}
                                                                             {guest.instagram_username && (
                                                                                 <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
+                                                                                    size="action"
+                                                                                    variant="soft"
+                                                                                    className="text-pink-600 hover:bg-pink-600/10"
                                                                                     title="Instagram"
                                                                                     onClick={() => {
                                                                                         setSelectedGuest(guest);
@@ -691,31 +719,32 @@ export default function GuestsPage() {
                                                                                         setIsSendMessageDialogOpen(true);
                                                                                     }}
                                                                                 >
-                                                                                    <Instagram className="h-4 w-4" />
+                                                                                    <Instagram /> IG
                                                                                 </Button>
                                                                             )}
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="guests.update">
                                                                             <Button
-                                                                                size="sm"
-                                                                                variant="outline"
+                                                                                size="action"
+                                                                                variant="soft-accent"
                                                                                 onClick={() => openEditDialog(guest)}
                                                                                 title="Edit"
                                                                             >
-                                                                                <Edit className="h-4 w-4" />
+                                                                                <Edit /> Edit
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="guests.delete">
                                                                             <Button
-                                                                                size="sm"
+                                                                                size="action"
                                                                                 variant="outline"
+                                                                                className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                                 onClick={() => {
                                                                                     setSelectedGuest(guest);
                                                                                     setIsDeleteDialogOpen(true);
                                                                                 }}
                                                                                 title="Delete"
                                                                             >
-                                                                                <Trash2 className="h-4 w-4" />
+                                                                                <Trash2 /> Delete
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                     </div>
@@ -761,14 +790,40 @@ export default function GuestsPage() {
                                 {/* Deleted Guests Tab */}
                                 <TabsContent value="deleted">
                                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                            <Input
-                                                placeholder="Search deleted guests..."
-                                                value={deletedSearchInput}
-                                                onChange={(e) => setDeletedSearchInput(e.target.value)}
-                                                className="pl-10"
-                                            />
+                                        <div className="flex gap-2 flex-1">
+                                            <Select
+                                                value={deletedQueryParams.page_size?.toString() || '10'}
+                                                onValueChange={(value) =>
+                                                    setDeletedQueryParams(prev => ({
+                                                        ...prev,
+                                                        page: 1,
+                                                        page_size: parseInt(value),
+                                                    }))
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[110px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <SelectValue placeholder="10" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="10">10</SelectItem>
+                                                    <SelectItem value="25">25</SelectItem>
+                                                    <SelectItem value="50">50</SelectItem>
+                                                    <SelectItem value="100">100</SelectItem>
+                                                    <SelectItem value="99999">All</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                <Input
+                                                    placeholder="Search deleted guests..."
+                                                    value={deletedSearchInput}
+                                                    onChange={(e) => setDeletedSearchInput(e.target.value)}
+                                                    className="pl-10"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -804,14 +859,14 @@ export default function GuestsPage() {
                                                                 <TableCell className="text-right">
                                                                     <ProtectedFeature permission="guests.update">
                                                                         <Button
-                                                                            size="sm"
-                                                                            variant="outline"
+                                                                            size="action"
+                                                                            variant="soft-accent"
                                                                             onClick={() => {
                                                                                 setSelectedGuest(guest);
                                                                                 setIsRestoreDialogOpen(true);
                                                                             }}
                                                                         >
-                                                                            <RotateCcw className="h-4 w-4 mr-1" />
+                                                                            <RotateCcw />
                                                                             Restore
                                                                         </Button>
                                                                     </ProtectedFeature>
@@ -956,6 +1011,13 @@ export default function GuestsPage() {
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onFocus={(e) => {
+                                            const val = e.target.value;
+                                            e.target.setSelectionRange(val.length, val.length);
+                                            setTimeout(() => {
+                                                e.target.setSelectionRange(val.length, val.length);
+                                            }, 0);
+                                        }}
                                     />
                                 </div>
                                 <div className="space-y-2">

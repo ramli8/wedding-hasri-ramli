@@ -2,7 +2,7 @@
 
 import { Menu } from 'lucide-react'
 import { Button } from '@/src/presentation/components/ui/button'
-import { ThemeToggle } from '@/src/presentation/components/theme-toggle'
+import { UserNav } from '@/src/presentation/components/layout/user-nav'
 
 interface NavbarProps {
     onMenuToggle: () => void
@@ -27,7 +27,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
                 <div className="flex items-center space-x-2 lg:hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/gns.png" alt="GNS" className="h-8 w-8 rounded-lg dark:invert" />
-                    <span className="text-xl font-bold">GNS</span>
+                    <span className="text-xl font-bold">Wedding</span>
                 </div>
 
                 {/* Spacer for desktop */}
@@ -35,7 +35,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
 
                 {/* Right side actions */}
                 <div className="flex items-center gap-2">
-                    <ThemeToggle />
+                    <UserNav />
                 </div>
             </div>
         </nav>

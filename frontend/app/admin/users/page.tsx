@@ -250,14 +250,40 @@ export default function UsersPage() {
                                 <TabsContent value="active">
                                     {/* Search and Actions */}
                                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                            <Input
-                                                placeholder="Search users..."
-                                                value={searchInput}
-                                                onChange={(e) => setSearchInput(e.target.value)}
-                                                className="pl-10"
-                                            />
+                                        <div className="flex gap-2 flex-1">
+                                            <Select
+                                                value={queryParams.page_size?.toString() || '10'}
+                                                onValueChange={(value) =>
+                                                    setQueryParams(prev => ({
+                                                        ...prev,
+                                                        page: 1,
+                                                        page_size: parseInt(value),
+                                                    }))
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[110px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <SelectValue placeholder="10" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="10">10</SelectItem>
+                                                    <SelectItem value="25">25</SelectItem>
+                                                    <SelectItem value="50">50</SelectItem>
+                                                    <SelectItem value="100">100</SelectItem>
+                                                    <SelectItem value="99999">All</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                <Input
+                                                    placeholder="Search users..."
+                                                    value={searchInput}
+                                                    onChange={(e) => setSearchInput(e.target.value)}
+                                                    className="pl-10"
+                                                />
+                                            </div>
                                         </div>
                                         <Select
                                             value={queryParams.is_active === undefined ? 'all' : queryParams.is_active.toString()}
@@ -347,45 +373,47 @@ export default function UsersPage() {
                                                                     <div className="flex justify-end gap-2">
                                                                         <ProtectedFeature permission="roles.assign">
                                                                             <Button
-                                                                                size="sm"
-                                                                                variant="outline"
+                                                                                size="action"
+                                                                                variant="soft-accent"
                                                                                 onClick={() => openRoleDialog(user)}
                                                                                 title="Assign Roles"
                                                                             >
-                                                                                <Shield className="h-4 w-4" />
+                                                                                <Shield /> Roles
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="users.manage_status">
                                                                             <Button
-                                                                                size="sm"
-                                                                                variant="outline"
+                                                                                size="action"
+                                                                                variant="soft"
+                                                                                className={user.is_active ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-600/10"}
                                                                                 onClick={() => handleToggleStatus(user)}
                                                                                 title={user.is_active ? 'Deactivate' : 'Activate'}
                                                                             >
-                                                                                <Power className="h-4 w-4" />
+                                                                                <Power /> {user.is_active ? 'Deactivate' : 'Activate'}
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="users.update">
                                                                             <Button
-                                                                                size="sm"
-                                                                                variant="outline"
+                                                                                size="action"
+                                                                                variant="soft"
                                                                                 onClick={() => openEditDialog(user)}
                                                                                 title="Edit"
                                                                             >
-                                                                                <Edit className="h-4 w-4" />
+                                                                                <Edit /> Edit
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="users.delete">
                                                                             <Button
-                                                                                size="sm"
+                                                                                size="action"
                                                                                 variant="outline"
+                                                                                className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                                 onClick={() => {
                                                                                     setSelectedUser(user);
                                                                                     setIsDeleteDialogOpen(true);
                                                                                 }}
                                                                                 title="Delete"
                                                                             >
-                                                                                <Trash2 className="h-4 w-4" />
+                                                                                <Trash2 /> Delete
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                     </div>
@@ -432,14 +460,40 @@ export default function UsersPage() {
                                 <TabsContent value="deleted">
                                     {/* Search */}
                                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                            <Input
-                                                placeholder="Search deleted users..."
-                                                value={deletedSearchInput}
-                                                onChange={(e) => setDeletedSearchInput(e.target.value)}
-                                                className="pl-10"
-                                            />
+                                        <div className="flex gap-2 flex-1">
+                                            <Select
+                                                value={deletedQueryParams.page_size?.toString() || '10'}
+                                                onValueChange={(value) =>
+                                                    setDeletedQueryParams(prev => ({
+                                                        ...prev,
+                                                        page: 1,
+                                                        page_size: parseInt(value),
+                                                    }))
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[110px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <SelectValue placeholder="10" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="10">10</SelectItem>
+                                                    <SelectItem value="25">25</SelectItem>
+                                                    <SelectItem value="50">50</SelectItem>
+                                                    <SelectItem value="100">100</SelectItem>
+                                                    <SelectItem value="99999">All</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                <Input
+                                                    placeholder="Search deleted users..."
+                                                    value={deletedSearchInput}
+                                                    onChange={(e) => setDeletedSearchInput(e.target.value)}
+                                                    className="pl-10"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -483,15 +537,15 @@ export default function UsersPage() {
                                                                 <TableCell className="text-right">
                                                                     <ProtectedFeature permission="users.delete">
                                                                         <Button
-                                                                            size="sm"
-                                                                            variant="outline"
+                                                                            size="action"
+                                                                            variant="soft-accent"
                                                                             onClick={() => {
                                                                                 setSelectedUser(user);
                                                                                 setIsRestoreDialogOpen(true);
                                                                             }}
                                                                             title="Restore User"
                                                                         >
-                                                                            <RotateCcw className="h-4 w-4 mr-1" />
+                                                                            <RotateCcw />
                                                                             Restore
                                                                         </Button>
                                                                     </ProtectedFeature>
@@ -620,6 +674,14 @@ export default function UsersPage() {
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        onFocus={(e) => {
+                                            const val = e.target.value;
+                                            e.target.setSelectionRange(val.length, val.length);
+                                            // Force to end after browser's default auto-select
+                                            setTimeout(() => {
+                                                e.target.setSelectionRange(val.length, val.length);
+                                            }, 0);
+                                        }}
                                     />
                                 </div>
                                 <div className="space-y-2">

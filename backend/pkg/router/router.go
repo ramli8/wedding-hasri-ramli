@@ -159,6 +159,7 @@ func SetupRoutes(
 
 			r.With(middleware.RequirePermission(rbacRepo, "guests.create")).Post("/", guestHandler.CreateGuest)
 			r.Get("/", guestHandler.ListGuests)
+			r.Post("/check-in", guestHandler.CheckInByQRCode)
 			r.Get("/deleted", guestHandler.ListDeletedGuests)
 			r.Get("/export", guestHandler.ExportGuests)
 			r.Get("/template", guestHandler.GetImportTemplate)
@@ -181,6 +182,7 @@ func SetupRoutes(
 				r.With(middleware.RequirePermission(rbacRepo, "guests.delete")).Delete("/", guestHandler.DeleteGuest)
 				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Post("/restore", guestHandler.RestoreGuest)
 				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Put("/status-sent", guestHandler.UpdateStatusSent)
+				r.Post("/check-in", guestHandler.CheckInByGuestID)
 			})
 		})
 	})

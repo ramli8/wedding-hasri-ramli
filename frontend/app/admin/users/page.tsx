@@ -218,14 +218,20 @@ export default function UsersPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-3xl font-bold">User Management</CardTitle>
-                            <CardDescription>
-                                Manage users, assign roles, and control access
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    {/* Independent Page Header */}
+                    <div className="mb-8">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-3xl font-bold tracking-tight text-foreground">User Management</h2>
+                                <p className="text-muted-foreground mt-1 text-base">
+                                    Manage users, assign roles, and control access
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Card className="border-border/50 shadow-sm">
+                        <CardContent className="p-6">
                             {error && (
                                 <Alert variant="destructive" className="mb-4">
                                     <AlertDescription>{error}</AlertDescription>
@@ -275,6 +281,25 @@ export default function UsersPage() {
                                                     <SelectItem value="99999">All</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            <Select
+                                                value={queryParams.is_active === undefined ? 'all' : queryParams.is_active.toString()}
+                                                onValueChange={(value) =>
+                                                    setQueryParams(prev => ({
+                                                        ...prev,
+                                                        page: 1,
+                                                        is_active: value === 'all' ? undefined : value === 'true',
+                                                    }))
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[150px]">
+                                                    <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Status</SelectItem>
+                                                    <SelectItem value="true">Active</SelectItem>
+                                                    <SelectItem value="false">Inactive</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <div className="relative flex-1">
                                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                                 <Input
@@ -285,31 +310,14 @@ export default function UsersPage() {
                                                 />
                                             </div>
                                         </div>
-                                        <Select
-                                            value={queryParams.is_active === undefined ? 'all' : queryParams.is_active.toString()}
-                                            onValueChange={(value) =>
-                                                setQueryParams(prev => ({
-                                                    ...prev,
-                                                    page: 1,
-                                                    is_active: value === 'all' ? undefined : value === 'true',
-                                                }))
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[150px]">
-                                                <SelectValue placeholder="Status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Status</SelectItem>
-                                                <SelectItem value="true">Active</SelectItem>
-                                                <SelectItem value="false">Inactive</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <ProtectedFeature permission="users.create">
-                                            <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
-                                                <UserPlus className="mr-2 h-4 w-4" />
-                                                Add User
-                                            </Button>
-                                        </ProtectedFeature>
+                                        <div className="flex items-center gap-2">
+                                            <ProtectedFeature permission="users.create">
+                                                <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
+                                                    <UserPlus className="mr-2 h-4 w-4" />
+                                                    Add User
+                                                </Button>
+                                            </ProtectedFeature>
+                                        </div>
                                     </div>
 
                                     {/* Users Table */}

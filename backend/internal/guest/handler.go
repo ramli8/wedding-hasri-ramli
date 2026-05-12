@@ -230,6 +230,56 @@ func (h Handler) RestoreGuest(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// CheckInByQRCode godoc
+// @Summary Check-in guest by QR code
+// @Description Check-in a guest by scanning their 6-digit QR code
+// @Tags Guest
+// @Accept json
+// @Produce json
+// @Param request body CheckInByQRCodeRequest true "QR code"
+// @Success 200 {object} CheckInResponse
+// @Failure 400 {object} map[string]string "Invalid request body"
+// @Failure 404 {object} map[string]string "Guest not found"
+// @Failure 409 {object} map[string]string "Already checked in"
+// @Router /guests/check-in [post]
+func (h Handler) CheckInByQRCode(w http.ResponseWriter, r *http.Request) {
+	var req CheckInByQRCodeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.ResponseError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	res, statusCode, err := h.service.CheckInByQRCode(r.Context(), req)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// CheckInByGuestID godoc
+// @Summary Check-in guest by ID (bypass)
+// @Description Check-in a guest using their ID when QR code is unavailable
+// @Tags Guest
+// @Produce json
+// @Param id path string true "Guest ID (UUID)"
+// @Success 200 {object} CheckInResponse
+// @Failure 404 {object} map[string]string "Guest not found"
+// @Failure 409 {object} map[string]string "Already checked in"
+// @Router /guests/{id}/check-in [post]
+func (h Handler) CheckInByGuestID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	res, statusCode, err := h.service.CheckInByID(r.Context(), id)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+
+	response.ResponseJSON(w, statusCode, res)
+}
+
 // UpdateStatusSent godoc
 // @Summary Update guest status_sent
 // @Description Update the sent status of a guest

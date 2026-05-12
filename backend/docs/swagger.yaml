@@ -148,6 +148,20 @@ definitions:
           type: string
         type: array
     type: object
+  internal_guest.CheckInByQRCodeRequest:
+    properties:
+      qr_code:
+        type: string
+    required:
+    - qr_code
+    type: object
+  internal_guest.CheckInResponse:
+    properties:
+      guest:
+        $ref: '#/definitions/internal_guest.GuestResponse'
+      message:
+        type: string
+    type: object
   internal_guest.CreateGuestCategoryRequest:
     properties:
       end_time:
@@ -213,6 +227,42 @@ definitions:
       updated_at:
         type: string
     type: object
+  internal_guest.GuestImportPreviewResponse:
+    properties:
+      error_count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/internal_guest.GuestImportRow'
+        type: array
+      total:
+        type: integer
+      valid_count:
+        type: integer
+    type: object
+  internal_guest.GuestImportRow:
+    properties:
+      address:
+        type: string
+      category_name:
+        type: string
+      errors:
+        items:
+          type: string
+        type: array
+      guest_category_id:
+        type: integer
+      instagram_username:
+        type: string
+      is_valid:
+        type: boolean
+      name:
+        type: string
+      note:
+        type: string
+      phone_number:
+        type: string
+    type: object
   internal_guest.GuestListResponse:
     properties:
       items:
@@ -276,10 +326,6 @@ definitions:
     properties:
       address:
         type: string
-      check_in_at:
-        type: string
-      check_out_at:
-        type: string
       guest_category_id:
         type: integer
       instagram_username:
@@ -293,17 +339,6 @@ definitions:
         type: string
       phone_number:
         maxLength: 20
-        type: string
-      status_attending:
-        enum:
-        - pending
-        - going
-        - not_going
-        type: string
-      status_sent:
-        enum:
-        - pending
-        - sent
         type: string
     type: object
   internal_rbac.AssignPermissionsToRoleRequest:
@@ -831,7 +866,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a guest by its ID
+      description: Soft delete a guest by its ID
       parameters:
       - description: Guest ID (UUID)
         in: path
@@ -918,6 +953,63 @@ paths:
               type: string
             type: object
       summary: Update guest
+      tags:
+      - Guest
+  /guests/{id}/restore:
+    post:
+      consumes:
+      - application/json
+      description: Restore a soft-deleted guest by its ID
+      parameters:
+      - description: Guest ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Guest restored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Restore guest
+      tags:
+      - Guest
+  /guests/{id}/status-sent:
+    put:
+      consumes:
+      - application/json
+      description: Update the sent status of a guest
+      parameters:
+      - description: Guest ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status (pending/sent)
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update guest status_sent
       tags:
       - Guest
   /guests/categories:
@@ -1072,6 +1164,148 @@ paths:
               type: string
             type: object
       summary: Update guest category
+      tags:
+      - Guest
+  /guests/check-in:
+    post:
+      consumes:
+      - application/json
+      description: Check-in a guest by scanning their 6-digit QR code
+      parameters:
+      - description: QR code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_guest.CheckInByQRCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.CheckInResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Already checked in
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check-in guest by QR code
+      tags:
+      - Guest
+  /guests/deleted:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of deleted guests
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      - description: Search by name or QR code
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.GuestListResponse'
+      summary: List deleted guests
+      tags:
+      - Guest
+  /guests/export:
+    get:
+      description: Export all guests data to an Excel file
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Export guests to Excel
+      tags:
+      - Guest
+  /guests/import/execute:
+    post:
+      consumes:
+      - application/json
+      description: Import a batch of validated guest data
+      parameters:
+      - description: Batch guest data
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/internal_guest.CreateGuestRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Import successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Execute guest import
+      tags:
+      - Guest
+  /guests/import/preview:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an Excel file to preview and validate guest data before
+        importing
+      parameters:
+      - description: Excel file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_guest.GuestImportPreviewResponse'
+      summary: Preview guest import
+      tags:
+      - Guest
+  /guests/template:
+    get:
+      description: Get an empty Excel template for importing guests
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get guest import template
       tags:
       - Guest
   /rbac/check-module-access:

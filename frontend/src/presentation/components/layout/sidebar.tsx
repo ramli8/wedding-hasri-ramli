@@ -2,7 +2,7 @@
 
 import {
     X, Gauge, Tags, Contact, UserRound,
-    Users, ShieldCheck, Key
+    Users, ShieldCheck, Key, ScanQrCode
 } from 'lucide-react'
 import { SidebarItem, SidebarMenuItem } from './sidebar-item'
 import { cn } from '@/src/lib/utils'
@@ -21,6 +21,37 @@ const menuItems: SidebarMenuItem[] = [
         label: 'Home',
         href: '/home',
         icon: Gauge,
+    },
+    {
+        label: 'Guest Management',
+        icon: Contact,
+        anyRole: ['Super Admin', 'Admin'],
+        children: [
+            {
+                label: 'Check-In',
+                href: '/admin/guest-checkin',
+                icon: ScanQrCode,
+                permission: 'guests.check_in',
+            },
+            {
+                label: 'Bypass Check-In',
+                href: '/admin/guest-checkin-bypass',
+                icon: ScanQrCode,
+                permission: 'guests.bypass_checkin',
+            },
+            {
+                label: 'Guests',
+                href: '/admin/guests',
+                icon: UserRound,
+                permission: 'guests.read',
+            },
+            {
+                label: 'Categories',
+                href: '/admin/guest-categories',
+                icon: Tags,
+                permission: 'guest_categories.read',
+            },
+        ],
     },
     {
         label: 'User Management',
@@ -44,25 +75,6 @@ const menuItems: SidebarMenuItem[] = [
                 href: '/admin/permissions',
                 icon: Key,
                 permission: 'permissions.read',
-            },
-        ],
-    },
-    {
-        label: 'Guest Management',
-        icon: Contact,
-        anyRole: ['Super Admin', 'Admin'],
-        children: [
-            {
-                label: 'Guests',
-                href: '/admin/guests',
-                icon: UserRound,
-                permission: 'guests.read',
-            },
-            {
-                label: 'Categories',
-                href: '/admin/guest-categories',
-                icon: Tags,
-                permission: 'guest_categories.read',
             },
         ],
     },
@@ -91,11 +103,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
-                {/* Sidebar Header — Brand area with primary bg */}
-                <div className="flex h-16 items-center justify-between bg-[hsl(var(--sidebar-header-bg))] px-4">
+                {/* Sidebar Header — Brand area */}
+                <div className="flex h-16 items-center justify-between px-4 border-b border-border/50">
                     <div className="flex items-center space-x-2">
-                        <Image src="/gns.png" alt="GNS" width={32} height={32} className="h-8 w-8 rounded-lg brightness-0 invert" />
-                        <span className="text-xl font-bold text-white">Wedding</span>
+                        <Image src="/gns.png" alt="GNS" width={32} height={32} className="h-8 w-8 rounded-lg brightness-0 dark:invert" />
+                        <span className="text-xl font-bold text-sidebar-foreground">Wedding App</span>
                     </div>
 
                     {/* Close button (mobile/tablet only) */}
@@ -103,7 +115,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="lg:hidden text-white hover:bg-white/10"
+                        className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         aria-label="Close sidebar"
                     >
                         <X className="h-5 w-5" />

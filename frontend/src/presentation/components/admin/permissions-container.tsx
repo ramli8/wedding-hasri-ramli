@@ -124,24 +124,20 @@ export function PermissionsContainer() {
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-3xl font-bold">Permission Management</CardTitle>
-                            <CardDescription>
-                                Manage system permissions and organize them by module
-                            </CardDescription>
-                        </div>
-                        <ProtectedFeature permission="permissions.create">
-                            <Button onClick={() => setIsCreateDialogOpen(true)}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Create Permission
-                            </Button>
-                        </ProtectedFeature>
+            {/* Independent Page Header */}
+            <div className="mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">Permission Management</h2>
+                        <p className="text-muted-foreground mt-1 text-base">
+                            Manage system permissions and organize them by module
+                        </p>
                     </div>
-                </CardHeader>
-                <CardContent>
+                </div>
+            </div>
+
+            <Card className="border-border/50 shadow-sm">
+                <CardContent className="p-6">
                     {error && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertDescription>{error}</AlertDescription>
@@ -172,15 +168,25 @@ export function PermissionsContainer() {
                         </Card>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative mb-6">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                            placeholder="Search permissions..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10"
-                        />
+                    {/* Search and Actions */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                                placeholder="Search permissions..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <ProtectedFeature permission="permissions.create">
+                                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Permission
+                                </Button>
+                            </ProtectedFeature>
+                        </div>
                     </div>
 
                     {/* Permissions by Module */}

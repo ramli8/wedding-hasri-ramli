@@ -205,6 +205,16 @@ export const guestService = {
   async executeImport(data: CreateGuestRequest[]): Promise<void> {
     await apiClient.post('/v1/guests/import/execute', data);
   },
+
+  async checkInByQRCode(qrCode: string): Promise<CheckInResponse> {
+    const response = await apiClient.post<CheckInResponse>('/v1/guests/check-in', { qr_code: qrCode });
+    return response.data;
+  },
+
+  async checkInByID(id: string): Promise<CheckInResponse> {
+    const response = await apiClient.post<CheckInResponse>(`/v1/guests/${id}/check-in`);
+    return response.data;
+  },
 };
 
 export interface GuestImportRow {
@@ -224,4 +234,9 @@ export interface GuestImportPreviewResponse {
   total: number;
   valid_count: number;
   error_count: number;
+}
+
+export interface CheckInResponse {
+  guest: Guest;
+  message: string;
 }

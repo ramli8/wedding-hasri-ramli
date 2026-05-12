@@ -25,11 +25,11 @@ export function ThemeToggle() {
     }
 
     return (
-        <div className="flex h-9 items-center gap-1 rounded-full bg-muted/80 p-1 border border-border/50 shadow-inner">
+        <div className="flex h-11 items-center gap-1.5 rounded-full bg-muted/80 p-1.5 border border-border/50 shadow-inner">
             <button
                 onClick={() => setTheme('light')}
                 className={cn(
-                    "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
+                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
                     theme === 'light'
                         ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
@@ -37,12 +37,12 @@ export function ThemeToggle() {
                 aria-label="Light theme"
                 title="Light mode"
             >
-                <Sun className="h-4 w-4" />
+                <Sun className="h-[18px] w-[18px]" />
             </button>
             <button
                 onClick={() => setTheme('dark')}
                 className={cn(
-                    "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
+                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
                     theme === 'dark'
                         ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
@@ -50,12 +50,12 @@ export function ThemeToggle() {
                 aria-label="Dark theme"
                 title="Dark mode"
             >
-                <Moon className="h-4 w-4" />
+                <Moon className="h-[18px] w-[18px]" />
             </button>
             <button
                 onClick={() => setTheme('system')}
                 className={cn(
-                    "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
+                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
                     theme === 'system'
                         ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
@@ -63,7 +63,7 @@ export function ThemeToggle() {
                 aria-label="System theme"
                 title="System preference"
             >
-                <Monitor className="h-4 w-4" />
+                <Monitor className="h-[18px] w-[18px]" />
             </button>
         </div>
     )

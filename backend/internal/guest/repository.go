@@ -14,12 +14,14 @@ var (
 	ErrGuestNotFound         = errors.New("guest not found")
 	ErrCategoryNotFound      = errors.New("guest category not found")
 	ErrCategoryAlreadyExists = errors.New("guest category already exists")
+	ErrAlreadyCheckedIn      = errors.New("guest already checked in")
 )
 
 type Repository interface {
 	// Guest operations
 	Create(ctx context.Context, guest *models.Guest) error
 	GetByID(ctx context.Context, id string) (*models.Guest, error)
+	GetByQRCode(ctx context.Context, qrCode string) (*models.Guest, error)
 	List(ctx context.Context, req GuestListRequest) ([]models.Guest, int64, error)
 	Update(ctx context.Context, guest *models.Guest) error
 	Delete(ctx context.Context, id string) error
@@ -27,6 +29,7 @@ type Repository interface {
 	ListDeleted(ctx context.Context, req GuestListRequest) ([]models.Guest, int64, error)
 	IsQRCodeExists(ctx context.Context, qrCode string) (bool, error)
 	UpdateStatusSent(ctx context.Context, id string, status string) error
+	CheckIn(ctx context.Context, id string) error
 	ListAll(ctx context.Context) ([]models.Guest, error)
 
 	// Guest Category operations
@@ -75,7 +78,8 @@ func (r *repository) List(ctx context.Context, req GuestListRequest) ([]models.G
 		Where("deleted_at IS NULL")
 
 	if req.Search != "" {
-		query = query.Where("name ILIKE ? OR qr_code ILIKE ?", "%"+req.Search+"%", "%"+req.Search+"%")
+		query = query.Where("name ILIKE ? OR qr_code ILIKE ? OR phone_number ILIKE ? OR instagram_username ILIKE ?",
+			"%"+req.Search+"%", "%"+req.Search+"%", "%"+req.Search+"%", "%"+req.Search+"%")
 	}
 
 	if req.CategoryID != 0 {
@@ -166,6 +170,28 @@ func (r *repository) IsQRCodeExists(ctx context.Context, qrCode string) (bool, e
 	var count int64
 	err := r.db.GetDB().WithContext(ctx).Model(&models.Guest{}).Where("qr_code = ?", qrCode).Count(&count).Error
 	return count > 0, err
+}
+
+func (r *repository) GetByQRCode(ctx context.Context, qrCode string) (*models.Guest, error) {
+	var guest models.Guest
+	err := r.db.GetDB().WithContext(ctx).Preload("GuestCategory").
+		Where("qr_code = ? AND deleted_at IS NULL", qrCode).
+		First(&guest).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrGuestNotFound
+		}
+		return nil, err
+	}
+	return &guest, nil
+}
+
+func (r *repository) CheckIn(ctx context.Context, id string) error {
+	now := time.Now()
+	return r.db.GetDB().WithContext(ctx).
+		Model(&models.Guest{}).
+		Where("id = ?", id).
+		Update("check_in_at", now).Error
 }
 
 func (r *repository) ListAll(ctx context.Context) ([]models.Guest, error) {

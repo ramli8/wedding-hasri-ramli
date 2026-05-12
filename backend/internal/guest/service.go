@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/base-go/backend/internal/shared/models"
 	"github.com/base-go/backend/pkg/validator"
@@ -20,12 +21,15 @@ type Service interface {
 	// Guest operations
 	CreateGuest(ctx context.Context, req CreateGuestRequest) (GuestResponse, int, error)
 	GetGuestByID(ctx context.Context, id string) (GuestResponse, int, error)
+	GetGuestByQRCode(ctx context.Context, qrCode string) (GuestResponse, int, error)
 	ListGuests(ctx context.Context, req GuestListRequest) (GuestListResponse, int, error)
 	UpdateGuest(ctx context.Context, id string, req UpdateGuestRequest) (GuestResponse, int, error)
 	DeleteGuest(ctx context.Context, id string) (int, error)
 	RestoreGuest(ctx context.Context, id string) (int, error)
 	ListDeletedGuests(ctx context.Context, req GuestListRequest) (GuestListResponse, int, error)
 	UpdateStatusSent(ctx context.Context, id string, status string) (int, error)
+	CheckInByQRCode(ctx context.Context, req CheckInByQRCodeRequest) (CheckInResponse, int, error)
+	CheckInByID(ctx context.Context, id string) (CheckInResponse, int, error)
 
 	// Guest Category operations
 	CreateCategory(ctx context.Context, req CreateGuestCategoryRequest) (*GuestCategoryResponse, int, error)
@@ -98,6 +102,66 @@ func (s *service) GetGuestByID(ctx context.Context, id string) (GuestResponse, i
 	}
 
 	return s.mapToResponse(*guest), http.StatusOK, nil
+}
+
+func (s *service) GetGuestByQRCode(ctx context.Context, qrCode string) (GuestResponse, int, error) {
+	guest, err := s.repo.GetByQRCode(ctx, qrCode)
+	if err != nil {
+		return GuestResponse{}, http.StatusNotFound, ErrGuestNotFound
+	}
+
+	return s.mapToResponse(*guest), http.StatusOK, nil
+}
+
+func (s *service) CheckInByQRCode(ctx context.Context, req CheckInByQRCodeRequest) (CheckInResponse, int, error) {
+	if err := validator.ValidateStruct(req); err != nil {
+		return CheckInResponse{}, http.StatusBadRequest, err
+	}
+
+	guest, err := s.repo.GetByQRCode(ctx, req.QRCode)
+	if err != nil {
+		return CheckInResponse{}, http.StatusNotFound, ErrGuestNotFound
+	}
+
+	if guest.CheckInAt != nil {
+		return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
+	}
+
+	if err := s.repo.CheckIn(ctx, guest.ID); err != nil {
+		return CheckInResponse{}, http.StatusInternalServerError, err
+	}
+
+	// Set check-in time in memory to avoid an extra DB round-trip
+	now := time.Now()
+	guest.CheckInAt = &now
+
+	return CheckInResponse{
+		Guest:   s.mapToResponse(*guest),
+		Message: "Check-in successful",
+	}, http.StatusOK, nil
+}
+
+func (s *service) CheckInByID(ctx context.Context, id string) (CheckInResponse, int, error) {
+	guest, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return CheckInResponse{}, http.StatusNotFound, ErrGuestNotFound
+	}
+
+	if guest.CheckInAt != nil {
+		return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
+	}
+
+	if err := s.repo.CheckIn(ctx, guest.ID); err != nil {
+		return CheckInResponse{}, http.StatusInternalServerError, err
+	}
+
+	now := time.Now()
+	guest.CheckInAt = &now
+
+	return CheckInResponse{
+		Guest:   s.mapToResponse(*guest),
+		Message: "Check-in successful",
+	}, http.StatusOK, nil
 }
 
 func (s *service) ListGuests(ctx context.Context, req GuestListRequest) (GuestListResponse, int, error) {

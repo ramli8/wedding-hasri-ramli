@@ -115,3 +115,13 @@ type GuestImportPreviewResponse struct {
 	ValidCount int              `json:"valid_count"`
 	ErrorCount int              `json:"error_count"`
 }
+
+// Check-In DTOs
+type CheckInByQRCodeRequest struct {
+	QRCode string `json:"qr_code" validate:"required,len=6"`
+}
+
+type CheckInResponse struct {
+	Guest   GuestResponse `json:"guest"`
+	Message string        `json:"message"`
+}

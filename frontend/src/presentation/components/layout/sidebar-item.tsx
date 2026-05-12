@@ -94,7 +94,7 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
     const content = (
         <div
             className={cn(
-                'flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-base font-medium transition-all duration-200',
                 // Active: solid fill primary, text putih
                 isActive
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
@@ -104,7 +104,7 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
         >
             <div className="flex items-center gap-3">
                 <Icon strokeWidth={1.5} className={cn(
-                    'h-5 w-5 shrink-0 transition-colors',
+                    'h-[22px] w-[22px] shrink-0 transition-colors',
                     isActive ? 'text-sidebar-primary-foreground' : 'text-muted-foreground'
                 )} />
                 <span className="truncate">{item.label}</span>

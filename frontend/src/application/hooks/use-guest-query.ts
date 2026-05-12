@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { guestService, GuestCategoryListParams, CreateGuestCategoryRequest, UpdateGuestCategoryRequest, GuestListParams, CreateGuestRequest, UpdateGuestRequest } from '@/src/domain/services/guest.service';
+import { guestService, GuestCategoryListParams, CreateGuestCategoryRequest, UpdateGuestCategoryRequest, GuestListParams, CreateGuestRequest, UpdateGuestRequest, CheckInResponse } from '@/src/domain/services/guest.service';
 
 // Query keys
 export const guestKeys = {
@@ -214,5 +214,45 @@ export function useExecuteImport() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: guestKeys.guestLists() });
     },
+  });
+}
+
+/**
+ * Hook to check-in guest by QR code
+ */
+export function useCheckInGuest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (qrCode: string) => guestService.checkInByQRCode(qrCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: guestKeys.guestLists() });
+    },
+  });
+}
+
+/**
+ * Hook to check-in guest by ID (bypass check-in)
+ */
+export function useCheckInGuestByID() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => guestService.checkInByID(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: guestKeys.guestLists() });
+    },
+  });
+}
+
+/**
+ * Hook to search guests for bypass check-in (lightweight, small page size)
+ */
+export function useSearchGuests(search: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: guestKeys.guestList({ search, page: 1, page_size: 10 }),
+    queryFn: () => guestService.listGuests({ search, page: 1, page_size: 10 }),
+    enabled: enabled && search.length >= 2,
+    staleTime: 10000,
   });
 }

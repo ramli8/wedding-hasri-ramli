@@ -164,14 +164,20 @@ export default function GuestCategoriesPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-3xl font-bold">Guest Categories</CardTitle>
-                            <CardDescription>
-                                Manage guest categories and their session times
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    {/* Independent Page Header */}
+                    <div className="mb-8">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-3xl font-bold tracking-tight text-foreground">Guest Categories</h2>
+                                <p className="text-muted-foreground mt-1 text-base">
+                                    Manage guest categories and their session times
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Card className="border-border/50 shadow-sm">
+                        <CardContent className="p-6">
                             {error && (
                                 <Alert variant="destructive" className="mb-4">
                                     <AlertDescription>{error}</AlertDescription>
@@ -215,12 +221,14 @@ export default function GuestCategoriesPage() {
                                         />
                                     </div>
                                 </div>
-                                <ProtectedFeature permission="guest_categories.create">
-                                    <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Category
-                                    </Button>
-                                </ProtectedFeature>
+                                <div className="flex items-center gap-2">
+                                    <ProtectedFeature permission="guest_categories.create">
+                                        <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Category
+                                        </Button>
+                                    </ProtectedFeature>
+                                </div>
                             </div>
 
                             {/* Table */}

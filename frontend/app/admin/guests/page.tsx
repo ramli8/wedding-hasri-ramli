@@ -429,14 +429,21 @@ export default function GuestsPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-3xl font-bold">Guest Management</CardTitle>
-                            <CardDescription>
-                                Manage your wedding guests, RSVP status, and invitations
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    {/* Independent Page Header */}
+                    <div className="mb-8">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-3xl font-bold tracking-tight text-foreground">Guest Management</h2>
+                                <p className="text-muted-foreground mt-1 text-base">
+                                    Manage your wedding guests, RSVP status, and invitations
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content Card */}
+                    <Card className="border-border/50 shadow-sm">
+                        <CardContent className="p-6">
                             {error && (
                                 <Alert variant="destructive" className="mb-4">
                                     <AlertDescription>{error}</AlertDescription>

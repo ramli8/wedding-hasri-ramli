@@ -750,6 +750,222 @@ const docTemplate = `{
                 }
             }
         },
+        "/guests/check-in": {
+            "post": {
+                "description": "Check-in a guest by scanning their 6-digit QR code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Check-in guest by QR code",
+                "parameters": [
+                    {
+                        "description": "QR code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.CheckInByQRCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.CheckInResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Already checked in",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/deleted": {
+            "get": {
+                "description": "Get a paginated list of deleted guests",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "List deleted guests",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by name or QR code",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/export": {
+            "get": {
+                "description": "Export all guests data to an Excel file",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Export guests to Excel",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/import/execute": {
+            "post": {
+                "description": "Import a batch of validated guest data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Execute guest import",
+                "parameters": [
+                    {
+                        "description": "Batch guest data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_guest.CreateGuestRequest"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Import successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/import/preview": {
+            "post": {
+                "description": "Upload an Excel file to preview and validate guest data before importing",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Preview guest import",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Excel file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_guest.GuestImportPreviewResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/template": {
+            "get": {
+                "description": "Get an empty Excel template for importing guests",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Get guest import template",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/guests/{id}": {
             "get": {
                 "description": "Get a single guest by its ID",
@@ -848,7 +1064,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a guest by its ID",
+                "description": "Soft delete a guest by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -880,6 +1096,92 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/{id}/restore": {
+            "post": {
+                "description": "Restore a soft-deleted guest by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Restore guest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Guest restored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/guests/{id}/status-sent": {
+            "put": {
+                "description": "Update the sent status of a guest",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Update guest status_sent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Status (pending/sent)",
+                        "name": "status",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status updated",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2250,6 +2552,28 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_guest.CheckInByQRCodeRequest": {
+            "type": "object",
+            "required": [
+                "qr_code"
+            ],
+            "properties": {
+                "qr_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_guest.CheckInResponse": {
+            "type": "object",
+            "properties": {
+                "guest": {
+                    "$ref": "#/definitions/internal_guest.GuestResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_guest.CreateGuestCategoryRequest": {
             "type": "object",
             "required": [
@@ -2342,6 +2666,61 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_guest.GuestImportPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "error_count": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_guest.GuestImportRow"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "valid_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_guest.GuestImportRow": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "guest_category_id": {
+                    "type": "integer"
+                },
+                "instagram_username": {
+                    "type": "string"
+                },
+                "is_valid": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "phone_number": {
                     "type": "string"
                 }
             }
@@ -2441,12 +2820,6 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
-                "check_in_at": {
-                    "type": "string"
-                },
-                "check_out_at": {
-                    "type": "string"
-                },
                 "guest_category_id": {
                     "type": "integer"
                 },
@@ -2465,21 +2838,6 @@ const docTemplate = `{
                 "phone_number": {
                     "type": "string",
                     "maxLength": 20
-                },
-                "status_attending": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "going",
-                        "not_going"
-                    ]
-                },
-                "status_sent": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "sent"
-                    ]
                 }
             }
         },

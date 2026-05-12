@@ -39,7 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
                 {/* Brand Name */}
                 <div className="flex flex-col items-center gap-2">
-                    <span className="text-2xl font-bold tracking-tight text-[#3b1f14] dark:text-[#ede3da]">Wedding</span>
+                    <span className="text-2xl font-bold tracking-tight text-[#3b1f14] dark:text-[#ede3da]">Wedding App</span>
                     <span className="text-sm text-[#a08070] dark:text-[#9e8a7a]">Loading your experience...</span>
                 </div>
 

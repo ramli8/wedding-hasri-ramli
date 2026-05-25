@@ -14,7 +14,7 @@ import { Textarea } from '@/src/presentation/components/ui/textarea';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Badge } from '@/src/presentation/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/presentation/components/ui/table';
-import { Plus, Edit, Trash2, Shield, Loader2, CheckCircle, Search, Users, Key, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield, Loader2, CheckCircle, Search, Users, Key, Settings, ShieldCheck } from 'lucide-react';
 import { rbacService, type Role, type RoleWithPermissions, type Permission } from '@/src/domain/services/rbac.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/presentation/components/ui/tabs';
 import { ScrollArea } from '@/src/presentation/components/ui/scroll-area';
@@ -211,14 +211,15 @@ export default function RolesPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    {/* Independent Page Header */}
+                    {/* Page Header */}
                     <div className="mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-3xl font-bold tracking-tight text-foreground">Role Management</h2>
-                                <p className="text-muted-foreground mt-1 text-base">
-                                    Manage roles and their permissions for system access control
-                                </p>
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <ShieldCheck strokeWidth={1.5} className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Manajemen Peran</h2>
+                                <p className="text-sm text-muted-foreground">Kelola peran dan izinnya untuk kontrol akses sistem</p>
                             </div>
                         </div>
                     </div>
@@ -236,7 +237,7 @@ export default function RolesPage() {
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
-                                        placeholder="Search roles..."
+                                        placeholder="Cari peran..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="pl-10"
@@ -246,7 +247,7 @@ export default function RolesPage() {
                                     <ProtectedFeature permission="roles.create">
                                         <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
                                             <Plus className="mr-2 h-4 w-4" />
-                                            Add Role
+                                            Tambah Peran
                                         </Button>
                                     </ProtectedFeature>
                                 </div>
@@ -261,7 +262,7 @@ export default function RolesPage() {
                                         </div>
                                         <div>
                                             <p className="text-2xl font-bold">{roles.length}</p>
-                                            <p className="text-sm text-muted-foreground">Total Roles</p>
+                                            <p className="text-sm text-muted-foreground">Total Peran</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -272,7 +273,7 @@ export default function RolesPage() {
                                         </div>
                                         <div>
                                             <p className="text-2xl font-bold">{permissions.length}</p>
-                                            <p className="text-sm text-muted-foreground">Total Permissions</p>
+                                            <p className="text-sm text-muted-foreground">Total Izin</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -283,7 +284,7 @@ export default function RolesPage() {
                                         </div>
                                         <div>
                                             <p className="text-2xl font-bold">{Object.keys(permissionsByModule).length}</p>
-                                            <p className="text-sm text-muted-foreground">Modules</p>
+                                            <p className="text-sm text-muted-foreground">Modul</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -296,9 +297,9 @@ export default function RolesPage() {
                             ) : filteredRoles.length === 0 ? (
                                 <div className="text-center py-12">
                                     <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No Roles Found</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Tidak Ada Peran Ditemukan</h3>
                                     <p className="text-muted-foreground">
-                                        {searchQuery ? 'Try a different search term' : 'Create your first role to get started'}
+                                        {searchQuery ? 'Coba kata kunci pencarian lain' : 'Tambah peran pertama untuk memulai'}
                                     </p>
                                 </div>
                             ) : (
@@ -306,11 +307,11 @@ export default function RolesPage() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Role Name</TableHead>
-                                                <TableHead>Description</TableHead>
-                                                <TableHead>Type</TableHead>
-                                                <TableHead>Created</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
+                                                <TableHead>Nama Peran</TableHead>
+                                                <TableHead>Deskripsi</TableHead>
+                                                <TableHead>Tipe</TableHead>
+                                                <TableHead>Dibuat</TableHead>
+                                                <TableHead className="text-right">Aksi</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -325,13 +326,13 @@ export default function RolesPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-muted-foreground">
-                                                        {role.description || 'No description'}
+                                                        {role.description || 'Tidak ada deskripsi'}
                                                     </TableCell>
                                                     <TableCell>
                                                         {role.is_system ? (
-                                                            <Badge variant="secondary">System</Badge>
+                                                            <Badge variant="secondary">Sistem</Badge>
                                                         ) : (
-                                                            <Badge variant="outline">Custom</Badge>
+                                                            <Badge variant="outline">Kustom</Badge>
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="text-muted-foreground">
@@ -344,9 +345,9 @@ export default function RolesPage() {
                                                                     size="action"
                                                                     variant="soft"
                                                                     onClick={() => openPermissionsDialog(role)}
-                                                                    title="Manage Permissions"
+                                                                    title="Kelola Izin"
                                                                 >
-                                                                    <Key /> Permissions
+                                                                    <Key /> Izin
                                                                 </Button>
                                                             </ProtectedFeature>
                                                             <ProtectedFeature permission="roles.update">
@@ -355,7 +356,7 @@ export default function RolesPage() {
                                                                     variant="soft-accent"
                                                                     onClick={() => openEditDialog(role)}
                                                                     disabled={role.is_system}
-                                                                    title={role.is_system ? 'System roles cannot be edited' : 'Edit'}
+                                                                    title={role.is_system ? 'Peran sistem tidak dapat diedit' : 'Edit'}
                                                                 >
                                                                     <Edit /> Edit
                                                                 </Button>
@@ -367,9 +368,9 @@ export default function RolesPage() {
                                                                     className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                     onClick={() => openDeleteDialog(role)}
                                                                     disabled={role.is_system}
-                                                                    title={role.is_system ? 'System roles cannot be deleted' : 'Delete'}
+                                                                    title={role.is_system ? 'Peran sistem tidak dapat dihapus' : 'Hapus'}
                                                                 >
-                                                                    <Trash2 /> Delete
+                                                                    <Trash2 /> Hapus
                                                                 </Button>
                                                             </ProtectedFeature>
                                                         </div>
@@ -387,30 +388,30 @@ export default function RolesPage() {
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create New Role</DialogTitle>
+                                <DialogTitle>Tambah Peran Baru</DialogTitle>
                                 <DialogDescription>
-                                    Create a new role to define user access levels
+                                    Tambah peran baru untuk menentukan tingkat akses pengguna
                                 </DialogDescription>
                             </DialogHeader>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="create-name">Role Name</Label>
+                                    <Label htmlFor="create-name">Nama Peran</Label>
                                     <Input
                                         id="create-name"
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="e.g., Editor, Viewer"
+                                        placeholder="Mis: Editor, Viewer"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="create-description">Description</Label>
+                                    <Label htmlFor="create-description">Deskripsi</Label>
                                     <Textarea
                                         id="create-description"
                                         value={formData.description}
                                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                        placeholder="Describe what this role can do..."
+                                        placeholder="Jelaskan apa yang bisa dilakukan peran ini..."
                                         rows={3}
                                     />
                                 </div>
@@ -418,11 +419,11 @@ export default function RolesPage() {
 
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                                    Cancel
+                                    Batal
                                 </Button>
                                 <Button onClick={handleCreateRole} disabled={!formData.name.trim() || isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create
+                                    Tambah
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -432,15 +433,15 @@ export default function RolesPage() {
                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Edit Role</DialogTitle>
+                                <DialogTitle>Edit Peran</DialogTitle>
                                 <DialogDescription>
-                                    Update role information
+                                    Perbarui data peran
                                 </DialogDescription>
                             </DialogHeader>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="edit-name">Role Name</Label>
+                                    <Label htmlFor="edit-name">Nama Peran</Label>
                                     <Input
                                         id="edit-name"
                                         value={formData.name}
@@ -456,7 +457,7 @@ export default function RolesPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="edit-description">Description</Label>
+                                    <Label htmlFor="edit-description">Deskripsi</Label>
                                     <Textarea
                                         id="edit-description"
                                         value={formData.description}
@@ -468,11 +469,11 @@ export default function RolesPage() {
 
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                                    Cancel
+                                    Batal
                                 </Button>
                                 <Button onClick={handleUpdateRole} disabled={!formData.name.trim() || isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
+                                    Simpan
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -482,20 +483,20 @@ export default function RolesPage() {
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Role</AlertDialogTitle>
+                                <AlertDialogTitle>Hapus Peran</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to delete the role &quot;{selectedRole?.name}&quot;?
-                                    This action cannot be undone. Users with this role will lose their assigned permissions.
+                                    Yakin ingin menghapus peran &quot;{selectedRole?.name}&quot;?
+                                    Tindakan ini tidak dapat dibatalkan. Pengguna dengan peran ini akan kehilangan izin yang ditetapkan.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction
                                     onClick={handleDeleteRole}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Delete
+                                    Hapus
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -507,11 +508,11 @@ export default function RolesPage() {
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <Key className="h-5 w-5 text-primary" />
-                                    Manage Permissions
+                                    Kelola Izin
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Assign permissions to {selectedRole?.name}.
-                                    Selected: {selectedPermissions.length} of {permissions.length} permissions
+                                    Tetapkan izin untuk {selectedRole?.name}.
+                                    Terpilih: {selectedPermissions.length} dari {permissions.length} izin
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -550,7 +551,7 @@ export default function RolesPage() {
                                                                 size="sm"
                                                                 onClick={() => toggleModulePermissions(perms, allSelected)}
                                                             >
-                                                                {allSelected ? 'Deselect All' : 'Select All'}
+                                                                {allSelected ? 'Hapus Semua' : 'Pilih Semua'}
                                                             </Button>
                                                         </div>
 
@@ -600,18 +601,18 @@ export default function RolesPage() {
                                 ) : (
                                     <div className="text-center py-8">
                                         <Key className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                        <p className="text-muted-foreground">No permissions available</p>
+                                        <p className="text-muted-foreground">Tidak ada izin tersedia</p>
                                     </div>
                                 )}
                             </div>
 
                             <DialogFooter className="mt-4">
                                 <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)}>
-                                    Cancel
+                                    Batal
                                 </Button>
                                 <Button onClick={handleAssignPermissions} disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Permissions ({selectedPermissions.length})
+                                    Simpan Izin ({selectedPermissions.length})
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

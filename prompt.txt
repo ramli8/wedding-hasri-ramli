@@ -1,0 +1,61 @@
+buatkan saya issue.md, berisi planning untuk membuat ini : 
+
+    jangan terlalu low level atau detail
+    cukup intruksikan secara high level
+    Nanti documen planning nya akan digunakan oleh junior programmer atau model yang lebih murah untuk di implementasikan  
+
+Buatkan saya table untuk menyimpan data guest 
+
+nama table : guests
+dengan kolom:
+    id UUID PRIMARY KEY,
+    guest_category_id INTEGER NOT NULL,
+    qr_code VARCHAR(6) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20) DEFAULT NULL,
+    instagram_username VARCHAR(50) DEFAULT NULL,
+    address TEXT DEFAULT NULL,
+    note TEXT DEFAULT NULL,
+    status_attending ENUM('pending', 'going', 'not_going') DEFAULT 'pending',
+    status_sent ENUM('pending', 'sent') DEFAULT 'pending',
+    check_in_at TIMESTAMP DEFAULT NULL,
+    check_out_at TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP DEFAULT NULL,
+
+guest_category_id memiliki relasi dengan tabel guest_categories
+
+implementasi migration dan seeder untuk table guest
+
+buatkan saya api untuk CRUD guest sesuai dengan base api yang sudah ada di folder backend
+
+implementasi swagger untuk api guest
+
+implementasi RBAC untuk api guest
+
+buatkan di module baru bernama guest 
+
+buatkan juga halaman untuk CRUD guest sesuai dengan base halaman yang sudah ada di folder frontend
+
+untuk halaman guest gunakan layout yang sudah ada di folder frontend
+
+untuk frontend tambahkan juga filter category, status_attending (enum dengan value pending, going, not_going) dan status_sent (enum dengan value pending, sent), check_in_at (jumlah tamu yang sudah check_in dan yang belum check_in)  saat memfilter jangan lupa untuk melakukan reset page
+
+buatkan chekbox all pada data guest nantinya saya ingin mengirim pesan melalui layanan whatsapp blast message
+
+generate qr code untuk setiap guest random 6 karakter dan unik untuk setiap guest (tidak boleh ada yang sama)  
+
+saya ingin menambahkan tombol detail qr code di bagian actions setiap data guest , dengan menampilkan modal menampilkan qr code tersebut dan detail nama guest , kategori dan status
+
+ada juga tombol button dengan icon whatsapp untuk mengirim pesan secara manual menggunakan wa.me/<nomor_telepon>
+
+ada juga tombol button dengan icon icon instagram untuk mengirim pesan secara manual menggunakan instagram.com/<username>
+
+gunakan style yang konsisten dengan tema frontend
+
+buat form untuk phone number dan instagram_username minimal di isi salah satu
+
+
+
+

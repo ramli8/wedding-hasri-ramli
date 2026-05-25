@@ -218,14 +218,15 @@ export default function UsersPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    {/* Independent Page Header */}
+                    {/* Page Header */}
                     <div className="mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-3xl font-bold tracking-tight text-foreground">User Management</h2>
-                                <p className="text-muted-foreground mt-1 text-base">
-                                    Manage users, assign roles, and control access
-                                </p>
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <Users strokeWidth={1.5} className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Manajemen Pengguna</h2>
+                                <p className="text-sm text-muted-foreground">Kelola pengguna, tetapkan peran, dan atur akses</p>
                             </div>
                         </div>
                     </div>
@@ -242,12 +243,12 @@ export default function UsersPage() {
                                 <TabsList className="mb-4">
                                     <TabsTrigger value="active" className="flex items-center gap-2">
                                         <Users className="h-4 w-4" />
-                                        Active Users
+                                        Aktif
                                         {usersData?.total ? <Badge variant="secondary">{usersData.total}</Badge> : null}
                                     </TabsTrigger>
                                     <TabsTrigger value="deleted" className="flex items-center gap-2">
                                         <UserX className="h-4 w-4" />
-                                        Deleted Users
+                                        Diarsipkan
                                         {deletedUsersData?.total ? <Badge variant="secondary">{deletedUsersData.total}</Badge> : null}
                                     </TabsTrigger>
                                 </TabsList>
@@ -269,7 +270,7 @@ export default function UsersPage() {
                                             >
                                                 <SelectTrigger className="w-[110px]">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <span className="text-xs text-muted-foreground">Tampilkan:</span>
                                                         <SelectValue placeholder="10" />
                                                     </div>
                                                 </SelectTrigger>
@@ -278,7 +279,7 @@ export default function UsersPage() {
                                                     <SelectItem value="25">25</SelectItem>
                                                     <SelectItem value="50">50</SelectItem>
                                                     <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">All</SelectItem>
+                                                    <SelectItem value="99999">Semua</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <Select
@@ -295,15 +296,15 @@ export default function UsersPage() {
                                                     <SelectValue placeholder="Status" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">All Status</SelectItem>
-                                                    <SelectItem value="true">Active</SelectItem>
-                                                    <SelectItem value="false">Inactive</SelectItem>
+                                                    <SelectItem value="all">Semua Status</SelectItem>
+                                                    <SelectItem value="true">Aktif</SelectItem>
+                                                    <SelectItem value="false">Tidak Aktif</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <div className="relative flex-1">
                                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                                 <Input
-                                                    placeholder="Search users..."
+                                                    placeholder="Cari pengguna..."
                                                     value={searchInput}
                                                     onChange={(e) => setSearchInput(e.target.value)}
                                                     className="pl-10"
@@ -314,7 +315,7 @@ export default function UsersPage() {
                                             <ProtectedFeature permission="users.create">
                                                 <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
                                                     <UserPlus className="mr-2 h-4 w-4" />
-                                                    Add User
+                                                    Tambah Pengguna
                                                 </Button>
                                             </ProtectedFeature>
                                         </div>
@@ -328,9 +329,9 @@ export default function UsersPage() {
                                     ) : !usersData?.items?.length ? (
                                         <div className="text-center py-12">
                                             <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">No Users Found</h3>
+                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Pengguna Ditemukan</h3>
                                             <p className="text-muted-foreground">
-                                                {queryParams.search ? 'Try a different search term' : 'Add your first user to get started'}
+                                                {queryParams.search ? 'Coba kata kunci pencarian lain' : 'Tambah pengguna pertama untuk memulai'}
                                             </p>
                                         </div>
                                     ) : (
@@ -339,12 +340,12 @@ export default function UsersPage() {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
-                                                            <TableHead><SortButton field="name">Name</SortButton></TableHead>
+                                                            <TableHead><SortButton field="name">Nama</SortButton></TableHead>
                                                             <TableHead><SortButton field="email">Email</SortButton></TableHead>
-                                                            <TableHead>Roles</TableHead>
+                                                            <TableHead>Peran</TableHead>
                                                             <TableHead><SortButton field="is_active">Status</SortButton></TableHead>
                                                             <TableHead>OAuth</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
+                                                            <TableHead className="text-right">Aksi</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -361,13 +362,13 @@ export default function UsersPage() {
                                                                                 </Badge>
                                                                             ))
                                                                         ) : (
-                                                                            <span className="text-muted-foreground text-sm">No roles</span>
+                                                                            <span className="text-muted-foreground text-sm">Tidak ada peran</span>
                                                                         )}
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <Badge variant={user.is_active ? 'default' : 'destructive'}>
-                                                                        {user.is_active ? 'Active' : 'Inactive'}
+                                                                        {user.is_active ? 'Aktif' : 'Tidak Aktif'}
                                                                     </Badge>
                                                                 </TableCell>
                                                                 <TableCell>
@@ -384,9 +385,9 @@ export default function UsersPage() {
                                                                                 size="action"
                                                                                 variant="soft-accent"
                                                                                 onClick={() => openRoleDialog(user)}
-                                                                                title="Assign Roles"
+                                                                                title="Tetapkan Peran"
                                                                             >
-                                                                                <Shield /> Roles
+                                                                                <Shield /> Peran
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="users.manage_status">
@@ -395,9 +396,9 @@ export default function UsersPage() {
                                                                                 variant="soft"
                                                                                 className={user.is_active ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-600/10"}
                                                                                 onClick={() => handleToggleStatus(user)}
-                                                                                title={user.is_active ? 'Deactivate' : 'Activate'}
-                                                                            >
-                                                                                <Power /> {user.is_active ? 'Deactivate' : 'Activate'}
+                                                                title={user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                                            >
+                                                                <Power /> {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                         <ProtectedFeature permission="users.update">
@@ -419,9 +420,9 @@ export default function UsersPage() {
                                                                                     setSelectedUser(user);
                                                                                     setIsDeleteDialogOpen(true);
                                                                                 }}
-                                                                                title="Delete"
-                                                                            >
-                                                                                <Trash2 /> Delete
+                                                                            title="Hapus"
+                                                                        >
+                                                                            <Trash2 /> Hapus
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                     </div>
@@ -435,11 +436,11 @@ export default function UsersPage() {
                                             {/* Pagination */}
                                             <div className="flex items-center justify-between mt-4">
                                                 <p className="text-sm text-muted-foreground">
-                                                    Showing {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} to{' '}
-                                                    {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), usersData.total)} of{' '}
-                                                    {usersData.total} users
+                                                    Menampilkan {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} ke{' '}
+                                                    {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), usersData.total)} dari{' '}
+                                                    {usersData.total} pengguna
                                                 </p>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -447,7 +448,7 @@ export default function UsersPage() {
                                                         onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
-                                                        Previous
+                                                        Sebelumnya
                                                     </Button>
                                                     <Button
                                                         variant="outline"
@@ -455,7 +456,7 @@ export default function UsersPage() {
                                                         disabled={(queryParams.page || 1) >= usersData.total_pages}
                                                         onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                                                     >
-                                                        Next
+                                                        Selanjutnya
                                                         <ChevronRight className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -481,7 +482,7 @@ export default function UsersPage() {
                                             >
                                                 <SelectTrigger className="w-[110px]">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <span className="text-xs text-muted-foreground">Tampilkan:</span>
                                                         <SelectValue placeholder="10" />
                                                     </div>
                                                 </SelectTrigger>
@@ -490,13 +491,13 @@ export default function UsersPage() {
                                                     <SelectItem value="25">25</SelectItem>
                                                     <SelectItem value="50">50</SelectItem>
                                                     <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">All</SelectItem>
+                                                    <SelectItem value="99999">Semua</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <div className="relative flex-1">
                                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                                 <Input
-                                                    placeholder="Search deleted users..."
+                                                    placeholder="Cari pengguna yang diarsipkan..."
                                                     value={deletedSearchInput}
                                                     onChange={(e) => setDeletedSearchInput(e.target.value)}
                                                     className="pl-10"
@@ -513,9 +514,9 @@ export default function UsersPage() {
                                     ) : !deletedUsersData?.items?.length ? (
                                         <div className="text-center py-12">
                                             <UserX className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">No Deleted Users</h3>
+                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Pengguna Diarsipkan</h3>
                                             <p className="text-muted-foreground">
-                                                Deleted users will appear here for restoration
+                                                Pengguna yang diarsipkan akan muncul di sini untuk dipulihkan
                                             </p>
                                         </div>
                                     ) : (
@@ -524,10 +525,10 @@ export default function UsersPage() {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
-                                                            <TableHead>Name</TableHead>
+                                                            <TableHead>Nama</TableHead>
                                                             <TableHead>Email</TableHead>
                                                             <TableHead>OAuth</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
+                                                            <TableHead className="text-right">Aksi</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -551,10 +552,10 @@ export default function UsersPage() {
                                                                                 setSelectedUser(user);
                                                                                 setIsRestoreDialogOpen(true);
                                                                             }}
-                                                                            title="Restore User"
+                                                                            title="Pulihkan Pengguna"
                                                                         >
                                                                             <RotateCcw />
-                                                                            Restore
+                                                                            Pulihkan
                                                                         </Button>
                                                                     </ProtectedFeature>
                                                                 </TableCell>
@@ -567,11 +568,11 @@ export default function UsersPage() {
                                             {/* Pagination */}
                                             <div className="flex items-center justify-between mt-4">
                                                 <p className="text-sm text-muted-foreground">
-                                                    Showing {((deletedQueryParams.page || 1) - 1) * (deletedQueryParams.page_size || 10) + 1} to{' '}
-                                                    {Math.min((deletedQueryParams.page || 1) * (deletedQueryParams.page_size || 10), deletedUsersData.total)} of{' '}
-                                                    {deletedUsersData.total} deleted users
+                                                    Menampilkan {((deletedQueryParams.page || 1) - 1) * (deletedQueryParams.page_size || 10) + 1} ke{' '}
+                                                    {Math.min((deletedQueryParams.page || 1) * (deletedQueryParams.page_size || 10), deletedUsersData.total)} dari{' '}
+                                                    {deletedUsersData.total} pengguna diarsipkan
                                                 </p>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -579,15 +580,14 @@ export default function UsersPage() {
                                                         onClick={() => setDeletedQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
-                                                        Previous
+                                                        Sebelumnya
                                                     </Button>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         disabled={(deletedQueryParams.page || 1) >= deletedUsersData.total_pages}
-                                                        onClick={() => setDeletedQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                                                     >
-                                                        Next
+                                                        Selanjutnya
                                                         <ChevronRight className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -603,16 +603,16 @@ export default function UsersPage() {
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create User</DialogTitle>
-                                <DialogDescription>Add a new user to the system</DialogDescription>
+                                <DialogTitle>Tambah Pengguna</DialogTitle>
+                                <DialogDescription>Tambah pengguna baru ke sistem</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Name</Label>
+                                    <Label>Nama</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="Full name"
+                                        placeholder="Nama lengkap"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -621,20 +621,20 @@ export default function UsersPage() {
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                        placeholder="email@example.com"
+                                        placeholder="email@contoh.com"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Password</Label>
+                                    <Label>Kata Sandi</Label>
                                     <Input
                                         type="password"
                                         value={formData.password}
                                         onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                        placeholder="Minimum 8 characters"
+                                        placeholder="Minimal 8 karakter"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Roles</Label>
+                                    <Label>Peran</Label>
                                     <div className="space-y-2">
                                         {roles.map((role) => (
                                             <div key={role.id} className="flex items-center space-x-2">
@@ -660,10 +660,10 @@ export default function UsersPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleCreateUser} disabled={createUser.isPending}>
                                     {createUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create
+                                    Tambah
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -673,12 +673,12 @@ export default function UsersPage() {
                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Edit User</DialogTitle>
-                                <DialogDescription>Update user information</DialogDescription>
+                                <DialogTitle>Edit Pengguna</DialogTitle>
+                                <DialogDescription>Perbarui data pengguna</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Name</Label>
+                                    <Label>Nama</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -701,7 +701,7 @@ export default function UsersPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Roles</Label>
+                                    <Label>Peran</Label>
                                     <div className="space-y-2">
                                         {roles.map((role) => (
                                             <div key={role.id} className="flex items-center space-x-2">
@@ -727,10 +727,10 @@ export default function UsersPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleUpdateUser} disabled={updateUser.isPending}>
                                     {updateUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
+                                    Simpan
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -740,9 +740,9 @@ export default function UsersPage() {
                     <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Assign Roles</DialogTitle>
+                                <DialogTitle>Tetapkan Peran</DialogTitle>
                                 <DialogDescription>
-                                    Assign roles to {selectedUser?.name}
+                                    Tetapkan peran untuk {selectedUser?.name}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
@@ -775,10 +775,10 @@ export default function UsersPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleAssignRoles} disabled={updateUser.isPending}>
                                     {updateUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Assign Roles
+                                    Tetapkan Peran
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -788,15 +788,15 @@ export default function UsersPage() {
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                <AlertDialogTitle>Hapus Pengguna</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to delete {selectedUser?.name}? You can restore this user later from the Deleted Users tab.
+                                    Yakin ingin menghapus {selectedUser?.name}? Anda dapat memulihkan pengguna ini nanti dari tab Diarsipkan.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Delete
+                                    Hapus
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -806,15 +806,15 @@ export default function UsersPage() {
                     <AlertDialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Restore User</AlertDialogTitle>
+                                <AlertDialogTitle>Pulihkan Pengguna</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to restore {selectedUser?.name}? The user will be able to log in again.
+                                    Yakin ingin memulihkan {selectedUser?.name}? Pengguna akan dapat masuk kembali.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleRestoreUser}>
-                                    Restore
+                                    Pulihkan
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>

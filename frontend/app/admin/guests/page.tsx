@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/src/presentation/componen
 import { Textarea } from '@/src/presentation/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/presentation/components/ui/tabs';
 import { Checkbox } from '@/src/presentation/components/ui/checkbox';
-import { Search, UserPlus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, QrCode, RotateCcw, Users, UserX, User, ArrowUpDown, Instagram, Download, Upload, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, QrCode, RotateCcw, Users, UserX, User, ArrowUpDown, Instagram, Download, Upload, FileSpreadsheet, AlertTriangle, UserRound } from 'lucide-react';
 import { useGuests, useCreateGuest, useUpdateGuest, useDeleteGuest, useGuestCategories, useDeletedGuests, useRestoreGuest, useUpdateGuestStatusSent, usePreviewImport, useExecuteImport } from '@/src/application/hooks/use-guest-query';
 import { guestService, Guest, GuestListParams } from '@/src/domain/services/guest.service';
 import { Progress } from '@/src/presentation/components/ui/progress';
@@ -136,7 +136,7 @@ export default function GuestsPage() {
     const handleCreateGuest = async () => {
         // Validation: either phone or instagram must be filled
         if (!formData.phone_number && !formData.instagram_username) {
-            setError('At least one of phone number or instagram username must be filled');
+            setError('Minimal salah satu No. HP atau Instagram harus diisi');
             return;
         }
 
@@ -151,9 +151,9 @@ export default function GuestsPage() {
             });
             setIsCreateDialogOpen(false);
             resetForm();
-            toast.success('Guest created successfully');
+            toast.success('Tamu berhasil ditambahkan');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create guest');
+            setError(err.response?.data?.message || 'Gagal menambah tamu');
         }
     };
 
@@ -162,7 +162,7 @@ export default function GuestsPage() {
 
         // Validation: either phone or instagram must be filled
         if (!formData.phone_number && !formData.instagram_username) {
-            setError('At least one of phone number or instagram username must be filled');
+            setError('Minimal salah satu No. HP atau Instagram harus diisi');
             return;
         }
 
@@ -182,9 +182,9 @@ export default function GuestsPage() {
             });
             setIsEditDialogOpen(false);
             resetForm();
-            toast.success('Guest updated successfully');
+            toast.success('Tamu berhasil diperbarui');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to update guest');
+            setError(err.response?.data?.message || 'Gagal memperbarui tamu');
         }
     };
 
@@ -194,9 +194,9 @@ export default function GuestsPage() {
             await deleteGuest.mutateAsync(selectedGuest.id);
             setIsDeleteDialogOpen(false);
             setSelectedGuest(null);
-            toast.success('Guest deleted successfully');
+            toast.success('Tamu berhasil dihapus');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete guest');
+            setError(err.response?.data?.message || 'Gagal menghapus tamu');
         }
     };
 
@@ -206,9 +206,9 @@ export default function GuestsPage() {
             await restoreGuest.mutateAsync(selectedGuest.id);
             setIsRestoreDialogOpen(false);
             setSelectedGuest(null);
-            toast.success('Guest restored successfully');
+            toast.success('Tamu berhasil dipulihkan');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to restore guest');
+            setError(err.response?.data?.message || 'Gagal memulihkan tamu');
         }
     };
 
@@ -226,9 +226,9 @@ export default function GuestsPage() {
             setIsSendMessageDialogOpen(false);
             setSelectedGuest(null);
             setMessageType(null);
-            toast.success('Invitation status updated to Sent');
+            toast.success('Status undangan berhasil diperbarui menjadi Terkirim');
         } catch {
-            toast.error('Failed to update invitation status');
+            toast.error('Gagal memperbarui status undangan');
         }
     };
 
@@ -258,9 +258,9 @@ export default function GuestsPage() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            toast.success('Guests exported successfully');
+            toast.success('Tamu berhasil diekspor');
         } catch {
-            toast.error('Failed to export guests');
+            toast.error('Gagal mengekspor tamu');
         }
     };
 
@@ -276,7 +276,7 @@ export default function GuestsPage() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch {
-            toast.error('Failed to download template');
+            toast.error('Gagal mengunduh template');
         }
     };
 
@@ -296,7 +296,7 @@ export default function GuestsPage() {
             const preview = await previewImport.mutateAsync(importFile);
             setImportPreviewData(preview);
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to preview file');
+            toast.error(err.response?.data?.message || 'Gagal melihat pratinjau file');
         }
     };
 
@@ -305,7 +305,7 @@ export default function GuestsPage() {
 
         const validItems = importPreviewData.items.filter((item: any) => item.is_valid);
         if (validItems.length === 0) {
-            toast.error('No valid items to import');
+            toast.error('Tidak ada item valid untuk diimpor');
             return;
         }
 
@@ -332,11 +332,11 @@ export default function GuestsPage() {
                 setImportProgress(Math.round((processedCount / totalItems) * 100));
             }
 
-            toast.success(`Successfully imported ${processedCount} guests`);
+            toast.success(`Berhasil mengimpor ${processedCount} tamu`);
             setIsImportModalOpen(false);
             resetImportState();
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to import guests');
+            toast.error(err.response?.data?.message || 'Gagal mengimpor tamu');
         } finally {
             setIsImporting(false);
         }
@@ -361,7 +361,7 @@ export default function GuestsPage() {
         if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
             setImportFile(file);
         } else {
-            toast.error('Please upload a valid Excel file (.xlsx or .xls)');
+            toast.error('Unggah file Excel yang valid (.xlsx atau .xls)');
         }
     };
 
@@ -404,10 +404,12 @@ export default function GuestsPage() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'going': return <Badge variant="default">Going</Badge>;
-            case 'not_going': return <Badge variant="destructive">Not Going</Badge>;
-            case 'sent': return <Badge variant="default">Sent</Badge>;
-            default: return <Badge variant="secondary">{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+            case 'going': return <Badge variant="default">Hadir</Badge>;
+            case 'not_going': return <Badge variant="destructive">Tidak Hadir</Badge>;
+            case 'pending': return <Badge variant="secondary">Menunggu</Badge>;
+            case 'sent': return <Badge variant="default">Terkirim</Badge>;
+            case 'not_sent': return <Badge variant="secondary">Belum Dikirim</Badge>;
+            default: return <Badge variant="secondary">{status}</Badge>;
         }
     };
 
@@ -429,14 +431,15 @@ export default function GuestsPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    {/* Independent Page Header */}
+                    {/* Page Header */}
                     <div className="mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-3xl font-bold tracking-tight text-foreground">Guest Management</h2>
-                                <p className="text-muted-foreground mt-1 text-base">
-                                    Manage your wedding guests, RSVP status, and invitations
-                                </p>
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <UserRound strokeWidth={1.5} className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Daftar Tamu</h2>
+                                <p className="text-sm text-muted-foreground">Kelola tamu undangan, status RSVP, dan undangan</p>
                             </div>
                         </div>
                     </div>
@@ -454,12 +457,12 @@ export default function GuestsPage() {
                                 <TabsList className="mb-4">
                                     <TabsTrigger value="active" className="flex items-center gap-2">
                                         <Users className="h-4 w-4" />
-                                        Active Guests
+                                        Aktif
                                         {guestsData?.total ? <Badge variant="secondary">{guestsData.total}</Badge> : null}
                                     </TabsTrigger>
                                     <TabsTrigger value="deleted" className="flex items-center gap-2">
                                         <UserX className="h-4 w-4" />
-                                        Deleted Guests
+                                        Dihapus
                                         {deletedGuestsData?.total ? <Badge variant="secondary">{deletedGuestsData.total}</Badge> : null}
                                     </TabsTrigger>
                                 </TabsList>
@@ -481,7 +484,7 @@ export default function GuestsPage() {
                                             >
                                                 <SelectTrigger className="w-[110px]">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <span className="text-xs text-muted-foreground">Tampil:</span>
                                                         <SelectValue placeholder="10" />
                                                     </div>
                                                 </SelectTrigger>
@@ -490,38 +493,38 @@ export default function GuestsPage() {
                                                     <SelectItem value="25">25</SelectItem>
                                                     <SelectItem value="50">50</SelectItem>
                                                     <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">All</SelectItem>
+                                                    <SelectItem value="99999">Semua</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <div className="relative flex-1">
                                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                                 <Input
-                                                    placeholder="Search by name or QR code..."
+                                                    placeholder="Cari tamu..."
                                                     value={searchInput}
                                                     onChange={(e) => setSearchInput(e.target.value)}
                                                     className="pl-10"
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             {selectedGuestIds.length > 0 && (
                                                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
                                                     <Whatsapp className="mr-2 h-4 w-4" />
-                                                    Blast ({selectedGuestIds.length})
+                                                    Kirim ({selectedGuestIds.length})
                                                 </Button>
                                             )}
                                             <Button variant="outline" onClick={handleExport}>
                                                 <Download className="mr-2 h-4 w-4" />
-                                                Export
+                                                Ekspor
                                             </Button>
                                             <ProtectedFeature permission="guests.create">
                                                 <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                                                     <Upload className="mr-2 h-4 w-4" />
-                                                    Import
+                                                    Impor
                                                 </Button>
                                                 <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
                                                     <UserPlus className="mr-2 h-4 w-4" />
-                                                    Add Guest
+                                                    Tambah Tamu
                                                 </Button>
                                             </ProtectedFeature>
                                         </div>
@@ -540,10 +543,10 @@ export default function GuestsPage() {
                                             }
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="All Categories" />
+                                                <SelectValue placeholder="Semua Kategori" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">All Categories</SelectItem>
+                                                <SelectItem value="all">Semua Kategori</SelectItem>
                                                 {categoriesData?.items.map(cat => (
                                                     <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
                                                 ))}
@@ -560,13 +563,13 @@ export default function GuestsPage() {
                                             }
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="All RSVP Status" />
+                                                <SelectValue placeholder="Semua Status" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">All RSVP Status</SelectItem>
-                                                <SelectItem value="pending">Pending</SelectItem>
-                                                <SelectItem value="going">Going</SelectItem>
-                                                <SelectItem value="not_going">Not Going</SelectItem>
+                                                <SelectItem value="all">Semua Status</SelectItem>
+                                                <SelectItem value="pending">Menunggu</SelectItem>
+                                                <SelectItem value="going">Hadir</SelectItem>
+                                                <SelectItem value="not_going">Tidak Hadir</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <Select
@@ -580,12 +583,12 @@ export default function GuestsPage() {
                                             }
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="All Invitation Status" />
+                                                <SelectValue placeholder="Semua Status" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">All Invitation Status</SelectItem>
-                                                <SelectItem value="pending">Pending</SelectItem>
-                                                <SelectItem value="sent">Sent</SelectItem>
+                                                <SelectItem value="all">Semua Status</SelectItem>
+                                                <SelectItem value="pending">Menunggu</SelectItem>
+                                                <SelectItem value="sent">Terkirim</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <Select
@@ -599,12 +602,12 @@ export default function GuestsPage() {
                                             }
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="All Check-in Status" />
+                                                <SelectValue placeholder="Semua Status" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">All Check-in Status</SelectItem>
-                                                <SelectItem value="true">Checked In</SelectItem>
-                                                <SelectItem value="false">Not Checked In</SelectItem>
+                                                <SelectItem value="all">Semua Status</SelectItem>
+                                                <SelectItem value="true">Sudah Check In</SelectItem>
+                                                <SelectItem value="false">Belum Check In</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -617,9 +620,9 @@ export default function GuestsPage() {
                                     ) : !guestsData?.items?.length ? (
                                         <div className="text-center py-12">
                                             <User className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">No Guests Found</h3>
+                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Tamu Ditemukan</h3>
                                             <p className="text-muted-foreground">
-                                                {queryParams.search ? 'Try a different search term' : 'Add your first guest to get started'}
+                                                {queryParams.search ? 'Coba kata kunci pencarian lain' : 'Tambah tamu pertama untuk memulai'}
                                             </p>
                                         </div>
                                     ) : (
@@ -634,12 +637,12 @@ export default function GuestsPage() {
                                                                     onCheckedChange={toggleSelectAll}
                                                                 />
                                                             </TableHead>
-                                                            <TableHead><SortButton field="name">Name</SortButton></TableHead>
-                                                            <TableHead>Category</TableHead>
-                                                            <TableHead>Phone / Instagram</TableHead>
-                                                            <TableHead>RSVP & Invitation</TableHead>
-                                                            <TableHead>Check-in At</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
+                                                            <TableHead><SortButton field="name">Nama</SortButton></TableHead>
+                                                            <TableHead>Kategori</TableHead>
+                                                            <TableHead>No. HP / Instagram</TableHead>
+                                                            <TableHead>RSVP & Undangan</TableHead>
+                                                            <TableHead>Check In</TableHead>
+                                                            <TableHead className="text-right">Aksi</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -656,36 +659,36 @@ export default function GuestsPage() {
                                                                 </TableCell>
                                                                 <TableCell>{guest.category_name}</TableCell>
                                                                 <TableCell>
-                                                                    <div className="text-xs space-y-1">
-                                                                        {guest.phone_number && <div className="flex items-center gap-1"><Whatsapp className="h-3 w-3 text-muted-foreground" /> {guest.phone_number}</div>}
-                                                                        {guest.instagram_username && <div className="flex items-center gap-1"><Instagram className="h-3 w-3 text-muted-foreground" /> @{guest.instagram_username}</div>}
-                                                                        {!guest.phone_number && !guest.instagram_username && <span className="text-muted-foreground italic">None</span>}
+                                                                    <div className="text-sm space-y-1">
+                                                                        {guest.phone_number && <div className="flex items-center gap-1.5"><Whatsapp className="h-4 w-4 text-muted-foreground" /> {guest.phone_number}</div>}
+                                                                        {guest.instagram_username && <div className="flex items-center gap-1.5"><Instagram className="h-4 w-4 text-muted-foreground" /> @{guest.instagram_username}</div>}
+                                                                        {!guest.phone_number && !guest.instagram_username && <span className="text-muted-foreground italic">-</span>}
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <div className="flex flex-col gap-1.5 text-[10px]">
+                                                                    <div className="flex flex-col gap-2 text-xs">
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="text-muted-foreground w-12">RSVP:</span>
                                                                             {getStatusBadge(guest.status_attending)}
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
-                                                                            <span className="text-muted-foreground w-12">Invite:</span>
+                                                                            <span className="text-muted-foreground w-12">Undang:</span>
                                                                             {getStatusBadge(guest.status_sent)}
                                                                         </div>
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     {guest.check_in_at ? (
-                                                                        <div className="text-xs">
-                                                                            <Badge variant="outline">
+                                                                        <div className="text-sm">
+                                                                            <Badge variant="outline" className="text-sm">
                                                                                 {format(new Date(guest.check_in_at), 'HH:mm')}
                                                                             </Badge>
-                                                                            <div className="text-[10px] text-muted-foreground mt-1">
+                                                                            <div className="text-xs text-muted-foreground mt-1">
                                                                                 {format(new Date(guest.check_in_at), 'dd MMM')}
                                                                             </div>
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-muted-foreground text-xs italic">Not yet</span>
+                                                                        <span className="text-muted-foreground text-sm italic">Belum</span>
                                                                     )}
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
@@ -704,7 +707,7 @@ export default function GuestsPage() {
                                                                                     size="action"
                                                                                     variant="soft"
                                                                                     className="text-green-600 hover:bg-green-600/10"
-                                                                                    title="WA Message"
+                                                                                    title="Pesan WA"
                                                                                     onClick={() => {
                                                                                         setSelectedGuest(guest);
                                                                                         setMessageType('whatsapp');
@@ -719,7 +722,7 @@ export default function GuestsPage() {
                                                                                     size="action"
                                                                                     variant="soft"
                                                                                     className="text-pink-600 hover:bg-pink-600/10"
-                                                                                    title="Instagram"
+                                                                                    title="Pesan IG"
                                                                                     onClick={() => {
                                                                                         setSelectedGuest(guest);
                                                                                         setMessageType('instagram');
@@ -749,9 +752,9 @@ export default function GuestsPage() {
                                                                                     setSelectedGuest(guest);
                                                                                     setIsDeleteDialogOpen(true);
                                                                                 }}
-                                                                                title="Delete"
+                                                                                title="Hapus"
                                                                             >
-                                                                                <Trash2 /> Delete
+                                                                                <Trash2 /> Hapus
                                                                             </Button>
                                                                         </ProtectedFeature>
                                                                     </div>
@@ -765,11 +768,11 @@ export default function GuestsPage() {
                                             {/* Pagination */}
                                             <div className="flex items-center justify-between mt-4">
                                                 <p className="text-sm text-muted-foreground">
-                                                    Showing {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} to{' '}
-                                                    {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), guestsData.total)} of{' '}
-                                                    {guestsData.total} guests
+                                                    Menampilkan {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} ke{' '}
+                                                    {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), guestsData.total)} dari{' '}
+                                                    {guestsData.total} tamu
                                                 </p>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -777,7 +780,7 @@ export default function GuestsPage() {
                                                         onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
-                                                        Previous
+                                                        Sebelumnya
                                                     </Button>
                                                     <Button
                                                         variant="outline"
@@ -785,7 +788,7 @@ export default function GuestsPage() {
                                                         disabled={(queryParams.page || 1) >= guestsData.total_pages}
                                                         onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                                                     >
-                                                        Next
+                                                        Selanjutnya
                                                         <ChevronRight className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -810,7 +813,7 @@ export default function GuestsPage() {
                                             >
                                                 <SelectTrigger className="w-[110px]">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Show:</span>
+                                                        <span className="text-xs text-muted-foreground">Tampil:</span>
                                                         <SelectValue placeholder="10" />
                                                     </div>
                                                 </SelectTrigger>
@@ -819,13 +822,13 @@ export default function GuestsPage() {
                                                     <SelectItem value="25">25</SelectItem>
                                                     <SelectItem value="50">50</SelectItem>
                                                     <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">All</SelectItem>
+                                                    <SelectItem value="99999">Semua</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <div className="relative flex-1">
                                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                                 <Input
-                                                    placeholder="Search deleted guests..."
+                                                    placeholder="Cari tamu yang dihapus..."
                                                     value={deletedSearchInput}
                                                     onChange={(e) => setDeletedSearchInput(e.target.value)}
                                                     className="pl-10"
@@ -842,9 +845,9 @@ export default function GuestsPage() {
                                     ) : !deletedGuestsData?.items?.length ? (
                                         <div className="text-center py-12">
                                             <UserX className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">No Deleted Guests</h3>
+                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Tamu Dihapus</h3>
                                             <p className="text-muted-foreground">
-                                                Deleted guests will appear here for restoration
+                                                Tamu yang dihapus akan muncul di sini untuk dipulihkan
                                             </p>
                                         </div>
                                     ) : (
@@ -853,9 +856,9 @@ export default function GuestsPage() {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead>Category</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
+                                                            <TableHead>Nama</TableHead>
+                                                            <TableHead>Kategori</TableHead>
+                                                            <TableHead className="text-right">Aksi</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -874,7 +877,7 @@ export default function GuestsPage() {
                                                                             }}
                                                                         >
                                                                             <RotateCcw />
-                                                                            Restore
+                                                                            Pulihkan
                                                                         </Button>
                                                                     </ProtectedFeature>
                                                                 </TableCell>
@@ -887,11 +890,11 @@ export default function GuestsPage() {
                                             {/* Pagination */}
                                             <div className="flex items-center justify-between mt-4">
                                                 <p className="text-sm text-muted-foreground">
-                                                    Showing {((deletedQueryParams.page || 1) - 1) * (deletedQueryParams.page_size || 10) + 1} to{' '}
-                                                    {Math.min((deletedQueryParams.page || 1) * (deletedQueryParams.page_size || 10), deletedGuestsData.total)} of{' '}
-                                                    {deletedGuestsData.total} deleted guests
+                                                    Menampilkan {((deletedQueryParams.page || 1) - 1) * (deletedQueryParams.page_size || 10) + 1} ke{' '}
+                                                    {Math.min((deletedQueryParams.page || 1) * (deletedQueryParams.page_size || 10), deletedGuestsData.total)} dari{' '}
+                                                    {deletedGuestsData.total} tamu dihapus
                                                 </p>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
@@ -899,7 +902,7 @@ export default function GuestsPage() {
                                                         onClick={() => setDeletedQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
-                                                        Previous
+                                                        Sebelumnya
                                                     </Button>
                                                     <Button
                                                         variant="outline"
@@ -907,7 +910,7 @@ export default function GuestsPage() {
                                                         disabled={(deletedQueryParams.page || 1) >= deletedGuestsData.total_pages}
                                                         onClick={() => setDeletedQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                                                     >
-                                                        Next
+                                                        Selanjutnya
                                                         <ChevronRight className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -923,8 +926,8 @@ export default function GuestsPage() {
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create Guest</DialogTitle>
-                                <DialogDescription>Add a new guest to the wedding list</DialogDescription>
+                                <DialogTitle>Tambah Tamu</DialogTitle>
+                                <DialogDescription>Tambah tamu baru ke daftar undangan</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                                 {error && (
@@ -933,21 +936,21 @@ export default function GuestsPage() {
                                     </Alert>
                                 )}
                                 <div className="space-y-2">
-                                    <Label>Name</Label>
+                                    <Label>Nama</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="Full name"
+                                        placeholder="Nama lengkap"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
+                                    <Label>Kategori</Label>
                                     <Select
                                         value={formData.guest_category_id?.toString()}
                                         onValueChange={(value) => setFormData(prev => ({ ...prev, guest_category_id: parseInt(value) }))}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select category" />
+                                            <SelectValue placeholder="Pilih kategori" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {categoriesData?.items.map(cat => (
@@ -958,32 +961,32 @@ export default function GuestsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Phone Number</Label>
+                                        <Label>No. HP</Label>
                                         <Input
                                             value={formData.phone_number}
                                             onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                                            placeholder="e.g. 628123456789"
+                                            placeholder="cth. 628123456789"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Instagram Username</Label>
+                                        <Label>Username Instagram</Label>
                                         <Input
                                             value={formData.instagram_username}
                                             onChange={(e) => setFormData(prev => ({ ...prev, instagram_username: e.target.value }))}
-                                            placeholder="Username without @"
+                                            placeholder="Username tanpa @"
                                         />
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground italic">* Minimal salah satu diisi (No. HP atau Instagram)</p>
+                                <p className="text-[10px] text-muted-foreground italic">* Minimal salah satu No. HP atau Instagram harus diisi</p>
                                 <div className="space-y-2">
-                                    <Label>Address</Label>
+                                    <Label>Alamat</Label>
                                     <Textarea
                                         value={formData.address}
                                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Note</Label>
+                                    <Label>Catatan</Label>
                                     <Textarea
                                         value={formData.note}
                                         onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
@@ -991,10 +994,10 @@ export default function GuestsPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleCreateGuest} disabled={createGuest.isPending}>
                                     {createGuest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create
+                                    Tambah
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -1004,8 +1007,8 @@ export default function GuestsPage() {
                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Edit Guest</DialogTitle>
-                                <DialogDescription>Update guest information</DialogDescription>
+                                <DialogTitle>Edit Tamu</DialogTitle>
+                                <DialogDescription>Perbarui data tamu</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                                 {error && (
@@ -1014,7 +1017,7 @@ export default function GuestsPage() {
                                     </Alert>
                                 )}
                                 <div className="space-y-2">
-                                    <Label>Name</Label>
+                                    <Label>Nama</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -1028,13 +1031,13 @@ export default function GuestsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
+                                    <Label>Kategori</Label>
                                     <Select
                                         value={formData.guest_category_id?.toString()}
                                         onValueChange={(value) => setFormData(prev => ({ ...prev, guest_category_id: parseInt(value) }))}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select category" />
+                                            <SelectValue placeholder="Pilih kategori" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {categoriesData?.items.map(cat => (
@@ -1045,14 +1048,14 @@ export default function GuestsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Phone Number</Label>
+                                        <Label>No. HP</Label>
                                         <Input
                                             value={formData.phone_number}
                                             onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Instagram Username</Label>
+                                        <Label>Username Instagram</Label>
                                         <Input
                                             value={formData.instagram_username}
                                             onChange={(e) => setFormData(prev => ({ ...prev, instagram_username: e.target.value }))}
@@ -1060,14 +1063,14 @@ export default function GuestsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Address</Label>
+                                    <Label>Alamat</Label>
                                     <Textarea
                                         value={formData.address}
                                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Note</Label>
+                                    <Label>Catatan</Label>
                                     <Textarea
                                         value={formData.note}
                                         onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
@@ -1075,10 +1078,10 @@ export default function GuestsPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleUpdateGuest} disabled={updateGuest.isPending}>
                                     {updateGuest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
+                                    Simpan
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -1094,9 +1097,9 @@ export default function GuestsPage() {
             }}>
                 <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>Import Guests from Excel</DialogTitle>
+                        <DialogTitle>Impor Tamu</DialogTitle>
                         <DialogDescription>
-                            Upload an Excel file to bulk add guests. Download the template first to ensure correct format.
+                            Impor tamu dari file Excel
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1104,11 +1107,11 @@ export default function GuestsPage() {
                         <div className="flex justify-between items-center bg-muted/50 p-4 rounded-lg">
                             <div className="flex items-center gap-2">
                                 <FileSpreadsheet className="h-5 w-5 text-green-600" />
-                                <span className="text-sm font-medium">Excel Template</span>
+                                <span className="text-sm font-medium">Template Excel</span>
                             </div>
                             <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
                                 <Download className="mr-2 h-4 w-4" />
-                                Download Template
+                                Unduh Template
                             </Button>
                         </div>
 
@@ -1121,7 +1124,7 @@ export default function GuestsPage() {
                                 {previewImport.isPending ? (
                                     <div className="flex flex-col items-center">
                                         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                                        <p className="text-sm font-medium">Analyzing file...</p>
+                                        <p className="text-sm font-medium">Menganalisis file...</p>
                                     </div>
                                 ) : (
                                     <>
@@ -1132,16 +1135,16 @@ export default function GuestsPage() {
                                                 <p className="text-xs text-muted-foreground mb-4">{(importFile.size / 1024).toFixed(2)} KB</p>
                                                 <div className="flex gap-2 justify-center">
                                                     <Button size="sm" onClick={handleAnalyzeFile}>
-                                                        Analyze File
+                                                        Analisis File
                                                     </Button>
                                                     <Button size="sm" variant="outline" onClick={() => setImportFile(null)}>
-                                                        Change
+                                                        Ganti
                                                     </Button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <>
-                                                <p className="text-sm text-muted-foreground mb-4">Click or drag and drop your Excel file here</p>
+                                                <p className="text-sm text-muted-foreground mb-4">Seret dan letakkan file Excel di sini, atau klik untuk memilih</p>
                                                 <Input 
                                                     type="file" 
                                                     accept=".xlsx, .xls" 
@@ -1152,7 +1155,7 @@ export default function GuestsPage() {
                                                 />
                                                 <Button asChild>
                                                     <label htmlFor="excel-upload" className="cursor-pointer">
-                                                        Select File
+                                                        Pilih File
                                                     </label>
                                                 </Button>
                                             </>
@@ -1164,7 +1167,7 @@ export default function GuestsPage() {
                             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                                 <div className="grid grid-cols-3 gap-4">
                                     <Card className="p-3 bg-blue-50/50">
-                                        <div className="text-xs text-muted-foreground">Total Rows</div>
+                                        <div className="text-xs text-muted-foreground">Total Baris</div>
                                         <div className="text-xl font-bold">{importPreviewData.total}</div>
                                     </Card>
                                     <Card className="p-3 bg-green-50/50">
@@ -1172,7 +1175,7 @@ export default function GuestsPage() {
                                         <div className="text-xl font-bold text-green-600">{importPreviewData.valid_count}</div>
                                     </Card>
                                     <Card className="p-3 bg-red-50/50">
-                                        <div className="text-xs text-muted-foreground">Error</div>
+                                        <div className="text-xs text-muted-foreground">Tidak Valid</div>
                                         <div className="text-xl font-bold text-red-600">{importPreviewData.error_count}</div>
                                     </Card>
                                 </div>
@@ -1182,10 +1185,10 @@ export default function GuestsPage() {
                                         <TableHeader className="sticky top-0 bg-white">
                                             <TableRow>
                                                 <TableHead>Status</TableHead>
-                                                <TableHead>Name</TableHead>
-                                                <TableHead>Category</TableHead>
-                                                <TableHead>Phone / IG</TableHead>
-                                                <TableHead>Error Messages</TableHead>
+                                                <TableHead>Nama</TableHead>
+                                                <TableHead>Kategori</TableHead>
+                                                <TableHead>No. HP / IG</TableHead>
+                                                <TableHead>Pesan Error</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1195,7 +1198,7 @@ export default function GuestsPage() {
                                                         {item.is_valid ? (
                                                             <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">Valid</Badge>
                                                         ) : (
-                                                            <Badge variant="destructive">Error</Badge>
+                                                            <Badge variant="destructive">Tidak Valid</Badge>
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="font-medium">{item.name || "-"}</TableCell>
@@ -1227,7 +1230,7 @@ export default function GuestsPage() {
                                 {isImporting && (
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-xs font-medium">
-                                            <span>Importing guests...</span>
+                                            <span>Mengimpor...</span>
                                             <span>{importProgress}%</span>
                                         </div>
                                         <Progress value={importProgress} className="h-2" />
@@ -1236,9 +1239,9 @@ export default function GuestsPage() {
                                 {importPreviewData.error_count > 0 && (
                                     <Alert variant="destructive" className="mt-4">
                                         <AlertTriangle className="h-4 w-4" />
-                                        <AlertTitle>Validation Error</AlertTitle>
+                                        <AlertTitle>Error Validasi</AlertTitle>
                                         <AlertDescription>
-                                            There are {importPreviewData.error_count} invalid rows. Please fix them in your Excel file and upload again.
+                                            Terdapat {importPreviewData.error_count} baris tidak valid. Perbaiki file Excel dan upload kembali.
                                         </AlertDescription>
                                     </Alert>
                                 )}
@@ -1248,12 +1251,12 @@ export default function GuestsPage() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsImportModalOpen(false)} disabled={isImporting}>
-                            Cancel
+                            Batal
                         </Button>
                         {importPreviewData && (
                             <>
                                 <Button variant="ghost" onClick={() => { setImportFile(null); setImportPreviewData(null); }} disabled={isImporting}>
-                                    Change File
+                                    Ganti File
                                 </Button>
                                 <Button 
                                     onClick={handleConfirmImport} 
@@ -1263,10 +1266,10 @@ export default function GuestsPage() {
                                     {isImporting ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Importing...
+                                            Mengimpor...
                                         </>
                                     ) : (
-                                        `Confirm Import (${importPreviewData.valid_count})`
+                                        `Impor (${importPreviewData.valid_count})`
                                     )}
                                 </Button>
                             </>
@@ -1278,9 +1281,9 @@ export default function GuestsPage() {
             <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Guest Detail & QR Code</DialogTitle>
+                                <DialogTitle>Kode QR Tamu</DialogTitle>
                                 <DialogDescription>
-                                    Full detail for {selectedGuest?.name}
+                                    Detail lengkap untuk {selectedGuest?.name}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="flex flex-col items-center justify-center p-4 gap-6">
@@ -1302,27 +1305,27 @@ export default function GuestsPage() {
                                 
                                 <div className="w-full grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg border">
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">RSVP Status</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status RSVP</p>
                                         <p className="font-semibold">{selectedGuest?.status_attending.toUpperCase()}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Invitation</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Undangan</p>
                                         <p className="font-semibold">{selectedGuest?.status_sent.toUpperCase()}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Check-in</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Check In</p>
                                         <p className="font-semibold">
-                                            {selectedGuest?.check_in_at ? format(new Date(selectedGuest.check_in_at), 'HH:mm dd MMM') : 'N/A'}
+                                            {selectedGuest?.check_in_at ? format(new Date(selectedGuest.check_in_at), 'HH:mm dd MMM') : '-'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Contact</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Kontak</p>
                                         <p className="font-semibold truncate">{selectedGuest?.phone_number || selectedGuest?.instagram_username || '-'}</p>
                                     </div>
                                 </div>
 
                                 <Button className="w-full" variant="outline" onClick={() => window.print()}>
-                                    Print Guest Pass
+                                    Cetak Tiket Tamu
                                 </Button>
                             </div>
                         </DialogContent>
@@ -1332,17 +1335,17 @@ export default function GuestsPage() {
                     <AlertDialog open={isSendMessageDialogOpen} onOpenChange={setIsSendMessageDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Send Invitation</AlertDialogTitle>
+                                <AlertDialogTitle>Kirim Undangan</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to send the invitation to <strong>{selectedGuest?.name}</strong> via {messageType === 'whatsapp' ? 'WhatsApp' : 'Instagram'}? 
-                                    This will also mark their invitation status as <strong>&quot;Sent&quot;</strong>.
+                                    Kirim undangan ke <strong>{selectedGuest?.name}</strong> melalui {messageType === 'whatsapp' ? 'WhatsApp' : 'Instagram'}? 
+                                    Tindakan ini akan menandai status undangan menjadi <strong>&quot;Terkirim&quot;</strong>.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => { setSelectedGuest(null); setMessageType(null); }}>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel onClick={() => { setSelectedGuest(null); setMessageType(null); }}>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleConfirmSendMessage} disabled={updateStatusSent.isPending}>
                                     {updateStatusSent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Yes, Send & Mark as Sent
+                                    Ya, Kirim & Tandai Terkirim
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -1352,15 +1355,15 @@ export default function GuestsPage() {
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Guest</AlertDialogTitle>
+                                <AlertDialogTitle>Hapus Tamu</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to delete {selectedGuest?.name}? You can restore this guest later from the Deleted Guests tab.
+                                    Yakin ingin menghapus {selectedGuest?.name}? Anda dapat memulihkan tamu ini nanti dari tab Dihapus.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleDeleteGuest} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Delete
+                                    Hapus
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -1370,15 +1373,15 @@ export default function GuestsPage() {
                     <AlertDialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Restore Guest</AlertDialogTitle>
+                                <AlertDialogTitle>Pulihkan Tamu</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to restore {selectedGuest?.name}?
+                                    Yakin ingin memulihkan {selectedGuest?.name}?
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleRestoreGuest}>
-                                    Restore
+                                    Pulihkan
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>

@@ -14,7 +14,7 @@ import { Label } from '@/src/presentation/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/presentation/components/ui/select';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Switch } from '@/src/presentation/components/ui/switch';
-import { Search, Plus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, Clock, ArrowUpDown } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Loader2, ChevronLeft, ChevronRight, Clock, ArrowUpDown, Tags } from 'lucide-react';
 import { useGuestCategories, useCreateGuestCategory, useUpdateGuestCategory, useDeleteGuestCategory } from '@/src/application/hooks/use-guest-query';
 import { GuestCategory } from '@/src/domain/services/guest.service';
 import { format } from 'date-fns';
@@ -164,14 +164,15 @@ export default function GuestCategoriesPage() {
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <MainLayout>
-                    {/* Independent Page Header */}
+                    {/* Page Header */}
                     <div className="mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-3xl font-bold tracking-tight text-foreground">Guest Categories</h2>
-                                <p className="text-muted-foreground mt-1 text-base">
-                                    Manage guest categories and their session times
-                                </p>
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <Tags strokeWidth={1.5} className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Kategori Tamu</h2>
+                                <p className="text-sm text-muted-foreground">Kelola kategori tamu dan waktu sesinya</p>
                             </div>
                         </div>
                     </div>
@@ -214,7 +215,7 @@ export default function GuestCategoriesPage() {
                                     <div className="relative flex-1">
                                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                         <Input
-                                            placeholder="Search categories..."
+                                            placeholder="Cari kategori..."
                                             value={searchInput}
                                             onChange={(e) => setSearchInput(e.target.value)}
                                             className="pl-10"
@@ -225,7 +226,7 @@ export default function GuestCategoriesPage() {
                                     <ProtectedFeature permission="guest_categories.create">
                                         <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
                                             <Plus className="mr-2 h-4 w-4" />
-                                            Add Category
+                                            Tambah Kategori
                                         </Button>
                                     </ProtectedFeature>
                                 </div>
@@ -239,9 +240,9 @@ export default function GuestCategoriesPage() {
                             ) : !categoriesData?.items?.length ? (
                                 <div className="text-center py-12">
                                     <Clock className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No Categories Found</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Tidak ada kategori ditemukan</h3>
                                     <p className="text-muted-foreground">
-                                        {queryParams.search ? 'Try a different search term' : 'Add your first category to get started'}
+                                        {queryParams.search ? 'Coba kata kunci pencarian lain' : 'Tambah kategori pertama untuk memulai'}
                                     </p>
                                 </div>
                             ) : (
@@ -250,10 +251,10 @@ export default function GuestCategoriesPage() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead><SortButton field="name">Name</SortButton></TableHead>
-                                                    <TableHead>Start Time</TableHead>
-                                                    <TableHead>End Time</TableHead>
-                                                    <TableHead className="text-right">Actions</TableHead>
+                                                    <TableHead><SortButton field="name">Nama Kategori</SortButton></TableHead>
+                                                    <TableHead>Waktu Mulai</TableHead>
+                                                    <TableHead>Waktu Selesai</TableHead>
+                                                    <TableHead className="text-right">Aksi</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -285,7 +286,7 @@ export default function GuestCategoriesPage() {
                                                                         }}
                                                                         title="Delete"
                                                                     >
-                                                                        <Trash2 /> Delete
+                                                                        <Trash2 /> Hapus
                                                                     </Button>
                                                                 </ProtectedFeature>
                                                             </div>
@@ -299,11 +300,11 @@ export default function GuestCategoriesPage() {
                                     {/* Pagination */}
                                     <div className="flex items-center justify-between mt-4">
                                         <p className="text-sm text-muted-foreground">
-                                            Showing {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} to{' '}
-                                            {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), categoriesData.total)} of{' '}
-                                            {categoriesData.total} categories
+                                            Menampilkan {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} ke{' '}
+                                            {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), categoriesData.total)} dari{' '}
+                                            {categoriesData.total} kategori
                                         </p>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -311,7 +312,7 @@ export default function GuestCategoriesPage() {
                                                 onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
                                             >
                                                 <ChevronLeft className="h-4 w-4" />
-                                                Previous
+                                                Sebelumnya
                                             </Button>
                                             <Button
                                                 variant="outline"
@@ -319,7 +320,7 @@ export default function GuestCategoriesPage() {
                                                 disabled={(queryParams.page || 1) >= categoriesData.total_pages}
                                                 onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
                                             >
-                                                Next
+                                                Selanjutnya
                                                 <ChevronRight className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -333,16 +334,16 @@ export default function GuestCategoriesPage() {
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Add Guest Category</DialogTitle>
-                                <DialogDescription>Create a new category for guests</DialogDescription>
+                                <DialogTitle>Tambah Kategori Tamu</DialogTitle>
+                                <DialogDescription>Tambah kategori baru untuk tamu</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label>Category Name</Label>
+                                    <Label>Nama Kategori</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="e.g. Morning Session"
+                                        placeholder="cth. Sesi Pagi"
                                     />
                                 </div>
                                 <div className="flex items-center space-x-2 py-2">
@@ -351,13 +352,13 @@ export default function GuestCategoriesPage() {
                                         checked={formData.hasTime}
                                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasTime: checked }))}
                                     />
-                                    <Label htmlFor="has-time">Has Specific Session Time?</Label>
+                                    <Label htmlFor="has-time">Punya Waktu Sesi Tertentu?</Label>
                                 </div>
                                 
                                 {formData.hasTime && (
                                     <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
                                         <div className="space-y-2">
-                                            <Label>Start Time (24h)</Label>
+                                            <Label>Waktu Mulai (24h)</Label>
                                             <Input
                                                 type="time"
                                                 value={formData.startTime}
@@ -365,7 +366,7 @@ export default function GuestCategoriesPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>End Time (24h)</Label>
+                                            <Label>Waktu Selesai (24h)</Label>
                                             <Input
                                                 type="time"
                                                 value={formData.endTime}
@@ -376,10 +377,10 @@ export default function GuestCategoriesPage() {
                                 )}
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleCreate} disabled={createCategory.isPending}>
                                     {createCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create
+                                    Tambah
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -389,8 +390,8 @@ export default function GuestCategoriesPage() {
                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Edit Guest Category</DialogTitle>
-                                <DialogDescription>Update category information</DialogDescription>
+                                <DialogTitle>Edit Kategori Tamu</DialogTitle>
+                                <DialogDescription>Perbarui data kategori</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
@@ -413,13 +414,13 @@ export default function GuestCategoriesPage() {
                                         checked={formData.hasTime}
                                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasTime: checked }))}
                                     />
-                                    <Label htmlFor="edit-has-time">Has Specific Session Time?</Label>
+                                    <Label htmlFor="edit-has-time">Punya Waktu Sesi Tertentu?</Label>
                                 </div>
                                 
                                 {formData.hasTime && (
                                     <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
                                         <div className="space-y-2">
-                                            <Label>Start Time (24h)</Label>
+                                            <Label>Waktu Mulai (24h)</Label>
                                             <Input
                                                 type="time"
                                                 value={formData.startTime}
@@ -427,7 +428,7 @@ export default function GuestCategoriesPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>End Time (24h)</Label>
+                                            <Label>Waktu Selesai (24h)</Label>
                                             <Input
                                                 type="time"
                                                 value={formData.endTime}
@@ -438,10 +439,10 @@ export default function GuestCategoriesPage() {
                                 )}
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
                                 <Button onClick={handleUpdate} disabled={updateCategory.isPending}>
                                     {updateCategory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
+                                    Simpan
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -451,15 +452,15 @@ export default function GuestCategoriesPage() {
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Guest Category</AlertDialogTitle>
+                                <AlertDialogTitle>Hapus Kategori</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to delete this category? This action cannot be undone.
+                                    Yakin ingin menghapus kategori ini?
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Delete
+                                    Hapus
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>

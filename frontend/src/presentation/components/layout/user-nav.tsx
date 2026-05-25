@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Settings, LogOut, AlertTriangle, ChevronDown } from 'lucide-react'
+import { User, LogOut, AlertTriangle, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/src/application/hooks/use-auth'
 import { useDemoRoute } from '@/src/lib/demo/use-demo-route'
 import { Button } from '@/src/presentation/components/ui/button'
@@ -9,7 +9,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/src/presentation/components/ui/dropdown-menu'
 import {
@@ -56,7 +55,7 @@ export function UserNav() {
                         </div>
                         <div className="hidden md:flex items-center gap-1">
                             <span className="truncate text-sm font-medium text-foreground max-w-[120px]">
-                                {user?.name || 'User Name'}
+                                {user?.name || 'Nama Pengguna'}
                             </span>
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -75,26 +74,18 @@ export function UserNav() {
                             )}
                         </div>
                     </div>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                         <Link href={getRoute("/settings/profile")} className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
+                            <span>Profil</span>
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href={getRoute("/settings/preference")} className="cursor-pointer">
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Settings</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={handleLogout}
                         className="cursor-pointer text-destructive focus:text-destructive"
                     >
                         <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
+                        <span>Keluar</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -107,13 +98,14 @@ export function UserNav() {
                             <AlertTriangle className="w-6 h-6 text-destructive" />
                         </div>
                         <DialogTitle className="text-center text-xl">
-                            Konfirmasi Logout
+                                    Konfirmasi Keluar
+                                
                         </DialogTitle>
                         <DialogDescription className="text-center">
                             Apakah Anda yakin ingin keluar dari aplikasi?
                             <br />
                             <span className="text-sm text-muted-foreground mt-2 block">
-                                Anda perlu login kembali untuk mengakses aplikasi.
+                                Anda perlu masuk kembali untuk mengakses aplikasi.
                             </span>
                         </DialogDescription>
                     </DialogHeader>

@@ -2,7 +2,8 @@
 
 import {
     X, Gauge, Tags, Contact, UserRound,
-    Users, ShieldCheck, Key, ScanQrCode
+    Users, ShieldCheck, Key, ScanQrCode,
+    ScanFace, NotebookTabs
 } from 'lucide-react'
 import { SidebarItem, SidebarMenuItem } from './sidebar-item'
 import { cn } from '@/src/lib/utils'
@@ -18,13 +19,13 @@ interface SidebarProps {
 
 const menuItems: SidebarMenuItem[] = [
     {
-        label: 'Home',
+        label: 'Beranda',
         href: '/home',
         icon: Gauge,
     },
     {
-        label: 'Guest Management',
-        icon: Contact,
+        label: 'Manajemen Tamu',
+        icon: NotebookTabs,
         anyRole: ['Super Admin', 'Admin'],
         children: [
             {
@@ -34,19 +35,19 @@ const menuItems: SidebarMenuItem[] = [
                 permission: 'guests.check_in',
             },
             {
-                label: 'Bypass Check-In',
+                label: 'Check-In Manual',
                 href: '/admin/guest-checkin-bypass',
-                icon: ScanQrCode,
+                icon: ScanFace,
                 permission: 'guests.bypass_checkin',
             },
             {
-                label: 'Guests',
+                label: 'Daftar Tamu',
                 href: '/admin/guests',
                 icon: UserRound,
                 permission: 'guests.read',
             },
             {
-                label: 'Categories',
+                label: 'Kategori',
                 href: '/admin/guest-categories',
                 icon: Tags,
                 permission: 'guest_categories.read',
@@ -54,24 +55,24 @@ const menuItems: SidebarMenuItem[] = [
         ],
     },
     {
-        label: 'User Management',
+        label: 'Manajemen Pengguna',
         icon: Users,
         anyRole: ['Super Admin', 'Admin'],
         children: [
             {
-                label: 'Users',
+                label: 'Pengguna',
                 href: '/admin/users',
                 icon: Users,
                 permission: 'users.read',
             },
             {
-                label: 'Roles',
+                label: 'Peran',
                 href: '/admin/roles',
                 icon: ShieldCheck,
                 permission: 'roles.read',
             },
             {
-                label: 'Permissions',
+                label: 'Izin',
                 href: '/admin/permissions',
                 icon: Key,
                 permission: 'permissions.read',

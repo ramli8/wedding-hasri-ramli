@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Globe, Moon, Sun, Check } from 'lucide-react';
+import { Moon, Sun, Check } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useLocale, useTranslations } from '@/src/presentation/hooks/use-locale';
+import { useTranslations } from '@/src/presentation/hooks/use-locale';
 import { DemoMainLayout } from '@/src/lib/demo/demo-main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/presentation/components/ui/card';
 import { Label } from '@/src/presentation/components/ui/label';
@@ -16,26 +16,19 @@ export default function DemoPreferencePage() {
     const t = useTranslations('settings.preferences');
     const tCommon = useTranslations('common');
     const { theme, setTheme } = useTheme();
-    const { locale, changeLocale, isReady } = useLocale();
 
-    const [selectedLocale, setSelectedLocale] = useState<'en' | 'id'>(locale);
     const [selectedTheme, setSelectedTheme] = useState(theme || 'dark');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
-    useEffect(() => { if (isReady) setSelectedLocale(locale); }, [locale, isReady]);
     useEffect(() => { if (theme) setSelectedTheme(theme); }, [theme]);
 
     const handleSave = () => {
         if (selectedTheme !== theme) setTheme(selectedTheme);
-        if (selectedLocale !== locale) {
-            changeLocale(selectedLocale);
-        } else {
-            toast.success(t('changesSaved'));
-        }
+        toast.success(t('changesSaved'));
     };
 
-    if (!mounted || !isReady) {
+    if (!mounted) {
         return (
             <DemoMainLayout>
                 <div className="flex h-64 items-center justify-center">
@@ -50,36 +43,10 @@ export default function DemoPreferencePage() {
             <div className="space-y-6 pb-8">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-                    <p className="text-muted-foreground mt-2">Manage your application preferences and settings</p>
+                    <p className="text-muted-foreground mt-2">Kelola preferensi dan pengaturan aplikasi Anda</p>
                 </div>
 
                 <Separator />
-
-                {/* Language Settings */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <CardTitle>{t('language.title')}</CardTitle>
-                            <CardDescription>{t('language.description')}</CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <RadioGroup value={selectedLocale} onValueChange={(value) => setSelectedLocale(value as 'en' | 'id')}>
-                            <div className="flex flex-col gap-3">
-                                <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${selectedLocale === 'en' ? 'border-primary bg-primary/5' : 'border-border hover:border-foreground/20 hover:bg-muted/50'}`} onClick={() => setSelectedLocale('en')}>
-                                    <RadioGroupItem value="en" id="en" />
-                                    <Label htmlFor="en" className="flex-1 cursor-pointer font-medium">{t('language.english')}</Label>
-                                    {selectedLocale === 'en' && <Check className="h-5 w-5 text-emerald-500" />}
-                                </div>
-                                <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${selectedLocale === 'id' ? 'border-primary bg-primary/5' : 'border-border hover:border-foreground/20 hover:bg-muted/50'}`} onClick={() => setSelectedLocale('id')}>
-                                    <RadioGroupItem value="id" id="id" />
-                                    <Label htmlFor="id" className="flex-1 cursor-pointer font-medium">{t('language.indonesian')}</Label>
-                                    {selectedLocale === 'id' && <Check className="h-5 w-5 text-emerald-500" />}
-                                </div>
-                            </div>
-                        </RadioGroup>
-                    </CardContent>
-                </Card>
 
                 {/* Theme Settings */}
                 <Card>
@@ -109,7 +76,7 @@ export default function DemoPreferencePage() {
 
                 {/* Save Button */}
                 <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => { setSelectedLocale(locale); setSelectedTheme(theme || 'dark'); }}>
+                    <Button variant="outline" onClick={() => { setSelectedTheme(theme || 'dark'); }}>
                         {tCommon('cancel')}
                     </Button>
                     <Button onClick={handleSave}>

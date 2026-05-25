@@ -37,7 +37,7 @@ export default function DemoLoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
-            <Card className="w-full max-w-md shadow-xl">
+            <Card className="w-full max-w-[28rem] shadow-xl">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-3xl font-bold text-center">Welcome Back</CardTitle>
                     <CardDescription className="text-center">

@@ -27,23 +27,23 @@ export default function LoginPage() {
             await login({ email, password });
             router.push('/home');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            setError(err.response?.data?.message || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');
         }
     };
 
     const handleGoogleLogin = async () => {
         // This would integrate with Google OAuth
         // For now, showing placeholder
-        setError('Google OAuth integration requires Google Client ID configuration');
+        setError('Integrasi Google OAuth memerlukan konfigurasi Google Client ID');
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
-            <Card className="w-full max-w-md shadow-xl">
+            <Card className="w-full max-w-[28rem] shadow-xl">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-3xl font-bold text-center">Welcome Back</CardTitle>
+                    <CardTitle className="text-3xl font-bold text-center">Selamat Datang</CardTitle>
                     <CardDescription className="text-center">
-                        Sign in to your account to continue
+                        Masuk ke akun Anda untuk melanjutkan
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -59,7 +59,7 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder="anda@contoh.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -69,12 +69,12 @@ export default function LoginPage() {
 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">Kata Sandi</Label>
                                 <Link
                                     href="/auth/forgot-password"
                                     className="text-sm text-primary hover:underline"
                                 >
-                                    Forgot password?
+                                    Lupa kata sandi?
                                 </Link>
                             </div>
                             <Input
@@ -96,10 +96,10 @@ export default function LoginPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Signing in...
+                                    Memasuki...
                                 </>
                             ) : (
-                                'Sign In'
+                                'Masuk'
                             )}
                         </Button>
                     </form>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
                             <span className="bg-background px-2 text-muted-foreground">
-                                Or continue with
+                                Atau lanjutkan dengan
                             </span>
                         </div>
                     </div>
@@ -140,14 +140,14 @@ export default function LoginPage() {
                                 fill="#EA4335"
                             />
                         </svg>
-                        Continue with Google
+                        Lanjutkan dengan Google
                     </Button>
                 </CardContent>
                 <CardFooter>
                     <p className="text-center text-sm text-muted-foreground w-full">
-                        Don&apos;t have an account?{' '}
+                        Belum punya akun?{' '}
                         <Link href="/auth/register" className="text-primary hover:underline font-medium">
-                            Sign up
+                            Daftar
                         </Link>
                     </p>
                 </CardFooter>

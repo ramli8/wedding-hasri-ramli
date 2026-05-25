@@ -3,618 +3,717 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-    ArrowRight,
-    Shield,
-    Globe,
-    Palette,
-    FileCheck,
-    Plug,
-    Users,
-    Menu,
-    X,
-    Github,
-    Terminal,
-    Code2,
+  ArrowRight, Heart, ScanQrCode, Users, CalendarCheck,
+  UserCheck, Menu, X, Gift, MapPin, Clock,
 } from 'lucide-react'
-import { ThemeToggle } from '@/src/presentation/components/theme-toggle'
 import { Button } from '@/src/presentation/components/ui/button'
 import { useDemoRoute } from '@/src/lib/demo/use-demo-route'
-import { GoIcon, NextjsIcon, ShadcnIcon } from '../ui/icons/icon'
 
-// ─── Navbar ──────────────────────────────────────────────
+// ─── Decorative ring illustration ──────────────────────
+function RingIllustration() {
+  return (
+    <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      {/* Outer ring */}
+      <circle cx="200" cy="200" r="160" stroke="#cc785c" strokeWidth="1.5" opacity="0.4" />
+      <circle cx="200" cy="200" r="140" stroke="#cc785c" strokeWidth="0.5" opacity="0.2" />
+      {/* Inner rings */}
+      <circle cx="200" cy="200" r="90" stroke="#141413" strokeWidth="1" opacity="0.15" />
+      {/* Decorative dots */}
+      <circle cx="200" cy="48" r="3" fill="#cc785c" opacity="0.6" />
+      <circle cx="200" cy="352" r="3" fill="#cc785c" opacity="0.6" />
+      <circle cx="48" cy="200" r="3" fill="#141413" opacity="0.3" />
+      <circle cx="352" cy="200" r="3" fill="#141413" opacity="0.3" />
+      {/* Small decorative lines */}
+      <line x1="200" y1="40" x2="200" y2="56" stroke="#cc785c" strokeWidth="1" opacity="0.4" />
+      <line x1="200" y1="344" x2="200" y2="360" stroke="#cc785c" strokeWidth="1" opacity="0.4" />
+      <line x1="40" y1="200" x2="56" y2="200" stroke="#141413" strokeWidth="1" opacity="0.3" />
+      <line x1="344" y1="200" x2="360" y2="200" stroke="#141413" strokeWidth="1" opacity="0.3" />
+      {/* Center hearts */}
+      <path d="M200 180C190 168 175 168 175 180C175 192 200 210 200 210C200 210 225 192 225 180C225 168 210 168 200 180Z" fill="#cc785c" opacity="0.5" />
+      <path d="M200 188C194 180 185 180 185 188C185 196 200 207 200 207C200 207 215 196 215 188C215 180 206 180 200 188Z" fill="#cc785c" opacity="0.3" />
+    </svg>
+  )
+}
+
+// ─── Decorative divider ─────────────────────────────────
+function Divider() {
+  return (
+    <div className="flex items-center justify-center gap-3 py-6">
+      <span className="block h-px w-12 bg-[#cc785c]/30" />
+      <span className="block h-1.5 w-1.5 rounded-full bg-[#cc785c]/50" />
+      <span className="block h-px w-12 bg-[#cc785c]/30" />
+    </div>
+  )
+}
+
+// ─── Navbar ─────────────────────────────────────────────
 function LandingNavbar() {
-    const [scrolled, setScrolled] = useState(false)
-    const [mobileOpen, setMobileOpen] = useState(false)
-    const { getRoute } = useDemoRoute()
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { getRoute } = useDemoRoute()
 
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 20)
-        window.addEventListener('scroll', onScroll)
-        return () => window.removeEventListener('scroll', onScroll)
-    }, [])
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-    const navLinks = [
-        { label: 'Features', href: '#features' },
-        { label: 'Stack', href: '#stack' },
-        { label: 'Architecture', href: '#architecture' },
-        { label: 'Docs', href: getRoute('/docs') },
-    ]
+  const navLinks = [
+    { label: 'Story', href: '#story' },
+    { label: 'Features', href: '#features' },
+    { label: 'Dashboard', href: '#dashboard' },
+  ]
 
-    return (
-        <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm'
-                : 'bg-transparent'
-                }`}
-        >
-            <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-16">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2.5 group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/gns.png" alt="GNS" className="h-8 w-8 rounded-lg dark:invert" />
-                    <span className="text-lg font-semibold tracking-tight">GNS</span>
-                </Link>
+  return (
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#faf9f5] transition-shadow duration-300"
+      style={scrolled ? { boxShadow: '0 1px 3px rgba(20,20,19,0.08)' } : undefined}
+    >
+      <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#cc785c]">
+            <Heart className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-medium text-sm text-[#141413]" style={{ fontFamily: 'var(--font-inter)' }}>
+            Hasri <span className="text-[#cc785c]">&amp;</span> Ramli
+          </span>
+        </Link>
 
-                {/* Desktop Links */}
-                <div className="hidden md:flex items-center gap-1">
-                    {navLinks.map((link) => (
-                        <a
-                            key={link.href}
-                            href={link.href}
-                            className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md"
-                        >
-                            {link.label}
-                        </a>
-                    ))}
-                </div>
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="px-3 py-2 text-sm font-medium text-[#6c6a64] hover:text-[#141413] transition-colors rounded-md"
+              style={{ fontFamily: 'var(--font-inter)' }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
 
-                {/* Desktop Actions */}
-                <div className="hidden md:flex items-center gap-2">
-                    <ThemeToggle />
-                    <Link href={getRoute("/auth/login")}>
-                        <Button variant="ghost" size="sm">Sign In</Button>
-                    </Link>
-                    <Link href={getRoute("/auth/register")}>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                            Get Started
-                        </Button>
-                    </Link>
-                </div>
+        {/* Desktop Actions */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link href={getRoute('/auth/login')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-sm font-medium text-[#141413] hover:text-[#cc785c]"
+            >
+              Sign In
+            </Button>
+          </Link>
+          <Link href={getRoute('/auth/register')}>
+            <button
+              className="inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-medium text-white transition-colors"
+              style={{
+                backgroundColor: '#cc785c',
+                fontFamily: 'var(--font-inter)',
+                height: 40,
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a9583e'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#cc785c'}
+            >
+              Get Started
+            </button>
+          </Link>
+        </div>
 
-                {/* Mobile */}
-                <div className="flex md:hidden items-center gap-2">
-                    <ThemeToggle />
-                    <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
-                        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                    </Button>
-                </div>
+        {/* Mobile Toggle */}
+        <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f0e8] text-[#141413]"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-[#e6dfd8] bg-[#faf9f5]">
+          <div className="px-6 py-4 space-y-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block px-3 py-2.5 text-sm font-medium text-[#6c6a64] hover:text-[#141413] rounded-md transition-colors"
+                style={{ fontFamily: 'var(--font-inter)' }}
+              >
+                {link.label}
+              </a>
+            ))}
+            <div className="pt-3 flex flex-col gap-2 border-t border-[#e6dfd8] mt-2">
+              <Link href={getRoute('/auth/login')}>
+                <Button variant="outline" className="w-full" size="sm">Sign In</Button>
+              </Link>
+              <Link href={getRoute('/auth/register')}>
+                <Button className="w-full" size="sm" style={{ backgroundColor: '#cc785c', color: 'white' }}>
+                  Get Started
+                </Button>
+              </Link>
             </div>
-
-            {/* Mobile Menu */}
-            {mobileOpen && (
-                <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
-                    <div className="px-6 py-4 space-y-1">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.href}
-                                href={link.href}
-                                onClick={() => setMobileOpen(false)}
-                                className="block px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground rounded-md transition-colors"
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                        <div className="pt-3 flex flex-col gap-2 border-t border-border/50 mt-2">
-                            <Link href={getRoute("/auth/login")}>
-                                <Button variant="outline" className="w-full" size="sm">Sign In</Button>
-                            </Link>
-                            <Link href={getRoute("/auth/register")}>
-                                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" size="sm">
-                                    Get Started
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </nav>
-    )
+          </div>
+        </div>
+      )}
+    </nav>
+  )
 }
 
-// ─── Hero ────────────────────────────────────────────────
+// ─── Hero ───────────────────────────────────────────────
 function HeroSection() {
-    const { getRoute } = useDemoRoute()
-    return (
-        <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
-            {/* Background Glow */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[15%] left-[50%] -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px]" />
-                <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-teal-500/6 rounded-full blur-[100px]" />
+  const { getRoute } = useDemoRoute()
+  return (
+    <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-[#faf9f5]">
+      <div className="relative mx-auto max-w-6xl px-6">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+          {/* Left: Text */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#e6dfd8] bg-[#efe9de] px-4 py-1.5 mb-8">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#cc785c]" />
+              <span className="text-xs font-medium text-[#6c6a64] tracking-wide" style={{ fontFamily: 'var(--font-inter)' }}>
+                Wedding Management System
+              </span>
             </div>
 
-            <div className="relative mx-auto max-w-6xl px-6">
-                <div className="max-w-3xl">
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-4 py-1.5 text-xs text-muted-foreground mb-8">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Open Source Base Project
-                    </div>
+            <h1
+              className="text-[40px] md:text-[56px] lg:text-[64px] leading-[1.05] tracking-[-1.5px] font-normal text-[#141413] mb-6"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              Hasri <span className="text-[#cc785c]">&amp;</span> Ramli
+            </h1>
 
-                    {/* Heading */}
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight mb-6">
-                        Build faster with{' '}
-                        <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-teal-400">
-                            Go, Next.js
-                        </span>
-                        {' '}and{' '}
-                        <span className="text-transparent bg-clip-text bg-linear-to-r from-teal-400 to-cyan-400">
-                            shadcn
-                        </span>
-                    </h1>
+            <p
+              className="text-lg md:text-xl text-[#3d3d3a] max-w-lg mb-4 leading-relaxed"
+              style={{ fontFamily: 'var(--font-inter)' }}
+            >
+              We invite you to celebrate our special day.
+            </p>
 
-                    {/* Description */}
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-                        A production-ready starter kit with authentication, role management,
-                        i18n, and a clean architecture — so you can focus on building what matters.
-                    </p>
-
-                    {/* CTAs */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <Link href={getRoute("/auth/register")}>
-                            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white! h-12 px-8 text-base">
-                                Get Started
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </Link>
-                        <a href="https://github.com/yogameleniawan/gns.git" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="lg" className="h-12 px-8 text-base">
-                                <Github className="mr-2 h-4 w-4" />
-                                View on GitHub
-                            </Button>
-                        </a>
-                    </div>
-                </div>
-
-                {/* Code Preview Card */}
-                <div className="mt-16 md:mt-20">
-                    <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden shadow-2xl shadow-emerald-500/5">
-                        {/* Window Chrome */}
-                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
-                            <div className="flex gap-1.5">
-                                <div className="h-3 w-3 rounded-full bg-red-500/70" />
-                                <div className="h-3 w-3 rounded-full bg-yellow-500/70" />
-                                <div className="h-3 w-3 rounded-full bg-green-500/70" />
-                            </div>
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="flex items-center gap-1 rounded-md bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
-                                    <Terminal className="h-3 w-3" />
-                                    <span>main.go</span>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Code Content */}
-                        <div className="p-6 font-mono text-sm leading-relaxed overflow-x-auto">
-                            <div className="text-muted-foreground/60">{`// cmd/api/main.go`}</div>
-                            <div className="mt-2">
-                                <span className="text-purple-400">package</span>{' '}
-                                <span className="text-foreground">main</span>
-                            </div>
-                            <div className="mt-4">
-                                <span className="text-purple-400">func</span>{' '}
-                                <span className="text-blue-400">main</span>
-                                <span className="text-foreground">() {'{'}</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">godotenv.</span>
-                                <span className="text-blue-400">Load</span>
-                                <span className="text-foreground">()</span>
-                            </div>
-                            <div className="mt-3 ml-6">
-                                <span className="text-muted-foreground/60">{`// setup server`}</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">container, _</span>
-                                <span className="text-muted-foreground"> := </span>
-                                <span className="text-foreground">containerPkg.</span>
-                                <span className="text-blue-400">New</span>
-                                <span className="text-foreground">()</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">container.</span>
-                                <span className="text-blue-400">Invoke</span>
-                                <span className="text-foreground">(Start)</span>
-                            </div>
-                            <div className="mt-3 ml-6">
-                                <span className="text-muted-foreground/60">{`// add quit signal`}</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">quit</span>
-                                <span className="text-muted-foreground"> := </span>
-                                <span className="text-purple-400">make</span>
-                                <span className="text-foreground">(</span>
-                                <span className="text-purple-400">chan</span>
-                                <span className="text-foreground"> os.Signal, </span>
-                                <span className="text-amber-400">1</span>
-                                <span className="text-foreground">)</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">signal.</span>
-                                <span className="text-blue-400">Notify</span>
-                                <span className="text-foreground">(quit, os.Interrupt)</span>
-                            </div>
-                            <div className="ml-6">
-                                <span className="text-foreground">container.</span>
-                                <span className="text-blue-400">Invoke</span>
-                                <span className="text-foreground">(Shutdown)</span>
-                            </div>
-                            <div className="text-foreground">{'}'}</div>
-                        </div>
-                    </div>
-                </div>
+            <div className="flex items-center gap-2 text-[#6c6a64] mb-8">
+              <CalendarCheck className="h-4 w-4 text-[#cc785c]" />
+              <span className="text-sm" style={{ fontFamily: 'var(--font-inter)' }}>December 25, 2026</span>
             </div>
-        </section>
-    )
+
+            <Divider />
+
+            <p
+              className="text-base text-[#6c6a64] mb-8 leading-relaxed max-w-md"
+              style={{ fontFamily: 'var(--font-inter)' }}
+            >
+              A modern wedding management platform — manage guest lists, track RSVPs, 
+              handle check-ins, and create unforgettable moments.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href={getRoute('/auth/register')}>
+                <button
+                  className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors"
+                  style={{
+                    backgroundColor: '#cc785c',
+                    fontFamily: 'var(--font-inter)',
+                    height: 44,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a9583e'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#cc785c'}
+                >
+                  Access Platform
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </Link>
+              <a href="#story">
+                <button
+                  className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-[#141413] transition-colors border border-[#e6dfd8]"
+                  style={{
+                    backgroundColor: '#faf9f5',
+                    fontFamily: 'var(--font-inter)',
+                    height: 44,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f0e8'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#faf9f5'}
+                >
+                  Learn More
+                </button>
+              </a>
+            </div>
+          </div>
+
+          {/* Right: Illustration */}
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-[400px] aspect-square">
+              <RingIllustration />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
-// ─── Tech Stack ──────────────────────────────────────────
-const techStack = [
-    {
-        name: 'Go',
-        description: 'High-performance backend with Fiber framework, clean architecture, and built-in concurrency.',
-        icon: GoIcon,
-        tags: ['Fiber', 'REST API', 'Clean Arch'],
-        color: 'from-cyan-500 to-blue-500',
-        iconBg: 'bg-cyan-500/10 text-cyan-500',
-    },
-    {
-        name: 'Next.js',
-        description: 'React framework with server components, file-based routing, and optimized performance out of the box.',
-        icon: NextjsIcon,
-        tags: ['React 19', 'App Router', 'SSR'],
-        color: 'from-foreground to-foreground/70',
-        iconBg: 'bg-foreground/10 text-foreground',
-    },
-    {
-        name: 'shadcn/ui',
-        description: 'Beautiful, accessible components built on Radix UI with Tailwind CSS for rapid UI development.',
-        icon: ShadcnIcon,
-        tags: ['Tailwind v4', 'Radix UI', 'Dark Mode'],
-        color: 'from-emerald-500 to-teal-500',
-        iconBg: 'bg-emerald-500/10 text-emerald-500',
-    },
-]
+// ─── Story Section ──────────────────────────────────────
+function StorySection() {
+  return (
+    <section id="story" className="py-24 md:py-32 bg-[#faf9f5]">
+      <div className="mx-auto max-w-3xl px-6 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#e6dfd8] bg-[#efe9de] px-4 py-1.5 mb-6">
+          <span className="text-xs font-medium text-[#6c6a64] tracking-wide" style={{ fontFamily: 'var(--font-inter)' }}>
+            Our Story
+          </span>
+        </div>
 
-function TechStackSection() {
-    return (
-        <section id="stack" className="py-24 md:py-32">
-            <div className="mx-auto max-w-6xl px-6">
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                    <p className="text-sm font-medium text-emerald-500 tracking-wide uppercase mb-3">Tech Stack</p>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                        Powered by modern tools
-                    </h2>
-                    <p className="text-muted-foreground text-lg">
-                        Each technology chosen for performance, developer experience, and production readiness.
-                    </p>
-                </div>
+        <h2
+          className="text-[36px] md:text-[44px] leading-[1.1] tracking-[-1px] font-normal text-[#141413] mb-8"
+          style={{ fontFamily: 'var(--font-cormorant)' }}
+        >
+          The Beginning of Forever
+        </h2>
 
-                {/* Grid */}
-                <div className="grid md:grid-cols-3 gap-6">
-                    {techStack.map((tech) => (
-                        <div
-                            key={tech.name}
-                            className="group relative rounded-xl border border-border/50 bg-card/30 p-6 transition-all duration-300 hover:border-border hover:bg-card/60 hover:shadow-lg hover:shadow-black/5"
-                        >
-                            {/* Icon */}
-                            <div className={`inline-flex items-center justify-center h-11 w-11 rounded-lg ${tech.iconBg} mb-5`}>
-                                <tech.icon className="h-8 w-8" />
-                            </div>
+        <Divider />
 
-                            {/* Title */}
-                            <h3 className="text-lg font-semibold mb-2">{tech.name}</h3>
+        <p
+          className="text-base md:text-lg text-[#3d3d3a] leading-relaxed mb-6"
+          style={{ fontFamily: 'var(--font-inter)' }}
+        >
+          Two souls, one journey. We are delighted to welcome you to our wedding management platform — 
+          built with love to help us celebrate this beautiful chapter with our closest friends and family.
+        </p>
 
-                            {/* Description */}
-                            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                                {tech.description}
-                            </p>
+        <p
+          className="text-base md:text-lg text-[#6c6a64] leading-relaxed"
+          style={{ fontFamily: 'var(--font-inter)' }}
+        >
+          From guest invitations to the final toast, every detail matters. This platform helps us 
+          manage it all so we can focus on what truly matters — celebrating together.
+        </p>
 
-                            {/* Tags */}
-                            <div className="flex flex-wrap gap-2">
-                                {tech.tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="text-xs px-2.5 py-1 rounded-md bg-muted/50 text-muted-foreground"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    )
+        {/* Event details */}
+        <div className="mt-12 grid sm:grid-cols-3 gap-6">
+          <div className="rounded-lg border border-[#e6dfd8] bg-[#f5f0e8] p-6">
+            <MapPin className="h-5 w-5 text-[#cc785c] mb-3 mx-auto" />
+            <h3 className="text-sm font-medium text-[#141413] mb-1" style={{ fontFamily: 'var(--font-inter)' }}>Ceremony</h3>
+            <p className="text-xs text-[#6c6a64]" style={{ fontFamily: 'var(--font-inter)' }}>Grand Hall, Jakarta</p>
+          </div>
+          <div className="rounded-lg border border-[#e6dfd8] bg-[#f5f0e8] p-6">
+            <Clock className="h-5 w-5 text-[#cc785c] mb-3 mx-auto" />
+            <h3 className="text-sm font-medium text-[#141413] mb-1" style={{ fontFamily: 'var(--font-inter)' }}>Time</h3>
+            <p className="text-xs text-[#6c6a64]" style={{ fontFamily: 'var(--font-inter)' }}>10:00 AM — 4:00 PM</p>
+          </div>
+          <div className="rounded-lg border border-[#e6dfd8] bg-[#f5f0e8] p-6">
+            <Gift className="h-5 w-5 text-[#cc785c] mb-3 mx-auto" />
+            <h3 className="text-sm font-medium text-[#141413] mb-1" style={{ fontFamily: 'var(--font-inter)' }}>Reception</h3>
+            <p className="text-xs text-[#6c6a64]" style={{ fontFamily: 'var(--font-inter)' }}>Ballroom, 2nd Floor</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
-// ─── Features ────────────────────────────────────────────
+// ─── Features ───────────────────────────────────────────
 const features = [
-    {
-        icon: Shield,
-        title: 'Authentication',
-        description: 'JWT-based auth with login, register, and token refresh built into the Go backend.',
-    },
-    {
-        icon: Users,
-        title: 'Role-Based Access',
-        description: 'Granular roles and permissions system with frontend route protection.',
-    },
-    {
-        icon: Globe,
-        title: 'Internationalization',
-        description: 'Multi-language support via next-intl with English and Indonesian out of the box.',
-    },
-    {
-        icon: Palette,
-        title: 'Theme System',
-        description: 'Light and dark mode with next-themes, fully integrated with shadcn/ui components.',
-    },
-    {
-        icon: FileCheck,
-        title: 'Form Validation',
-        description: 'Type-safe forms with react-hook-form and Zod schema validation.',
-    },
-    {
-        icon: Plug,
-        title: 'API Integration',
-        description: 'Axios + TanStack Query with typed hooks for data fetching and caching.',
-    },
+  {
+    icon: Users,
+    title: 'Guest Management',
+    description: 'Easily manage your guest list with categories, tracking, and detailed profiles — all in one place.',
+    tags: ['Categories', 'Profiles', 'Tracking'],
+  },
+  {
+    icon: ScanQrCode,
+    title: 'QR Check-In',
+    description: 'Seamless check-in experience with QR codes. Scan and verify guests in seconds at the venue.',
+    tags: ['QR Code', 'Real-time', 'Verification'],
+  },
+  {
+    icon: UserCheck,
+    title: 'RSVP Tracking',
+    description: 'Track who&apos;s attending, who&apos;s declined, and who&apos;s yet to respond — live status updates.',
+    tags: ['Attendance', 'Status', 'Reports'],
+  },
+  {
+    icon: CalendarCheck,
+    title: 'Event Timeline',
+    description: 'Keep track of your wedding timeline with scheduled reminders and event milestones.',
+    tags: ['Schedule', 'Reminders', 'Planning'],
+  },
+  {
+    icon: Gift,
+    title: 'Gift Registry',
+    description: 'Manage wish lists and track gifts received, with easy sharing for guests.',
+    tags: ['Wish List', 'Tracking', 'Sharing'],
+  },
+  {
+    icon: Heart,
+    title: 'Guest Experience',
+    description: 'Beautiful invitation pages, photo galleries, and a personalized experience for every guest.',
+    tags: ['Invitations', 'Gallery', 'Personalized'],
+  },
 ]
 
 function FeaturesSection() {
-    return (
-        <section id="features" className="py-24 md:py-32 relative">
-            {/* Subtle background */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute bottom-0 left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px]" />
-            </div>
+  return (
+    <section id="features" className="py-24 md:py-32 bg-[#faf9f5]">
+      <div className="mx-auto max-w-6xl px-6">
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#e6dfd8] bg-[#efe9de] px-4 py-1.5 mb-6">
+            <span className="text-xs font-medium text-[#6c6a64] tracking-wide" style={{ fontFamily: 'var(--font-inter)' }}>
+              Features
+            </span>
+          </div>
+          <h2
+            className="text-[32px] md:text-[40px] leading-[1.1] tracking-[-1px] font-normal text-[#141413] mb-4"
+            style={{ fontFamily: 'var(--font-cormorant)' }}
+          >
+            Everything you need for your big day
+          </h2>
+          <p
+            className="text-base md:text-lg text-[#3d3d3a] leading-relaxed"
+            style={{ fontFamily: 'var(--font-inter)' }}
+          >
+            From invitations to check-ins, manage your wedding with ease.
+          </p>
+        </div>
 
-            <div className="relative mx-auto max-w-6xl px-6">
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                    <p className="text-sm font-medium text-emerald-500 tracking-wide uppercase mb-3">Features</p>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                        Everything you need, pre-configured
-                    </h2>
-                    <p className="text-muted-foreground text-lg">
-                        Stop setting up boilerplate. Start building your product with batteries included.
-                    </p>
-                </div>
-
-                {/* Grid */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {features.map((feature) => (
-                        <div
-                            key={feature.title}
-                            className="group rounded-xl border border-border/40 bg-card/20 p-6 transition-all duration-300 hover:border-border/70 hover:bg-card/40"
-                        >
-                            <div className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-500 mb-4">
-                                <feature.icon className="h-5 w-5" />
-                            </div>
-                            <h3 className="font-semibold mb-2">{feature.title}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                {feature.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+        {/* Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-xl p-8 transition-all duration-300"
+              style={{
+                backgroundColor: '#efe9de',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e8e0d2'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#efe9de'}
+            >
+              <div
+                className="inline-flex items-center justify-center h-10 w-10 rounded-lg mb-5"
+                style={{ backgroundColor: 'rgba(204, 120, 92, 0.15)' }}
+              >
+                <feature.icon className="h-5 w-5" style={{ color: '#cc785c' }} />
+              </div>
+              <h3
+                className="text-lg font-medium mb-2 text-[#141413]"
+                style={{ fontFamily: 'var(--font-inter)' }}
+              >
+                {feature.title}
+              </h3>
+              <p
+                className="text-sm text-[#6c6a64] leading-relaxed mb-5"
+                style={{ fontFamily: 'var(--font-inter)' }}
+              >
+                {feature.description}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {feature.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs font-medium px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: '#f5f0e8',
+                      color: '#6c6a64',
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-        </section>
-    )
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 
-// ─── Architecture ────────────────────────────────────────
-function ArchitectureSection() {
-    const backendStructure = [
-        { name: 'cmd/', label: 'Entry point' },
-        { name: 'internal/', label: '' },
-        { name: '  domain/', label: 'Entities & interfaces' },
-        { name: '  application/', label: 'Use cases & services' },
-        { name: '  infrastructure/', label: 'DB, auth, external' },
-        { name: '  presentation/', label: 'Controllers & routes' },
-        { name: 'pkg/', label: 'Shared utilities' },
-    ]
-
-    const frontendStructure = [
-        { name: 'app/', label: 'Next.js routes' },
-        { name: 'src/', label: '' },
-        { name: '  domain/', label: 'Types & interfaces' },
-        { name: '  application/', label: 'Hooks & use cases' },
-        { name: '  infrastructure/', label: 'API, stores' },
-        { name: '  presentation/', label: 'Components & pages' },
-        { name: '  lib/', label: 'Utilities' },
-    ]
-
-    return (
-        <section id="architecture" className="py-24 md:py-32">
-            <div className="mx-auto max-w-6xl px-6">
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto mb-16">
-                    <p className="text-sm font-medium text-emerald-500 tracking-wide uppercase mb-3">Architecture</p>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                        Clean architecture, front to back
-                    </h2>
-                    <p className="text-muted-foreground text-lg">
-                        Consistent folder structure on both sides for maintainable, scalable code.
-                    </p>
-                </div>
-
-                {/* Two Columns */}
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* Backend */}
-                    <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50 bg-muted/20">
-                            <div className="flex gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                                <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
-                                <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
-                            </div>
-                            <span className="text-xs text-muted-foreground font-medium ml-2">backend/</span>
-                            <div className="ml-auto">
-                                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-500 font-medium">Go</span>
-                            </div>
-                        </div>
-                        <div className="p-5 font-mono text-sm space-y-1.5">
-                            {backendStructure.map((item, i) => (
-                                <div key={i} className="flex items-baseline gap-3">
-                                    <span className="text-emerald-400/80">{item.name}</span>
-                                    {item.label && (
-                                        <span className="text-muted-foreground/50 text-xs">{`// `}{item.label}</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Frontend */}
-                    <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50 bg-muted/20">
-                            <div className="flex gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                                <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
-                                <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
-                            </div>
-                            <span className="text-xs text-muted-foreground font-medium ml-2">frontend/</span>
-                            <div className="ml-auto">
-                                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-medium">Next.js</span>
-                            </div>
-                        </div>
-                        <div className="p-5 font-mono text-sm space-y-1.5">
-                            {frontendStructure.map((item, i) => (
-                                <div key={i} className="flex items-baseline gap-3">
-                                    <span className="text-teal-400/80">{item.name}</span>
-                                    {item.label && (
-                                        <span className="text-muted-foreground/50 text-xs">{`// `}{item.label}</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+// ─── Dashboard Preview (dark product mockup) ────────────
+function DashboardSection() {
+  const { getRoute } = useDemoRoute()
+  return (
+    <section id="dashboard" className="py-24 md:py-32 bg-[#faf9f5]">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+          {/* Left: Text */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#e6dfd8] bg-[#efe9de] px-4 py-1.5 mb-6">
+              <span className="text-xs font-medium text-[#6c6a64] tracking-wide" style={{ fontFamily: 'var(--font-inter)' }}>
+                Dashboard
+              </span>
             </div>
-        </section>
-    )
+            <h2
+              className="text-[32px] md:text-[40px] leading-[1.1] tracking-[-1px] font-normal text-[#141413] mb-6"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              Elegant control,<br />simply managed
+            </h2>
+            <p
+              className="text-base text-[#3d3d3a] leading-relaxed mb-6"
+              style={{ fontFamily: 'var(--font-inter)' }}
+            >
+              A clean, intuitive dashboard puts everything at your fingertips. 
+              Manage guests, track attendance, and monitor your wedding data — all from one place.
+            </p>
+            <Link href={getRoute('/home')}>
+              <button
+                className="inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-medium text-white transition-colors"
+                style={{
+                  backgroundColor: '#cc785c',
+                  fontFamily: 'var(--font-inter)',
+                  height: 40,
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a9583e'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#cc785c'}
+              >
+                View Dashboard
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+
+          {/* Right: Dark mockup card */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{
+              backgroundColor: '#181715',
+            }}
+          >
+            {/* Window Chrome */}
+            <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: '#252320' }}>
+              <div className="flex gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#c64545' }} />
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#d4a017' }} />
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#5db872' }} />
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-xs font-medium" style={{ color: '#a09d96', fontFamily: 'var(--font-inter)' }}>
+                  wedding-dashboard
+                </span>
+              </div>
+            </div>
+
+            {/* Mockup Content */}
+            <div className="p-6 space-y-5">
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Guests', value: '248', color: '#cc785c' },
+                  { label: 'Attending', value: '186', color: '#5db872' },
+                  { label: 'Pending', value: '42', color: '#e8a55a' },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-lg p-3" style={{ backgroundColor: '#1f1e1b' }}>
+                    <div className="text-xs font-medium mb-1" style={{ color: '#a09d96', fontFamily: 'var(--font-inter)' }}>
+                      {stat.label}
+                    </div>
+                    <div className="text-xl font-medium" style={{ color: '#faf9f5', fontFamily: 'var(--font-cormorant)' }}>
+                      {stat.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Table header */}
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: '#252320' }}>
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#a09d96', fontFamily: 'var(--font-inter)' }}>
+                  Recent RSVPs
+                </span>
+              </div>
+
+              {/* Table rows */}
+              {[
+                { name: 'Sarah Johnson', status: 'Attending', statusColor: '#5db872' },
+                { name: 'Michael Chen', status: 'Pending', statusColor: '#e8a55a' },
+                { name: 'Emily Davis', status: 'Declined', statusColor: '#c64545' },
+                { name: 'James Wilson', status: 'Attending', statusColor: '#5db872' },
+              ].map((row, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5">
+                  <span className="text-sm" style={{ color: '#faf9f5', fontFamily: 'var(--font-inter)' }}>
+                    {row.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: row.statusColor }} />
+                    <span className="text-xs" style={{ color: '#a09d96', fontFamily: 'var(--font-inter)' }}>
+                      {row.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
-// ─── CTA ─────────────────────────────────────────────────
+// ─── CTA Coral Band ─────────────────────────────────────
 function CtaSection() {
-    const { getRoute } = useDemoRoute()
-    return (
-        <section className="py-24 md:py-32">
-            <div className="mx-auto max-w-6xl px-6">
-                <div className="relative rounded-2xl border border-border/50 bg-card/20 overflow-hidden">
-                    {/* Gradient Background */}
-                    <div className="absolute inset-0 pointer-events-none">
-                        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
-                        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-teal-500/6 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4" />
-                    </div>
-
-                    <div className="relative px-8 py-16 md:py-20 text-center">
-                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                            Ready to start building?
-                        </h2>
-                        <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
-                            Clone the repo, set up your environment, and start shipping features in minutes — not days.
-                        </p>
-
-                        {/* Terminal-like command */}
-                        <div className="inline-flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-5 py-3 font-mono text-sm mb-8">
-                            <span className="text-emerald-500">$</span>
-                            <span className="text-muted-foreground">git clone</span>
-                            <span className="text-foreground">https://github.com/yogameleniawan/gns.git</span>
-                            <button
-                                className="text-muted-foreground/50 hover:text-foreground transition-colors ml-1"
-                                onClick={() => navigator.clipboard.writeText('git clone https://github.com/yogameleniawan/gns.git')}
-                                title="Copy command"
-                            >
-                                <Code2 className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            <Link href={getRoute("/auth/register")}>
-                                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-8">
-                                    Get Started Free
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
-                            <a href="https://github.com/yogameleniawan/gns.git" target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="lg" className="h-12 px-8">
-                                    <Github className="mr-2 h-4 w-4" />
-                                    Star on GitHub
-                                </Button>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    )
+  const { getRoute } = useDemoRoute()
+  return (
+    <section className="py-24 md:py-32 bg-[#faf9f5]">
+      <div className="mx-auto max-w-6xl px-6">
+        <div
+          className="relative rounded-xl overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center"
+          style={{ backgroundColor: '#cc785c' }}
+        >
+          <h2
+            className="text-[28px] md:text-[36px] leading-[1.2] tracking-[-0.5px] font-normal text-white mb-4"
+            style={{ fontFamily: 'var(--font-cormorant)' }}
+          >
+            Ready to begin your journey?
+          </h2>
+          <p
+            className="text-base text-white/80 max-w-lg mx-auto mb-8 leading-relaxed"
+            style={{ fontFamily: 'var(--font-inter)' }}
+          >
+            Create your account and start managing your wedding guest experience today.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href={getRoute('/auth/register')}>
+              <button
+                className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: '#faf9f5',
+                  color: '#141413',
+                  fontFamily: 'var(--font-inter)',
+                  height: 44,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f0e8'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#faf9f5'
+                }}
+              >
+                Get Started Free
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </button>
+            </Link>
+            <Link href={getRoute('/auth/login')}>
+              <button
+                className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  fontFamily: 'var(--font-inter)',
+                  height: 44,
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+              >
+                Sign In
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
-// ─── Footer ──────────────────────────────────────────────
+// ─── Footer ─────────────────────────────────────────────
 function LandingFooter() {
-    return (
-        <footer className="border-t border-border/50 py-10">
-            <div className="mx-auto max-w-6xl px-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    {/* Brand */}
-                    <div className="flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/gns.png" alt="GNS" className="h-5 w-5 rounded dark:invert" />
-                        <span className="text-sm text-muted-foreground">
-                            GNS © {new Date().getFullYear()}
-                        </span>
-                    </div>
-
-                    {/* Links */}
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-                        <a href="#" className="hover:text-foreground transition-colors">Contact</a>
-                    </div>
-
-                    {/* Tech Badges */}
-                    <div className="flex items-center gap-2">
-                        {['Go', 'Next.js', 'shadcn'].map((tech) => (
-                            <span
-                                key={tech}
-                                className="text-[10px] px-2 py-0.5 rounded bg-muted/50 text-muted-foreground"
-                            >
-                                {tech}
-                            </span>
-                        ))}
-                    </div>
-                </div>
+  return (
+    <footer
+      className="py-16"
+      style={{ backgroundColor: '#181715', color: '#a09d96' }}
+    >
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#cc785c]">
+                <Heart className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-[#faf9f5]" style={{ fontFamily: 'var(--font-inter)' }}>
+                Hasri &amp; Ramli
+              </span>
             </div>
-        </footer>
-    )
+            <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-inter)' }}>
+              A modern wedding management platform for your special day.
+            </p>
+          </div>
+
+          {/* Platform */}
+          <div>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-[#faf9f5] mb-4" style={{ fontFamily: 'var(--font-inter)' }}>
+              Platform
+            </h4>
+            <ul className="space-y-2.5">
+              {['Features', 'Dashboard', 'RSVP', 'Check-In'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-sm hover:text-[#faf9f5] transition-colors" style={{ fontFamily: 'var(--font-inter)' }}>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-[#faf9f5] mb-4" style={{ fontFamily: 'var(--font-inter)' }}>
+              Company
+            </h4>
+            <ul className="space-y-2.5">
+              {['About', 'Privacy', 'Terms'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-sm hover:text-[#faf9f5] transition-colors" style={{ fontFamily: 'var(--font-inter)' }}>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-[#faf9f5] mb-4" style={{ fontFamily: 'var(--font-inter)' }}>
+              Contact
+            </h4>
+            <ul className="space-y-2.5">
+              {['Help', 'Support', 'Feedback'].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-sm hover:text-[#faf9f5] transition-colors" style={{ fontFamily: 'var(--font-inter)' }}>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t" style={{ borderColor: '#252320' }}>
+          <p className="text-xs" style={{ fontFamily: 'var(--font-inter)' }}>
+            &copy; {new Date().getFullYear()} Hasri &amp; Ramli. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4 text-xs" style={{ fontFamily: 'var(--font-inter)' }}>
+            <span>Built with love</span>
+            <Heart className="h-3 w-3 text-[#cc785c]" />
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
 }
 
 // ─── Main Landing Page ───────────────────────────────────
 export function LandingPage() {
-    return (
-        <div className="min-h-screen">
-            <LandingNavbar />
-            <main>
-                <HeroSection />
-                <TechStackSection />
-                <FeaturesSection />
-                <ArchitectureSection />
-                <CtaSection />
-            </main>
-            <LandingFooter />
-        </div>
-    )
+  return (
+    <div className="min-h-screen bg-[#faf9f5]">
+      <LandingNavbar />
+      <main>
+        <HeroSection />
+        <StorySection />
+        <FeaturesSection />
+        <DashboardSection />
+        <CtaSection />
+      </main>
+      <LandingFooter />
+    </div>
+  )
 }

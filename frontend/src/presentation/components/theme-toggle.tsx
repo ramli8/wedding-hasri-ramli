@@ -31,7 +31,7 @@ export function ThemeToggle() {
                 className={cn(
                     "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
                     theme === 'light'
-                        ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
+                        ? "bg-[#cc785c] text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                 )}
                 aria-label="Light theme"

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Locale = 'en' | 'id';
+export type Locale = 'id';
 
 interface LocaleState {
   locale: Locale;
@@ -13,7 +13,7 @@ interface LocaleState {
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set) => ({
-      locale: 'en',
+      locale: 'id',
       hasHydrated: false,
 
       setLocale: (locale: Locale) => {

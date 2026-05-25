@@ -21,7 +21,7 @@ export function useLocale() {
   };
 
   return {
-    locale: hasHydrated ? locale : 'en',
+    locale: hasHydrated ? locale : 'id',
     changeLocale,
     isReady: hasHydrated,
   };

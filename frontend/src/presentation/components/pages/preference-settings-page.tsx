@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Moon, Sun, Check } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useLocale, useTranslations } from '@/src/presentation/hooks/use-locale'
+import { useTranslations } from '@/src/presentation/hooks/use-locale'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/presentation/components/ui/card'
 import { Label } from '@/src/presentation/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/src/presentation/components/ui/radio-group'
@@ -17,9 +17,7 @@ export function PreferenceSettingsPage() {
     const t = useTranslations('settings.preferences')
     const tCommon = useTranslations('common')
     const { theme, setTheme } = useTheme()
-    const { locale, changeLocale, isReady } = useLocale()
 
-    const [selectedLocale, setSelectedLocale] = useState<'en' | 'id'>(locale)
     const [selectedTheme, setSelectedTheme] = useState(theme || 'dark')
     const [mounted, setMounted] = useState(false)
 
@@ -29,13 +27,6 @@ export function PreferenceSettingsPage() {
     }, [])
 
     useEffect(() => {
-        if (isReady) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSelectedLocale(locale)
-        }
-    }, [locale, isReady])
-
-    useEffect(() => {
         if (theme) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedTheme(theme)
@@ -43,21 +34,13 @@ export function PreferenceSettingsPage() {
     }, [theme])
 
     const handleSave = () => {
-        // Apply theme
         if (selectedTheme !== theme) {
             setTheme(selectedTheme)
         }
-
-        // Apply locale (this will reload the page)
-        if (selectedLocale !== locale) {
-            changeLocale(selectedLocale)
-        } else {
-            // If no locale change, just show success toast
-            toast.success(t('changesSaved'))
-        }
+        toast.success(t('changesSaved'))
     }
 
-    if (!mounted || !isReady) {
+    if (!mounted) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <div className="text-muted-foreground">{tCommon('loading')}</div>
@@ -72,52 +55,11 @@ export function PreferenceSettingsPage() {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                         <p className="text-muted-foreground mt-2">
-                            Manage your application preferences and settings
+                            Kelola preferensi dan pengaturan aplikasi Anda
                         </p>
                     </div>
 
                     <Separator />
-
-                    {/* Language Settings */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <CardTitle>{t('language.title')}</CardTitle>
-                                <CardDescription>{t('language.description')}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <RadioGroup value={selectedLocale} onValueChange={(value) => setSelectedLocale(value as 'en' | 'id')}>
-                                <div className="flex flex-col gap-3">
-                                    <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${selectedLocale === 'en'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-border hover:border-foreground/20 hover:bg-muted/50'
-                                        }`} onClick={() => setSelectedLocale('en')}>
-                                        <RadioGroupItem value="en" id="en" />
-                                        <Label htmlFor="en" className="flex-1 cursor-pointer font-medium">
-                                            {t('language.english')}
-                                        </Label>
-                                        {selectedLocale === 'en' && (
-                                            <Check className="h-5 w-5 text-emerald-500" />
-                                        )}
-                                    </div>
-
-                                    <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${selectedLocale === 'id'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-border hover:border-foreground/20 hover:bg-muted/50'
-                                        }`} onClick={() => setSelectedLocale('id')}>
-                                        <RadioGroupItem value="id" id="id" />
-                                        <Label htmlFor="id" className="flex-1 cursor-pointer font-medium">
-                                            {t('language.indonesian')}
-                                        </Label>
-                                        {selectedLocale === 'id' && (
-                                            <Check className="h-5 w-5 text-emerald-500" />
-                                        )}
-                                    </div>
-                                </div>
-                            </RadioGroup>
-                        </CardContent>
-                    </Card>
 
                     {/* Theme Settings */}
                     <Card>
@@ -167,7 +109,6 @@ export function PreferenceSettingsPage() {
                         <Button
                             variant="outline"
                             onClick={() => {
-                                setSelectedLocale(locale)
                                 setSelectedTheme(theme || 'dark')
                             }}
                         >

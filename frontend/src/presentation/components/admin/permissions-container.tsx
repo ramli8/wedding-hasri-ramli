@@ -86,7 +86,7 @@ export function PermissionsContainer() {
     };
 
     const handleDeletePermission = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this permission? This action cannot be undone.')) {
+        if (!confirm('Yakin ingin menghapus izin ini? Tindakan ini tidak dapat dibatalkan.')) {
             return;
         }
 
@@ -124,14 +124,15 @@ export function PermissionsContainer() {
 
     return (
         <>
-            {/* Independent Page Header */}
+            {/* Page Header */}
             <div className="mb-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">Permission Management</h2>
-                        <p className="text-muted-foreground mt-1 text-base">
-                            Manage system permissions and organize them by module
-                        </p>
+                <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <Key className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Manajemen Izin</h2>
+                        <p className="text-sm text-muted-foreground">Kelola izin sistem dan atur berdasarkan modul</p>
                     </div>
                 </div>
             </div>
@@ -148,19 +149,19 @@ export function PermissionsContainer() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardDescription>Total Permissions</CardDescription>
+                                <CardDescription>Total Izin</CardDescription>
                                 <CardTitle className="text-3xl">{totalPermissions}</CardTitle>
                             </CardHeader>
                         </Card>
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardDescription>Modules</CardDescription>
+                                <CardDescription>Modul</CardDescription>
                                 <CardTitle className="text-3xl">{permissionsByModule.length}</CardTitle>
                             </CardHeader>
                         </Card>
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardDescription>Search Results</CardDescription>
+                                <CardDescription>Hasil Pencarian</CardDescription>
                                 <CardTitle className="text-3xl">
                                     {filteredPermissions.reduce((sum, m) => sum + m.permissions.length, 0)}
                                 </CardTitle>
@@ -173,7 +174,7 @@ export function PermissionsContainer() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                             <Input
-                                placeholder="Search permissions..."
+                                placeholder="Cari izin..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
@@ -183,7 +184,7 @@ export function PermissionsContainer() {
                             <ProtectedFeature permission="permissions.create">
                                 <Button onClick={() => setIsCreateDialogOpen(true)}>
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add Permission
+                                    Tambah Izin
                                 </Button>
                             </ProtectedFeature>
                         </div>
@@ -201,12 +202,12 @@ export function PermissionsContainer() {
                                     <CardHeader>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Key className="h-5 w-5 text-primary" />
+                        <Key strokeWidth={1.5} className="h-5 w-5 text-primary" />
                                                 <CardTitle className="text-xl capitalize">
                                                     {moduleGroup.module}
                                                 </CardTitle>
                                                 <Badge variant="secondary">
-                                                    {moduleGroup.permissions.length} permissions
+                                                    {moduleGroup.permissions.length} izin
                                                 </Badge>
                                             </div>
                                         </div>
@@ -216,10 +217,10 @@ export function PermissionsContainer() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead>Name</TableHead>
-                                                        <TableHead>Description</TableHead>
-                                                        <TableHead>Created</TableHead>
-                                                        <TableHead className="text-right">Actions</TableHead>
+                                                        <TableHead>Nama Izin</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead>Dibuat</TableHead>
+                                                        <TableHead className="text-right">Aksi</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -252,7 +253,7 @@ export function PermissionsContainer() {
                                                                             className="text-destructive border-destructive/20 hover:bg-destructive/10"
                                                                             onClick={() => handleDeletePermission(permission.id)}
                                                                         >
-                                                                            <Trash2 /> Delete
+                                                                            <Trash2 /> Hapus
                                                                         </Button>
                                                                     </ProtectedFeature>
                                                                 </div>
@@ -269,9 +270,9 @@ export function PermissionsContainer() {
                             {filteredPermissions.length === 0 && !loading && (
                                 <div className="text-center py-12">
                                     <Key className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No Permissions Found</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Tidak Ada Izin Ditemukan</h3>
                                     <p className="text-muted-foreground">
-                                        {searchQuery ? 'No permissions match your search.' : 'Create your first permission to get started.'}
+                                        {searchQuery ? 'Tidak ada izin yang cocok dengan pencarian Anda.' : 'Tambah izin pertama untuk memulai.'}
                                     </p>
                                 </div>
                             )}
@@ -284,40 +285,40 @@ export function PermissionsContainer() {
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Create New Permission</DialogTitle>
+                        <DialogTitle>Tambah Izin</DialogTitle>
                         <DialogDescription>
-                            Add a new permission to the system
+                            Tambah izin baru ke sistem
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Permission Name</Label>
+                            <Label htmlFor="name">Nama Izin</Label>
                             <Input
                                 id="name"
                                 value={permissionName}
                                 onChange={(e) => setPermissionName(e.target.value)}
-                                placeholder="e.g., users.create"
+                                placeholder="Mis: users.create"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="module">Module</Label>
+                            <Label htmlFor="module">Modul</Label>
                             <Input
                                 id="module"
                                 value={permissionModule}
                                 onChange={(e) => setPermissionModule(e.target.value)}
-                                placeholder="e.g., users"
+                                placeholder="Mis: users"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">Deskripsi</Label>
                             <Textarea
                                 id="description"
                                 value={permissionDescription}
                                 onChange={(e) => setPermissionDescription(e.target.value)}
-                                placeholder="Describe what this permission allows..."
+                                placeholder="Jelaskan apa yang diizinkan oleh izin ini..."
                                 rows={3}
                             />
                         </div>
@@ -325,13 +326,13 @@ export function PermissionsContainer() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                            Cancel
+                            Batal
                         </Button>
                         <Button
                             onClick={handleCreatePermission}
                             disabled={!permissionName.trim() || !permissionModule.trim()}
                         >
-                            Create Permission
+                            Tambah Izin
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -341,15 +342,15 @@ export function PermissionsContainer() {
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Permission</DialogTitle>
+                        <DialogTitle>Edit Izin</DialogTitle>
                         <DialogDescription>
-                            Update permission details
+                            Perbarui data izin
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-name">Permission Name</Label>
+                            <Label htmlFor="edit-name">Nama Izin</Label>
                             <Input
                                 id="edit-name"
                                 value={permissionName}
@@ -361,27 +362,27 @@ export function PermissionsContainer() {
                                         e.target.setSelectionRange(val.length, val.length);
                                     }, 0);
                                 }}
-                                placeholder="e.g., users.create"
+                                placeholder="Mis: users.create"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-module">Module</Label>
+                            <Label htmlFor="edit-module">Modul</Label>
                             <Input
                                 id="edit-module"
                                 value={permissionModule}
                                 onChange={(e) => setPermissionModule(e.target.value)}
-                                placeholder="e.g., users"
+                                placeholder="Mis: users"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-description">Description</Label>
+                            <Label htmlFor="edit-description">Deskripsi</Label>
                             <Textarea
                                 id="edit-description"
                                 value={permissionDescription}
                                 onChange={(e) => setPermissionDescription(e.target.value)}
-                                placeholder="Describe what this permission allows..."
+                                placeholder="Jelaskan apa yang diizinkan oleh izin ini..."
                                 rows={3}
                             />
                         </div>
@@ -389,13 +390,13 @@ export function PermissionsContainer() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                            Cancel
+                            Batal
                         </Button>
                         <Button
                             onClick={handleEditPermission}
                             disabled={!permissionName.trim() || !permissionModule.trim()}
                         >
-                            Save Changes
+                            Simpan
                         </Button>
                     </DialogFooter>
                 </DialogContent>

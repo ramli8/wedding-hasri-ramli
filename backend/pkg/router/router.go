@@ -7,6 +7,7 @@ import (
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
 	"github.com/base-go/backend/internal/rbac"
+	"github.com/base-go/backend/internal/vendor"
 	"github.com/base-go/backend/pkg/middleware"
 	"github.com/base-go/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
@@ -27,6 +28,7 @@ func SetupRoutes(
 	rbacHandler rbac.Handler,
 	rbacRepo rbac.Repository,
 	guestHandler guest.Handler,
+	vendorHandler vendor.Handler,
 ) *chi.Mux {
 	mux := chi.NewRouter()
 
@@ -149,6 +151,60 @@ func SetupRoutes(
 				r.With(middleware.RequirePermission(rbacRepo, "users.delete")).Delete("/", authHandler.DeleteUser)
 				r.With(middleware.RequirePermission(rbacRepo, "users.manage_status")).Post("/toggle-status", authHandler.ToggleUserStatus)
 				r.With(middleware.RequirePermission(rbacRepo, "users.manage_status")).Post("/restore", authHandler.RestoreUser)
+			})
+		})
+
+		// Vendor management routes (protected - Admin only)
+		r.Route("/vendors", func(r chi.Router) {
+			r.Use(middleware.JWTAuthMiddleware)
+			r.Use(middleware.RequireRole("Super Admin", "Admin"))
+
+			r.Get("/overview", vendorHandler.GetOverview)
+
+			r.Route("/categories", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.categories.create")).Post("/", vendorHandler.CreateCategory)
+				r.Get("/", vendorHandler.ListCategories)
+
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", vendorHandler.GetCategoryByID)
+					r.With(middleware.RequirePermission(rbacRepo, "vendors.categories.update")).Put("/", vendorHandler.UpdateCategory)
+					r.With(middleware.RequirePermission(rbacRepo, "vendors.categories.delete")).Delete("/", vendorHandler.DeleteCategory)
+
+					r.Post("/select/{vendorId}", vendorHandler.SelectVendor)
+					r.Delete("/select", vendorHandler.DeselectVendor)
+
+					r.Route("/attributes", func(r chi.Router) {
+						r.With(middleware.RequirePermission(rbacRepo, "vendors.attributes.create")).Post("/", vendorHandler.CreateAttribute)
+						r.Get("/", vendorHandler.ListAttributes)
+					})
+
+					r.Route("/vendors", func(r chi.Router) {
+						r.With(middleware.RequirePermission(rbacRepo, "vendors.create")).Post("/", vendorHandler.CreateVendor)
+						r.Get("/", vendorHandler.ListVendors)
+					})
+				})
+			})
+
+			r.Route("/attributes/{id}", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.attributes.update")).Put("/", vendorHandler.UpdateAttribute)
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.attributes.delete")).Delete("/", vendorHandler.DeleteAttribute)
+			})
+
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", vendorHandler.GetVendorByID)
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.update")).Put("/", vendorHandler.UpdateVendor)
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.delete")).Delete("/", vendorHandler.DeleteVendor)
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.update")).Put("/attribute-values", vendorHandler.UpdateAttributeValues)
+
+				r.Route("/payments", func(r chi.Router) {
+					r.With(middleware.RequirePermission(rbacRepo, "vendors.payments.create")).Post("/", vendorHandler.CreatePayment)
+					r.Get("/", vendorHandler.ListPayments)
+				})
+			})
+
+			r.Route("/payments/{id}", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.payments.update")).Put("/", vendorHandler.UpdatePayment)
+				r.With(middleware.RequirePermission(rbacRepo, "vendors.payments.delete")).Delete("/", vendorHandler.DeletePayment)
 			})
 		})
 

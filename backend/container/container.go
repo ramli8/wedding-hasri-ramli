@@ -7,6 +7,7 @@ import (
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
 	"github.com/base-go/backend/internal/rbac"
+	"github.com/base-go/backend/internal/vendor"
 	"github.com/base-go/backend/pkg/cache"
 	"github.com/base-go/backend/pkg/database"
 	"github.com/base-go/backend/pkg/router"
@@ -64,6 +65,19 @@ func New() (*dig.Container, error) {
 	}
 
 	if err := container.Provide(guest.NewHandler); err != nil {
+		return nil, err
+	}
+
+	// vendor module
+	if err := container.Provide(vendor.NewRepository); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(vendor.NewService); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(vendor.NewHandler); err != nil {
 		return nil, err
 	}
 

@@ -94,15 +94,18 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
     const content = (
         <div
             className={cn(
-                'flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-base font-medium transition-all duration-200',
+                'flex flex-1 items-center justify-between gap-3 rounded-lg px-3 py-3 text-base font-medium transition-all duration-200',
                 // Active: solid fill primary, text putih
                 isActive
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent',
-                level > 0 && 'ml-4'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent'
             )}
+            style={{ 
+                marginLeft: level > 0 ? `${level * 1}rem` : undefined,
+                width: level > 0 ? `calc(100% - ${level * 1}rem)` : '100%'
+            }}
         >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 overflow-hidden">
                 <Icon strokeWidth={1.5} className={cn(
                     'h-[22px] w-[22px] shrink-0 transition-colors',
                     isActive ? 'text-sidebar-primary-foreground' : 'text-muted-foreground'
@@ -121,11 +124,11 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
     )
 
     return (
-        <div>
+        <div className="w-full">
             {hasChildren ? (
                 <button
                     onClick={handleClick}
-                    className="w-full text-left"
+                    className="flex w-full text-left"
                 >
                     {content}
                 </button>
@@ -133,6 +136,7 @@ export function SidebarItem({ item, level = 0, onNavigate }: SidebarItemProps) {
                 <Link
                     href={actualHref || '#'}
                     onClick={handleClick}
+                    className="flex w-full"
                 >
                     {content}
                 </Link>

@@ -3,6 +3,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/src/lib/query-client'
 import { ThemeProvider } from '@/src/presentation/components/theme-provider'
+import { Toaster } from '@/src/presentation/components/ui/sonner'
 import { NextIntlClientProvider } from 'next-intl'
 import Image from 'next/image'
 import { useLocaleStore } from '@/src/infrastructure/stores/locale-store'
@@ -74,6 +75,7 @@ export function Providers({ children }: { children: ReactNode }) {
                 <NextIntlClientProvider locale={hasHydrated ? locale : 'id'} messages={messages}>
                     <QueryClientProvider client={queryClient}>
                         {children}
+                        <Toaster position="top-center" />
                     </QueryClientProvider>
                 </NextIntlClientProvider>
             )}

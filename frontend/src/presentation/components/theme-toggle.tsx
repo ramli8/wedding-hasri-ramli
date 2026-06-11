@@ -3,10 +3,15 @@
 import * as React from 'react'
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { cn } from '@/src/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/presentation/components/ui/dropdown-menu"
 
 export function ThemeToggle() {
-    const { setTheme, theme } = useTheme()
+    const { setTheme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
 
     // Prevent hydration mismatch by only rendering after mount
@@ -16,55 +21,35 @@ export function ThemeToggle() {
 
     if (!mounted) {
         return (
-            <div className="flex h-9 items-center gap-1 rounded-full bg-muted/80 p-1 border border-border/50 opacity-50">
-                <div className="h-7 w-7 rounded-full" />
-                <div className="h-7 w-7 rounded-full" />
-                <div className="h-7 w-7 rounded-full" />
-            </div>
+            <button className="relative w-11 h-11 bg-card border border-border/50 rounded-full flex items-center justify-center shadow-sm text-foreground opacity-50">
+                <Sun className="h-5 w-5" />
+            </button>
         )
     }
 
     return (
-        <div className="flex h-11 items-center gap-1.5 rounded-full bg-muted/80 p-1.5 border border-border/50 shadow-inner">
-            <button
-                onClick={() => setTheme('light')}
-                className={cn(
-                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
-                    theme === 'light'
-                        ? "bg-[#cc785c] text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                )}
-                aria-label="Light theme"
-                title="Light mode"
-            >
-                <Sun className="h-[18px] w-[18px]" />
-            </button>
-            <button
-                onClick={() => setTheme('dark')}
-                className={cn(
-                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
-                    theme === 'dark'
-                        ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                )}
-                aria-label="Dark theme"
-                title="Dark mode"
-            >
-                <Moon className="h-[18px] w-[18px]" />
-            </button>
-            <button
-                onClick={() => setTheme('system')}
-                className={cn(
-                    "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-all duration-300 ease-out",
-                    theme === 'system'
-                        ? "bg-[#fca55d] text-[#3b1f14] shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                )}
-                aria-label="System theme"
-                title="System preference"
-            >
-                <Monitor className="h-[18px] w-[18px]" />
-            </button>
-        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button className="relative w-11 h-11 bg-card border border-border/50 rounded-full flex items-center justify-center shadow-sm text-foreground hover:bg-accent transition-colors focus:outline-none">
+                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-xl border-border/50">
+                <DropdownMenuItem onClick={() => setTheme("light")} className="gap-2 cursor-pointer rounded-lg">
+                    <Sun className="h-4 w-4" />
+                    <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")} className="gap-2 cursor-pointer rounded-lg">
+                    <Moon className="h-4 w-4" />
+                    <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")} className="gap-2 cursor-pointer rounded-lg">
+                    <Monitor className="h-4 w-4" />
+                    <span>System</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }

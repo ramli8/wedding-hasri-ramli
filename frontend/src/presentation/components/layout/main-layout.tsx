@@ -1,29 +1,23 @@
 'use client'
 
-import { ReactNode, useState } from 'react'
+import { ReactNode } from 'react'
 import { Navbar } from './navbar'
-import { Sidebar } from './sidebar'
+import { BottomNav } from './bottom-nav'
 
 interface MainLayoutProps {
     children: ReactNode
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
     return (
-        <div className="min-h-screen bg-background">
-            <Sidebar
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-            />
+        <div className="min-h-screen bg-background pb-16">
+            <Navbar />
+            
+            <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
+                {children}
+            </main>
 
-            <div className="lg:pl-[280px]">
-                <Navbar onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-                <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
-                    {children}
-                </main>
-            </div>
+            <BottomNav />
         </div>
     )
 }

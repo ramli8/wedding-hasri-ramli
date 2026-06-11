@@ -74,6 +74,11 @@ const menuItems: SidebarMenuItem[] = [
         href: "/admin/vendors",
         icon: Store,
       },
+      {
+        label: "Catatan Kondangan",
+        href: "/admin/kondangan",
+        icon: NotebookTabs,
+      },
     ],
   },
   {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
+	"github.com/base-go/backend/internal/kondangan"
 	"github.com/base-go/backend/internal/rbac"
 	"github.com/base-go/backend/internal/vendor"
 	"github.com/base-go/backend/pkg/middleware"
@@ -29,6 +30,7 @@ func SetupRoutes(
 	rbacRepo rbac.Repository,
 	guestHandler guest.Handler,
 	vendorHandler vendor.Handler,
+	kondanganHandler kondangan.Handler,
 ) *chi.Mux {
 	mux := chi.NewRouter()
 
@@ -239,6 +241,28 @@ func SetupRoutes(
 				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Post("/restore", guestHandler.RestoreGuest)
 				r.With(middleware.RequirePermission(rbacRepo, "guests.update")).Put("/status-sent", guestHandler.UpdateStatusSent)
 				r.Post("/check-in", guestHandler.CheckInByGuestID)
+			})
+		})
+
+		// Kondangan routes (protected - Admin only)
+		r.Route("/kondangan", func(r chi.Router) {
+			r.Use(middleware.JWTAuthMiddleware)
+			r.Use(middleware.RequireRole("Super Admin", "Admin"))
+
+			r.Post("/", kondanganHandler.Create)
+			r.Get("/", kondanganHandler.List)
+			r.Get("/stats", kondanganHandler.GetStats)
+
+			r.Route("/relations", func(r chi.Router) {
+				r.Post("/", kondanganHandler.CreateRelation)
+				r.Get("/", kondanganHandler.ListRelations)
+				r.Delete("/{id}", kondanganHandler.DeleteRelation)
+			})
+
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", kondanganHandler.GetByID)
+				r.Put("/", kondanganHandler.Update)
+				r.Delete("/", kondanganHandler.Delete)
 			})
 		})
 	})

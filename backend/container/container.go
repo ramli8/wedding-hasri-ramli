@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
+	"github.com/base-go/backend/internal/kondangan"
 	"github.com/base-go/backend/internal/rbac"
 	"github.com/base-go/backend/internal/vendor"
 	"github.com/base-go/backend/pkg/cache"
@@ -78,6 +79,19 @@ func New() (*dig.Container, error) {
 	}
 
 	if err := container.Provide(vendor.NewHandler); err != nil {
+		return nil, err
+	}
+
+	// kondangan module
+	if err := container.Provide(kondangan.NewRepository); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(kondangan.NewService); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(kondangan.NewHandler); err != nil {
 		return nil, err
 	}
 

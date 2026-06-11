@@ -49,7 +49,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.ChangePasswordRequest"
+                            "$ref": "#/definitions/internal_auth.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -95,7 +95,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.LoginRequest"
+                            "$ref": "#/definitions/internal_auth.LoginRequest"
                         }
                     }
                 ],
@@ -103,7 +103,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.AuthResponse"
+                            "$ref": "#/definitions/internal_auth.AuthResponse"
                         }
                     },
                     "400": {
@@ -187,7 +187,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.GoogleOAuthRequest"
+                            "$ref": "#/definitions/internal_auth.GoogleOAuthRequest"
                         }
                     }
                 ],
@@ -195,7 +195,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.AuthResponse"
+                            "$ref": "#/definitions/internal_auth.AuthResponse"
                         }
                     },
                     "400": {
@@ -241,7 +241,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     },
                     "401": {
@@ -279,7 +279,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UpdateProfileRequest"
+                            "$ref": "#/definitions/internal_auth.UpdateProfileRequest"
                         }
                     }
                 ],
@@ -287,7 +287,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     },
                     "400": {
@@ -331,7 +331,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/internal_auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -339,7 +339,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.AuthResponse"
+                            "$ref": "#/definitions/internal_auth.AuthResponse"
                         }
                     },
                     "400": {
@@ -383,7 +383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.RegisterRequest"
+                            "$ref": "#/definitions/internal_auth.RegisterRequest"
                         }
                     }
                 ],
@@ -391,7 +391,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.AuthResponse"
+                            "$ref": "#/definitions/internal_auth.AuthResponse"
                         }
                     },
                     "400": {
@@ -2045,7 +2045,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserListResponse"
+                            "$ref": "#/definitions/internal_auth.UserListResponse"
                         }
                     },
                     "401": {
@@ -2092,7 +2092,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.CreateUserRequest"
+                            "$ref": "#/definitions/internal_auth.CreateUserRequest"
                         }
                     }
                 ],
@@ -2100,7 +2100,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     },
                     "400": {
@@ -2159,7 +2159,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserListResponse"
+                            "$ref": "#/definitions/internal_auth.UserListResponse"
                         }
                     }
                 }
@@ -2196,7 +2196,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     },
                     "404": {
@@ -2241,7 +2241,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.AdminUpdateUserRequest"
+                            "$ref": "#/definitions/internal_auth.AdminUpdateUserRequest"
                         }
                     }
                 ],
@@ -2249,7 +2249,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     },
                     "400": {
@@ -2333,7 +2333,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     }
                 }
@@ -2370,116 +2370,20 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
+                            "$ref": "#/definitions/internal_auth.UserResponse"
                         }
                     }
                 }
             }
         },
-        "/vendors/attributes/{id}": {
-            "put": {
-                "description": "Update a comparison attribute",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Update attribute",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Attribute ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update attribute request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.UpdateAttributeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.AttributeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Attribute not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a comparison attribute and all its values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Delete attribute",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Attribute ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Attribute deleted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Attribute not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/categories": {
+        "/v1/kondangan": {
             "get": {
-                "description": "Get all vendor categories for an event",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a paginated list of kondangan records with optional filtering and sorting",
                 "consumes": [
                     "application/json"
                 ],
@@ -2487,29 +2391,87 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "List vendor categories",
+                "summary": "List kondangan records",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
-                        "description": "Event ID (UUID)",
-                        "name": "event_id",
-                        "in": "query",
-                        "required": true
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by relation",
+                        "name": "relation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by side",
+                        "name": "side",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc/desc)",
+                        "name": "sort_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.CategoryListResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a new vendor category for an event",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new kondangan record with the provided details",
                 "consumes": [
                     "application/json"
                 ],
@@ -2517,17 +2479,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "Create a new vendor category",
+                "summary": "Create a new kondangan record",
                 "parameters": [
                     {
-                        "description": "Create category request",
+                        "description": "Kondangan details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/vendor.CreateCategoryRequest"
+                            "$ref": "#/definitions/internal_kondangan.CreateKondanganRequest"
                         }
                     }
                 ],
@@ -2535,215 +2497,80 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/vendor.CategoryResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or validation failed",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     },
-                    "409": {
-                        "description": "Category already exists",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             }
         },
-        "/vendors/categories/{id}": {
+        "/v1/kondangan/relations": {
             "get": {
-                "description": "Get a single vendor category with its attributes and vendors",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan Relations"
                 ],
-                "summary": "Get vendor category by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "List all relation categories",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.CategoryResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update an existing vendor category's name",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Update vendor category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update category request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.UpdateCategoryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.CategoryResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a vendor category and all associated data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Delete vendor category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Category deleted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/categories/{id}/attributes": {
-            "get": {
-                "description": "Get all comparison attributes for a vendor category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "List attributes for category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/vendor.AttributeResponse"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/internal_kondangan.KondanganRelationResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a new comparison attribute for a vendor category",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -2751,24 +2578,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan Relations"
                 ],
-                "summary": "Create attribute for category",
+                "summary": "Create a new relation category",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Create attribute request",
+                        "description": "Relation details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/vendor.CreateAttributeRequest"
+                            "$ref": "#/definitions/internal_kondangan.CreateKondanganRelationRequest"
                         }
                     }
                 ],
@@ -2776,47 +2596,39 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/vendor.AttributeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganRelationResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
             }
         },
-        "/vendors/categories/{id}/select": {
+        "/v1/kondangan/relations/{id}": {
             "delete": {
-                "description": "Remove the selected vendor for a category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan Relations"
                 ],
-                "summary": "Deselect vendor for a category",
+                "summary": "Delete relation category",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Category ID",
+                        "description": "Relation ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2826,72 +2638,20 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.SelectVendorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             }
         },
-        "/vendors/categories/{id}/select/{vendorId}": {
-            "post": {
-                "description": "Mark a vendor as selected for a specific category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Select a vendor for a category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Vendor ID (UUID)",
-                        "name": "vendorId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.SelectVendorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Category or vendor not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/categories/{id}/vendors": {
+        "/v1/kondangan/stats": {
             "get": {
-                "description": "Get all vendors in a category with their attribute values and payments",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get summary statistics for all kondangan records",
                 "consumes": [
                     "application/json"
                 ],
@@ -2899,100 +2659,45 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "List vendors in category",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "Get kondangan statistics",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/vendor.VendorResponse"
-                            }
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
-                    "404": {
-                        "description": "Category not found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new vendor in a category with optional attribute values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Create a new vendor",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Create vendor request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.CreateVendorRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.VendorResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             }
         },
-        "/vendors/overview": {
+        "/v1/kondangan/{id}": {
             "get": {
-                "description": "Get all categories with attributes, vendors, and payments for an event",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a kondangan record by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -3000,146 +2705,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "Get complete vendor overview",
+                "summary": "Get kondangan by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Event ID (UUID)",
-                        "name": "event_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.OverviewResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/payments/{id}": {
-            "put": {
-                "description": "Update an existing payment record",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Update payment record",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Payment ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update payment request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.UpdatePaymentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.PaymentResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Payment not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a payment record by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Delete payment record",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Payment ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Payment deleted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Payment not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/{id}": {
-            "get": {
-                "description": "Get a single vendor with attribute values and payments",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Get vendor by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vendor ID (UUID)",
+                        "description": "Kondangan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3149,22 +2721,42 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.VendorResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
-                        "description": "Vendor not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update an existing vendor's information",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing kondangan record",
                 "consumes": [
                     "application/json"
                 ],
@@ -3172,24 +2764,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "Update vendor",
+                "summary": "Update kondangan record",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Vendor ID (UUID)",
+                        "description": "Kondangan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Update vendor request",
+                        "description": "Update details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/vendor.UpdateVendorRequest"
+                            "$ref": "#/definitions/internal_kondangan.UpdateKondanganRequest"
                         }
                     }
                 ],
@@ -3197,31 +2789,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.VendorResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_kondangan.KondanganResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     },
                     "404": {
-                        "description": "Vendor not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Soft delete a vendor by its ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft delete a kondangan record by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -3229,110 +2838,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vendor"
+                    "Kondangan"
                 ],
-                "summary": "Delete vendor",
+                "summary": "Delete kondangan record",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Vendor ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Vendor deleted",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Vendor not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/{id}/attribute-values": {
-            "put": {
-                "description": "Batch update attribute values for a vendor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Update vendor attribute values",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vendor ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Attribute values",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.UpdateAttributeValuesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Attribute values updated",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Vendor not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/vendors/{id}/payments": {
-            "get": {
-                "description": "Get all payment records for a vendor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "List payments for vendor",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vendor ID (UUID)",
+                        "description": "Kondangan ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3342,76 +2854,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/vendor.PaymentResponse"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     },
                     "404": {
-                        "description": "Vendor not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Add a payment record for a vendor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vendor"
-                ],
-                "summary": "Create a payment record",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vendor ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Create payment request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/vendor.CreatePaymentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/vendor.PaymentResponse"
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     },
-                    "400": {
-                        "description": "Invalid request body",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Vendor not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_base-go_backend_pkg_response.JSON"
                         }
                     }
                 }
@@ -3419,795 +2874,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_base-go_backend_internal_auth.AdminUpdateUserRequest": {
+        "github_com_base-go_backend_pkg_response.JSON": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "minLength": 2
-                },
-                "role_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_in": {
+                "code": {
                     "type": "integer"
                 },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.ChangePasswordRequest": {
-            "type": "object",
-            "required": [
-                "new_password",
-                "old_password"
-            ],
-            "properties": {
-                "new_password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "old_password": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "minLength": 2
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "role_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.GoogleOAuthRequest": {
-            "type": "object",
-            "required": [
-                "id_token"
-            ],
-            "properties": {
-                "id_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.LoginRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.RefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "minLength": 2
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.UpdateProfileRequest": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "minLength": 2
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.UserListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_auth.UserResponse"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_auth.UserResponse": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "email_verified": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "is_oauth": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "oauth_provider": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.CheckInByQRCodeRequest": {
-            "type": "object",
-            "required": [
-                "qr_code"
-            ],
-            "properties": {
-                "qr_code": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.CheckInResponse": {
-            "type": "object",
-            "properties": {
-                "guest": {
-                    "$ref": "#/definitions/github_com_base-go_backend_internal_guest.GuestResponse"
-                },
+                "data": {},
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.CreateGuestCategoryRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "end_time": {
-                    "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                },
-                "start_time": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.CreateGuestRequest": {
-            "type": "object",
-            "required": [
-                "guest_category_id",
-                "name"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "guest_category_id": {
-                    "type": "integer"
-                },
-                "instagram_username": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 2
-                },
-                "note": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string",
-                    "maxLength": 20
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestCategoryListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_guest.GuestCategoryResponse"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestCategoryResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestImportPreviewResponse": {
-            "type": "object",
-            "properties": {
-                "error_count": {
-                    "type": "integer"
-                },
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_guest.GuestImportRow"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "valid_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestImportRow": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                },
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "guest_category_id": {
-                    "type": "integer"
-                },
-                "instagram_username": {
-                    "type": "string"
-                },
-                "is_valid": {
+                "status": {
                     "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_guest.GuestResponse"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.GuestResponse": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                },
-                "check_in_at": {
-                    "type": "string"
-                },
-                "check_out_at": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "guest_category_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "instagram_username": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "qr_code": {
-                    "type": "string"
-                },
-                "status_attending": {
-                    "type": "string"
-                },
-                "status_sent": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.UpdateGuestCategoryRequest": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                },
-                "start_time": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_guest.UpdateGuestRequest": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "guest_category_id": {
-                    "type": "integer"
-                },
-                "instagram_username": {
-                    "type": "string",
-                    "maxLength": 50
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 2
-                },
-                "note": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string",
-                    "maxLength": 20
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.AssignPermissionsToRoleRequest": {
-            "type": "object",
-            "required": [
-                "permission_ids"
-            ],
-            "properties": {
-                "permission_ids": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.AssignRolesToUserRequest": {
-            "type": "object",
-            "required": [
-                "role_ids"
-            ],
-            "properties": {
-                "role_ids": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CheckModuleAccessRequest": {
-            "type": "object",
-            "required": [
-                "action",
-                "module"
-            ],
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "enum": [
-                        "view",
-                        "create",
-                        "edit",
-                        "delete"
-                    ]
-                },
-                "module": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CheckModuleAccessResponse": {
-            "type": "object",
-            "properties": {
-                "has_access": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CheckPermissionRequest": {
-            "type": "object",
-            "required": [
-                "permission"
-            ],
-            "properties": {
-                "permission": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CheckPermissionResponse": {
-            "type": "object",
-            "properties": {
-                "has_permission": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CreatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "module",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "module": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.CreateRoleRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.ModuleAccessResponse": {
-            "type": "object",
-            "properties": {
-                "can_create": {
-                    "type": "boolean"
-                },
-                "can_delete": {
-                    "type": "boolean"
-                },
-                "can_edit": {
-                    "type": "boolean"
-                },
-                "can_view": {
-                    "type": "boolean"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "module_name": {
-                    "type": "string"
-                },
-                "role_id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.PermissionResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "module": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.PermissionsByModuleResponse": {
-            "type": "object",
-            "properties": {
-                "module": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_rbac.PermissionResponse"
-                    }
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.RoleResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_system": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.UpdateModuleAccessRequest": {
-            "type": "object",
-            "required": [
-                "module_name"
-            ],
-            "properties": {
-                "can_create": {
-                    "type": "boolean"
-                },
-                "can_delete": {
-                    "type": "boolean"
-                },
-                "can_edit": {
-                    "type": "boolean"
-                },
-                "can_view": {
-                    "type": "boolean"
-                },
-                "module_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.UpdatePermissionRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "module": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.UpdateRoleRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "github_com_base-go_backend_internal_rbac.UserRoleResponse": {
-            "type": "object",
-            "properties": {
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_base-go_backend_internal_rbac.RoleResponse"
-                    }
-                },
-                "user_email": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "user_name": {
-                    "type": "string"
                 }
             }
         },
@@ -4721,6 +3399,196 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_kondangan.CreateKondanganRelationRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                }
+            }
+        },
+        "internal_kondangan.CreateKondanganRequest": {
+            "type": "object",
+            "required": [
+                "couple_name",
+                "gift_type",
+                "relation_id",
+                "side"
+            ],
+            "properties": {
+                "couple_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "gift_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "gift_type": {
+                    "type": "string",
+                    "enum": [
+                        "Uang",
+                        "Kado"
+                    ]
+                },
+                "nominal": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "relation_id": {
+                    "type": "integer"
+                },
+                "side": {
+                    "type": "string",
+                    "enum": [
+                        "Pria",
+                        "Wanita"
+                    ]
+                }
+            }
+        },
+        "internal_kondangan.KondanganListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_kondangan.KondanganResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_kondangan.KondanganRelationResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_kondangan.KondanganResponse": {
+            "type": "object",
+            "properties": {
+                "couple_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "gift_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nominal": {
+                    "type": "number"
+                },
+                "relation": {
+                    "type": "string"
+                },
+                "relation_id": {
+                    "type": "integer"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_kondangan.KondanganStatsResponse": {
+            "type": "object",
+            "properties": {
+                "max_kado": {
+                    "type": "number"
+                },
+                "max_uang": {
+                    "type": "number"
+                },
+                "rata_rata": {
+                    "type": "number"
+                },
+                "total_kado": {
+                    "type": "integer"
+                },
+                "total_kondangan": {
+                    "type": "integer"
+                },
+                "total_pengeluaran": {
+                    "type": "number"
+                },
+                "total_uang": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_kondangan.UpdateKondanganRequest": {
+            "type": "object",
+            "properties": {
+                "couple_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "gift_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "gift_type": {
+                    "type": "string",
+                    "enum": [
+                        "Uang",
+                        "Kado"
+                    ]
+                },
+                "nominal": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "relation_id": {
+                    "type": "integer"
+                },
+                "side": {
+                    "type": "string",
+                    "enum": [
+                        "Pria",
+                        "Wanita"
+                    ]
+                }
+            }
+        },
         "internal_rbac.AssignPermissionsToRoleRequest": {
             "type": "object",
             "required": [
@@ -5002,387 +3870,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "vendor.AttributeResponse": {
-            "type": "object",
-            "properties": {
-                "category_id": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sort_order": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.AttributeValueResponse": {
-            "type": "object",
-            "properties": {
-                "attribute_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "value": {
-                    "type": "string"
-                },
-                "vendor_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.CategoryListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.CategoryResponse"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "vendor.CategoryResponse": {
-            "type": "object",
-            "properties": {
-                "attributes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.AttributeResponse"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "event_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "selected_vendor_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "vendors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.VendorResponse"
-                    }
-                }
-            }
-        },
-        "vendor.CreateAttributeRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "sort_order": {
-                    "type": "integer"
-                }
-            }
-        },
-        "vendor.CreateCategoryRequest": {
-            "type": "object",
-            "required": [
-                "event_id",
-                "name"
-            ],
-            "properties": {
-                "event_id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "vendor.CreatePaymentRequest": {
-            "type": "object",
-            "required": [
-                "amount",
-                "date"
-            ],
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.CreateVendorRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "attribute_values": {
-                    "description": "attributeId -\u003e value",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "contact_person": {
-                    "type": "string"
-                },
-                "contract_amount": {
-                    "type": "number"
-                },
-                "instagram": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 1
-                },
-                "note": {
-                    "type": "string"
-                },
-                "payment_status": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "reference_price": {
-                    "type": "number"
-                }
-            }
-        },
-        "vendor.OverviewResponse": {
-            "type": "object",
-            "properties": {
-                "categories": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.CategoryResponse"
-                    }
-                }
-            }
-        },
-        "vendor.PaymentResponse": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "vendor_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.SelectVendorResponse": {
-            "type": "object",
-            "properties": {
-                "category_id": {
-                    "type": "integer"
-                },
-                "selected_vendor_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.UpdateAttributeRequest": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "sort_order": {
-                    "type": "integer"
-                }
-            }
-        },
-        "vendor.UpdateAttributeValuesRequest": {
-            "type": "object",
-            "required": [
-                "values"
-            ],
-            "properties": {
-                "values": {
-                    "description": "attributeId -\u003e value",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "vendor.UpdateCategoryRequest": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 2
-                }
-            }
-        },
-        "vendor.UpdatePaymentRequest": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                }
-            }
-        },
-        "vendor.UpdateVendorRequest": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "contact_person": {
-                    "type": "string"
-                },
-                "contract_amount": {
-                    "type": "number"
-                },
-                "instagram": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "payment_status": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "reference_price": {
-                    "type": "number"
-                }
-            }
-        },
-        "vendor.VendorResponse": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "attribute_values": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.AttributeValueResponse"
-                    }
-                },
-                "category_id": {
-                    "type": "integer"
-                },
-                "contact_person": {
-                    "type": "string"
-                },
-                "contract_amount": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "instagram": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "payment_status": {
-                    "type": "string"
-                },
-                "payments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vendor.PaymentResponse"
-                    }
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "reference_price": {
-                    "type": "number"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
         }
     },
     "securityDefinitions": {
@@ -5411,4 +3898,3 @@ var SwaggerInfo = &swag.Spec{
 func init() {
 	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
 }
-

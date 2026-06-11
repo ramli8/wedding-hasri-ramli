@@ -1,534 +1,14 @@
 basePath: /v1
 definitions:
-  github_com_base-go_backend_internal_auth.AdminUpdateUserRequest:
+  github_com_base-go_backend_pkg_response.JSON:
     properties:
-      avatar_url:
-        type: string
-      email:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        minLength: 2
-        type: string
-      role_ids:
-        items:
-          type: integer
-        type: array
-    type: object
-  github_com_base-go_backend_internal_auth.AuthResponse:
-    properties:
-      access_token:
-        type: string
-      expires_in:
+      code:
         type: integer
-      refresh_token:
-        type: string
-      user:
-        $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
-    type: object
-  github_com_base-go_backend_internal_auth.ChangePasswordRequest:
-    properties:
-      new_password:
-        minLength: 8
-        type: string
-      old_password:
-        type: string
-    required:
-    - new_password
-    - old_password
-    type: object
-  github_com_base-go_backend_internal_auth.CreateUserRequest:
-    properties:
-      email:
-        type: string
-      name:
-        minLength: 2
-        type: string
-      password:
-        minLength: 8
-        type: string
-      role_ids:
-        items:
-          type: integer
-        type: array
-    required:
-    - email
-    - name
-    - password
-    type: object
-  github_com_base-go_backend_internal_auth.GoogleOAuthRequest:
-    properties:
-      id_token:
-        type: string
-    required:
-    - id_token
-    type: object
-  github_com_base-go_backend_internal_auth.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  github_com_base-go_backend_internal_auth.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  github_com_base-go_backend_internal_auth.RegisterRequest:
-    properties:
-      email:
-        type: string
-      name:
-        minLength: 2
-        type: string
-      password:
-        minLength: 8
-        type: string
-    required:
-    - email
-    - name
-    - password
-    type: object
-  github_com_base-go_backend_internal_auth.UpdateProfileRequest:
-    properties:
-      avatar_url:
-        type: string
-      name:
-        minLength: 2
-        type: string
-    type: object
-  github_com_base-go_backend_internal_auth.UserListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  github_com_base-go_backend_internal_auth.UserResponse:
-    properties:
-      avatar_url:
-        type: string
-      created_at:
-        type: string
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      id:
-        type: string
-      is_active:
-        type: boolean
-      is_oauth:
-        type: boolean
-      name:
-        type: string
-      oauth_provider:
-        type: string
-      permissions:
-        items:
-          type: string
-        type: array
-      roles:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_base-go_backend_internal_guest.CheckInByQRCodeRequest:
-    properties:
-      qr_code:
-        type: string
-    required:
-    - qr_code
-    type: object
-  github_com_base-go_backend_internal_guest.CheckInResponse:
-    properties:
-      guest:
-        $ref: '#/definitions/github_com_base-go_backend_internal_guest.GuestResponse'
+      data: {}
       message:
         type: string
-    type: object
-  github_com_base-go_backend_internal_guest.CreateGuestCategoryRequest:
-    properties:
-      end_time:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      start_time:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_base-go_backend_internal_guest.CreateGuestRequest:
-    properties:
-      address:
-        type: string
-      guest_category_id:
-        type: integer
-      instagram_username:
-        maxLength: 50
-        type: string
-      name:
-        maxLength: 255
-        minLength: 2
-        type: string
-      note:
-        type: string
-      phone_number:
-        maxLength: 20
-        type: string
-    required:
-    - guest_category_id
-    - name
-    type: object
-  github_com_base-go_backend_internal_guest.GuestCategoryListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_guest.GuestCategoryResponse'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  github_com_base-go_backend_internal_guest.GuestCategoryResponse:
-    properties:
-      created_at:
-        type: string
-      end_time:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      start_time:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_guest.GuestImportPreviewResponse:
-    properties:
-      error_count:
-        type: integer
-      items:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_guest.GuestImportRow'
-        type: array
-      total:
-        type: integer
-      valid_count:
-        type: integer
-    type: object
-  github_com_base-go_backend_internal_guest.GuestImportRow:
-    properties:
-      address:
-        type: string
-      category_name:
-        type: string
-      errors:
-        items:
-          type: string
-        type: array
-      guest_category_id:
-        type: integer
-      instagram_username:
-        type: string
-      is_valid:
+      status:
         type: boolean
-      name:
-        type: string
-      note:
-        type: string
-      phone_number:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_guest.GuestListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_guest.GuestResponse'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  github_com_base-go_backend_internal_guest.GuestResponse:
-    properties:
-      address:
-        type: string
-      category_name:
-        type: string
-      check_in_at:
-        type: string
-      check_out_at:
-        type: string
-      created_at:
-        type: string
-      guest_category_id:
-        type: integer
-      id:
-        type: string
-      instagram_username:
-        type: string
-      name:
-        type: string
-      note:
-        type: string
-      phone_number:
-        type: string
-      qr_code:
-        type: string
-      status_attending:
-        type: string
-      status_sent:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_guest.UpdateGuestCategoryRequest:
-    properties:
-      end_time:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-      start_time:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_guest.UpdateGuestRequest:
-    properties:
-      address:
-        type: string
-      guest_category_id:
-        type: integer
-      instagram_username:
-        maxLength: 50
-        type: string
-      name:
-        maxLength: 255
-        minLength: 2
-        type: string
-      note:
-        type: string
-      phone_number:
-        maxLength: 20
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.AssignPermissionsToRoleRequest:
-    properties:
-      permission_ids:
-        items:
-          type: integer
-        minItems: 1
-        type: array
-    required:
-    - permission_ids
-    type: object
-  github_com_base-go_backend_internal_rbac.AssignRolesToUserRequest:
-    properties:
-      role_ids:
-        items:
-          type: integer
-        minItems: 1
-        type: array
-    required:
-    - role_ids
-    type: object
-  github_com_base-go_backend_internal_rbac.CheckModuleAccessRequest:
-    properties:
-      action:
-        enum:
-        - view
-        - create
-        - edit
-        - delete
-        type: string
-      module:
-        type: string
-    required:
-    - action
-    - module
-    type: object
-  github_com_base-go_backend_internal_rbac.CheckModuleAccessResponse:
-    properties:
-      has_access:
-        type: boolean
-    type: object
-  github_com_base-go_backend_internal_rbac.CheckPermissionRequest:
-    properties:
-      permission:
-        type: string
-    required:
-    - permission
-    type: object
-  github_com_base-go_backend_internal_rbac.CheckPermissionResponse:
-    properties:
-      has_permission:
-        type: boolean
-    type: object
-  github_com_base-go_backend_internal_rbac.CreatePermissionRequest:
-    properties:
-      description:
-        type: string
-      module:
-        maxLength: 100
-        minLength: 2
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    required:
-    - module
-    - name
-    type: object
-  github_com_base-go_backend_internal_rbac.CreateRoleRequest:
-    properties:
-      description:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    required:
-    - name
-    type: object
-  github_com_base-go_backend_internal_rbac.ModuleAccessResponse:
-    properties:
-      can_create:
-        type: boolean
-      can_delete:
-        type: boolean
-      can_edit:
-        type: boolean
-      can_view:
-        type: boolean
-      created_at:
-        type: string
-      id:
-        type: integer
-      module_name:
-        type: string
-      role_id:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.PermissionResponse:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      module:
-        type: string
-      name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.PermissionsByModuleResponse:
-    properties:
-      module:
-        type: string
-      permissions:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_rbac.PermissionResponse'
-        type: array
-    type: object
-  github_com_base-go_backend_internal_rbac.RoleResponse:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      is_system:
-        type: boolean
-      name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.UpdateModuleAccessRequest:
-    properties:
-      can_create:
-        type: boolean
-      can_delete:
-        type: boolean
-      can_edit:
-        type: boolean
-      can_view:
-        type: boolean
-      module_name:
-        type: string
-    required:
-    - module_name
-    type: object
-  github_com_base-go_backend_internal_rbac.UpdatePermissionRequest:
-    properties:
-      description:
-        type: string
-      module:
-        maxLength: 100
-        minLength: 2
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.UpdateRoleRequest:
-    properties:
-      description:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    type: object
-  github_com_base-go_backend_internal_rbac.UserRoleResponse:
-    properties:
-      roles:
-        items:
-          $ref: '#/definitions/github_com_base-go_backend_internal_rbac.RoleResponse'
-        type: array
-      user_email:
-        type: string
-      user_id:
-        type: string
-      user_name:
-        type: string
     type: object
   internal_auth.AdminUpdateUserRequest:
     properties:
@@ -871,6 +351,136 @@ definitions:
         maxLength: 20
         type: string
     type: object
+  internal_kondangan.CreateKondanganRelationRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  internal_kondangan.CreateKondanganRequest:
+    properties:
+      couple_name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      gift_name:
+        maxLength: 255
+        type: string
+      gift_type:
+        enum:
+        - Uang
+        - Kado
+        type: string
+      nominal:
+        minimum: 0
+        type: number
+      relation_id:
+        type: integer
+      side:
+        enum:
+        - Pria
+        - Wanita
+        type: string
+    required:
+    - couple_name
+    - gift_type
+    - relation_id
+    - side
+    type: object
+  internal_kondangan.KondanganListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_kondangan.KondanganResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  internal_kondangan.KondanganRelationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_kondangan.KondanganResponse:
+    properties:
+      couple_name:
+        type: string
+      created_at:
+        type: string
+      gift_name:
+        type: string
+      gift_type:
+        type: string
+      id:
+        type: string
+      nominal:
+        type: number
+      relation:
+        type: string
+      relation_id:
+        type: integer
+      side:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_kondangan.KondanganStatsResponse:
+    properties:
+      max_kado:
+        type: number
+      max_uang:
+        type: number
+      rata_rata:
+        type: number
+      total_kado:
+        type: integer
+      total_kondangan:
+        type: integer
+      total_pengeluaran:
+        type: number
+      total_uang:
+        type: integer
+    type: object
+  internal_kondangan.UpdateKondanganRequest:
+    properties:
+      couple_name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      gift_name:
+        maxLength: 255
+        type: string
+      gift_type:
+        enum:
+        - Uang
+        - Kado
+        type: string
+      nominal:
+        minimum: 0
+        type: number
+      relation_id:
+        type: integer
+      side:
+        enum:
+        - Pria
+        - Wanita
+        type: string
+    type: object
   internal_rbac.AssignPermissionsToRoleRequest:
     properties:
       permission_ids:
@@ -1060,259 +670,6 @@ definitions:
       user_name:
         type: string
     type: object
-  vendor.AttributeResponse:
-    properties:
-      category_id:
-        type: integer
-      created_at:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      sort_order:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  vendor.AttributeValueResponse:
-    properties:
-      attribute_id:
-        type: integer
-      id:
-        type: integer
-      value:
-        type: string
-      vendor_id:
-        type: string
-    type: object
-  vendor.CategoryListResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/vendor.CategoryResponse'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  vendor.CategoryResponse:
-    properties:
-      attributes:
-        items:
-          $ref: '#/definitions/vendor.AttributeResponse'
-        type: array
-      created_at:
-        type: string
-      event_id:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      selected_vendor_id:
-        type: string
-      updated_at:
-        type: string
-      vendors:
-        items:
-          $ref: '#/definitions/vendor.VendorResponse'
-        type: array
-    type: object
-  vendor.CreateAttributeRequest:
-    properties:
-      name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      sort_order:
-        type: integer
-    required:
-    - name
-    type: object
-  vendor.CreateCategoryRequest:
-    properties:
-      event_id:
-        type: string
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    required:
-    - event_id
-    - name
-    type: object
-  vendor.CreatePaymentRequest:
-    properties:
-      amount:
-        type: number
-      date:
-        type: string
-      note:
-        type: string
-    required:
-    - amount
-    - date
-    type: object
-  vendor.CreateVendorRequest:
-    properties:
-      address:
-        type: string
-      attribute_values:
-        additionalProperties:
-          type: string
-        description: attributeId -> value
-        type: object
-      contact_person:
-        type: string
-      contract_amount:
-        type: number
-      instagram:
-        type: string
-      name:
-        maxLength: 255
-        minLength: 1
-        type: string
-      note:
-        type: string
-      payment_status:
-        type: string
-      phone_number:
-        type: string
-      reference_price:
-        type: number
-    required:
-    - name
-    type: object
-  vendor.OverviewResponse:
-    properties:
-      categories:
-        items:
-          $ref: '#/definitions/vendor.CategoryResponse'
-        type: array
-    type: object
-  vendor.PaymentResponse:
-    properties:
-      amount:
-        type: number
-      created_at:
-        type: string
-      date:
-        type: string
-      id:
-        type: integer
-      note:
-        type: string
-      updated_at:
-        type: string
-      vendor_id:
-        type: string
-    type: object
-  vendor.SelectVendorResponse:
-    properties:
-      category_id:
-        type: integer
-      selected_vendor_id:
-        type: string
-    type: object
-  vendor.UpdateAttributeRequest:
-    properties:
-      name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      sort_order:
-        type: integer
-    type: object
-  vendor.UpdateAttributeValuesRequest:
-    properties:
-      values:
-        additionalProperties:
-          type: string
-        description: attributeId -> value
-        type: object
-    required:
-    - values
-    type: object
-  vendor.UpdateCategoryRequest:
-    properties:
-      name:
-        maxLength: 100
-        minLength: 2
-        type: string
-    type: object
-  vendor.UpdatePaymentRequest:
-    properties:
-      amount:
-        type: number
-      date:
-        type: string
-      note:
-        type: string
-    type: object
-  vendor.UpdateVendorRequest:
-    properties:
-      address:
-        type: string
-      contact_person:
-        type: string
-      contract_amount:
-        type: number
-      instagram:
-        type: string
-      name:
-        type: string
-      note:
-        type: string
-      payment_status:
-        type: string
-      phone_number:
-        type: string
-      reference_price:
-        type: number
-    type: object
-  vendor.VendorResponse:
-    properties:
-      address:
-        type: string
-      attribute_values:
-        items:
-          $ref: '#/definitions/vendor.AttributeValueResponse'
-        type: array
-      category_id:
-        type: integer
-      contact_person:
-        type: string
-      contract_amount:
-        type: number
-      created_at:
-        type: string
-      id:
-        type: string
-      instagram:
-        type: string
-      name:
-        type: string
-      note:
-        type: string
-      payment_status:
-        type: string
-      payments:
-        items:
-          $ref: '#/definitions/vendor.PaymentResponse'
-        type: array
-      phone_number:
-        type: string
-      reference_price:
-        type: number
-      updated_at:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact:
@@ -1338,7 +695,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.ChangePasswordRequest'
+          $ref: '#/definitions/internal_auth.ChangePasswordRequest'
       produces:
       - application/json
       responses:
@@ -1370,14 +727,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.LoginRequest'
+          $ref: '#/definitions/internal_auth.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.AuthResponse'
+            $ref: '#/definitions/internal_auth.AuthResponse'
         "400":
           description: Invalid request body
           schema:
@@ -1429,14 +786,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.GoogleOAuthRequest'
+          $ref: '#/definitions/internal_auth.GoogleOAuthRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.AuthResponse'
+            $ref: '#/definitions/internal_auth.AuthResponse'
         "400":
           description: Invalid request body
           schema:
@@ -1463,7 +820,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1485,14 +842,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.UpdateProfileRequest'
+          $ref: '#/definitions/internal_auth.UpdateProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
         "400":
           description: Invalid request body
           schema:
@@ -1521,14 +878,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.RefreshTokenRequest'
+          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.AuthResponse'
+            $ref: '#/definitions/internal_auth.AuthResponse'
         "400":
           description: Invalid request body
           schema:
@@ -1555,14 +912,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.RegisterRequest'
+          $ref: '#/definitions/internal_auth.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.AuthResponse'
+            $ref: '#/definitions/internal_auth.AuthResponse'
         "400":
           description: Invalid request body
           schema:
@@ -2627,7 +1984,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserListResponse'
+            $ref: '#/definitions/internal_auth.UserListResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2655,14 +2012,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.CreateUserRequest'
+          $ref: '#/definitions/internal_auth.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
         "400":
           description: Invalid request body
           schema:
@@ -2715,7 +2072,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
         "404":
           description: User not found
           schema:
@@ -2742,14 +2099,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_base-go_backend_internal_auth.AdminUpdateUserRequest'
+          $ref: '#/definitions/internal_auth.AdminUpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
         "400":
           description: Invalid request body
           schema:
@@ -2778,7 +2135,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
       security:
       - BearerAuth: []
       summary: Restore deleted user
@@ -2801,7 +2158,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserResponse'
+            $ref: '#/definitions/internal_auth.UserResponse'
       security:
       - BearerAuth: []
       summary: Toggle user status
@@ -2833,624 +2190,113 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_base-go_backend_internal_auth.UserListResponse'
+            $ref: '#/definitions/internal_auth.UserListResponse'
       security:
       - BearerAuth: []
       summary: List deleted users
       tags:
       - User Management
-  /vendors/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Soft delete a vendor by its ID
-      parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Vendor deleted
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete vendor
-      tags:
-      - Vendor
+  /v1/kondangan:
     get:
       consumes:
       - application/json
-      description: Get a single vendor with attribute values and payments
+      description: Get a paginated list of kondangan records with optional filtering
+        and sorting
       parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.VendorResponse'
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get vendor by ID
-      tags:
-      - Vendor
-    put:
-      consumes:
-      - application/json
-      description: Update an existing vendor's information
-      parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Update vendor request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.UpdateVendorRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.VendorResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update vendor
-      tags:
-      - Vendor
-  /vendors/{id}/attribute-values:
-    put:
-      consumes:
-      - application/json
-      description: Batch update attribute values for a vendor
-      parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Attribute values
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.UpdateAttributeValuesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Attribute values updated
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update vendor attribute values
-      tags:
-      - Vendor
-  /vendors/{id}/payments:
-    get:
-      consumes:
-      - application/json
-      description: Get all payment records for a vendor
-      parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/vendor.PaymentResponse'
-            type: array
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: List payments for vendor
-      tags:
-      - Vendor
-    post:
-      consumes:
-      - application/json
-      description: Add a payment record for a vendor
-      parameters:
-      - description: Vendor ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Create payment request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.CreatePaymentRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/vendor.PaymentResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a payment record
-      tags:
-      - Vendor
-  /vendors/attributes/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a comparison attribute and all its values
-      parameters:
-      - description: Attribute ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Attribute deleted
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Attribute not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete attribute
-      tags:
-      - Vendor
-    put:
-      consumes:
-      - application/json
-      description: Update a comparison attribute
-      parameters:
-      - description: Attribute ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Update attribute request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.UpdateAttributeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.AttributeResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Attribute not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update attribute
-      tags:
-      - Vendor
-  /vendors/categories:
-    get:
-      consumes:
-      - application/json
-      description: Get all vendor categories for an event
-      parameters:
-      - description: Event ID (UUID)
+      - description: Page number
         in: query
-        name: event_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.CategoryListResponse'
-      summary: List vendor categories
-      tags:
-      - Vendor
-    post:
-      consumes:
-      - application/json
-      description: Create a new vendor category for an event
-      parameters:
-      - description: Create category request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.CreateCategoryRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/vendor.CategoryResponse'
-        "400":
-          description: Invalid request body or validation failed
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "409":
-          description: Category already exists
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new vendor category
-      tags:
-      - Vendor
-  /vendors/categories/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a vendor category and all associated data
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
+        name: page
         type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Category deleted
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete vendor category
-      tags:
-      - Vendor
-    get:
-      consumes:
-      - application/json
-      description: Get a single vendor category with its attributes and vendors
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.CategoryResponse'
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get vendor category by ID
-      tags:
-      - Vendor
-    put:
-      consumes:
-      - application/json
-      description: Update an existing vendor category's name
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Update category request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.UpdateCategoryRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.CategoryResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update vendor category
-      tags:
-      - Vendor
-  /vendors/categories/{id}/attributes:
-    get:
-      consumes:
-      - application/json
-      description: Get all comparison attributes for a vendor category
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/vendor.AttributeResponse'
-            type: array
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: List attributes for category
-      tags:
-      - Vendor
-    post:
-      consumes:
-      - application/json
-      description: Create a new comparison attribute for a vendor category
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Create attribute request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.CreateAttributeRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/vendor.AttributeResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create attribute for category
-      tags:
-      - Vendor
-  /vendors/categories/{id}/select:
-    delete:
-      consumes:
-      - application/json
-      description: Remove the selected vendor for a category
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.SelectVendorResponse'
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Deselect vendor for a category
-      tags:
-      - Vendor
-  /vendors/categories/{id}/select/{vendorId}:
-    post:
-      consumes:
-      - application/json
-      description: Mark a vendor as selected for a specific category
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Vendor ID (UUID)
-        in: path
-        name: vendorId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vendor.SelectVendorResponse'
-        "404":
-          description: Category or vendor not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Select a vendor for a category
-      tags:
-      - Vendor
-  /vendors/categories/{id}/vendors:
-    get:
-      consumes:
-      - application/json
-      description: Get all vendors in a category with their attribute values and payments
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/vendor.VendorResponse'
-            type: array
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: List vendors in category
-      tags:
-      - Vendor
-    post:
-      consumes:
-      - application/json
-      description: Create a new vendor in a category with optional attribute values
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Create vendor request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.CreateVendorRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/vendor.VendorResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Category not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new vendor
-      tags:
-      - Vendor
-  /vendors/overview:
-    get:
-      consumes:
-      - application/json
-      description: Get all categories with attributes, vendors, and payments for an
-        event
-      parameters:
-      - description: Event ID (UUID)
+      - description: Page size
         in: query
-        name: event_id
+        name: page_size
+        type: integer
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      - description: Filter by relation
+        in: query
+        name: relation
+        type: string
+      - description: Filter by side
+        in: query
+        name: side
+        type: string
+      - description: Sort field
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort direction (asc/desc)
+        in: query
+        name: sort_dir
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganListResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: List kondangan records
+      tags:
+      - Kondangan
+    post:
+      consumes:
+      - application/json
+      description: Create a new kondangan record with the provided details
+      parameters:
+      - description: Kondangan details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_kondangan.CreateKondanganRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Create a new kondangan record
+      tags:
+      - Kondangan
+  /v1/kondangan/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a kondangan record by its ID
+      parameters:
+      - description: Kondangan ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
@@ -3459,77 +2305,192 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/vendor.OverviewResponse'
-      summary: Get complete vendor overview
-      tags:
-      - Vendor
-  /vendors/payments/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a payment record by its ID
-      parameters:
-      - description: Payment ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Payment deleted
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
         "404":
-          description: Payment not found
+          description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete payment record
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Delete kondangan record
       tags:
-      - Vendor
-    put:
+      - Kondangan
+    get:
       consumes:
       - application/json
-      description: Update an existing payment record
+      description: Get a kondangan record by its ID
       parameters:
-      - description: Payment ID
+      - description: Kondangan ID
         in: path
         name: id
         required: true
-        type: integer
-      - description: Update payment request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/vendor.UpdatePaymentRequest'
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/vendor.PaymentResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganResponse'
+              type: object
         "404":
-          description: Payment not found
+          description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update payment record
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Get kondangan by ID
       tags:
-      - Vendor
+      - Kondangan
+    put:
+      consumes:
+      - application/json
+      description: Update an existing kondangan record
+      parameters:
+      - description: Kondangan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_kondangan.UpdateKondanganRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Update kondangan record
+      tags:
+      - Kondangan
+  /v1/kondangan/relations:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/internal_kondangan.KondanganRelationResponse'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: List all relation categories
+      tags:
+      - Kondangan Relations
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Relation details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_kondangan.CreateKondanganRelationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganRelationResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new relation category
+      tags:
+      - Kondangan Relations
+  /v1/kondangan/relations/{id}:
+    delete:
+      parameters:
+      - description: Relation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Delete relation category
+      tags:
+      - Kondangan Relations
+  /v1/kondangan/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get summary statistics for all kondangan records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_kondangan.KondanganStatsResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_base-go_backend_pkg_response.JSON'
+      security:
+      - BearerAuth: []
+      summary: Get kondangan statistics
+      tags:
+      - Kondangan
 securityDefinitions:
   BearerAuth:
     in: header

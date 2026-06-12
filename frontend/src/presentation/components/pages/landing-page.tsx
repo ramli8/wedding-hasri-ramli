@@ -458,7 +458,7 @@ function DashboardSection() {
               A clean, intuitive dashboard puts everything at your fingertips. 
               Manage guests, track attendance, and monitor your wedding data — all from one place.
             </p>
-            <Link href={getRoute('/home')}>
+            <Link href={getRoute('/admin')}>
               <button
                 className="inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-medium text-white transition-colors"
                 style={{

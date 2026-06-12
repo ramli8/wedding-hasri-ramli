@@ -30,7 +30,7 @@ interface SidebarProps {
 const menuItems: SidebarMenuItem[] = [
   {
     label: "Beranda",
-    href: "/home",
+    href: "/admin",
     icon: Gauge,
   },
   {
@@ -56,12 +56,7 @@ const menuItems: SidebarMenuItem[] = [
         icon: UserRound,
         permission: "guests.read",
       },
-      {
-        label: "Kategori",
-        href: "/admin/guest-categories",
-        icon: Tags,
-        permission: "guest_categories.read",
-      },
+
     ],
   },
   {

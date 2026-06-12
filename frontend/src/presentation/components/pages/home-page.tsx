@@ -132,12 +132,7 @@ export function HomePage() {
       href: '/admin/guest-checkin',
       icon: ScanQrCode,
     },
-    {
-      title: 'Kategori Tamu',
-      description: 'Kelola kategori sesi',
-      href: '/admin/guest-categories',
-      icon: Gift,
-    },
+
   ]
 
   return (

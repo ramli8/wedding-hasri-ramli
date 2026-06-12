@@ -94,6 +94,7 @@ export function useGuests(params: GuestListParams = {}) {
     queryKey: guestKeys.guestList(params),
     queryFn: () => guestService.listGuests(params),
     staleTime: 30000,
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -105,6 +106,7 @@ export function useDeletedGuests(params: GuestListParams = {}) {
     queryKey: guestKeys.guestDeletedList(params),
     queryFn: () => guestService.listDeletedGuests(params),
     staleTime: 30000,
+    placeholderData: (prev) => prev,
   });
 }
 

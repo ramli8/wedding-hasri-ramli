@@ -9,21 +9,25 @@ import { Button } from '@/src/presentation/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/presentation/components/ui/card';
 import { Badge } from '@/src/presentation/components/ui/badge';
 import { Input } from '@/src/presentation/components/ui/input';
-import { Loader2, ScanQrCode, CameraOff, CheckCircle2, XCircle, User, Clock, AlertTriangle, Power } from 'lucide-react';
+import { Loader2, ScanQrCode, CameraOff, CheckCircle2, XCircle, User, Clock, AlertTriangle, Power, RefreshCcw } from 'lucide-react';
 import { useCheckInGuest } from '@/src/application/hooks/use-guest-query';
-import { Guest } from '@/src/domain/services/guest.service';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Guest, guestService } from '@/src/domain/services/guest.service';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 type ViewMode = 'idle' | 'scanner' | 'result';
 type ResultStatus = 'success' | 'error' | 'warning';
 
 async function stopSafely(scanner: Html5Qrcode | null) {
     if (!scanner) return;
-    try { await scanner.stop(); } catch { /* already stopped - ok */ }
+    try {
+        if (scanner.isScanning) {
+            await scanner.stop();
+        }
+    } catch { /* already stopped - ok */ }
 }
 
 export default function GuestCheckInPage() {
@@ -38,7 +42,7 @@ export default function GuestCheckInPage() {
     const [checkedInGuest, setCheckedInGuest] = useState<Guest | null>(null);
     
     const [isFullscreen, setIsFullscreen] = useState(false);
-
+    const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const mountedRef = useRef(true);
     const onScanRef = useRef<((code: string) => void) | null>(null);
@@ -46,7 +50,7 @@ export default function GuestCheckInPage() {
 
     const checkInMutation = useCheckInGuest();
 
-    const startScanner = async () => {
+    const startScanner = async (mode: "environment" | "user" = facingMode) => {
         if (!scannerRef.current) return;
 
         setCameraError('');
@@ -59,19 +63,22 @@ export default function GuestCheckInPage() {
 
             try {
                 await scannerRef.current.start(
-                    { facingMode: "environment" },
-                    { fps: 15, qrbox: { width: 250, height: 250 } },
+                    { facingMode: mode },
+                    { fps: 30 },
                     onScanSuccess,
                     () => {}
                 );
+                if (mountedRef.current) setFacingMode(mode);
             } catch (fallbackError) {
-                // Fallback to front camera (user) for laptops/devices without rear camera
+                // Fallback to the other camera
+                const fallbackMode = mode === "environment" ? "user" : "environment";
                 await scannerRef.current.start(
-                    { facingMode: "user" },
-                    { fps: 15, qrbox: { width: 250, height: 250 } },
+                    { facingMode: fallbackMode },
+                    { fps: 30 },
                     onScanSuccess,
                     () => {}
                 );
+                if (mountedRef.current) setFacingMode(fallbackMode);
             }
 
             if (mountedRef.current) {
@@ -84,6 +91,8 @@ export default function GuestCheckInPage() {
         }
     };
 
+    // Toggling dynamically removed to avoid html5-qrcode internal bugs. Camera is now chosen beforehand.
+
     const handleCheckInRequest = (code: string) => {
         checkInMutation.mutate(code, {
             onSuccess: async (data) => {
@@ -92,9 +101,8 @@ export default function GuestCheckInPage() {
                 setResultStatus('success');
                 setResultMessage('Terima kasih, kehadiran Anda telah dicatat.');
                 setViewMode('result');
-                toast.success(`Check-in berhasil: ${data.guest.name}`);
             },
-            onError: async (err: any) => {
+            onError: async (err: any, variables: string) => {
                 if (!mountedRef.current) return;
                 let message = err.response?.data?.error || err.message || 'Gagal melakukan check-in';
                 
@@ -102,37 +110,49 @@ export default function GuestCheckInPage() {
                 
                 if (isAlreadyCheckedIn) {
                     message = 'Tamu ini sudah melakukan check-in sebelumnya.';
+                    try {
+                        const searchRes = await guestService.listGuests({ search: variables });
+                        if (searchRes.items && searchRes.items.length > 0) {
+                            setCheckedInGuest(searchRes.items[0]);
+                        } else {
+                            setCheckedInGuest(null);
+                        }
+                    } catch (e) {
+                        setCheckedInGuest(null);
+                    }
                 } else if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('invalid')) {
                     message = 'Kode QR tidak valid atau tamu tidak ditemukan.';
+                    setCheckedInGuest(null);
+                } else {
+                    setCheckedInGuest(null);
                 }
                 
                 setResultStatus(isAlreadyCheckedIn ? 'warning' : 'error');
                 setResultMessage(message);
-                setCheckedInGuest(null);
                 setViewMode('result');
-                
-                if (isAlreadyCheckedIn) {
-                    toast.warning(message);
-                } else {
-                    toast.error(message);
-                }
             },
         });
     };
 
     useEffect(() => {
-        mountedRef.current = true;
-
-        if (!scannerRef.current) {
-            scannerRef.current = new Html5Qrcode("qr-reader");
-        }
-
         onScanRef.current = (code: string) => {
-            if (code.length !== 6 || checkInMutation.isPending) return;
+            if (!code || checkInMutation.isPending) return;
             // Prevent multiple triggers by checking if we are already transitioning
             if (resultMessage !== '') return;
             handleCheckInRequest(code);
         };
+    });
+
+    useEffect(() => {
+        mountedRef.current = true;
+
+        if (!scannerRef.current) {
+            scannerRef.current = new Html5Qrcode("qr-reader", { 
+                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+                verbose: false
+            });
+        }
 
         return () => {
             mountedRef.current = false;
@@ -140,7 +160,7 @@ export default function GuestCheckInPage() {
                 stopSafely(scannerRef.current);
             }
         };
-    }, [checkInMutation.isPending, resultMessage]);
+    }, []);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -175,6 +195,21 @@ export default function GuestCheckInPage() {
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (viewMode === 'result') {
+            const delay = resultStatus === 'error' ? 5000 : 5000;
+            timer = setTimeout(() => {
+                if (mountedRef.current) {
+                    setCheckedInGuest(null);
+                    setResultMessage('');
+                    setViewMode('scanner');
+                }
+            }, delay);
+        }
+        return () => clearTimeout(timer);
+    }, [viewMode, resultStatus]);
+
     const handleScanAgain = () => {
         setCheckedInGuest(null);
         setResultMessage('');
@@ -186,195 +221,169 @@ export default function GuestCheckInPage() {
     return (
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
-                <MainLayout>
-                    <div 
-                        ref={containerRef} 
-                        className={`transition-all duration-300 fixed inset-0 z-[100] flex items-center justify-center p-0 overflow-hidden bg-background`}
-                    >
-                        {/* Background Image always shown */}
-                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80')] bg-cover bg-center z-0" />
+                <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans transition-colors duration-300">
+                    {/* Sticky Mobile Header */}
+                    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
+                        <Link 
+                            href="/admin"
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </Link>
+                        <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap">
+                            Scan Kehadiran
+                        </h1>
+                        <div className="w-10 shrink-0" />
+                    </div>
 
-                        {/* Floating Controls */}
-                        <div className="absolute top-6 right-6 z-50 flex items-center gap-4">
-                            <Link href="/home" title="Dashboard">
-                                <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-black/30 backdrop-blur-md text-white border-0 ring-1 ring-white/30 hover:bg-black/50 transition-all !shadow-none hover:text-white">
-                                    <Home className="h-6 w-6" />
-                                </Button>
-                            </Link>
-                            {viewMode !== 'idle' && (
-                                <Button variant="ghost" size="icon" onClick={() => {
-                                    setCheckedInGuest(null);
-                                    setResultMessage('');
-                                    setViewMode('idle');
-                                }} className="h-14 w-14 rounded-2xl bg-red-500/20 backdrop-blur-md text-white border-0 ring-1 ring-red-500/50 hover:bg-red-500/40 transition-all !shadow-none hover:text-white" title="Tutup / Mode Standby">
-                                    <Power className="h-6 w-6 text-red-100" />
-                                </Button>
-                            )}
-                        </div>
+                    <div className="flex-1 flex flex-col px-6 pb-24" ref={containerRef}>
+                        {/* IDLE VIEW */}
+                        {viewMode === 'idle' && (
+                            <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6">
+                                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <ScanQrCode className="w-10 h-10 text-primary" />
+                                </div>
+                                <div className="text-center">
+                                    <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Scan QR Tamu</h2>
+                                    <p className="text-[13px] text-muted-foreground leading-snug px-4">
+                                        Arahkan kamera ke kode QR undangan tamu untuk mencatat kehadiran secara otomatis.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                                    <button 
+                                        onClick={() => { setFacingMode('environment'); setViewMode('scanner'); }} 
+                                        className="h-12 w-full bg-primary text-primary-foreground rounded-xl text-[14px] font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+                                    >
+                                        <ScanQrCode className="w-5 h-5" />
+                                        Gunakan Kamera Belakang
+                                    </button>
+                                    <button 
+                                        onClick={() => { setFacingMode('user'); setViewMode('scanner'); }} 
+                                        className="h-12 w-full bg-primary/10 text-primary border border-primary/20 rounded-xl text-[14px] font-bold active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <User className="w-5 h-5" />
+                                        Gunakan Kamera Depan
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
-                        {/* MAIN CONTENT AREA */}
-                        <div className="w-full h-full max-w-none relative z-10 flex flex-col justify-center items-center">
-
-                                    {/* IDLE VIEW */}
-                                    {viewMode === 'idle' && (
-                                        <div className="absolute inset-0 flex flex-col justify-end items-center pb-24 z-20">
-                                            <Button 
-                                                onClick={() => {
-                                                    if (!document.fullscreenElement && containerRef.current?.requestFullscreen) {
-                                                        containerRef.current.requestFullscreen();
-                                                    }
-                                                    setViewMode('scanner');
-                                                }} 
-                                                variant="ghost"
-                                                className="h-20 px-12 text-2xl font-bold rounded-full bg-black/30 backdrop-blur-md text-white border-0 ring-1 ring-white/30 hover:bg-black/50 transition-all !shadow-none hover:text-white"
-                                                size="lg"
-                                            >
-                                                <ScanQrCode className="mr-4 h-8 w-8" />
-                                                Mulai Scan Kehadiran
-                                            </Button>
+                        {/* SCANNER VIEW */}
+                        <div className={viewMode === 'scanner' ? 'w-full flex-1 flex flex-col animate-in fade-in zoom-in-95 duration-300' : 'hidden'}>
+                            <div className={`relative w-full max-w-2xl mx-auto rounded-[32px] overflow-hidden bg-black border border-border/50 shadow-sm flex flex-col items-center justify-center transition-all duration-300 ${!cameraReady ? 'min-h-[300px]' : ''}`}>
+                                <style>{`
+                                    #qr-reader { width: 100% !important; border: none !important; background: transparent !important; }
+                                    #qr-reader video { width: 100% !important; height: auto !important; display: block !important; object-fit: contain !important; }
+                                    #qr-shaded-region { display: none !important; }
+                                `}</style>
+                                {!cameraReady && !cameraError && (
+                                    <div className="absolute inset-0 flex flex-col justify-center items-center z-10 text-white">
+                                        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                                        <span className="text-[13px] font-medium">Membuka kamera...</span>
+                                    </div>
+                                )}
+                                {cameraError && (
+                                    <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6 bg-destructive/10 z-10">
+                                        <CameraOff className="h-10 w-10 text-destructive mb-3" />
+                                        <p className="text-[13px] text-destructive font-medium">{cameraError}</p>
+                                    </div>
+                                )}
+                                <div id="qr-reader" />
+                                
+                                {cameraReady && (
+                                    <div className="absolute inset-0 pointer-events-none z-20">
+                                        <div className="absolute inset-3 md:inset-5">
+                                            <div className="absolute top-0 left-0 w-12 h-12 border-t-[5px] border-l-[5px] border-white/80 rounded-tl-[1.5rem]" />
+                                            <div className="absolute top-0 right-0 w-12 h-12 border-t-[5px] border-r-[5px] border-white/80 rounded-tr-[1.5rem]" />
+                                            <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[5px] border-l-[5px] border-white/80 rounded-bl-[1.5rem]" />
+                                            <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[5px] border-r-[5px] border-white/80 rounded-br-[1.5rem]" />
                                         </div>
-                                    )}
-
-                                    {/* SCANNER VIEW */}
-                                    <div className={viewMode === 'scanner' ? 'flex flex-col items-center justify-center w-full h-full animate-in fade-in zoom-in-95 duration-300' : 'hidden'}>
-                                        <div className={`flex flex-col items-center justify-center w-full h-full bg-transparent p-6`}>
-                                             <div className={`relative w-full mx-auto overflow-hidden !shadow-none max-w-2xl aspect-[4/3] rounded-[3rem] border-0 ring-1 ring-white/30 bg-black/30 backdrop-blur-md`}>
-                                                <style>{`
-                                                    #qr-reader {
-                                                        position: absolute !important;
-                                                        inset: 0 !important;
-                                                        width: 100% !important;
-                                                        height: 100% !important;
-                                                        border: none !important;
-                                                        outline: none !important;
-                                                    }
-                                                    #qr-reader > div {
-                                                        width: 100% !important;
-                                                        height: 100% !important;
-                                                        border: none !important;
-                                                    }
-                                                    #qr-reader video {
-                                                        width: 100% !important;
-                                                        height: 100% !important;
-                                                        object-fit: cover !important;
-                                                    }
-                                                    #qr-reader canvas {
-                                                        display: none !important;
-                                                    }
-                                                    #qr-shaded-region {
-                                                        border: none !important;
-                                                        outline: none !important;
-                                                        box-shadow: none !important;
-                                                        stroke-width: 0 !important;
-                                                    }
-                                                `}</style>
-                                                {!cameraReady && !cameraError && (
-                                                    <div className="absolute inset-0 flex flex-col justify-center items-center z-10">
-                                                        <Loader2 className={`${isFullscreen ? 'h-16 w-16' : 'h-10 w-10'} animate-spin text-white mb-6`} />
-                                                        <span className={`${isFullscreen ? 'text-xl' : 'text-sm'} font-medium text-white/70 animate-pulse`}>Initializing camera...</span>
-                                                    </div>
-                                                )}
-                                                {cameraError && (
-                                                    <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6 bg-destructive/10 z-10">
-                                                        <CameraOff className="h-12 w-12 text-destructive mb-4" />
-                                                        <p className="text-sm text-destructive font-medium mb-4">{cameraError}</p>
-                                                    </div>
-                                                )}
-                                                <div id="qr-reader" />
-                                                
-                                                {/* Custom Viewfinder Overlay - Full Frame */}
-                                                {cameraReady && (
-                                                    <div className="absolute inset-0 pointer-events-none z-20">
-                                                        {/* Corner brackets at the edges of the frame */}
-                                                        <div className="absolute inset-4 md:inset-8">
-                                                            <div className="absolute top-0 left-0 w-12 h-12 md:w-16 md:h-16 border-t-[6px] md:border-t-[8px] border-l-[6px] md:border-l-[8px] border-white/80 rounded-tl-3xl" />
-                                                            <div className="absolute top-0 right-0 w-12 h-12 md:w-16 md:h-16 border-t-[6px] md:border-t-[8px] border-r-[6px] md:border-r-[8px] border-white/80 rounded-tr-3xl" />
-                                                            <div className="absolute bottom-0 left-0 w-12 h-12 md:w-16 md:h-16 border-b-[6px] md:border-b-[8px] border-l-[6px] md:border-l-[8px] border-white/80 rounded-bl-3xl" />
-                                                            <div className="absolute bottom-0 right-0 w-12 h-12 md:w-16 md:h-16 border-b-[6px] md:border-b-[8px] border-r-[6px] md:border-r-[8px] border-white/80 rounded-br-3xl" />
-                                                        </div>
-                                                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white px-6 py-2 rounded-full text-sm font-medium border border-white/20 whitespace-nowrap">
-                                                            Arahkan kode QR ke dalam bingkai
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-[12px] font-medium border border-white/20 whitespace-nowrap">
+                                            Arahkan QR ke dalam bingkai
                                         </div>
                                     </div>
+                                )}
 
+                                {/* LOADING OVERLAY WHEN SCANNED */}
+                                {checkInMutation.isPending && (
+                                    <div className="absolute inset-0 z-30 flex flex-col justify-center items-center bg-black/60 backdrop-blur-md text-white animate-in fade-in duration-200">
+                                        <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        </div>
+                                        <span className="text-[15px] font-bold tracking-wide">Memverifikasi Data...</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                        </div>
 
-                                    {/* RESULT VIEW */}
-                                    {viewMode === 'result' && (
-                                        <div className="animate-in zoom-in-95 fade-in duration-500 ease-out w-full h-full flex items-center justify-center">
-                                            
-                                            <div className="flex flex-col w-full max-w-3xl bg-black/40 backdrop-blur-2xl border-0 ring-1 ring-white/30 rounded-[3rem] !shadow-none overflow-hidden">
-                                                
-                                                {/* Header Section (Status Indicator) */}
-                                                <div className="w-full p-12 pb-10 flex flex-col items-center justify-center relative">
-                                                    <div className="mb-8 animate-in zoom-in duration-500 delay-150 relative">
-                                                        <div className="absolute inset-0 blur-3xl opacity-50">
-                                                            {resultStatus === 'success' && <div className="w-full h-full bg-green-500 rounded-full" />}
-                                                            {resultStatus === 'error' && <div className="w-full h-full bg-red-500 rounded-full" />}
-                                                            {resultStatus === 'warning' && <div className="w-full h-full bg-orange-500 rounded-full" />}
-                                                        </div>
-                                                        {resultStatus === 'success' && <CheckCircle2 className="h-32 w-32 text-green-400 relative z-10 drop-shadow-[0_0_20px_rgba(74,222,128,1)]" />}
-                                                        {resultStatus === 'error' && <XCircle className="h-32 w-32 text-red-400 relative z-10 drop-shadow-[0_0_20px_rgba(248,113,113,1)]" />}
-                                                        {resultStatus === 'warning' && <AlertTriangle className="h-32 w-32 text-orange-400 relative z-10 drop-shadow-[0_0_20px_rgba(251,146,60,1)]" />}
-                                                    </div>
-                                                    
-                                                    <h3 className="text-4xl sm:text-5xl font-bold tracking-widest text-white drop-shadow-md text-center uppercase">
-                                                        {resultStatus === 'success' ? 'Check-In Berhasil' :
-                                                         resultStatus === 'error' ? 'Check-In Gagal' :
-                                                         'Sudah Check-In'}
-                                                    </h3>
-                                                    <p className="text-white/80 mt-6 text-xl sm:text-2xl text-center font-light tracking-wide">
-                                                        {resultMessage}
-                                                    </p>
-                                                </div>
+                        {/* RESULT VIEW */}
+                        {viewMode === 'result' && (
+                            <div className="w-full flex-1 flex flex-col justify-center animate-in zoom-in-95 fade-in duration-300">
+                                <div className="w-[90vw] max-w-[380px] min-w-[300px] mx-auto bg-card rounded-[32px] border border-border/40 shadow-xl overflow-hidden text-center flex flex-col items-center relative p-10">
+                                    {/* Icon */}
+                                    <div className="mb-6">
+                                        {resultStatus === 'success' && <CheckCircle2 className="h-16 w-16 text-emerald-500" strokeWidth={1.5} />}
+                                        {resultStatus === 'error' && <XCircle className="h-16 w-16 text-destructive" strokeWidth={1.5} />}
+                                        {resultStatus === 'warning' && <AlertTriangle className="h-16 w-16 text-orange-500" strokeWidth={1.5} />}
+                                    </div>
+                                    
+                                    {/* Title & Message */}
+                                    <h3 className="text-[20px] font-semibold tracking-tight mb-2 text-foreground">
+                                        {resultStatus === 'success' ? 'Check-In Berhasil' :
+                                         resultStatus === 'error' ? 'Check-In Gagal' :
+                                         'Sudah Check-In'}
+                                    </h3>
+                                    <p className="text-[14px] text-muted-foreground mb-8">
+                                        {resultMessage}
+                                    </p>
 
-                                                {/* Guest Details Section (The "Ticket" body) */}
-                                                {checkedInGuest && (
-                                                    <div className="w-full p-12 bg-white/5 border-t border-white/10 flex flex-col space-y-10">
-                                                        <div className="flex flex-col items-center text-center">
-                                                            <p className="text-white/50 uppercase tracking-[0.3em] text-sm font-semibold mb-3">Nama Tamu</p>
-                                                            <p className="text-4xl sm:text-6xl font-light text-white tracking-wide">{checkedInGuest.name}</p>
-                                                        </div>
-                                                        
-                                                        <div className="grid grid-cols-2 gap-6 pt-8 border-t border-white/10">
-                                                            <div className="flex flex-col items-center">
-                                                                <p className="text-white/50 uppercase tracking-[0.2em] text-xs font-semibold mb-3">Kategori</p>
-                                                                <div className="px-6 py-2 rounded-full border-0 ring-1 ring-white/30 bg-white/10 text-white text-lg sm:text-xl font-medium tracking-wide">
-                                                                    {checkedInGuest.category_name}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-col items-center">
-                                                                <p className="text-white/50 uppercase tracking-[0.2em] text-xs font-semibold mb-3">Kode VIP</p>
-                                                                <div className="px-6 py-2 rounded-full border-0 ring-1 ring-white/30 bg-white/10 text-white font-mono text-lg sm:text-xl tracking-[0.2em]">
-                                                                    {checkedInGuest.qr_code}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Action Footer */}
-                                                <div className="w-full p-10 pt-6 flex justify-center bg-white/5">
-                                                    <Button 
-                                                        size="lg" 
-                                                        variant="ghost"
-                                                        className="h-20 text-2xl px-16 rounded-full bg-white/10 text-white border-0 ring-1 ring-white/30 hover:bg-white/20 transition-all w-full max-w-lg tracking-widest font-medium uppercase !shadow-none hover:text-white"
-                                                        onClick={handleScanAgain}
-                                                    >
-                                                        Scan Tamu Berikutnya
-                                                    </Button>
-                                                </div>
-
+                                    {/* Content Block */}
+                                    {checkedInGuest && (
+                                        <div className="w-full flex flex-col items-center gap-4 border-t border-border/40 pt-6 mt-2">
+                                            <div className="text-center w-full">
+                                                <p className="text-[12px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Nama Tamu</p>
+                                                <h4 className="text-[26px] sm:text-[30px] font-black tracking-tight text-foreground leading-tight">
+                                                    {checkedInGuest.name}
+                                                </h4>
                                             </div>
-
+                                            
+                                            <div className="w-full bg-muted/40 rounded-2xl p-4 mt-2 border border-border/50">
+                                                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 text-center">Kategori Undangan</p>
+                                                <div className="flex justify-center">
+                                                    <span className={`px-5 py-2 font-bold rounded-full text-[15px] border ${
+                                                        resultStatus === 'success' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                                                        resultStatus === 'error' ? 'bg-destructive/10 text-destructive border-destructive/20' :
+                                                        'bg-orange-500/10 text-orange-600 border-orange-500/20'
+                                                    }`}>
+                                                        {checkedInGuest.category_name}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
-                        </div>
+
+                                    <style>{`
+                                        @keyframes growWidth {
+                                            from { width: 0%; }
+                                            to { width: 100%; }
+                                        }
+                                        .animate-grow {
+                                            animation: growWidth linear forwards;
+                                        }
+                                    `}</style>
+                                    <div 
+                                        className={`absolute bottom-0 left-0 h-[4px] animate-grow ${
+                                            resultStatus === 'success' ? 'bg-emerald-500' : 
+                                            resultStatus === 'error' ? 'bg-destructive' : 'bg-orange-500'
+                                        }`} 
+                                        style={{ animationDuration: '5s' }} 
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </MainLayout>
+                </div>
             </ProtectedModule>
         </ProtectedRoute>
     );

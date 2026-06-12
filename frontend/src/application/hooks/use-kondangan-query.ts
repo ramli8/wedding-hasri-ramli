@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { kondanganService, GetKondangansParams, CreateKondanganRequest, UpdateKondanganRequest } from '@/src/domain/services/kondangan.service';
 
 export const KONDANGAN_KEYS = {
@@ -15,6 +15,21 @@ export function useKondangans(params: GetKondangansParams = {}) {
   return useQuery({
     queryKey: KONDANGAN_KEYS.list(params),
     queryFn: () => kondanganService.getKondangans(params),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useInfiniteKondangans(params: Omit<GetKondangansParams, 'page'> = {}) {
+  return useInfiniteQuery({
+    queryKey: KONDANGAN_KEYS.list({ ...params, page: 0 }), // Using 0 as indicative for infinite
+    queryFn: ({ pageParam = 1 }) => kondanganService.getKondangans({ ...params, page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.total_pages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
   });
 }
 

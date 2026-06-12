@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/src/presentation/components/layout/main-layout';
+import Link from 'next/link';
 import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route';
 import { ProtectedModule } from '@/src/presentation/components/layout/protected-feature';
 import { Button } from '@/src/presentation/components/ui/button';
@@ -10,11 +11,11 @@ import { Card, CardContent } from '@/src/presentation/components/ui/card';
 import { Badge } from '@/src/presentation/components/ui/badge';
 import {
   Loader2, User, Search, Phone, Instagram,
-  CheckCheck, CheckCircle2, MapPin, StickyNote, ScanFace,
+  CheckCheck, CheckCircle2, MapPin, StickyNote, ScanFace, ChevronLeft
 } from 'lucide-react';
 import { useSearchGuests, useCheckInGuestByID } from '@/src/application/hooks/use-guest-query';
 import { Guest } from '@/src/domain/services/guest.service';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 function GuestCard({
   guest,
@@ -27,102 +28,125 @@ function GuestCard({
   isCheckingIn: boolean;
   isCheckedIn: boolean;
 }) {
-  const statusLabel = guest.status_attending === 'going' ? 'Hadir' : guest.status_attending === 'not_going' ? 'Tidak Hadir' : 'Menunggu';
-
   return (
     <div
-      className={`relative flex flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
-        isCheckedIn
-          ? 'bg-primary/5 border-primary/20'
-          : 'bg-card border-border shadow-sm hover:shadow-md hover:border-primary/30'
+      className={`bg-card rounded-[24px] p-4 shadow-sm border relative overflow-hidden transition-colors ${
+        isCheckedIn ? "border-emerald-500/30 bg-emerald-500/5" : "border-border/50"
       }`}
     >
-      {/* Top section */}
-      <div className="p-5 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              isCheckedIn ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+      {/* Header: Category and Name */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+              isCheckedIn ? "bg-emerald-500/20 text-emerald-600" : "bg-primary/10 text-primary"
             }`}>
-              {isCheckedIn ? <CheckCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
+              {isCheckedIn ? <CheckCheck className="w-4 h-4" /> : <User className="w-4 h-4" />}
             </div>
-            <div className="min-w-0">
-              <h4 className="font-semibold text-base leading-tight truncate">{guest.name}</h4>
-              <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="secondary" className="text-[11px] h-5 px-2 font-medium">
-                  {guest.category_name}
-                </Badge>
-                <span className={`text-[11px] font-medium ${
-                  guest.status_attending === 'going' ? 'text-green-600' :
-                  guest.status_attending === 'not_going' ? 'text-red-500' :
-                  'text-muted-foreground'
-                }`}>
-                  {statusLabel}
-                </span>
-              </div>
+            <div>
+              <h3 className="font-bold text-[15px] text-foreground tracking-tight leading-none">
+                {guest.name}
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${isCheckedIn ? "bg-emerald-500/60" : "bg-primary/60"}`}></span>
+                {guest.category_name}
+              </p>
             </div>
           </div>
-
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
           {isCheckedIn ? (
-            <div className="inline-flex items-center gap-1.5 text-primary font-medium px-3.5 py-1.5 bg-primary/10 rounded-full border border-primary/20 shrink-0">
-              <CheckCheck className="h-3.5 w-3.5" />
-              <span className="text-xs">Hadir</span>
-            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600">
+              Hadir
+            </span>
           ) : (
-            <Button
-              onClick={() => onCheckIn(guest.id)}
-              disabled={isCheckingIn}
-              size="sm"
-              className="rounded-full shrink-0 shadow-none"
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                guest.status_attending === "going"
+                  ? "bg-green-500/10 text-green-600"
+                  : guest.status_attending === "not_going"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-secondary text-secondary-foreground"
+              }`}
             >
-              {isCheckingIn ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Check-In
-                </>
-              )}
-            </Button>
+              {guest.status_attending === "going"
+                ? "Konfirm Hadir"
+                : guest.status_attending === "not_going"
+                  ? "Absen"
+                  : "Menunggu"}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Details section */}
-      <div className="px-5 py-3 bg-muted/20 border-t border-border/40">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <div className="space-y-1.5">
-            {guest.phone_number && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{guest.phone_number}</span>
+      {/* Body: Contact and Notes in styled boxes */}
+      <div className="grid grid-cols-2 gap-2 mt-1">
+        <div className="bg-muted/30 p-3 rounded-2xl border border-border/30">
+          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+            Kontak
+          </p>
+          <div className="flex flex-col gap-1">
+            {guest.phone_number ? (
+              <div className="flex items-center gap-1.5 text-[12px] text-emerald-600 font-semibold truncate">
+                <Phone className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{guest.phone_number}</span>
               </div>
-            )}
-            {guest.instagram_username && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Instagram className="h-3.5 w-3.5 shrink-0 text-pink-500/70" />
-                <span className="truncate">@{guest.instagram_username}</span>
+            ) : guest.instagram_username ? (
+              <div className="flex items-center gap-1.5 text-[12px] text-pink-600 font-semibold truncate">
+                <Instagram className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">@{guest.instagram_username}</span>
               </div>
-            )}
-            {!guest.phone_number && !guest.instagram_username && (
-              <span className="text-xs italic text-muted-foreground/60">Tidak ada kontak</span>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            {guest.address && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{guest.address}</span>
-              </div>
-            )}
-            {guest.note && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <StickyNote className="h-3.5 w-3.5 mt-0.5 shrink-0 text-yellow-600/70" />
-                <span className="line-clamp-2 italic">{guest.note}</span>
-              </div>
+            ) : (
+              <span className="text-[12px] text-muted-foreground font-medium">
+                -
+              </span>
             )}
           </div>
         </div>
+
+        <div className="bg-muted/30 p-3 rounded-2xl border border-border/30">
+          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+            Alamat / Catatan
+          </p>
+          <div className="flex flex-col gap-1">
+            {guest.address ? (
+              <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground font-medium line-clamp-1">
+                <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" /> <span className="line-clamp-1">{guest.address}</span>
+              </div>
+            ) : guest.note ? (
+              <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground font-medium line-clamp-1">
+                <StickyNote className="w-3.5 h-3.5 shrink-0 mt-0.5" /> <span className="line-clamp-1 italic">{guest.note}</span>
+              </div>
+            ) : (
+              <span className="text-[12px] text-muted-foreground font-medium">
+                -
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Footer */}
+      <div className="mt-4 pt-3 border-t border-border/40">
+        {!isCheckedIn ? (
+          <button
+            onClick={() => onCheckIn(guest.id)}
+            disabled={isCheckingIn}
+            className="w-full h-11 bg-primary text-primary-foreground rounded-xl text-[13px] font-bold active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {isCheckingIn ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Check-In Sekarang
+              </>
+            )}
+          </button>
+        ) : (
+          <div className="w-full h-11 bg-emerald-500/10 text-emerald-600 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2">
+            <CheckCheck className="h-4 w-4" />
+            Tamu Sudah Hadir
+          </div>
+        )}
       </div>
     </div>
   );
@@ -164,9 +188,9 @@ export default function GuestCheckInBypassPage() {
   const renderResults = () => {
     if (isSearching) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 rounded-xl border-2 border-dashed border-muted bg-muted/5">
-          <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Mencari data tamu...</p>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary/50" />
+          <p className="text-[13px] font-medium">Mencari data tamu...</p>
         </div>
       );
     }
@@ -175,12 +199,9 @@ export default function GuestCheckInBypassPage() {
 
     if (searchResults?.items?.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 rounded-xl border-2 border-dashed border-destructive/20 bg-destructive/5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 mb-4">
-            <User className="h-6 w-6 text-destructive/60" />
-          </div>
-          <p className="text-base font-medium text-destructive/80">Tidak ada tamu ditemukan</p>
-          <p className="text-sm text-destructive/60 mt-1">Coba kata kunci pencarian yang lain</p>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <User className="w-12 h-12 mb-3 opacity-20" />
+          <p className="text-[13px] font-medium">Tidak ada tamu ditemukan.</p>
         </div>
       );
     }
@@ -210,37 +231,43 @@ export default function GuestCheckInBypassPage() {
   return (
     <ProtectedRoute>
       <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
-        <MainLayout>
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <ScanFace strokeWidth={1.5} className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Check-In Manual</h2>
-                <p className="text-sm text-muted-foreground">Cari tamu berdasarkan nama, nomor HP, atau Instagram untuk check-in manual</p>
-              </div>
+        <div className="min-h-screen bg-background text-foreground pb-24 relative font-sans transition-colors duration-300">
+          <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
+            <Link 
+                href="/admin"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+            >
+                <ChevronLeft className="w-6 h-6" />
+            </Link>
+            <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap">
+                Check-In Manual
+            </h1>
+            <div className="w-10 shrink-0" />
+          </div>
+
+          <div className="px-6">
+            <p className="text-[13px] text-muted-foreground text-center mb-6 leading-snug px-2">
+              Cari tamu berdasarkan nama, nomor HP, atau Instagram untuk melakukan check-in
+            </p>
+
+            {/* Search */}
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Cari nama, HP, atau IG..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 rounded-full bg-card border-border/60 shadow-sm h-12 text-[14px] focus-visible:ring-primary"
+                autoFocus
+              />
+            </div>
+
+            {/* Results */}
+            <div className="min-h-[400px]">
+              {renderResults()}
             </div>
           </div>
-
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Ketik minimal 2 karakter..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11"
-              autoFocus
-            />
-          </div>
-
-          {/* Results */}
-          <div className="min-h-[400px]">
-            {renderResults()}
-          </div>
-        </MainLayout>
+        </div>
       </ProtectedModule>
     </ProtectedRoute>
   );

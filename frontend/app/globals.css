@@ -319,6 +319,12 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: var(--font-sans), sans-serif;
   }
+  button {
+    @apply cursor-pointer;
+  }
+  button:disabled {
+    @apply cursor-not-allowed;
+  }
 }
 
 @theme inline {

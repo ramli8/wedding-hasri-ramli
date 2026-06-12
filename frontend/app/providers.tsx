@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/src/lib/query-client'
 import { ThemeProvider } from '@/src/presentation/components/theme-provider'
 import { Toaster } from '@/src/presentation/components/ui/sonner'
+import { Toaster as HotToaster } from 'react-hot-toast'
 import { NextIntlClientProvider } from 'next-intl'
 import Image from 'next/image'
 import { useLocaleStore } from '@/src/infrastructure/stores/locale-store'
@@ -76,6 +77,16 @@ export function Providers({ children }: { children: ReactNode }) {
                     <QueryClientProvider client={queryClient}>
                         {children}
                         <Toaster position="top-center" />
+                        <HotToaster 
+                            position="top-center" 
+                            toastOptions={{
+                                style: {
+                                    background: 'hsl(var(--card))',
+                                    color: 'hsl(var(--foreground))',
+                                    border: '1px solid hsl(var(--border))',
+                                }
+                            }}
+                        />
                     </QueryClientProvider>
                 </NextIntlClientProvider>
             )}

@@ -66,7 +66,7 @@ export default function RegisterPage() {
 
         try {
             await register({ name, email, password });
-            router.push('/home');
+            router.push('/admin');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         }

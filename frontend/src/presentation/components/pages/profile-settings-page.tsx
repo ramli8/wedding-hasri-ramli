@@ -1,15 +1,15 @@
 'use client'
 
-import { MainLayout } from '@/src/presentation/components/layout/main-layout'
+import { useRouter } from 'next/navigation'
 import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route'
 import { ProfileInfoForm } from '@/src/presentation/components/forms/profile-info-form'
 import { ChangePasswordForm } from '@/src/presentation/components/forms/change-password-form'
 import { useAuth } from '@/src/application/hooks/use-auth'
-import { Card, CardContent, CardHeader } from '@/src/presentation/components/ui/card'
-import { Separator } from '@/src/presentation/components/ui/separator'
+import { ChevronLeft } from 'lucide-react'
 
 export function ProfileSettingsPage() {
     const { user } = useAuth()
+    const router = useRouter()
 
     // Get user initials for avatar
     const getUserInitials = () => {
@@ -23,58 +23,53 @@ export function ProfileSettingsPage() {
 
     return (
         <ProtectedRoute>
-            <MainLayout>
-                <div className="space-y-6 pb-8">
-                    {/* Page Header */}
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-                        <p className="text-muted-foreground mt-2">
-                            Manage your account information and security settings
-                        </p>
+            <div className="min-h-screen bg-background text-foreground pb-24 relative font-sans">
+                {/* Header Navbar */}
+                <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between">
+                    <button 
+                        onClick={() => router.push('/admin')}
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all"
+                    >
+                        <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2">
+                        Pengaturan Profil
+                    </h1>
+                    <div className="w-10" /> {/* Spacer */}
+                </div>
+
+                {/* Profile Header Area */}
+                <div className="px-6 pt-8 pb-6 flex flex-col items-center border-b border-border/40 bg-card/30">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold border-4 border-background shadow-md mb-4">
+                        {getUserInitials()}
                     </div>
+                    <h2 className="text-[22px] font-bold tracking-tight mb-1">
+                        {user?.name || 'Tamu'}
+                    </h2>
+                    <p className="text-[14px] text-muted-foreground">
+                        {user?.email || 'user@example.com'}
+                    </p>
+                    {user?.is_oauth && user?.oauth_provider && (
+                        <span className="mt-3 px-3 py-1 bg-muted rounded-full text-[12px] font-semibold text-muted-foreground">
+                            Masuk dengan {user.oauth_provider}
+                        </span>
+                    )}
+                </div>
 
-                    <Separator />
-
-                    {/* User Info Card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-semibold">
-                                    {getUserInitials()}
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-semibold">{user?.name || 'User Name'}</h2>
-                                    <p className="text-sm text-muted-foreground">{user?.email || 'user@example.com'}</p>
-                                    {user?.is_oauth && user?.oauth_provider && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Signed in with {user.oauth_provider}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </CardHeader>
-                    </Card>
-
-                    {/* Forms Grid */}
-                    <div className="grid gap-6 lg:grid-cols-2">
+                <div className="px-6 pt-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Forms Sections */}
+                    <div className="space-y-6">
                         <ProfileInfoForm />
 
                         {/* Only show password change for non-OAuth users */}
-                        {!user?.is_oauth && <ChangePasswordForm />}
+                        {!user?.is_oauth && (
+                            <div className="pt-2">
+                                <ChangePasswordForm />
+                            </div>
+                        )}
                     </div>
-
-                    {/* OAuth Notice */}
-                    {user?.is_oauth && (
-                        <Card className="border-muted">
-                            <CardContent className="pt-6">
-                                <p className="text-sm text-muted-foreground">
-                                    You are signed in with {user.oauth_provider}. Password management is handled by your OAuth provider.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
-            </MainLayout>
+            </div>
         </ProtectedRoute>
     )
 }

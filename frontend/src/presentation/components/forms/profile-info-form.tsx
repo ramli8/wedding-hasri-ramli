@@ -5,7 +5,7 @@ import { Input } from '@/src/presentation/components/ui/input'
 import { Label } from '@/src/presentation/components/ui/label'
 import { useAuth } from '@/src/application/hooks/use-auth'
 import { Loader2, User } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from 'react-toastify';
 
 export function ProfileInfoForm() {
     const { user, updateProfile, isLoading } = useAuth()
@@ -95,7 +95,7 @@ export function ProfileInfoForm() {
                         className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold text-[13px] shadow-sm hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-70 gap-2 cursor-pointer"
                     >
                         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                        Simpan Perubahan
+                        Simpan
                     </button>
                 </div>
             </form>

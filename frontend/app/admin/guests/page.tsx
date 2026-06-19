@@ -14,6 +14,9 @@ import {
   Settings2,
   X,
   Inbox,
+  BookHeart,
+  Send,
+  ArchiveRestore,
 } from "lucide-react";
 
 import { MainLayout } from "@/src/presentation/components/layout/main-layout";
@@ -121,7 +124,7 @@ import {
 } from "@/src/domain/services/guest.service";
 import { Progress } from "@/src/presentation/components/ui/progress";
 import { format } from "date-fns";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { QRCodeSVG } from "qrcode.react";
 
 // Custom WhatsApp Icon in Lucide style
@@ -343,7 +346,7 @@ export default function GuestsPage() {
       await deleteGuest.mutateAsync(selectedGuest.id);
       setIsDeleteDialogOpen(false);
       setSelectedGuest(null);
-      toast.success("Tamu berhasil dihapus");
+      toast.error("Tamu berhasil dihapus", { icon: "🗑️" });
     } catch (err: any) {
       setError(err.response?.data?.message || "Gagal menghapus tamu");
     }
@@ -624,23 +627,22 @@ export default function GuestsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-32 relative font-sans transition-colors duration-300">
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
-        <Link
-          href="/admin"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+      <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
+        <Link 
+            href="/admin"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
         >
-          <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2">
-          Tamu
+        <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 text-foreground">
+            Buku Tamu
         </h1>
-        <div className="w-10 h-10 shrink-0"></div>
+        <div className="w-10 shrink-0" />
       </div>
 
-      <div className="px-6">
+      <div className="px-5">
         {/* Search and Filters */}
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
@@ -682,9 +684,9 @@ export default function GuestsPage() {
               </button>
             </div>
           </div>
-        </div>
+        
 
-        <div className="flex items-center justify-between mt-2 mb-4 px-1">
+        <div className="flex items-center justify-between mt-2 mb-4 px-2 min-h-[32px]">
           <span className="text-sm font-semibold text-foreground tracking-tight">
             Semua Tamu (
             {isLoading || isLoadingDeleted 
@@ -720,16 +722,18 @@ export default function GuestsPage() {
               <p className="text-[13px]">Mengambil data tamu...</p>
             </div>
           ) : allItems.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-muted-foreground/50" />
+            <div className="col-span-full w-full flex-1 flex flex-col items-center justify-center space-y-6 py-12">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                <BookHeart className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="font-semibold text-[15px] mb-1">Belum ada tamu</h3>
-              <p className="text-[13px] text-muted-foreground">
-                {searchInput || deletedSearchInput
-                  ? "Tidak ada tamu yang cocok dengan pencarian"
-                  : "Mulai tambahkan tamu undangan Anda"}
-              </p>
+              <div className="text-center w-full px-4">
+                <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Belum ada tamu</h2>
+                <p className="text-[13px] text-muted-foreground leading-snug">
+                  {searchInput || deletedSearchInput
+                    ? "Tidak ada tamu yang cocok dengan pencarian"
+                    : "Mulai tambahkan tamu undangan Anda"}
+                </p>
+              </div>
             </div>
           ) : (
             allItems.map((guest) => (
@@ -1341,10 +1345,11 @@ export default function GuestsPage() {
                 disabled={isEditDialogOpen ? updateGuest.isPending : createGuest.isPending}
                 className="w-full flex items-center justify-center h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer active:scale-95"
               >
+                {/* Unified submit button label */}
                 {(isEditDialogOpen ? updateGuest.isPending : createGuest.isPending) ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  isEditDialogOpen ? "Simpan Perubahan" : "Simpan Tamu"
+                  "Simpan"
                 )}
               </button>
             </div>
@@ -1487,7 +1492,7 @@ export default function GuestsPage() {
 
                   <div className="border border-border/50 rounded-2xl overflow-auto flex-1 no-scrollbar bg-card relative">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-md z-10 border-b border-border/50">
+                      <TableHeader className="sticky top-0 bg-muted z-10 border-b border-border/50">
                         <TableRow className="hover:bg-transparent border-0">
                           <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Status</TableHead>
                           <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Nama</TableHead>
@@ -1719,38 +1724,36 @@ export default function GuestsPage() {
         open={isSendMessageDialogOpen}
         onOpenChange={setIsSendMessageDialogOpen}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Kirim Undangan</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirim Undangan</AlertDialogTitle>
+            <AlertDialogDescription>
               Kirim undangan ke <strong>{selectedGuest?.name}</strong> melalui{" "}
               {messageType === "whatsapp" ? "WhatsApp" : "Instagram"}? Tindakan
               ini akan menandai status undangan menjadi{" "}
               <strong>&quot;Terkirim&quot;</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
-            <AlertDialogAction
-              onClick={handleConfirmSendMessage}
-              disabled={updateStatusSent.isPending}
-              className="w-full h-[46px] bg-transparent hover:bg-primary/10 text-primary font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
-            >
-              {updateStatusSent.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Ya, Kirim & Tandai Terkirim"
-              )}
-            </AlertDialogAction>
+          <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => {
                 setSelectedGuest(null);
                 setMessageType(null);
               }}
-              className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted"
             >
               Batal
             </AlertDialogCancel>
-          </div>
+            <AlertDialogAction
+              onClick={handleConfirmSendMessage}
+              disabled={updateStatusSent.isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {updateStatusSent.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Ya, Kirim & Tandai Terkirim
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -1759,25 +1762,23 @@ export default function GuestsPage() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Hapus Tamu</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Tamu</AlertDialogTitle>
+            <AlertDialogDescription>
               Yakin ingin menghapus {selectedGuest?.name}? Anda dapat memulihkan
               tamu ini nanti dari tab Dihapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteGuest}
-              className="w-full h-[46px] bg-transparent hover:bg-destructive/10 text-destructive font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted">
-              Batal
-            </AlertDialogCancel>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -1786,24 +1787,22 @@ export default function GuestsPage() {
         open={isRestoreDialogOpen}
         onOpenChange={setIsRestoreDialogOpen}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Pulihkan Tamu</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pulihkan Tamu</AlertDialogTitle>
+            <AlertDialogDescription>
               Yakin ingin memulihkan {selectedGuest?.name}?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleRestoreGuest}
-              className="w-full h-[46px] bg-transparent hover:bg-primary/10 text-primary font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Pulihkan
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted">
-              Batal
-            </AlertDialogCancel>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -1957,11 +1956,16 @@ export default function GuestsPage() {
                 ))}
                 {(!categoriesData?.items ||
                   categoriesData.items.length === 0) && (
-                  <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center">
-                    <Inbox className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-[13px] font-medium">
-                      Belum ada kategori tersimpan.
-                    </p>
+                  <div className="w-full flex-1 flex flex-col items-center justify-center space-y-4 py-8">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <BookHeart className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="text-center w-full px-4">
+                      <h3 className="text-[15px] font-bold tracking-tight mb-1 text-foreground">Belum ada kategori</h3>
+                      <p className="text-[13px] text-muted-foreground leading-snug">
+                        Mulai ketik nama kategori baru di bawah ini.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1975,35 +1979,33 @@ export default function GuestsPage() {
         open={!!deleteCategoryItem}
         onOpenChange={(open) => !open && setDeleteCategoryItem(null)}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Hapus Kategori?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Kategori?</AlertDialogTitle>
+            <AlertDialogDescription>
               Yakin ingin menghapus kategori <strong>{deleteCategoryItem?.name}</strong>?
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (deleteCategoryItem) {
                   try {
                     await deleteCategory.mutateAsync(deleteCategoryItem.id);
-                    toast.success("Kategori dihapus");
+                    toast.error("Kategori dihapus", { icon: "🗑️" });
                   } catch (err) {
                     toast.error("Gagal menghapus kategori");
                   }
                   setDeleteCategoryItem(null);
                 }
               }}
-              className="w-full h-[46px] bg-transparent hover:bg-destructive/10 text-destructive font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted">
-              Batal
-            </AlertDialogCancel>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

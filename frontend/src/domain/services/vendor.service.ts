@@ -165,7 +165,7 @@ export const vendorService = {
   },
 
   async selectVendor(categoryId: number, vendorId: string): Promise<SelectVendorResponse> {
-    const response = await apiClient.post<SelectVendorResponse>(`/v1/vendors/categories/${categoryId}/select/${vendorId}`);
+    const response = await apiClient.post<SelectVendorResponse>(`/v1/vendors/categories/${categoryId}/select/${vendorId}`, {});
     return response.data;
   },
 

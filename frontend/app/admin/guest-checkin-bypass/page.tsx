@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useSearchGuests, useCheckInGuestByID } from '@/src/application/hooks/use-guest-query';
 import { Guest } from '@/src/domain/services/guest.service';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 function GuestCard({
   guest,
@@ -199,9 +199,16 @@ export default function GuestCheckInBypassPage() {
 
     if (searchResults?.items?.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <User className="w-12 h-12 mb-3 opacity-20" />
-          <p className="text-[13px] font-medium">Tidak ada tamu ditemukan.</p>
+        <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6 py-12">
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10 text-primary" />
+          </div>
+          <div className="text-center w-full px-4">
+            <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Tidak ditemukan</h2>
+            <p className="text-[13px] text-muted-foreground leading-snug">
+              Tidak ada tamu yang cocok dengan pencarian Anda.
+            </p>
+          </div>
         </div>
       );
     }
@@ -213,7 +220,7 @@ export default function GuestCheckInBypassPage() {
             <span className="font-medium text-foreground">{searchResults?.items?.length || 0}</span> tamu ditemukan
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {searchResults?.items?.map((guest) => (
             <GuestCard
               key={guest.id}
@@ -232,15 +239,15 @@ export default function GuestCheckInBypassPage() {
     <ProtectedRoute>
       <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
         <div className="min-h-screen bg-background text-foreground pb-24 relative font-sans transition-colors duration-300">
-          <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
-            <Link 
-                href="/admin"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+          <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
+            <Link
+              href="/admin"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
             >
-                <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap">
-                Check-In Manual
+            <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-foreground">
+              Check-in Manual
             </h1>
             <div className="w-10 shrink-0" />
           </div>

@@ -47,7 +47,7 @@ import { Card, CardContent } from "@/src/presentation/components/ui/card";
 import { Button } from "@/src/presentation/components/ui/button";
 import { Input } from "@/src/presentation/components/ui/input";
 import { Badge } from "@/src/presentation/components/ui/badge";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,7 +142,7 @@ export default function CatatanKondanganPage() {
     giftName: "",
     nominal: "",
   });
-
+  
   // Prevent body scroll when custom modals are open
   useEffect(() => {
     if (isRelationDialogOpen || modalType || isCreateDialogOpen) {
@@ -174,7 +174,7 @@ export default function CatatanKondanganPage() {
     if (deleteRelationId) {
       deleteRelMut.mutate(deleteRelationId, {
         onSuccess: () => {
-          toast.success("Relasi berhasil dihapus");
+          toast.error("Relasi berhasil dihapus", { icon: "🗑️" });
           setDeleteRelationId(null);
         },
         onError: (error: any) => {
@@ -241,7 +241,7 @@ export default function CatatanKondanganPage() {
     if (deleteKondanganId) {
       deleteMut.mutate(deleteKondanganId, {
         onSuccess: () => {
-          toast.success("Catatan berhasil dihapus");
+          toast.error("Catatan berhasil dihapus", { icon: "🗑️" });
           setDeleteKondanganId(null);
         },
       });
@@ -294,20 +294,20 @@ export default function CatatanKondanganPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-32 relative font-sans transition-colors duration-300">
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
+      <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
         <Link 
             href="/admin"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
         >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 text-foreground">
             Kondangan
         </h1>
         <div className="w-10 shrink-0" /> {/* Spacer untuk menyeimbangkan ChevronLeft */}
       </div>
 
-      <div className="px-6">
+      <div className="px-5">
         {/* Search and Filters */}
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1">
@@ -343,7 +343,7 @@ export default function CatatanKondanganPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-2 mb-4 px-2">
+        <div className="flex items-center justify-between mt-2 mb-4 px-2 min-h-[32px]">
           <span className="text-sm font-semibold text-foreground tracking-tight">
             Semua Catatan ({totalItems})
           </span>
@@ -363,14 +363,16 @@ export default function CatatanKondanganPage() {
               Memuat data...
             </div>
           ) : allItems.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Inbox className="w-8 h-8 text-muted-foreground opacity-50" />
+            <div className="col-span-full w-full flex-1 flex flex-col items-center justify-center space-y-6 py-12">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                <Gift className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">Kosong</h3>
-              <p className="text-sm text-muted-foreground">
-                Tidak ada catatan ditemukan.
-              </p>
+              <div className="text-center w-full px-4">
+                <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Kosong</h2>
+                <p className="text-[13px] text-muted-foreground leading-snug">
+                  Tidak ada catatan ditemukan.
+                </p>
+              </div>
             </div>
           ) : (
             allItems.map((item, index) => (
@@ -724,11 +726,16 @@ export default function CatatanKondanganPage() {
                   </div>
                 ))}
                 {relationsData.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center">
-                    <Inbox className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-[13px] font-medium">
-                      Belum ada relasi tersimpan.
-                    </p>
+                  <div className="w-full flex-1 flex flex-col items-center justify-center space-y-4 py-8">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Gift className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="text-center w-full px-4">
+                      <h3 className="text-[15px] font-bold tracking-tight mb-1 text-foreground">Belum ada relasi</h3>
+                      <p className="text-[13px] text-muted-foreground leading-snug">
+                        Ketik nama relasi di atas lalu tekan Enter.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -903,7 +910,7 @@ export default function CatatanKondanganPage() {
                 disabled={createMut.isPending || updateMut.isPending}
                 className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-[14px] font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {editingId ? "Simpan Perubahan" : "Simpan Catatan"}
+                Simpan
               </button>
             </div>
           </div>
@@ -915,26 +922,24 @@ export default function CatatanKondanganPage() {
         open={!!deleteRelationId}
         onOpenChange={(open) => !open && setDeleteRelationId(null)}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Hapus Relasi?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Relasi?</AlertDialogTitle>
+            <AlertDialogDescription>
               Tindakan ini tidak dapat dibatalkan. Relasi ini akan dihapus
               secara permanen. Pastikan tidak ada catatan kondangan yang masih
               menggunakan relasi ini.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteRelation}
-              className="w-full h-[46px] bg-transparent hover:bg-destructive/10 text-destructive font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted">
-              Batal
-            </AlertDialogCancel>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -943,25 +948,23 @@ export default function CatatanKondanganPage() {
         open={!!deleteKondanganId}
         onOpenChange={(open) => !open && setDeleteKondanganId(null)}
       >
-        <AlertDialogContent className="w-[80vw] max-w-[300px] p-0 rounded-2xl overflow-hidden gap-0 bg-background/90 backdrop-blur-xl border border-border/50 shadow-2xl">
-          <AlertDialogHeader className="p-5 pb-4 text-center">
-            <AlertDialogTitle className="text-[17px] font-semibold text-center tracking-tight">Hapus Catatan?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px] text-center mt-1 text-muted-foreground leading-snug">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Catatan?</AlertDialogTitle>
+            <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus catatan kondangan ini? Data akan
               dihapus secara permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col border-t border-border/50">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteKondangan}
-              className="w-full h-[46px] bg-transparent hover:bg-destructive/10 text-destructive font-semibold rounded-none border-b border-border/50 transition-colors active:bg-muted"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full h-[46px] bg-transparent hover:bg-muted/50 text-foreground font-medium rounded-none border-0 m-0 transition-colors active:bg-muted">
-              Batal
-            </AlertDialogCancel>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

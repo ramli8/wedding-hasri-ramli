@@ -82,7 +82,6 @@ export function HomePage() {
   const totalGuests = allGuests?.total ?? 0
   const totalCheckedIn = checkedInGuests?.total ?? 0
   const totalGoing = goingGuests?.total ?? 0
-  const totalPending = totalGuests - totalGoing
   const totalCategories = categories?.total ?? 0
 
   const stats = [

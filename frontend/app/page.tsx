@@ -52,10 +52,10 @@ export default function Page() {
               <div className="space-y-4">
                 <div className="p-4 rounded bg-surface-dark-soft/50 border border-border/10">
                   <CodeText className="text-on-dark block">
-                    <span className="text-primary">import</span> &#123; DisplayXL &#125; <span className="text-primary">from</span> "typography"
+                    <span className="text-primary">import</span> &#123; DisplayXL &#125; <span className="text-primary">from</span> &quot;typography&quot;
                   </CodeText>
                   <CodeText className="text-muted-foreground mt-2 block">
-                    // The system anchors on a tinted cream canvas
+                    {/* The system anchors on a tinted cream canvas */}
                   </CodeText>
                 </div>
                 <div className="flex items-center gap-3 pt-2">
@@ -80,7 +80,7 @@ export default function Page() {
             <TitleMD className="mb-4">Warm Canvas</TitleMD>
             <BodyMD className="text-muted-foreground">
               Distinctly warm, deliberately not the cool gray-white that every other brand uses.
-              The cream-to-dark contrast is the page's pacing rhythm.
+              The cream-to-dark contrast is the page&apos;s pacing rhythm.
             </BodyMD>
           </FeatureCard>
 

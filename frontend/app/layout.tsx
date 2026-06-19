@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -9,7 +9,7 @@ const cormorant = Cormorant_Garamond({
   weight: ["400", "500", "600", "700"],
 });
 
-const jakarta = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   variable: "--font-inter", // Keep variable name same so we don't break globals.css
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -30,7 +30,7 @@ export default function RootLayout({
       style={{ colorScheme: "light" }}
     >
       <body
-        className={`${cormorant.variable} ${jakarta.variable} antialiased`}
+        className={`${cormorant.variable} ${dmSans.variable} antialiased`}
       >
         <Providers>
           {children}

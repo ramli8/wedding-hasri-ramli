@@ -9,7 +9,7 @@ import { Button } from '@/src/presentation/components/ui/button';
 import { Input } from '@/src/presentation/components/ui/input';
 import { Label } from '@/src/presentation/components/ui/label';
 import { Loader2, User, Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 export default function DemoProfilePage() {
     const { user, authService } = useDemoContext();

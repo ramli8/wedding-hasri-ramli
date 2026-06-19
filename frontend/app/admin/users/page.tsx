@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { MainLayout } from '@/src/presentation/components/layout/main-layout';
 import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route';
 import { ProtectedModule, ProtectedFeature } from '@/src/presentation/components/layout/protected-feature';
@@ -15,7 +17,8 @@ import { Label } from '@/src/presentation/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/src/presentation/components/ui/select';
 import { Alert, AlertDescription } from '@/src/presentation/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/presentation/components/ui/tabs';
-import { Search, UserPlus, Edit, Trash2, Shield, Loader2, ChevronLeft, ChevronRight, Power, ArrowUpDown, RotateCcw, Users, UserX } from 'lucide-react';
+import { Switch } from '@/src/presentation/components/ui/switch';
+import { Search, UserPlus, Edit, Trash2, Shield, Loader2, ChevronLeft, ChevronRight, Power, ArrowUpDown, RotateCcw, Users, UserX, User as UserIcon, Plus, Settings2, Check, X } from 'lucide-react';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useToggleUserStatus, useDeletedUsers, useRestoreUser } from '@/src/application/hooks/use-users-query';
 import { rbacService, type Role } from '@/src/domain/services/rbac.service';
 import { UserListParams } from '@/src/domain/services/user.service';
@@ -46,6 +49,7 @@ export default function UsersPage() {
     const [error, setError] = useState('');
 
     // Dialog states
+    const [modalType, setModalType] = useState<'filter' | 'sort' | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -54,6 +58,17 @@ export default function UsersPage() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
 
+    // Prevent body scroll when custom modals are open
+    useEffect(() => {
+        if (isCreateDialogOpen || isEditDialogOpen || modalType) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [isCreateDialogOpen, isEditDialogOpen, modalType]);
     // Form states
     const [formData, setFormData] = useState({
         name: '',
@@ -70,10 +85,28 @@ export default function UsersPage() {
     const toggleStatus = useToggleUserStatus();
     const restoreUser = useRestoreUser();
 
+    const hasNextPage = usersData && (queryParams.page || 1) * (queryParams.page_size || 10) < usersData.total;
+
+    const fetchNextPage = () => {
+        setQueryParams(prev => ({ ...prev, page_size: (prev.page_size || 10) + 10 }));
+    };
+
     // Load roles on mount
     useEffect(() => {
         rbacService.getAllRoles().then(setRoles).catch(console.error);
     }, []);
+
+    // Prevent body scroll when custom modals are open
+    useEffect(() => {
+        if (modalType) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [modalType]);
 
     // Debounced search for active users
     useEffect(() => {
@@ -101,8 +134,11 @@ export default function UsersPage() {
             });
             setIsCreateDialogOpen(false);
             resetForm();
+            toast.success('Pengguna berhasil ditambahkan');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create user');
+            const errorMsg = err.response?.data?.message || 'Gagal menambahkan pengguna';
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
@@ -119,8 +155,11 @@ export default function UsersPage() {
             });
             setIsEditDialogOpen(false);
             resetForm();
+            toast.success('Data pengguna berhasil diperbarui');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to update user');
+            const errorMsg = err.response?.data?.message || 'Gagal memperbarui pengguna';
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
@@ -131,8 +170,11 @@ export default function UsersPage() {
             setIsDeleteDialogOpen(false);
             setSelectedUser(null);
             refetchDeletedUsersData();
+            toast.error('Pengguna berhasil dihapus', { icon: '🗑️' });
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete user');
+            const errorMsg = err.response?.data?.message || 'Gagal menghapus pengguna';
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
@@ -142,16 +184,21 @@ export default function UsersPage() {
             await restoreUser.mutateAsync(selectedUser.id);
             setIsRestoreDialogOpen(false);
             setSelectedUser(null);
+            toast.success('Pengguna berhasil dipulihkan');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to restore user');
+            const errorMsg = err.response?.data?.message || 'Gagal memulihkan pengguna';
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
     const handleToggleStatus = async (user: User) => {
         try {
             await toggleStatus.mutateAsync(user.id);
+            toast.success(`Status pengguna ${user.name} berhasil diubah`);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to toggle user status');
+            toast.error('Gagal mengubah status pengguna');
         }
     };
 
@@ -165,8 +212,11 @@ export default function UsersPage() {
             setIsRoleDialogOpen(false);
             setSelectedUser(null);
             setSelectedRoles([]);
+            toast.success('Peran berhasil ditetapkan');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to assign roles');
+            const errorMsg = err.response?.data?.message || 'Gagal menetapkan peran';
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
@@ -217,572 +267,398 @@ export default function UsersPage() {
     return (
         <ProtectedRoute>
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
-                <MainLayout>
-                    {/* Page Header */}
-                    <div className="mb-8">
-                        <div className="flex items-start gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                <Users strokeWidth={1.5} className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Manajemen Pengguna</h2>
-                                <p className="text-sm text-muted-foreground">Kelola pengguna, tetapkan peran, dan atur akses</p>
-                            </div>
-                        </div>
+                <div className="min-h-screen bg-background text-foreground pb-32 relative font-sans transition-colors duration-300">
+                    <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
+                        <Link
+                            href="/admin"
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </Link>
+                        <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 text-foreground">
+                            Pengguna
+                        </h1>
+                        <div className="w-10 shrink-0" />
                     </div>
 
-                    <Card className="border-border/50 shadow-sm">
-                        <CardContent className="p-6">
-                            {error && (
-                                <Alert variant="destructive" className="mb-4">
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
+                    <div className="px-5">
+                        {error ? (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        ) : null}
 
-                            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                                <TabsList className="mb-4">
-                                    <TabsTrigger value="active" className="flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        Aktif
-                                        {usersData?.total ? <Badge variant="secondary">{usersData.total}</Badge> : null}
-                                    </TabsTrigger>
-                                    <TabsTrigger value="deleted" className="flex items-center gap-2">
-                                        <UserX className="h-4 w-4" />
-                                        Diarsipkan
-                                        {deletedUsersData?.total ? <Badge variant="secondary">{deletedUsersData.total}</Badge> : null}
-                                    </TabsTrigger>
-                                </TabsList>
-
-                                {/* Active Users Tab */}
-                                <TabsContent value="active">
-                                    {/* Search and Actions */}
-                                    <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                        <div className="flex gap-2 flex-1">
-                                            <Select
-                                                value={queryParams.page_size?.toString() || '10'}
-                                                onValueChange={(value) =>
-                                                    setQueryParams(prev => ({
-                                                        ...prev,
-                                                        page: 1,
-                                                        page_size: parseInt(value),
-                                                    }))
-                                                }
-                                            >
-                                                <SelectTrigger className="w-[110px]">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Tampilkan:</span>
-                                                        <SelectValue placeholder="10" />
-                                                    </div>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="10">10</SelectItem>
-                                                    <SelectItem value="25">25</SelectItem>
-                                                    <SelectItem value="50">50</SelectItem>
-                                                    <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">Semua</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Select
-                                                value={queryParams.is_active === undefined ? 'all' : queryParams.is_active.toString()}
-                                                onValueChange={(value) =>
-                                                    setQueryParams(prev => ({
-                                                        ...prev,
-                                                        page: 1,
-                                                        is_active: value === 'all' ? undefined : value === 'true',
-                                                    }))
-                                                }
-                                            >
-                                                <SelectTrigger className="w-[150px]">
-                                                    <SelectValue placeholder="Status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">Semua Status</SelectItem>
-                                                    <SelectItem value="true">Aktif</SelectItem>
-                                                    <SelectItem value="false">Tidak Aktif</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                        
+                        <div className="flex items-center gap-3 mb-6">
                                             <div className="relative flex-1">
-                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                                 <Input
-                                                    placeholder="Cari pengguna..."
+                                                    placeholder="Cari nama pengguna..."
                                                     value={searchInput}
                                                     onChange={(e) => setSearchInput(e.target.value)}
-                                                    className="pl-10"
+                                                    className="pl-11 rounded-full bg-card border-border/60 shadow-sm h-11 text-[13.5px] focus-visible:ring-primary"
                                                 />
                                             </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setModalType("sort")}
+                                                    className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
+                                                        queryParams.sort_by
+                                                        ? "bg-primary text-primary-foreground border-primary"
+                                                        : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
+                                                    }`}
+                                                >
+                                                    <ArrowUpDown className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setModalType("filter")}
+                                                    className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
+                                                        queryParams.is_active !== undefined
+                                                        ? "bg-primary text-primary-foreground border-primary"
+                                                        : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
+                                                    }`}
+                                                >
+                                                    <Settings2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <ProtectedFeature permission="users.create">
-                                                <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}>
-                                                    <UserPlus className="mr-2 h-4 w-4" />
-                                                    Tambah Pengguna
-                                                </Button>
-                                            </ProtectedFeature>
-                                        </div>
-                                    </div>
+                                    
 
-                                    {/* Users Table */}
-                                    {isLoading ? (
-                                        <div className="flex justify-center items-center h-64">
-                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <div className="flex items-center justify-between mt-2 mb-4 px-2 min-h-[32px]">
+                            <span className="text-sm font-semibold text-foreground tracking-tight">
+                                Semua Pengguna ({usersData?.total || 0})
+                            </span>
+                        </div>
+
+                        {isLoading ? (
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                            <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary/50" />
+                                            <p className="text-[13px]">Memuat pengguna...</p>
                                         </div>
                                     ) : !usersData?.items?.length ? (
-                                        <div className="text-center py-12">
-                                            <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Pengguna Ditemukan</h3>
-                                            <p className="text-muted-foreground">
-                                                {queryParams.search ? 'Coba kata kunci pencarian lain' : 'Tambah pengguna pertama untuk memulai'}
-                                            </p>
+                                        <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6 py-12">
+                                            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                                                <Shield className="w-10 h-10 text-primary" />
+                                            </div>
+                                            <div className="text-center w-full px-4">
+                                                <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Kosong</h2>
+                                                <p className="text-[13px] text-muted-foreground leading-snug">
+                                                    {queryParams.search ? 'Tidak ada pengguna ditemukan.' : 'Tambah pengguna pertama untuk memulai'}
+                                                </p>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <>
-                                            <div className="border rounded-lg overflow-hidden">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead><SortButton field="name">Nama</SortButton></TableHead>
-                                                            <TableHead><SortButton field="email">Email</SortButton></TableHead>
-                                                            <TableHead>Peran</TableHead>
-                                                            <TableHead><SortButton field="is_active">Status</SortButton></TableHead>
-                                                            <TableHead>OAuth</TableHead>
-                                                            <TableHead className="text-right">Aksi</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {usersData.items.map((user) => (
-                                                            <TableRow key={user.id}>
-                                                                <TableCell className="font-medium">{user.name}</TableCell>
-                                                                <TableCell>{user.email}</TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex gap-1 flex-wrap">
-                                                                        {user.roles && user.roles.length > 0 ? (
-                                                                            user.roles.map((role, idx) => (
-                                                                                <Badge key={idx} variant="secondary">
-                                                                                    {role}
-                                                                                </Badge>
-                                                                            ))
-                                                                        ) : (
-                                                                            <span className="text-muted-foreground text-sm">Tidak ada peran</span>
-                                                                        )}
-                                                                    </div>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Badge variant={user.is_active ? 'default' : 'destructive'}>
-                                                                        {user.is_active ? 'Aktif' : 'Tidak Aktif'}
-                                                                    </Badge>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    {user.is_oauth && user.oauth_provider ? (
-                                                                        <Badge variant="outline">{user.oauth_provider}</Badge>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground text-sm">Email</span>
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <ProtectedFeature permission="roles.assign">
-                                                                            <Button
-                                                                                size="action"
-                                                                                variant="soft-accent"
-                                                                                onClick={() => openRoleDialog(user)}
-                                                                                title="Tetapkan Peran"
-                                                                            >
-                                                                                <Shield /> Peran
-                                                                            </Button>
-                                                                        </ProtectedFeature>
-                                                                        <ProtectedFeature permission="users.manage_status">
-                                                                            <Button
-                                                                                size="action"
-                                                                                variant="soft"
-                                                                                className={user.is_active ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-600/10"}
-                                                                                onClick={() => handleToggleStatus(user)}
-                                                                title={user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                                                            >
-                                                                <Power /> {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                                                                            </Button>
-                                                                        </ProtectedFeature>
-                                                                        <ProtectedFeature permission="users.update">
-                                                                            <Button
-                                                                                size="action"
-                                                                                variant="soft"
-                                                                                onClick={() => openEditDialog(user)}
-                                                                                title="Edit"
-                                                                            >
-                                                                                <Edit /> Edit
-                                                                            </Button>
-                                                                        </ProtectedFeature>
-                                                                        <ProtectedFeature permission="users.delete">
-                                                                            <Button
-                                                                                size="action"
-                                                                                variant="outline"
-                                                                                className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                                                                                onClick={() => {
-                                                                                    setSelectedUser(user);
-                                                                                    setIsDeleteDialogOpen(true);
-                                                                                }}
-                                                                            title="Hapus"
-                                                                        >
-                                                                            <Trash2 /> Hapus
-                                                                            </Button>
-                                                                        </ProtectedFeature>
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                            {usersData.items.map((user) => (
+                                                <div key={user.id} className="bg-card rounded-[24px] p-5 shadow-sm border border-border/50 relative overflow-hidden flex flex-col">
+                                                    {/* Card Content */}
+                                                    <div className="flex flex-col flex-1 relative z-10">
+                                                        <div className="flex justify-between items-start mb-1.5">
+                                                            <div className="flex flex-col gap-1 min-w-0 pr-3">
+                                                                <h3 className="font-bold text-[17px] text-foreground tracking-tight leading-tight truncate">
+                                                                    {user.name}
+                                                                </h3>
+                                                                <p className="text-[13px] font-medium text-muted-foreground truncate">
+                                                                    {user.email}
+                                                                </p>
+                                                            </div>
+                                                            <div className="shrink-0 flex items-center">
+                                                                <ProtectedFeature permission="users.manage_status">
+                                                                    <label className={`flex items-center gap-2 cursor-pointer px-2.5 py-1 rounded-full border transition-colors ${user.is_active ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20' : 'bg-muted/30 border-border/50 hover:bg-muted/50'}`}>
+                                                                        <span className={`font-bold text-[9px] uppercase tracking-wider select-none ${user.is_active ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                                                            {user.is_active ? 'Aktif' : 'Nonaktif'}
+                                                                        </span>
+                                                                        <Switch 
+                                                                            checked={user.is_active}
+                                                                            onCheckedChange={() => handleToggleStatus(user)}
+                                                                            className="data-[state=checked]:bg-green-600 scale-[0.7] origin-right"
+                                                                        />
+                                                                    </label>
+                                                                </ProtectedFeature>
+                                                            </div>
+                                                        </div>
 
-                                            {/* Pagination */}
-                                            <div className="flex items-center justify-between mt-4">
-                                                <p className="text-sm text-muted-foreground">
-                                                    Menampilkan {((queryParams.page || 1) - 1) * (queryParams.page_size || 10) + 1} ke{' '}
-                                                    {Math.min((queryParams.page || 1) * (queryParams.page_size || 10), usersData.total)} dari{' '}
-                                                    {usersData.total} pengguna
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={(queryParams.page || 1) === 1}
-                                                        onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
-                                                    >
-                                                        <ChevronLeft className="h-4 w-4" />
-                                                        Sebelumnya
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={(queryParams.page || 1) >= usersData.total_pages}
-                                                        onClick={() => setQueryParams(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
-                                                    >
-                                                        Selanjutnya
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </TabsContent>
-
-                                {/* Deleted Users Tab */}
-                                <TabsContent value="deleted">
-                                    {/* Search */}
-                                    <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                        <div className="flex gap-2 flex-1">
-                                            <Select
-                                                value={deletedQueryParams.page_size?.toString() || '10'}
-                                                onValueChange={(value) =>
-                                                    setDeletedQueryParams(prev => ({
-                                                        ...prev,
-                                                        page: 1,
-                                                        page_size: parseInt(value),
-                                                    }))
-                                                }
-                                            >
-                                                <SelectTrigger className="w-[110px]">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-muted-foreground">Tampilkan:</span>
-                                                        <SelectValue placeholder="10" />
+                                                        {/* Roles */}
+                                                        <div className="flex items-center gap-1.5 flex-wrap mt-3 mb-2">
+                                                            {user.roles && user.roles.length > 0 ? (
+                                                                user.roles.map((role, idx) => (
+                                                                    <span key={idx} className="bg-primary/5 border border-primary/15 text-primary font-bold px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider">
+                                                                        {role}
+                                                                    </span>
+                                                                ))
+                                                            ) : (
+                                                                <span className="bg-muted border border-border/50 text-muted-foreground font-bold px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider">
+                                                                    Tanpa Peran
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="10">10</SelectItem>
-                                                    <SelectItem value="25">25</SelectItem>
-                                                    <SelectItem value="50">50</SelectItem>
-                                                    <SelectItem value="100">100</SelectItem>
-                                                    <SelectItem value="99999">Semua</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <div className="relative flex-1">
-                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                                <Input
-                                                    placeholder="Cari pengguna yang diarsipkan..."
-                                                    value={deletedSearchInput}
-                                                    onChange={(e) => setDeletedSearchInput(e.target.value)}
-                                                    className="pl-10"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Deleted Users Table */}
-                                    {isLoadingDeleted ? (
-                                        <div className="flex justify-center items-center h-64">
-                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                    {/* Mobile App Style Actions Footer */}
+                                                    <div className="grid grid-cols-2 mt-auto pt-3 border-t border-border/40 divide-x divide-border/40">
+                                                        <ProtectedFeature permission="users.update">
+                                                            <button onClick={() => openEditDialog(user)} className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground hover:text-primary transition-colors active:bg-muted/30 w-full rounded-l-md">
+                                                                <Edit className="w-3.5 h-3.5" /> Edit
+                                                            </button>
+                                                        </ProtectedFeature>
+                                                        <ProtectedFeature permission="users.delete">
+                                                            <button onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }} className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground hover:text-destructive transition-colors active:bg-muted/30 w-full rounded-r-md">
+                                                                <Trash2 className="w-3.5 h-3.5" /> Hapus
+                                                            </button>
+                                                        </ProtectedFeature>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ) : !deletedUsersData?.items?.length ? (
-                                        <div className="text-center py-12">
-                                            <UserX className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">Tidak Ada Pengguna Diarsipkan</h3>
-                                            <p className="text-muted-foreground">
-                                                Pengguna yang diarsipkan akan muncul di sini untuk dipulihkan
-                                            </p>
+                                    )}
+                                    {/* Load More Button */}
+                                    {hasNextPage && (
+                                        <div className="flex justify-center mt-6 mb-10">
+                                            <button
+                                                onClick={fetchNextPage}
+                                                disabled={isLoading}
+                                                className="px-6 py-2 bg-primary text-primary-foreground rounded-full text-[13px] font-medium disabled:opacity-50 shadow-sm transition-opacity cursor-pointer active:scale-95"
+                                            >
+                                                {isLoading
+                                                    ? "Memuat..."
+                                                    : "Tampilkan Lainnya"}
+                                            </button>
                                         </div>
-                                    ) : (
+                                    )}
+
+
+                    </div>
+
+                    {/* Floating Action Button */}
+                    <ProtectedFeature permission="users.create">
+                        <button
+                            onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}
+                            className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-40 flex items-center justify-center w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:scale-95 transition-transform"
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+                    </ProtectedFeature>
+
+                    {/* Filter & Sort Modals (Floating Match Image Design) */}
+                    {modalType && (
+                        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-4">
+                            <div
+                                className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                                onClick={() => setModalType(null)}
+                            ></div>
+                            <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-6 shrink-0 relative">
+                                    {modalType === "filter" && (
+                                        <button
+                                            onClick={() => setQueryParams(prev => ({ ...prev, is_active: undefined, page: 1 }))}
+                                            className="absolute left-0 text-destructive font-semibold text-sm"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                    <h2 className="text-base font-bold w-full text-center">
+                                        {modalType === "filter" ? "Filter" : "Urutkan"}
+                                    </h2>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto pb-4 space-y-6 no-scrollbar">
+                                    {modalType === "filter" && (
                                         <>
-                                            <div className="border rounded-lg overflow-hidden">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Nama</TableHead>
-                                                            <TableHead>Email</TableHead>
-                                                            <TableHead>OAuth</TableHead>
-                                                            <TableHead className="text-right">Aksi</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {deletedUsersData.items.map((user) => (
-                                                            <TableRow key={user.id}>
-                                                                <TableCell className="font-medium">{user.name}</TableCell>
-                                                                <TableCell>{user.email}</TableCell>
-                                                                <TableCell>
-                                                                    {user.is_oauth && user.oauth_provider ? (
-                                                                        <Badge variant="outline">{user.oauth_provider}</Badge>
-                                                                    ) : (
-                                                                        <span className="text-muted-foreground text-sm">Email</span>
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
-                                                                    <ProtectedFeature permission="users.delete">
-                                                                        <Button
-                                                                            size="action"
-                                                                            variant="soft-accent"
-                                                                            onClick={() => {
-                                                                                setSelectedUser(user);
-                                                                                setIsRestoreDialogOpen(true);
-                                                                            }}
-                                                                            title="Pulihkan Pengguna"
-                                                                        >
-                                                                            <RotateCcw />
-                                                                            Pulihkan
-                                                                        </Button>
-                                                                    </ProtectedFeature>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-
-                                            {/* Pagination */}
-                                            <div className="flex items-center justify-between mt-4">
-                                                <p className="text-sm text-muted-foreground">
-                                                    Menampilkan {((deletedQueryParams.page || 1) - 1) * (deletedQueryParams.page_size || 10) + 1} ke{' '}
-                                                    {Math.min((deletedQueryParams.page || 1) * (deletedQueryParams.page_size || 10), deletedUsersData.total)} dari{' '}
-                                                    {deletedUsersData.total} pengguna diarsipkan
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={(deletedQueryParams.page || 1) === 1}
-                                                        onClick={() => setDeletedQueryParams(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
-                                                    >
-                                                        <ChevronLeft className="h-4 w-4" />
-                                                        Sebelumnya
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={(deletedQueryParams.page || 1) >= deletedUsersData.total_pages}
-                                                    >
-                                                        Selanjutnya
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    </Button>
+                                            {/* Status */}
+                                            <div>
+                                                <h3 className="font-semibold text-sm mb-3">Status</h3>
+                                                <div className="flex flex-wrap gap-2.5">
+                                                    {[
+                                                        { id: "all", label: "Semua", value: undefined },
+                                                        { id: "Aktif", label: "Aktif", value: true },
+                                                        { id: "Nonaktif", label: "Tidak Aktif", value: false },
+                                                    ].map((opt) => {
+                                                        const isSelected = queryParams.is_active === opt.value;
+                                                        return (
+                                                            <button
+                                                                key={opt.id}
+                                                                onClick={() => setQueryParams(prev => ({ ...prev, is_active: opt.value, page: 1 }))}
+                                                                className={`px-4 py-2 rounded-full text-[13px] font-medium transition-colors border ${
+                                                                    isSelected
+                                                                    ? "bg-primary text-primary-foreground border-primary"
+                                                                    : "bg-transparent text-muted-foreground border-border hover:bg-muted/50"
+                                                                } flex items-center gap-1.5`}
+                                                            >
+                                                                {opt.label}
+                                                                {isSelected && <Check className="w-3.5 h-3.5" />}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </>
                                     )}
-                                </TabsContent>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
 
-                    {/* Create User Dialog */}
-                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Tambah Pengguna</DialogTitle>
-                                <DialogDescription>Tambah pengguna baru ke sistem</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Nama</Label>
-                                    <Input
-                                        value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="Nama lengkap"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Email</Label>
-                                    <Input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                        placeholder="email@contoh.com"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Kata Sandi</Label>
-                                    <Input
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                        placeholder="Minimal 8 karakter"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Peran</Label>
-                                    <div className="space-y-2">
-                                        {roles.map((role) => (
-                                            <div key={role.id} className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
-                                                    id={`create-role-${role.id}`}
-                                                    checked={selectedRoles.includes(role.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedRoles([...selectedRoles, role.id]);
-                                                        } else {
-                                                            setSelectedRoles(selectedRoles.filter(id => id !== role.id));
-                                                        }
-                                                    }}
-                                                    className="h-4 w-4 rounded border-gray-300"
-                                                />
-                                                <Label htmlFor={`create-role-${role.id}`} className="cursor-pointer">
-                                                    {role.name}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
-                                <Button onClick={handleCreateUser} disabled={createUser.isPending}>
-                                    {createUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Tambah
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Edit User Dialog */}
-                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Edit Pengguna</DialogTitle>
-                                <DialogDescription>Perbarui data pengguna</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Nama</Label>
-                                    <Input
-                                        value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        onFocus={(e) => {
-                                            const val = e.target.value;
-                                            e.target.setSelectionRange(val.length, val.length);
-                                            // Force to end after browser's default auto-select
-                                            setTimeout(() => {
-                                                e.target.setSelectionRange(val.length, val.length);
-                                            }, 0);
-                                        }}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Email</Label>
-                                    <Input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Peran</Label>
-                                    <div className="space-y-2">
-                                        {roles.map((role) => (
-                                            <div key={role.id} className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
-                                                    id={`edit-role-${role.id}`}
-                                                    checked={selectedRoles.includes(role.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedRoles([...selectedRoles, role.id]);
-                                                        } else {
-                                                            setSelectedRoles(selectedRoles.filter(id => id !== role.id));
-                                                        }
-                                                    }}
-                                                    className="h-4 w-4 rounded border-gray-300"
-                                                />
-                                                <Label htmlFor={`edit-role-${role.id}`} className="cursor-pointer">
-                                                    {role.name}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
-                                <Button onClick={handleUpdateUser} disabled={updateUser.isPending}>
-                                    {updateUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Simpan
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Assign Roles Dialog */}
-                    <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Tetapkan Peran</DialogTitle>
-                                <DialogDescription>
-                                    Tetapkan peran untuk {selectedUser?.name}
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    {roles.map((role) => (
-                                        <div key={role.id} className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                id={`role-${role.id}`}
-                                                checked={selectedRoles.includes(role.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedRoles([...selectedRoles, role.id]);
-                                                    } else {
-                                                        setSelectedRoles(selectedRoles.filter(id => id !== role.id));
-                                                    }
-                                                }}
-                                                className="h-4 w-4 rounded border-gray-300"
-                                            />
-                                            <Label htmlFor={`role-${role.id}`} className="cursor-pointer">
-                                                {role.name}
-                                                {role.description && (
-                                                    <span className="text-muted-foreground text-sm ml-2">
-                                                        - {role.description}
-                                                    </span>
-                                                )}
-                                            </Label>
+                                    {modalType === "sort" && (
+                                        <div className="space-y-0.5">
+                                            {[
+                                                { id: "Terbaru", field: "created_at", dir: "desc" },
+                                                { id: "Terlama", field: "created_at", dir: "asc" },
+                                                { id: "Nama: A-Z", field: "name", dir: "asc" },
+                                                { id: "Nama: Z-A", field: "name", dir: "desc" },
+                                            ].map((opt) => {
+                                                const isSelected = queryParams.sort_by === opt.field && queryParams.sort_dir === opt.dir;
+                                                return (
+                                                    <button
+                                                        key={opt.id}
+                                                        onClick={() => setQueryParams(prev => ({ ...prev, sort_by: opt.field, sort_dir: opt.dir as any, page: 1 }))}
+                                                        className="w-full flex items-center justify-between py-3 bg-transparent transition-colors text-left"
+                                                    >
+                                                        <span
+                                                            className={`text-[13.5px] ${
+                                                                isSelected
+                                                                ? "font-semibold text-foreground"
+                                                                : "font-medium text-foreground/80"
+                                                            }`}
+                                                        >
+                                                            {opt.id}
+                                                        </span>
+                                                        <div
+                                                            className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center ${
+                                                                isSelected ? "border-primary" : "border-border"
+                                                            }`}
+                                                        >
+                                                            {isSelected && (
+                                                                <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
-                                    ))}
+                                    )}
+                                </div>
+
+                                <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5">
+                                    <button
+                                        onClick={() => setModalType(null)}
+                                        className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
+                                    >
+                                        {modalType === "filter" 
+                                            ? `Terapkan (${queryParams.is_active !== undefined ? 1 : 0})`
+                                            : "Terapkan"
+                                        }
+                                    </button>
                                 </div>
                             </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>Batal</Button>
-                                <Button onClick={handleAssignRoles} disabled={updateUser.isPending}>
-                                    {updateUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Tetapkan Peran
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                        </div>
+                    )}
+
+                    {/* Create & Edit User Dialog */}
+                    {(isCreateDialogOpen || isEditDialogOpen) && (
+                        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-4">
+                            <div
+                                className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                                onClick={() => { setIsCreateDialogOpen(false); setIsEditDialogOpen(false); }}
+                            ></div>
+                            <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
+                                <div className="flex items-center justify-between mb-5 shrink-0 relative">
+                                    <h2 className="text-[15px] font-bold w-full text-center">
+                                        {isEditDialogOpen ? "Edit Pengguna" : "Tambah Pengguna"}
+                                    </h2>
+                                    <button
+                                        onClick={() => { setIsCreateDialogOpen(false); setIsEditDialogOpen(false); }}
+                                        className="absolute right-0 p-2 bg-muted/50 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+                                            Nama
+                                        </Label>
+                                        <Input
+                                            value={formData.name}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                            placeholder="Nama lengkap"
+                                            className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+                                            Email
+                                        </Label>
+                                        <Input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                                            placeholder="email@contoh.com"
+                                            className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+                                            Kata Sandi
+                                        </Label>
+                                        <Input
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                                            placeholder={isEditDialogOpen ? "Kosongkan jika tidak ingin diubah" : "Minimal 8 karakter"}
+                                            className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                                        />
+                                    </div>
+                                    
+                                    <div className="space-y-1.5 pt-2">
+                                        <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1 block mb-2">
+                                            Peran
+                                        </Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {roles.map((role) => {
+                                                const isSelected = selectedRoles.includes(role.id);
+                                                return (
+                                                    <button
+                                                        key={role.id}
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                setSelectedRoles(selectedRoles.filter(id => id !== role.id));
+                                                            } else {
+                                                                setSelectedRoles([...selectedRoles, role.id]);
+                                                            }
+                                                        }}
+                                                        className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                                                            isSelected 
+                                                                ? "border-primary bg-primary/5 text-foreground" 
+                                                                : "border-border bg-muted/30 text-foreground hover:bg-muted/50 hover:border-muted-foreground/30"
+                                                        }`}
+                                                    >
+                                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 bg-background ${
+                                                            isSelected ? "border-primary" : "border-muted-foreground/60"
+                                                        }`}>
+                                                            {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                                        </div>
+                                                        <span className="text-[13px] font-medium leading-none">{role.name}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-3 shrink-0 mt-3 flex border-t border-border/40">
+                                    <button
+                                        onClick={isEditDialogOpen ? handleUpdateUser : handleCreateUser}
+                                        disabled={createUser.isPending || updateUser.isPending}
+                                        className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-[13px] font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {createUser.isPending || updateUser.isPending ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            "Simpan"
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Delete Confirmation Dialog */}
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -819,7 +695,7 @@ export default function UsersPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </MainLayout>
+                </div>
             </ProtectedModule>
         </ProtectedRoute>
     );

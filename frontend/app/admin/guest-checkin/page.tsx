@@ -14,7 +14,7 @@ import { useCheckInGuest } from '@/src/application/hooks/use-guest-query';
 import { Guest, guestService } from '@/src/domain/services/guest.service';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
@@ -223,15 +223,15 @@ export default function GuestCheckInPage() {
             <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
                 <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans transition-colors duration-300">
                     {/* Sticky Mobile Header */}
-                    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 py-4 flex items-center justify-between mb-4">
-                        <Link 
+                    <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
+                        <Link
                             href="/admin"
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5" />
                         </Link>
-                        <h1 className="text-[17px] font-bold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap">
-                            Scan Kehadiran
+                        <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-foreground">
+                            Pindai QR Tamu
                         </h1>
                         <div className="w-10 shrink-0" />
                     </div>

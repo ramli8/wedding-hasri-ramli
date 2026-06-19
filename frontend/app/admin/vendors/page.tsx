@@ -5,9 +5,7 @@ import { VendorManagementPage } from '@/src/presentation/components/pages/vendor
 export default function VendorsPage() {
     return (
         <ProtectedRoute>
-            <MainLayout>
-                <VendorManagementPage />
-            </MainLayout>
+            <VendorManagementPage />
         </ProtectedRoute>
     );
 }

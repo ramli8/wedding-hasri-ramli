@@ -10,7 +10,7 @@ import { Label } from '@/src/presentation/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/src/presentation/components/ui/radio-group';
 import { Button } from '@/src/presentation/components/ui/button';
 import { Separator } from '@/src/presentation/components/ui/separator';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 export default function DemoPreferencePage() {
     const t = useTranslations('settings.preferences');

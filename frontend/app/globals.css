@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "react-toastify/dist/ReactToastify.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -337,6 +338,8 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
   
+  --animate-slide-out-left: slide-out-left 0.3s ease-in forwards;
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -348,4 +351,19 @@
     from { height: var(--radix-accordion-content-height); }
     to { height: 0; }
   }
+}
+
+/* ===== React Toastify Theme Overrides ===== */
+:root {
+  --toastify-color-light: hsl(var(--card));
+  --toastify-text-color-light: hsl(var(--foreground));
+  --toastify-color-dark: hsl(var(--card));
+  --toastify-text-color-dark: hsl(var(--foreground));
+}
+
+.Toastify__toast {
+  --toastify-color-success: #628469 !important;
+  --toastify-color-error: #a65959 !important;
+  --toastify-color-warning: #b3914d !important;
+  --toastify-color-info: #668899 !important;
 }

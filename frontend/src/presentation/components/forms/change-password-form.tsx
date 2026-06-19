@@ -5,7 +5,7 @@ import { Input } from '@/src/presentation/components/ui/input'
 import { Label } from '@/src/presentation/components/ui/label'
 import { useAuth } from '@/src/application/hooks/use-auth'
 import { Loader2, Lock, Eye, EyeOff } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from 'react-toastify';
 
 export function ChangePasswordForm() {
     const { changePassword, isLoading } = useAuth()
@@ -180,7 +180,7 @@ export function ChangePasswordForm() {
                         className="w-full h-12 bg-destructive/10 text-destructive rounded-xl font-bold text-[13px] shadow-sm hover:bg-destructive/20 transition-all active:scale-95 flex items-center justify-center disabled:opacity-70 gap-2 cursor-pointer"
                     >
                         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                        Ubah Kata Sandi
+                        Simpan
                     </button>
                     <p className="text-[11px] text-center text-muted-foreground/80 mt-3 px-2 leading-relaxed">
                         Anda akan dikeluarkan (*logged out*) secara otomatis setelah berhasil mengubah kata sandi demi keamanan.

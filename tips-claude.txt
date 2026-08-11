@@ -1,0 +1,35 @@
+Hal pertama yang dilakukan adalah init nanti akan muncul file CLAUDE.MD
+1. /init
+2. /login
+3. /statusline
+
+Bisa meniru design dari website referensi
+1. klik inspect element di chrome
+2. lalu setting ratio nya 1920 x 1080
+3. tekan ctrl + shift + p lalu pilih capture full size screenshoot
+4. lalu rezize image agar AI tidak terlalu banyak token
+5. lalu inspect element lagi klik kanan di syntax body lalu pilih copy styles 
+6. jadi inputan di claude code adalah berupa screenshoot dan style text
+7. ketika sudah style sesuai keinginan tinggal prompt saja "konten di buildwithangga.com implementasikan di style web saya"
+Cara Kedua
+1. 
+
+beberapa web design bisa di copy prompt: 
+1. 21st.dev
+
+Do (Yang Sebaiknya Dilakukan)
+Jalankan /init dulu — gunakan perintah ini di awal untuk membuat file CLAUDE.md secara otomatis berdasarkan struktur proyek.
+Gunakan bullet point & judul singkat — supaya mudah dibaca dan dipahami, bukan paragraf panjang.
+Taruh aturan paling penting (guardrails) di bagian atas — karena bagian awal file biasanya lebih diperhatikan.
+Version-control file CLAUDE.md ini — simpan di Git seperti kode lainnya, supaya perubahannya bisa dilacak dan dibagikan ke tim.
+Tinjau & rapikan secara berkala — perlakukan file ini seperti "kode yang hidup" (living code), bukan file yang ditulis sekali lalu dilupakan.
+Don't (Yang Sebaiknya Dihindari)
+Jangan menumpuk seluruh style guide/dokumentasi API ke dalamnya — bikin file jadi terlalu panjang dan tidak fokus.
+Jangan pakai @-include file besar kecuali benar-benar perlu — karena akan memakan banyak context/token.
+Jangan menulis aturan yang samar atau terlalu ideal (aspirational) — aturan harus jelas dan bisa langsung dijalankan, bukan sekadar harapan.
+Jangan biarkan file lebih dari 500 baris tanpa dipecah — kalau sudah terlalu panjang, sebaiknya dipecah jadi beberapa file.
+Jangan lupa menambahkan aturan baru kalau Claude terus mengulangi kesalahan yang sama — ini cara memperbaiki file secara berkelanjutan berdasarkan pengalaman nyata.
+
+Intinya: CLAUDE.md sebaiknya singkat, jelas, terstruktur, fokus pada hal-hal penting, dan terus diperbarui — bukan dokumen statis yang penuh informasi berlebihan.
+
+

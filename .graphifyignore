@@ -1,0 +1,24 @@
+# graphify ignore — keep the knowledge graph to OUR code, not dependencies
+.git/
+.agents/
+.claude/
+.opencode/
+.scratch/
+graphify-out/
+
+frontend/node_modules/
+frontend/.next/
+frontend/bun.lock
+frontend/package-lock.json
+frontend/tsconfig.tsbuildinfo
+frontend/lint_results.txt
+frontend/lint_errors.txt
+
+backend/api
+backend/main
+backend/tmp/
+backend/.env
+
+*.png
+*.jpg
+*.jpeg

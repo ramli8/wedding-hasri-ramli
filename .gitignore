@@ -1,0 +1,8 @@
+# Agent workspace
+.scratch/
+
+# Knowledge graph output (rebuildable)
+graphify-out/
+
+# OpenCode local config/deps
+.opencode/node_modules/

@@ -1,0 +1,336 @@
+/* ===== Undangan Digital — Monochrome Editorial =====
+   Token & helper hanya untuk modul undangan. Jangan mengubah token global admin. */
+
+:root {
+  --inv-bg: #1b1916;
+  --inv-surface: #2c2924;
+  --inv-accent: #f5f0e8;
+  --inv-muted: #8c8c8c;
+  --inv-hairline: rgba(245, 240, 232, 0.12);
+}
+
+.invitation.theme-ivory {
+  --inv-bg: #f5f0e8;
+  --inv-surface: #fdfbf6;
+  --inv-accent: #1c1b19;
+  --inv-muted: #635e55;
+  --inv-hairline: rgba(26, 26, 26, 0.15);
+}
+
+.invitation.theme-moody {
+  --inv-bg: #1b1916;
+  --inv-surface: #2c2924;
+  --inv-accent: #f5f0e8;
+  --inv-muted: #8c8c8c;
+  --inv-hairline: rgba(245, 240, 232, 0.12);
+}
+
+.invitation {
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--inv-font-sans);
+  background-color: var(--inv-bg);
+  color: var(--inv-accent);
+  font-family: var(--inv-font-sans), sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+.invitation ::selection {
+  background: var(--inv-hairline);
+  color: var(--inv-accent);
+}
+
+.inv-display {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+.inv-label {
+  font-family: var(--inv-font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--inv-muted);
+}
+
+.inv-eyebrow {
+  font-family: var(--inv-font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--inv-muted);
+}
+
+.inv-hairline-b {
+  border-color: var(--inv-hairline);
+}
+
+/* ===== Motion engine ===== */
+
+.inv-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
+}
+
+.inv-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.inv-marquee {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.inv-marquee-track {
+  animation: inv-marquee-scroll 28s linear infinite;
+}
+
+.inv-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  animation: inv-grain-shift 0.9s steps(4) infinite;
+}
+
+@keyframes inv-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes inv-grain-shift {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: -12px 6px;
+  }
+  50% {
+    background-position: 6px -9px;
+  }
+  75% {
+    background-position: -7px -5px;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .inv-marquee-track {
+    animation: none;
+  }
+
+  .inv-grain {
+    animation: none;
+  }
+
+  .inv-rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ===== Cover ===== */
+
+.invitation.theme-ivory .inv-cover-bg {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(255, 255, 255, 0.5), transparent 62%),
+    linear-gradient(160deg, #f8f4ec 0%, #f1ebdf 45%, #ece5d8 100%);
+}
+
+.invitation.theme-moody .inv-cover-bg {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(245, 240, 232, 0.06), transparent 62%),
+    linear-gradient(160deg, #201e1a 0%, #191713 45%, var(--inv-bg) 100%);
+}
+
+.inv-cover-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  mix-blend-mode: overlay;
+}
+
+.inv-cover-img {
+  filter: contrast(1.02);
+}
+
+.inv-cover-greeting {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+  color: var(--inv-muted);
+}
+
+.inv-cover-names {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  color: var(--inv-accent);
+}
+
+.inv-cover-names > * {
+  white-space: nowrap;
+}
+
+.inv-cover-names-amp {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--inv-muted);
+}
+
+.inv-cover-tagline {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1rem, 3vw, 1.15rem);
+  letter-spacing: 0.02em;
+  color: var(--inv-muted);
+}
+
+.inv-stack-card {
+  overflow: hidden;
+  border: 1px solid var(--inv-hairline);
+  background: var(--inv-surface);
+  will-change: transform;
+}
+
+.inv-stack-placeholder {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(
+      ellipse 90% 70% at 50% 45%,
+      color-mix(in srgb, var(--inv-accent) 6%, transparent),
+      transparent 70%
+    ),
+    var(--inv-surface);
+}
+
+.inv-stack-placeholder span {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  font-size: 1.5rem;
+  letter-spacing: 0.18em;
+  color: var(--inv-muted);
+}
+
+.invitation .inv-cta {
+  background: var(--inv-accent);
+  color: var(--inv-bg);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.invitation.theme-ivory .inv-cta:hover {
+  background: #000;
+}
+
+.invitation.theme-moody .inv-cta:hover {
+  background: #fff;
+}
+
+.inv-rise {
+  opacity: 0;
+  transform: translateY(28px);
+  animation: inv-rise 0.9s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+}
+
+@keyframes inv-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Ayat ===== */
+
+.inv-ayat-arabic {
+  font-family: var(--inv-font-arabic), serif;
+  font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+  line-height: 2.1;
+  color: var(--inv-accent);
+  direction: rtl;
+}
+
+.inv-ayat-divider {
+  width: 2.5rem;
+  height: 1px;
+  background: var(--inv-hairline);
+}
+
+.inv-ayat-translation {
+  font-family: var(--font-cormorant), serif;
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: var(--inv-muted);
+}
+
+/* ===== Mempelai ===== */
+
+.inv-card {
+  border: 1px solid var(--inv-hairline);
+}
+
+.inv-card-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--inv-surface);
+}
+
+.inv-card-img {
+  filter: grayscale(1) contrast(1.06) brightness(0.97);
+}
+
+.inv-card-mono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  color: var(--inv-muted);
+  background:
+    radial-gradient(
+      ellipse 70% 55% at 50% 45%,
+      color-mix(in srgb, var(--inv-accent) 6%, transparent),
+      transparent 65%
+    ),
+    var(--inv-surface);
+}
+
+.inv-card-label {
+  color: var(--inv-accent);
+}

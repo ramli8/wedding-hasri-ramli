@@ -4,6 +4,15 @@
     "AGENTS.md",
     "RTK.md"
   ],
+  "mcp": {
+    "21st": {
+      "type": "remote",
+      "url": "https://21st.dev/api/mcp",
+      "headers": {
+        "x-api-key": "21st_sk_5424369d35654caef479625420a2402dfdfebe97a42b8cc3513ca06c94a45d82"
+      }
+    }
+  },
   "skills": {
     "paths": [".agents/skills", ".opencode/skills"]
   },

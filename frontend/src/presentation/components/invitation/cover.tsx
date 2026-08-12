@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { invitationContent } from "@/src/domain/services/invitation-content";
 import { useInvitation } from "@/src/lib/invitation/invitation-context";
@@ -8,7 +8,9 @@ import { useInvitationTheme } from "@/src/lib/invitation/invitation-theme";
 import { useLenisScroll } from "@/src/lib/invitation/smooth-scroll";
 import { useGuestName } from "@/src/lib/invitation/use-guest";
 import { haptic } from "@/src/lib/invitation/haptics";
+import { prefersReducedMotion } from "@/src/lib/invitation/reduced-motion";
 import { useIsMobile } from "@/src/application/hooks/use-mobile";
+import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/presentation/components/ui/button";
 import { CoverflowCarousel } from "@/src/presentation/components/ui/coverflow-carousel";
 
@@ -18,32 +20,64 @@ export function Cover() {
   const guestName = useGuestName();
   const isMobile = useIsMobile();
   const [exiting, setExiting] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [veilVisible, setVeilVisible] = useState(false);
+  const timeoutsRef = useRef<number[]>([]);
   const { couple, wedding, cover } = invitationContent;
   const { theme } = useInvitationTheme();
 
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => timeouts.forEach((t) => window.clearTimeout(t));
+  }, []);
+
   const handleOpen = () => {
-    setExiting(true);
+    if (exiting) return;
     open();
-    if (lenis) {
-      lenis.start();
-      lenis.scrollTo("#ayat", {
-        duration: 1.6,
-        easing: (t) => 1 - Math.pow(1 - t, 4),
-      });
-    } else {
+
+    if (prefersReducedMotion()) {
+      setHidden(true);
       requestAnimationFrame(() => {
         document.getElementById("ayat")?.scrollIntoView({ behavior: "auto" });
       });
+      return;
     }
+
+    setExiting(true);
+    setVeilVisible(true);
+
+    timeoutsRef.current.push(
+      window.setTimeout(() => {
+        setHidden(true);
+        requestAnimationFrame(() => {
+          if (lenis) {
+            lenis.start();
+            lenis.scrollTo(0, { immediate: true });
+          } else {
+            window.scrollTo(0, 0);
+          }
+        });
+      }, 260),
+      window.setTimeout(() => setVeilVisible(false), 520),
+    );
   };
 
   return (
-    <section
-      id="cover"
-      className={`relative flex min-h-dvh flex-col items-center overflow-hidden transition-all duration-500 ease-out ${exiting ? "opacity-80" : ""}`}
-    >
-      <div className="inv-cover-bg absolute inset-0" aria-hidden />
-      <div className="inv-cover-grain absolute inset-0 pointer-events-none" aria-hidden />
+    <>
+      <div
+        className={cn("inv-veil fixed inset-0 z-30", veilVisible && "is-visible")}
+        aria-hidden
+      />
+      {!hidden && (
+        <section
+          id="cover"
+          className={cn(
+            "relative flex min-h-dvh flex-col items-center overflow-hidden",
+            exiting && "inv-cover-exit",
+          )}
+        >
+          <div className="inv-cover-bg absolute inset-0" aria-hidden />
+          <div className="inv-cover-grain absolute inset-0 pointer-events-none" aria-hidden />
 
       <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-6 sm:gap-9 lg:gap-0 lg:justify-start">
         <div className="inv-rise w-full lg:flex lg:flex-1 lg:items-center" style={{ animationDelay: "250ms" }}>
@@ -133,8 +167,10 @@ export function Cover() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+          </div>
         </div>
-      </div>
-    </section>
+        </section>
+      )}
+    </>
   );
 }

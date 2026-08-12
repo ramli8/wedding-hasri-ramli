@@ -139,6 +139,31 @@
   }
 }
 
+/* ===== Transisi Buka Undangan (Veil Dissolve) ===== */
+
+.inv-veil {
+  background: var(--inv-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.inv-veil.is-visible {
+  opacity: 0.6;
+  transition-duration: 300ms;
+}
+
+.inv-cover-exit {
+  opacity: 0;
+  transform: scale(0.985);
+  filter: blur(2px);
+  pointer-events: none;
+  transition:
+    opacity 0.6s cubic-bezier(0.33, 1, 0.68, 1),
+    transform 0.6s cubic-bezier(0.33, 1, 0.68, 1),
+    filter 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .inv-reveal {
     opacity: 1 !important;
@@ -158,6 +183,19 @@
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .inv-veil {
+    transition: none;
+    opacity: 0;
+  }
+
+  .inv-ayat-arabic-hero,
+  .inv-frame-rule {
+    clip-path: none;
+    transform: none;
+    opacity: 1;
+    transition: none;
   }
 }
 
@@ -351,25 +389,186 @@
 
 /* ===== Ayat ===== */
 
-.inv-ayat-arabic {
-  font-family: var(--inv-font-arabic), serif;
-  font-size: clamp(1.4rem, 4.5vw, 2.1rem);
-  line-height: 2.1;
-  color: var(--inv-accent);
-  direction: rtl;
+.inv-ayat-section {
+  background: var(--inv-bg);
 }
 
-.inv-ayat-divider {
-  width: 2.5rem;
+.invitation.theme-ivory .inv-ayat-section {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 25%, rgba(176, 141, 87, 0.1), transparent 62%),
+    linear-gradient(160deg, #f7f3ec 0%, #efe8db 45%, #e6dfcf 100%);
+}
+
+.invitation.theme-moody .inv-ayat-section {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 25%, rgba(243, 237, 227, 0.05), transparent 62%),
+    linear-gradient(160deg, #211d18 0%, #1b1815 45%, var(--inv-bg) 100%);
+}
+
+.inv-ayat-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+.inv-frame-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--inv-hairline);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.inv-ayat-translation {
-  font-family: var(--font-cormorant), serif;
-  font-size: 1.05rem;
-  line-height: 1.9;
+.inv-frame-top {
+  top: 2.5rem;
+}
+
+.inv-frame-bottom {
+  bottom: 2.5rem;
+}
+
+.inv-ayat-stage.is-revealed .inv-frame-rule {
+  transform: scaleX(1);
+}
+
+.inv-ayat-eyebrow {
+  font-family: var(--inv-font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
   color: var(--inv-muted);
+}
+
+.inv-ayat-opening {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.95rem, 2.25vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--inv-muted);
+}
+
+.inv-ayat-bismillah {
+  font-family: var(--inv-font-arabic), serif;
+  font-size: clamp(1.2rem, 3.25vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.8;
+  color: var(--inv-accent-color);
+}
+
+.inv-ayat-arabic-hero {
+  font-family: var(--inv-font-arabic), serif;
+  font-weight: 400;
+  font-size: clamp(1.4rem, 4.5vw, 2.25rem);
+  line-height: 1.8;
+  letter-spacing: normal;
+  color: var(--inv-accent);
+  direction: rtl;
+  text-align: right;
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inv-ayat-stage.is-revealed .inv-ayat-arabic-hero {
+  clip-path: inset(0 0 0 0);
+}
+
+.inv-ayat-note {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.95rem, 2.25vw, 1.15rem);
+  line-height: 1.8;
+  color: var(--inv-muted);
+  max-width: 58ch;
+}
+
+.inv-ayat-source {
+  font-family: var(--inv-font-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--inv-muted);
+}
+
+.inv-ayat-quote {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  color: var(--inv-accent-color);
+  user-select: none;
+  pointer-events: none;
+}
+
+.inv-ayat-quote-mark {
+  display: inline-block;
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(3.5rem, 8vw, 5.5rem);
+  line-height: 0.75;
+  opacity: 0.5;
+}
+
+.inv-ayat-quote--open {
+  top: -1.75rem;
+  left: -0.5rem;
+}
+
+.inv-ayat-quote--close {
+  bottom: -1.5rem;
+  right: -0.5rem;
+}
+
+.inv-ayat-doa {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 400;
+  font-size: clamp(1.1rem, 2.75vw, 1.35rem);
+  line-height: 1.7;
+  color: var(--inv-muted);
+  max-width: 40ch;
+  text-wrap: balance;
+}
+
+.inv-parent-intro {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.95rem, 2.25vw, 1.15rem);
+  line-height: 1.7;
+  color: var(--inv-muted);
+}
+
+.inv-parent-label {
+  font-family: var(--inv-font-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--inv-accent-color);
+}
+
+.inv-parent-name {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  letter-spacing: 0.04em;
+  color: var(--inv-accent);
+  text-wrap: balance;
+}
+
+.inv-parent-amp {
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--inv-accent-color);
 }
 
 /* ===== Mempelai ===== */

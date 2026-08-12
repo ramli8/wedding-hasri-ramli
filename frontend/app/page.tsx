@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
-import { Inter } from "next/font/google";
+import { Amiri, Inter } from "next/font/google";
 import { invitationContent } from "@/src/domain/services/invitation-content";
 import { InvitationThemeProvider } from "@/src/lib/invitation/invitation-theme";
 import { SmoothScrollProvider } from "@/src/lib/invitation/smooth-scroll";
@@ -30,6 +30,12 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+const amiri = Amiri({
+  variable: "--inv-font-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Undangan — Hasri & Ramli",
   description: "Undangan digital pernikahan Hasri & Ramli",
@@ -53,7 +59,7 @@ const sectionComponents: Record<string, ComponentType> = {
 
 export default function UndanganPage() {
   return (
-    <InvitationThemeProvider fontClassName={inter.variable}>
+    <InvitationThemeProvider fontClassName={`${inter.variable} ${amiri.variable}`}>
       <SmoothScrollProvider>
         <InvitationProvider>
           <ScrollProgress />

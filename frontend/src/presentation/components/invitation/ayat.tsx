@@ -2,38 +2,60 @@
 
 import { invitationContent } from "@/src/domain/services/invitation-content";
 import { Reveal } from "@/src/lib/invitation/reveal";
+import { useScrollReveal } from "@/src/lib/invitation/use-scroll-reveal";
 
 export function Ayat() {
-  const { ayat, orangTua } = invitationContent;
+  const { ayat, penutup } = invitationContent;
+  const stageRef = useScrollReveal<HTMLDivElement>();
 
   return (
     <section
       id="ayat"
-      className="inv-section inv-hairline-b relative flex min-h-dvh items-center justify-center border-b px-6 py-28"
+      className="inv-ayat-section inv-hairline-b relative overflow-hidden border-b"
     >
-      <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
-        <Reveal>
-          <p className="inv-eyebrow">Ayat</p>
-        </Reveal>
+      <div
+        className="inv-ayat-texture pointer-events-none absolute inset-0"
+        aria-hidden
+      />
 
-        <Reveal delay={100}>
-          <p dir="rtl" lang="ar" className="inv-ayat-arabic mt-12">
-            {ayat.arabic}
-          </p>
-        </Reveal>
+      <div ref={stageRef} className="inv-ayat-stage relative">
+        <div className="mx-auto w-full max-w-3xl px-6 md:px-10">
+          <div className="relative flex min-h-dvh flex-col items-center justify-center pt-20 pb-14 text-center md:pt-24 md:pb-16">
+            <div className="inv-frame-rule inv-frame-top" aria-hidden />
+            <div className="inv-frame-rule inv-frame-bottom" aria-hidden />
 
-        <Reveal delay={200}>
-          <div className="inv-ayat-divider mt-12" aria-hidden />
-          <p className="inv-ayat-translation mt-8">{ayat.translation}</p>
-          <p className="inv-eyebrow mt-8">{ayat.source}</p>
-        </Reveal>
+            <Reveal>
+              <p className="inv-ayat-eyebrow">{ayat.eyebrow}</p>
+            </Reveal>
 
-        <Reveal delay={300}>
-          <div className="mt-14 flex flex-col items-center gap-4 border-t border-[var(--inv-hairline)] pt-10">
-            <p className="inv-eyebrow">{orangTua.pihakWanita}</p>
-            <p className="inv-eyebrow">{orangTua.pihakPria}</p>
+            <div className="relative mx-auto mt-10 w-fit max-w-full md:mt-12">
+              <div className="inv-ayat-quote inv-ayat-quote--open" aria-hidden>
+                <span className="inv-ayat-quote-mark">{"\u201C"}</span>
+              </div>
+
+              <p dir="rtl" lang="ar" className="inv-ayat-arabic-hero">
+                {ayat.arabic}
+              </p>
+            </div>
+
+            <Reveal delay={800} className="mt-12">
+              <div className="relative mx-auto w-fit max-w-[58ch]">
+                <p className="inv-ayat-note">{ayat.translation}</p>
+                <p className="inv-ayat-source mt-4">{ayat.source}</p>
+                <div className="inv-ayat-quote inv-ayat-quote--close" aria-hidden>
+                  <span className="inv-ayat-quote-mark">{"\u201D"}</span>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={900} className="mt-14 md:mt-16">
+              <p dir="rtl" lang="ar" className="inv-ayat-bismillah">
+                {penutup.bismillah}
+              </p>
+              <p className="inv-ayat-doa mt-4">{penutup.doa}</p>
+            </Reveal>
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );

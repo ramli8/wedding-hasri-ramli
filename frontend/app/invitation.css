@@ -2,27 +2,33 @@
    Token & helper hanya untuk modul undangan. Jangan mengubah token global admin. */
 
 :root {
-  --inv-bg: #1b1916;
-  --inv-surface: #2c2924;
-  --inv-accent: #f5f0e8;
-  --inv-muted: #8c8c8c;
-  --inv-hairline: rgba(245, 240, 232, 0.12);
+  --inv-bg: #1b1815;
+  --inv-surface: #2a2620;
+  --inv-accent: #f3ede3;
+  --inv-muted: #9c948a;
+  --inv-hairline: rgba(243, 237, 227, 0.12);
+  --inv-accent-color: #b08d57;
+  --inv-accent-text: #b08d57;
 }
 
 .invitation.theme-ivory {
-  --inv-bg: #f5f0e8;
-  --inv-surface: #fdfbf6;
-  --inv-accent: #1c1b19;
-  --inv-muted: #635e55;
-  --inv-hairline: rgba(26, 26, 26, 0.15);
+  --inv-bg: #f7f3ec;
+  --inv-surface: #ede6d8;
+  --inv-accent: #211d18;
+  --inv-muted: #7a7266;
+  --inv-hairline: rgba(33, 29, 24, 0.14);
+  --inv-accent-color: #b08d57;
+  --inv-accent-text: #805f33;
 }
 
 .invitation.theme-moody {
-  --inv-bg: #1b1916;
-  --inv-surface: #2c2924;
-  --inv-accent: #f5f0e8;
-  --inv-muted: #8c8c8c;
-  --inv-hairline: rgba(245, 240, 232, 0.12);
+  --inv-bg: #1b1815;
+  --inv-surface: #2a2620;
+  --inv-accent: #f3ede3;
+  --inv-muted: #9c948a;
+  --inv-hairline: rgba(243, 237, 227, 0.12);
+  --inv-accent-color: #b08d57;
+  --inv-accent-text: #b08d57;
 }
 
 .invitation {
@@ -58,9 +64,13 @@
   font-family: var(--inv-font-sans), sans-serif;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--inv-muted);
+}
+
+.inv-eyebrow-accent {
+  color: var(--inv-accent-text);
 }
 
 .inv-hairline-b {
@@ -155,14 +165,14 @@
 
 .invitation.theme-ivory .inv-cover-bg {
   background:
-    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(255, 255, 255, 0.5), transparent 62%),
-    linear-gradient(160deg, #f8f4ec 0%, #f1ebdf 45%, #ece5d8 100%);
+    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(176, 141, 87, 0.14), transparent 62%),
+    linear-gradient(160deg, #f7f3ec 0%, #efe8db 45%, #e6dfcf 100%);
 }
 
 .invitation.theme-moody .inv-cover-bg {
   background:
-    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(245, 240, 232, 0.06), transparent 62%),
-    linear-gradient(160deg, #201e1a 0%, #191713 45%, var(--inv-bg) 100%);
+    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(243, 237, 227, 0.06), transparent 62%),
+    linear-gradient(160deg, #211d18 0%, #1b1815 45%, var(--inv-bg) 100%);
 }
 
 .inv-cover-grain {
@@ -190,11 +200,13 @@
   justify-content: center;
   gap: 0.5rem;
   font-family: var(--font-cormorant), serif;
-  font-weight: 300;
-  font-size: clamp(2.25rem, 6vw, 3.5rem);
-  letter-spacing: 0.03em;
-  line-height: 1.1;
+  font-weight: 400;
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.15;
   color: var(--inv-accent);
+  text-wrap: balance;
 }
 
 .inv-cover-names > * {
@@ -204,7 +216,31 @@
 .inv-cover-names-amp {
   font-style: italic;
   font-weight: 400;
-  color: var(--inv-muted);
+  color: var(--inv-accent-color);
+}
+
+.inv-cover-flourish {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.inv-cover-flourish-line {
+  height: 1px;
+  width: 2.5rem;
+  background: linear-gradient(90deg, transparent, var(--inv-accent-color));
+}
+
+.inv-cover-flourish-line:last-child {
+  background: linear-gradient(270deg, transparent, var(--inv-accent-color));
+}
+
+.inv-cover-flourish-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--inv-accent-color);
+  opacity: 0.85;
 }
 
 .inv-cover-tagline {
@@ -247,19 +283,57 @@
 }
 
 .invitation .inv-cta {
-  background: var(--inv-accent);
-  color: var(--inv-bg);
-  letter-spacing: 0.22em;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+  color: var(--inv-accent-text);
+  border: 1px solid var(--inv-accent-text);
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  transition:
+    border-color 0.25s ease,
+    transform 0.2s ease;
 }
 
-.invitation.theme-ivory .inv-cta:hover {
-  background: #000;
+.invitation .inv-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--inv-accent-color) 14%, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }
 
-.invitation.theme-moody .inv-cta:hover {
-  background: #fff;
+.invitation .inv-cta:hover::before,
+.invitation .inv-cta:active::before {
+  transform: scaleX(1);
+}
+
+.invitation .inv-cta:hover {
+  border-color: var(--inv-accent-color);
+}
+
+/* ===== CTA — Teks + garis bawah reveal ===== */
+
+.invitation .inv-cta--underline {
+  border: none;
+}
+
+.invitation .inv-cta--underline::before {
+  display: none;
+}
+
+.invitation .inv-cta--underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  height: 1px;
+  background: var(--inv-accent-color);
 }
 
 .inv-rise {
@@ -333,4 +407,11 @@
 
 .inv-card-label {
   color: var(--inv-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invitation .inv-cta::before {
+    transition: none;
+    transform: scaleX(1);
+  }
 }

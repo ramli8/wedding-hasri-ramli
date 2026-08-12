@@ -28,6 +28,8 @@ export interface CoverflowCarouselProps {
   falloff?: number;
   /** Opacity lost per step from the centre. */
   fade?: number;
+  /** Floor for card opacity, so far cards never wash out (0 = off). */
+  minOpacity?: number;
   /** Any CSS length. Everything else is derived from it, so the rake scales. */
   cardWidth?: string;
   /** Space between cards, as a fraction of card width. */
@@ -36,6 +38,8 @@ export interface CoverflowCarouselProps {
   showCaption?: boolean;
   showPagination?: boolean;
   showNavigation?: boolean;
+  /** Fired when the centred slide lands on a different index. */
+  onSlideChange?: (index: number) => void;
   /** Names the carousel for assistive tech. */
   label?: string;
   className?: string;
@@ -49,12 +53,14 @@ export function CoverflowCarousel({
   perspective = 3,
   falloff = 0.56,
   fade = 0.1,
+  minOpacity = 0,
   cardWidth = "clamp(148px, 22vw, 260px)",
   gap = 0.05,
   loop = true,
   showCaption = false,
   showPagination = false,
   showNavigation = false,
+  onSlideChange,
   label = "Cover carousel",
   className,
   cardClassName,
@@ -120,10 +126,11 @@ export function CoverflowCarousel({
       // A card is teleported across the ring at exactly half a turn out, so it
       // has to be gone by then or the jump is visible.
       const edge = loop ? Math.min(1, Math.max(0, count / 2 - distance)) : 1;
-      card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
+      const baseOpacity = Math.max(0, 1 - fade * distance) * edge;
+      card.style.opacity = String(edge > 0 ? Math.max(minOpacity, baseOpacity) : 0);
       card.style.zIndex = String(100 - Math.round(distance));
     });
-  }, [count, depth, fade, falloff, gap, loop, rotate]);
+  }, [count, depth, fade, falloff, gap, loop, minOpacity, rotate]);
 
   const settle = React.useCallback(
     (target: number) => {
@@ -241,6 +248,15 @@ export function CoverflowCarousel({
     [],
   );
 
+  const firstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    onSlideChange?.(selected);
+  }, [selected, onSlideChange]);
+
   const active = slides[selected];
 
   return (
@@ -269,7 +285,7 @@ export function CoverflowCarousel({
             }
           }}
           // Vertical padding keeps the drop shadows clear of the overflow clip.
-          className="cursor-grab overflow-hidden py-6 outline-none ring-ring focus-visible:ring-2 active:cursor-grabbing"
+          className="cursor-grab overflow-hidden py-8 sm:py-10 outline-none ring-ring focus-visible:ring-2 active:cursor-grabbing"
           style={{
             perspective: `calc(var(--cf-card) * ${perspective})`,
             // Horizontal drag is ours; the page keeps vertical scrolling.

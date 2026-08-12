@@ -32,7 +32,7 @@ export function InvitationThemeProvider({
   children,
   fontClassName,
 }: InvitationThemeProviderProps) {
-  const [theme, setTheme] = useState<InvitationTheme>("ivory");
+  const [theme, setTheme] = useState<InvitationTheme>("moody");
 
   useEffect(() => {
     const saved = window.localStorage.getItem(THEME_STORAGE_KEY);

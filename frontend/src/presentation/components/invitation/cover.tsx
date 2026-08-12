@@ -7,8 +7,8 @@ import { useInvitation } from "@/src/lib/invitation/invitation-context";
 import { useLenisScroll } from "@/src/lib/invitation/smooth-scroll";
 import { useGuestName } from "@/src/lib/invitation/use-guest";
 import { Magnetic } from "@/src/lib/invitation/magnetic";
-import { CoverStack } from "@/src/presentation/components/invitation/cover-stack";
 import { Button } from "@/src/presentation/components/ui/button";
+import { CoverflowCarousel } from "@/src/presentation/components/ui/coverflow-carousel";
 
 export function Cover() {
   const { open } = useInvitation();
@@ -44,8 +44,22 @@ export function Cover() {
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-12 pt-6 sm:pb-20 sm:pt-10 lg:px-10">
         <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-16">
           <div className="flex flex-col items-center lg:col-span-6 lg:items-start">
-            <div className="inv-rise" style={{ animationDelay: "250ms" }}>
-              <CoverStack images={cover.photos} className="mx-auto lg:mx-0" />
+            <div className="inv-rise w-full" style={{ animationDelay: "250ms" }}>
+              <CoverflowCarousel
+                slides={cover.photos.map((src) => ({
+                  src,
+                  alt: "Foto prewedding",
+                }))}
+                rotate={32}
+                depth={0.45}
+                falloff={0.65}
+                perspective={3.5}
+                fade={0.12}
+                cardWidth="clamp(170px, 24vw, 300px)"
+                loop
+                label="Foto prewedding Hasri & Ramli"
+                cardClassName="aspect-[4/5] rounded-lg border border-[var(--inv-hairline)] bg-[var(--inv-surface)] shadow-xl [&_img]:[filter:contrast(1.02)]"
+              />
             </div>
           </div>
 

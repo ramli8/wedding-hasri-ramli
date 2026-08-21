@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
+	"github.com/base-go/backend/internal/invitation"
 	"github.com/base-go/backend/internal/kondangan"
 	"github.com/base-go/backend/internal/rbac"
 	"github.com/base-go/backend/internal/vendor"
@@ -31,6 +32,7 @@ func SetupRoutes(
 	guestHandler guest.Handler,
 	vendorHandler vendor.Handler,
 	kondanganHandler kondangan.Handler,
+	invitationHandler invitation.Handler,
 ) *chi.Mux {
 	mux := chi.NewRouter()
 
@@ -263,6 +265,119 @@ func SetupRoutes(
 				r.Get("/", kondanganHandler.GetByID)
 				r.Put("/", kondanganHandler.Update)
 				r.Delete("/", kondanganHandler.Delete)
+			})
+		})
+
+		// Invitation public routes (no JWT - accessed by wedding guests)
+		r.Route("/invitation", func(r chi.Router) {
+			r.Get("/", invitationHandler.GetPublicInvitation)
+		})
+
+		// Wedding/invitation management routes (protected - Admin only)
+		r.Route("/wedding", func(r chi.Router) {
+			r.Use(middleware.JWTAuthMiddleware)
+			r.Use(middleware.RequireRole("Super Admin", "Admin"))
+
+			r.Get("/", invitationHandler.GetWedding)
+			r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateWedding)
+
+			// Couples
+			r.Route("/couples", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateCouple)
+				r.Get("/", invitationHandler.ListCouples)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetCouple)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateCouple)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteCouple)
+				})
+			})
+
+			// Events
+			r.Route("/events", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateEvent)
+				r.Get("/", invitationHandler.ListEvents)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetEvent)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateEvent)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteEvent)
+				})
+			})
+
+			// Story timeline
+			r.Route("/story", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateStory)
+				r.Get("/", invitationHandler.ListStories)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetStory)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateStory)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteStory)
+				})
+			})
+
+			// Gallery
+			r.Route("/gallery", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateGalleryItem)
+				r.Get("/", invitationHandler.ListGalleryItems)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetGalleryItem)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateGalleryItem)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteGalleryItem)
+				})
+			})
+
+			// FAQs
+			r.Route("/faqs", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateFaq)
+				r.Get("/", invitationHandler.ListFaqs)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetFaq)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateFaq)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteFaq)
+				})
+			})
+
+			// Bank accounts (digital envelope)
+			r.Route("/bank-accounts", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateBankAccount)
+				r.Get("/", invitationHandler.ListBankAccounts)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetBankAccount)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateBankAccount)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteBankAccount)
+				})
+			})
+
+			// E-wallets (digital envelope)
+			r.Route("/ewallets", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateEwallet)
+				r.Get("/", invitationHandler.ListEwallets)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetEwallet)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateEwallet)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteEwallet)
+				})
+			})
+
+			// Wishlist gifts
+			r.Route("/wishlist", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateWishlistItem)
+				r.Get("/", invitationHandler.ListWishlistItems)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetWishlistItem)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateWishlistItem)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteWishlistItem)
+				})
+			})
+
+			// Sections visibility & ordering
+			r.Route("/sections", func(r chi.Router) {
+				r.With(middleware.RequirePermission(rbacRepo, "weddings.create")).Post("/", invitationHandler.CreateSection)
+				r.Get("/", invitationHandler.ListSections)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", invitationHandler.GetSection)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/", invitationHandler.UpdateSection)
+					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteSection)
+				})
 			})
 		})
 	})

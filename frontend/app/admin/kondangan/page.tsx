@@ -33,6 +33,7 @@ import {
   Inbox,
   Check,
   Banknote,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -44,7 +45,7 @@ import {
 } from "@/src/presentation/components/ui/dialog";
 import { Label } from "@/src/presentation/components/ui/label";
 import { Card, CardContent } from "@/src/presentation/components/ui/card";
-import { Button } from "@/src/presentation/components/ui/button";
+
 import { Input } from "@/src/presentation/components/ui/input";
 import { Badge } from "@/src/presentation/components/ui/badge";
 import { toast } from "react-toastify";
@@ -639,10 +640,10 @@ export default function CatatanKondanganPage() {
               )}
             </div>
 
-            <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5">
+            <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5 border-t border-border/40">
               <button
                 onClick={() => setModalType(null)}
-                className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
+                className="w-full flex items-center justify-center h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors cursor-pointer active:scale-95"
               >
                 {modalType === "filter"
                   ? `Terapkan (${
@@ -904,13 +905,17 @@ export default function CatatanKondanganPage() {
               </div>
             </div>
 
-            <div className="pt-2 shrink-0 mt-2 mb-1">
+            <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5 border-t border-border/40">
               <button
                 onClick={handleSaveKondangan}
                 disabled={createMut.isPending || updateMut.isPending}
-                className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-[14px] font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer active:scale-95"
               >
-                Simpan
+                {(createMut.isPending || updateMut.isPending) ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Simpan"
+                )}
               </button>
             </div>
           </div>

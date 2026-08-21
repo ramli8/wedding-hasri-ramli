@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
+	"github.com/base-go/backend/internal/invitation"
 	"github.com/base-go/backend/internal/kondangan"
 	"github.com/base-go/backend/internal/rbac"
 	"github.com/base-go/backend/internal/vendor"
@@ -92,6 +93,19 @@ func New() (*dig.Container, error) {
 	}
 
 	if err := container.Provide(kondangan.NewHandler); err != nil {
+		return nil, err
+	}
+
+	// invitation/wedding module
+	if err := container.Provide(invitation.NewRepository); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(invitation.NewService); err != nil {
+		return nil, err
+	}
+
+	if err := container.Provide(invitation.NewHandler); err != nil {
 		return nil, err
 	}
 

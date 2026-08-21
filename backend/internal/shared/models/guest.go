@@ -31,6 +31,7 @@ type Guest struct {
 	Note              *string    `gorm:"type:text;default:null"`
 	StatusAttending   string     `gorm:"type:guest_status_attending;default:pending"`
 	StatusSent        string     `gorm:"type:guest_status_sent;default:pending"`
+	InvitationOpenedAt *time.Time `gorm:"type:timestamptz;default:null"`
 	CheckInAt         *time.Time `gorm:"type:timestamp;default:null"`
 	CheckOutAt        *time.Time `gorm:"type:timestamp;default:null"`
 	CreatedAt         time.Time  `gorm:"not null;default:now()"`

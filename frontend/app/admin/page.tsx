@@ -13,6 +13,7 @@ import {
     KeyRound,
     CircleUserRound,
     BookHeart,
+    MailOpen,
     LogOut,
     ChevronRight,
     User
@@ -46,6 +47,7 @@ export default function AdminMenuPage() {
 
     const modules: GridItem[] = [
         { href: '/admin/guests', icon: <BookHeart className="w-6 h-6" />, title: 'Tamu', subtitle: 'Kelola undangan' },
+        { href: '/admin/undangan', icon: <MailOpen className="w-6 h-6" />, title: 'Undangan', subtitle: 'Konten undangan' },
 
         { href: '/admin/guest-checkin', icon: <ScanQrCode className="w-6 h-6" />, title: 'Pindai QR', subtitle: 'Check-in kamera' },
         { href: '/admin/guest-checkin-bypass', icon: <UserCheck className="w-6 h-6" />, title: 'Manual', subtitle: 'Tanpa kode QR' },

@@ -1233,6 +1233,43 @@
                 }
             }
         },
+        "/invitation": {
+            "get": {
+                "description": "Single request payload for the invitation page: wedding content, couples, events, story, gallery, faqs, gift accounts, wishlist claim status, enabled sections. Optional guest uuid personalizes the response and marks the invitation as opened once.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Get the composed invitation payload (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guest UUID for personalization",
+                        "name": "guest",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.InvitationResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Wedding not configured yet",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/rbac/check-module-access": {
             "post": {
                 "security": [
@@ -2865,9 +2902,1825 @@
                     }
                 }
             }
+        },
+        "/wedding": {
+            "get": {
+                "description": "Get the single wedding record; 404 if not configured yet",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding"
+                ],
+                "summary": "Get wedding detail (singleton)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.WeddingResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Wedding not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the single wedding record (names, date, content JSONB, gift address)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding"
+                ],
+                "summary": "Update wedding detail (singleton)",
+                "parameters": [
+                    {
+                        "description": "Update wedding request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateWeddingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.WeddingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wedding not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/bank-accounts": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Bank Accounts"
+                ],
+                "summary": "List bank accounts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.BankAccountResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Bank Accounts"
+                ],
+                "summary": "Create a bank account for digital envelope",
+                "parameters": [
+                    {
+                        "description": "Create bank account request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateBankAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.BankAccountResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/bank-accounts/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Bank Accounts"
+                ],
+                "summary": "Get a bank account by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bank account ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.BankAccountResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Bank account not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Bank Accounts"
+                ],
+                "summary": "Update a bank account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bank account ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update bank account request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateBankAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.BankAccountResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bank account not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Bank Accounts"
+                ],
+                "summary": "Delete a bank account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bank account ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bank account not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/couples": {
+            "get": {
+                "description": "List all couple profiles",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Couples"
+                ],
+                "summary": "List couples",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.CoupleResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create bride or groom profile (side must be unique)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Couples"
+                ],
+                "summary": "Create a couple entry",
+                "parameters": [
+                    {
+                        "description": "Create couple request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateCoupleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CoupleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Couple side already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/couples/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Couples"
+                ],
+                "summary": "Get a couple by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Couple ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CoupleResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Couple not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Couples"
+                ],
+                "summary": "Update a couple",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Couple ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update couple request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateCoupleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CoupleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Couple not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Couples"
+                ],
+                "summary": "Delete a couple",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Couple ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Couple not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/events": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Events"
+                ],
+                "summary": "List wedding events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.EventResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create akad/resepsi event; setting is_main_event=true unsets others",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Events"
+                ],
+                "summary": "Create a wedding event",
+                "parameters": [
+                    {
+                        "description": "Create event request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateEventRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/events/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Events"
+                ],
+                "summary": "Get an event by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EventResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Event not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Setting is_main_event=true unsets other main events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Events"
+                ],
+                "summary": "Update a wedding event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update event request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateEventRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Event not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Events"
+                ],
+                "summary": "Delete a wedding event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Event not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/ewallets": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Ewallets"
+                ],
+                "summary": "List e-wallet accounts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.EwalletResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Ewallets"
+                ],
+                "summary": "Create an e-wallet account for digital envelope",
+                "parameters": [
+                    {
+                        "description": "Create ewallet request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateEwalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EwalletResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/ewallets/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Ewallets"
+                ],
+                "summary": "Get an e-wallet by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ewallet ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EwalletResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Ewallet not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Ewallets"
+                ],
+                "summary": "Update an e-wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ewallet ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update ewallet request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateEwalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.EwalletResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ewallet not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Ewallets"
+                ],
+                "summary": "Delete an e-wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ewallet ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ewallet not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/faqs": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding FAQ"
+                ],
+                "summary": "List FAQ entries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.FaqResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding FAQ"
+                ],
+                "summary": "Create a FAQ entry",
+                "parameters": [
+                    {
+                        "description": "Create faq request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateFaqRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.FaqResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/faqs/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding FAQ"
+                ],
+                "summary": "Get a FAQ by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FAQ ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.FaqResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "FAQ not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding FAQ"
+                ],
+                "summary": "Update a FAQ",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FAQ ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update faq request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateFaqRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.FaqResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "FAQ not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding FAQ"
+                ],
+                "summary": "Delete a FAQ",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FAQ ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "FAQ not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/gallery": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Gallery"
+                ],
+                "summary": "List gallery photos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.GalleryItemResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Gallery"
+                ],
+                "summary": "Add a gallery photo",
+                "parameters": [
+                    {
+                        "description": "Create gallery item request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateGalleryItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.GalleryItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/gallery/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Gallery"
+                ],
+                "summary": "Get a gallery photo by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gallery item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.GalleryItemResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Gallery item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Gallery"
+                ],
+                "summary": "Update a gallery photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gallery item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update gallery item request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateGalleryItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.GalleryItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Gallery item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Gallery"
+                ],
+                "summary": "Delete a gallery photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gallery item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Gallery item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/sections": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Sections"
+                ],
+                "summary": "List invitation sections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.SectionResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Register a section key (e.g. cover, acara, galeri) with enabled flag and order",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Sections"
+                ],
+                "summary": "Register an invitation section",
+                "parameters": [
+                    {
+                        "description": "Create section request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateSectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.SectionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Section key already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/sections/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Sections"
+                ],
+                "summary": "Get a section by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Section ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.SectionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Section not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Sections"
+                ],
+                "summary": "Toggle/reorder an invitation section",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Section ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update section request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateSectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.SectionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Section not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Sections"
+                ],
+                "summary": "Delete an invitation section registration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Section ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Section not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/story": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Story"
+                ],
+                "summary": "List story timeline items",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.StoryResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Story"
+                ],
+                "summary": "Create a story timeline item",
+                "parameters": [
+                    {
+                        "description": "Create story request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateStoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.StoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/story/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Story"
+                ],
+                "summary": "Get a story item by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Story ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.StoryResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Story not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Story"
+                ],
+                "summary": "Update a story item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Story ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update story request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateStoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.StoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Story not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Story"
+                ],
+                "summary": "Delete a story item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Story ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Story not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/wishlist": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Wishlist"
+                ],
+                "summary": "List wishlist gift items",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.WishlistItemResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Wishlist"
+                ],
+                "summary": "Create a wishlist gift item",
+                "parameters": [
+                    {
+                        "description": "Create wishlist item request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateWishlistItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.WishlistItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/wishlist/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Wishlist"
+                ],
+                "summary": "Get a wishlist item by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wishlist item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.WishlistItemResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Wishlist item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding Wishlist"
+                ],
+                "summary": "Update a wishlist item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wishlist item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update wishlist item request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.UpdateWishlistItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.WishlistItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wishlist item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wedding Wishlist"
+                ],
+                "summary": "Delete a wishlist item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wishlist item ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wishlist item not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "github_com_base-go_backend_internal_shared_models.JSONMap": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "github_com_base-go_backend_pkg_response.JSON": {
             "type": "object",
             "properties": {
@@ -3390,6 +5243,1092 @@
                 "phone_number": {
                     "type": "string",
                     "maxLength": 20
+                }
+            }
+        },
+        "internal_invitation.BankAccountResponse": {
+            "type": "object",
+            "properties": {
+                "account_holder_name": {
+                    "type": "string"
+                },
+                "account_number": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.CoupleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "gelar": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instagram_handle": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.CoverContent": {
+            "type": "object",
+            "properties": {
+                "button_text": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_invitation.CreateBankAccountRequest": {
+            "type": "object",
+            "required": [
+                "account_holder_name",
+                "account_number",
+                "bank_name"
+            ],
+            "properties": {
+                "account_holder_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "account_number": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "bank_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_invitation.CreateCoupleRequest": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "side"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "gelar": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "instagram_handle": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string",
+                    "enum": [
+                        "pria",
+                        "wanita"
+                    ]
+                }
+            }
+        },
+        "internal_invitation.CreateEventRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "address_full": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "gmaps_url": {
+                    "type": "string"
+                },
+                "is_main_event": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "venue_name": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "internal_invitation.CreateEwalletRequest": {
+            "type": "object",
+            "required": [
+                "account_id",
+                "provider_name"
+            ],
+            "properties": {
+                "account_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "provider_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "qr_code_image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.CreateFaqRequest": {
+            "type": "object",
+            "required": [
+                "answer",
+                "question"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "question": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.CreateGalleryItemRequest": {
+            "type": "object",
+            "required": [
+                "image_url"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "order_index": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.CreateSectionRequest": {
+            "type": "object",
+            "required": [
+                "section_key"
+            ],
+            "properties": {
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "section_key": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.CreateStoryRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.CreateWishlistItemRequest": {
+            "type": "object",
+            "required": [
+                "item_name"
+            ],
+            "properties": {
+                "item_image_url": {
+                    "type": "string"
+                },
+                "item_link": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.DressCodeContent": {
+            "type": "object",
+            "properties": {
+                "color_palette": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.EventResponse": {
+            "type": "object",
+            "properties": {
+                "address_full": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "gmaps_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_main_event": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "venue_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.EwalletResponse": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "provider_name": {
+                    "type": "string"
+                },
+                "qr_code_image_url": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.FaqResponse": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.FooterContent": {
+            "type": "object",
+            "properties": {
+                "made_by_credit": {
+                    "type": "string"
+                },
+                "social_links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "thank_you_message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.GalleryItemResponse": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.InvitationResponse": {
+            "type": "object",
+            "properties": {
+                "bank_accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicBankAccount"
+                    }
+                },
+                "countdown_target": {
+                    "type": "string"
+                },
+                "couples": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicCouple"
+                    }
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicEvent"
+                    }
+                },
+                "ewallets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicEwallet"
+                    }
+                },
+                "faqs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicFaq"
+                    }
+                },
+                "gallery": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicGalleryItem"
+                    }
+                },
+                "guest": {
+                    "$ref": "#/definitions/internal_invitation.PublicGuestInfo"
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicSection"
+                    }
+                },
+                "story": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicStory"
+                    }
+                },
+                "wedding": {
+                    "$ref": "#/definitions/internal_invitation.PublicWedding"
+                },
+                "wishlist": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicWishlistItem"
+                    }
+                }
+            }
+        },
+        "internal_invitation.LivestreamContent": {
+            "type": "object",
+            "properties": {
+                "datetime": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.MusicContent": {
+            "type": "object",
+            "properties": {
+                "file_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.OpeningContent": {
+            "type": "object",
+            "properties": {
+                "arabic": {
+                    "type": "string"
+                },
+                "eyebrow": {
+                    "type": "string"
+                },
+                "greeting": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "translation": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicBankAccount": {
+            "type": "object",
+            "properties": {
+                "account_holder_name": {
+                    "type": "string"
+                },
+                "account_number": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicCouple": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "gelar": {
+                    "type": "string"
+                },
+                "instagram_handle": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicEvent": {
+            "type": "object",
+            "properties": {
+                "address_full": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "gmaps_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_main_event": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "venue_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicEwallet": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "provider_name": {
+                    "type": "string"
+                },
+                "qr_code_image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicFaq": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicGalleryItem": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicGuestInfo": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "qr_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicSection": {
+            "type": "object",
+            "properties": {
+                "order_index": {
+                    "type": "integer"
+                },
+                "section_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicStory": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicWedding": {
+            "type": "object",
+            "properties": {
+                "bride_name": {
+                    "type": "string"
+                },
+                "content": {
+                    "$ref": "#/definitions/internal_invitation.WeddingContent"
+                },
+                "gift_shipping_address": {
+                    "type": "string"
+                },
+                "groom_name": {
+                    "type": "string"
+                },
+                "wedding_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicWishlistItem": {
+            "type": "object",
+            "properties": {
+                "is_claimed": {
+                    "type": "boolean"
+                },
+                "item_image_url": {
+                    "type": "string"
+                },
+                "item_link": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.SectionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "section_key": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.StoryResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.UpdateBankAccountRequest": {
+            "type": "object",
+            "properties": {
+                "account_holder_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "account_number": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "bank_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_invitation.UpdateCoupleRequest": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "gelar": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "instagram_handle": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "side": {
+                    "type": "string",
+                    "enum": [
+                        "pria",
+                        "wanita"
+                    ]
+                }
+            }
+        },
+        "internal_invitation.UpdateEventRequest": {
+            "type": "object",
+            "properties": {
+                "address_full": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "gmaps_url": {
+                    "type": "string"
+                },
+                "is_main_event": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "venue_name": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "internal_invitation.UpdateEwalletRequest": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "provider_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "qr_code_image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.UpdateFaqRequest": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "question": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.UpdateGalleryItemRequest": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "order_index": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.UpdateSectionRequest": {
+            "type": "object",
+            "properties": {
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "order_index": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.UpdateStoryRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.UpdateWeddingRequest": {
+            "type": "object",
+            "required": [
+                "bride_name",
+                "groom_name"
+            ],
+            "properties": {
+                "bride_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "content": {
+                    "$ref": "#/definitions/github_com_base-go_backend_internal_shared_models.JSONMap"
+                },
+                "gift_shipping_address": {
+                    "type": "string"
+                },
+                "groom_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "wedding_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.UpdateWishlistItemRequest": {
+            "type": "object",
+            "properties": {
+                "item_image_url": {
+                    "type": "string"
+                },
+                "item_link": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.WeddingContent": {
+            "type": "object",
+            "properties": {
+                "cover": {
+                    "$ref": "#/definitions/internal_invitation.CoverContent"
+                },
+                "dress_code": {
+                    "$ref": "#/definitions/internal_invitation.DressCodeContent"
+                },
+                "footer": {
+                    "$ref": "#/definitions/internal_invitation.FooterContent"
+                },
+                "livestream": {
+                    "$ref": "#/definitions/internal_invitation.LivestreamContent"
+                },
+                "music": {
+                    "$ref": "#/definitions/internal_invitation.MusicContent"
+                },
+                "opening": {
+                    "$ref": "#/definitions/internal_invitation.OpeningContent"
+                }
+            }
+        },
+        "internal_invitation.WeddingResponse": {
+            "type": "object",
+            "properties": {
+                "bride_name": {
+                    "type": "string"
+                },
+                "content": {
+                    "$ref": "#/definitions/github_com_base-go_backend_internal_shared_models.JSONMap"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_shipping_address": {
+                    "type": "string"
+                },
+                "groom_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "wedding_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.WishlistItemResponse": {
+            "type": "object",
+            "properties": {
+                "claimed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_claimed": {
+                    "type": "boolean"
+                },
+                "item_image_url": {
+                    "type": "string"
+                },
+                "item_link": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },

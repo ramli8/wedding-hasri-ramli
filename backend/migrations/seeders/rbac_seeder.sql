@@ -30,7 +30,13 @@ INSERT INTO permissions (name, module, description) VALUES
 ('permissions.create', 'permissions', 'Create new permissions'),
 ('permissions.update', 'permissions', 'Update permission information'),
 ('permissions.delete', 'permissions', 'Delete permissions'),
-('permissions.assign', 'permissions', 'Assign permissions to roles')
+('permissions.assign', 'permissions', 'Assign permissions to roles'),
+
+-- Wedding/invitation management permissions
+('weddings.read', 'weddings', 'View weddings'),
+('weddings.create', 'weddings', 'Create new weddings'),
+('weddings.update', 'weddings', 'Update wedding information'),
+('weddings.delete', 'weddings', 'Delete weddings')
 
 ON CONFLICT (name) DO NOTHING;
 
@@ -83,7 +89,8 @@ CROSS JOIN (
     VALUES 
         ('users', TRUE, TRUE, TRUE, FALSE),
         ('roles', TRUE, TRUE, TRUE, FALSE),
-        ('permissions', TRUE, FALSE, FALSE, FALSE)
+        ('permissions', TRUE, FALSE, FALSE, FALSE),
+        ('weddings', TRUE, TRUE, TRUE, FALSE)
 ) AS modules(module_name, can_view, can_create, can_edit, can_delete)
 WHERE r.name = 'Admin'
 ON CONFLICT (role_id, module_name) DO NOTHING;

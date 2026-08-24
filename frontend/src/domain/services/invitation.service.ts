@@ -173,6 +173,107 @@ export interface SubmitGuestbookPayload {
   message_text: string;
 }
 
+function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString();
+}
+
+const DUMMY_GUESTBOOK: GuestbookEntry[] = [
+  {
+    id: "dummy-gb-01",
+    guest_name: "Andi Pratama",
+    message_text:
+      "Barakallahu laka wa baraka 'alaika. Selamat menempuh hidup baru, semoga menjadi keluarga sakinah, mawaddah, warahmah.",
+    reply_text: null,
+    created_at: hoursAgo(1),
+  },
+  {
+    id: "dummy-gb-02",
+    guest_name: "Sari Wulandari",
+    message_text:
+      "MasyaAllah, akhirnya! Barakallah Hasri & Ramli. Semoga langgeng sampai jannah-Nya Allah.",
+    reply_text: null,
+    created_at: hoursAgo(5),
+  },
+  {
+    id: "dummy-gb-03",
+    guest_name: "Budi Santoso",
+    message_text:
+      "Selamat atas pernikahannya! Turut berbahagia untuk kalian berdua.",
+    reply_text: "Terima kasih banyak, Bang Budi. Doanya kami bawa pulang.",
+    created_at: hoursAgo(9),
+  },
+  {
+    id: "dummy-gb-04",
+    guest_name: "Dewi Lestari",
+    message_text:
+      "Congrats! Dari jaman kuliah sampai akhirnya ke pelaminan juga. Bahagia selalu berdua!",
+    reply_text: null,
+    created_at: hoursAgo(14),
+  },
+  {
+    id: "dummy-gb-05",
+    guest_name: "Keluarga Besar Hj. Maryam",
+    message_text:
+      "Turut berbahagia. Semoga Allah memberkahi hubungan kalian dan dikaruniai keturunan yang sholeh & sholehah.",
+    reply_text: null,
+    created_at: hoursAgo(22),
+  },
+  {
+    id: "dummy-gb-06",
+    guest_name: "Rizky Ramadhan",
+    message_text: "Selamat menempuh hidup baru, bro! Jangan lupa traktiran.",
+    reply_text: "Siap, makasih ya! Traktirannya kita ganti katering resepsi.",
+    created_at: hoursAgo(30),
+  },
+  {
+    id: "dummy-gb-07",
+    guest_name: "Fitri Handayani",
+    message_text:
+      "MasyaAllah cantik banget undangannya. Barakallah, semoga samawa!",
+    reply_text: null,
+    created_at: hoursAgo(46),
+  },
+  {
+    id: "dummy-gb-08",
+    guest_name: "Agus Wijaya",
+    message_text:
+      "Barakallah! Semoga rezeki melimpah dan rumah tangga penuh keberkahan.",
+    reply_text: null,
+    created_at: hoursAgo(60),
+  },
+  {
+    id: "dummy-gb-09",
+    guest_name: "Nadia Putri",
+    message_text:
+      "Akhirnya sahur bareng bareng diganti acara resepsian. Selamat ya Hasri & Ramli, doa terbaik dari saya sekeluarga.",
+    reply_text: null,
+    created_at: hoursAgo(80),
+  },
+  {
+    id: "dummy-gb-10",
+    guest_name: "Hendra Gunawan",
+    message_text: "Selamat menempuh hidup baru! Semoga langgeng dan bahagia selalu.",
+    reply_text: null,
+    created_at: hoursAgo(110),
+  },
+  {
+    id: "dummy-gb-11",
+    guest_name: "Ibu Rina & Keluarga",
+    message_text:
+      "Barakallah, anak-anak baik kami. Semoga menjadi pasangan yang saling menguatkan dalam kebaikan.",
+    reply_text: null,
+    created_at: hoursAgo(150),
+  },
+  {
+    id: "dummy-gb-12",
+    guest_name: "Tim Basket SMA 5",
+    message_text:
+      "Wih, kapten kita nikah duluan! Selamat ya bro, semoga samawa. Satu tim hadir semua nanti!",
+    reply_text: "Jangan lupa bawa jersey lengkap ya, ada dresscode!",
+    created_at: hoursAgo(200),
+  },
+];
+
 const http = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
@@ -193,10 +294,18 @@ export const invitationService = {
   },
 
   async listGuestbook(limit = 20): Promise<GuestbookResponse> {
-    const { data } = await http.get<GuestbookResponse>('/invitation/guestbook', {
-      params: { limit },
-    });
-    return data;
+    try {
+      const { data } = await http.get<GuestbookResponse>('/invitation/guestbook', {
+        params: { limit },
+      });
+      if (data.entries?.length) return data;
+    } catch {
+      // backend belum siap / offline — jatuh ke data contoh
+    }
+    return {
+      entries: DUMMY_GUESTBOOK.slice(0, limit),
+      total: DUMMY_GUESTBOOK.length,
+    };
   },
 
   async submitGuestbook(payload: SubmitGuestbookPayload): Promise<GuestbookEntry> {

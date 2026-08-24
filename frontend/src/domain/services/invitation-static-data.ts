@@ -71,8 +71,8 @@ export const invitationStaticData: InvitationDetail = {
     {
       id: 'evt-akad',
       name: 'Akad Nikah',
-      event_date: '2026-12-12T08:00:00+07:00',
-      start_time: '2026-12-12T08:00:00+07:00',
+      event_date: '2026-12-11T08:00:00+07:00',
+      start_time: '2026-12-11T08:00:00+07:00',
       venue_name: 'Ballroom Nama Venue',
       address_full: 'Jl. Contoh Alamat No. 123, Kota',
       gmaps_url: 'https://maps.google.com/?q=Ballroom+Nama+Venue',

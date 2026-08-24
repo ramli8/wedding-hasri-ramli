@@ -210,15 +210,19 @@
   --radius-xl: 16px;
   --radius-pill: 9999px;
   
-  /* Spacing Tokens */
-  --spacing-xxs: 4px;
-  --spacing-xs: 8px;
-  --spacing-sm: 12px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-xxl: 48px;
-  --spacing-section: 96px;
+  /* Spacing Tokens
+     PENTING: jangan pakai prefix --spacing-<nama-skala> (sm/md/lg/xl) — di
+     Tailwind v4 kunci bernama di namespace --spacing-* ikut mengambil alih
+     resolusi utility skala container (max-w-sm/md/lg → var(--spacing-*)).
+     Prefix --space- aman: bukan namespace bawaan Tailwind. */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
 }
 
 @utility text-display-xl {

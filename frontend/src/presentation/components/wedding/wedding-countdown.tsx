@@ -64,31 +64,29 @@ export function WeddingCountdown() {
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Menuju Hari Bahagia</h2>
         </WeddingReveal>
 
-        <WeddingReveal delay={100} className="w-full md:max-w-[42rem]">
+        <WeddingReveal delay={100} className="w-full md:max-w-[38rem]">
           <div
-            className="mx-auto flex w-fit items-stretch justify-center"
+            className="mx-auto grid w-full grid-cols-4 gap-2 sm:gap-3"
             role="timer"
             aria-live="off"
           >
-            {items.map((item, index) => (
-              <div key={item.label} className="flex items-stretch">
-                {index > 0 ? (
-                  <span aria-hidden className="w-px self-stretch bg-[var(--wd-line)]" />
-                ) : null}
-                <div className="flex flex-col items-center gap-1.5 px-2.5 py-2 sm:px-5 sm:py-3 md:px-7">
-                  <span
-                    key={item.value}
-                    className={
-                      item.ticking
-                        ? "wd-display wd-tick text-[1.6rem] tabular-nums sm:text-[2.25rem] md:text-[3.25rem]"
-                        : "wd-display text-[1.6rem] tabular-nums sm:text-[2.25rem] md:text-[3.25rem]"
-                    }
-                    aria-hidden
-                  >
-                    {item.value}
-                  </span>
-                  <span className="wd-label">{item.label}</span>
-                </div>
+            {items.map((item) => (
+              <div
+                key={item.label}
+                className="wd-glass flex flex-col items-center justify-center gap-1.5 px-1 py-5 sm:py-6 md:py-8"
+              >
+                <span
+                  key={item.value}
+                  className={
+                    item.ticking
+                      ? "wd-display wd-tick text-[1.75rem] tabular-nums text-[var(--wd-accent)] sm:text-[2.25rem] md:text-[3rem]"
+                      : "wd-display text-[1.75rem] tabular-nums text-[var(--wd-accent)] sm:text-[2.25rem] md:text-[3rem]"
+                  }
+                  aria-hidden
+                >
+                  {item.value}
+                </span>
+                <span className="wd-label">{item.label}</span>
               </div>
             ))}
           </div>

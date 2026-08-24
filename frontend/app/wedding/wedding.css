@@ -110,6 +110,34 @@
   filter: grayscale(1) contrast(1.05);
 }
 
+/* Foto kisah — grayscale yang "hidup": berwarna saat disentuh/di-hover. */
+.wd-photo-live {
+  filter: grayscale(1) contrast(1.05);
+  transition: filter 500ms var(--wd-ease);
+}
+
+.group:hover .wd-photo-live,
+.group:active .wd-photo-live,
+.group:focus-visible .wd-photo-live {
+  filter: grayscale(0) contrast(1);
+}
+
+/* Tahun hollow editorial — numeral serif transparan dengan stroke ivory,
+   overlap di atas sudut foto pada section kisah. */
+.wd-year-hollow {
+  font-family: var(--wd-font-serif);
+  font-weight: 300;
+  line-height: 0.85;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--wd-accent-line);
+}
+
+@supports not (-webkit-text-stroke: 1px black) {
+  .wd-year-hollow {
+    color: var(--wd-accent-soft);
+  }
+}
+
 .wd-hairline {
   border-color: var(--wd-line);
 }

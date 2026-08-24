@@ -271,6 +271,9 @@ func SetupRoutes(
 		// Invitation public routes (no JWT - accessed by wedding guests)
 		r.Route("/invitation", func(r chi.Router) {
 			r.Get("/", invitationHandler.GetPublicInvitation)
+			r.Post("/rsvp", invitationHandler.SubmitRSVP)
+			r.Get("/guestbook", invitationHandler.ListGuestbook)
+			r.Post("/guestbook", invitationHandler.SubmitGuestbook)
 		})
 
 		// Wedding/invitation management routes (protected - Admin only)

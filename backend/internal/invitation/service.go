@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/base-go/backend/internal/shared/models"
 	"github.com/base-go/backend/pkg/validator"
@@ -68,6 +69,10 @@ type Service interface {
 	DeleteSection(ctx context.Context, id string) (int, error)
 
 	GetPublicInvitation(ctx context.Context, guestID string) (InvitationResponse, int, error)
+
+	SubmitRSVP(ctx context.Context, req CreateRSVPRequest) (PublicRSVPResponse, int, error)
+	ListPublicGuestbook(ctx context.Context, limit int) (PublicGuestbookResponse, int, error)
+	SubmitGuestbook(ctx context.Context, req CreateGuestbookRequest) (PublicGuestbookEntry, int, error)
 }
 
 type service struct {
@@ -1213,6 +1218,7 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 		}
 		if guest != nil {
 			res.Guest = &PublicGuestInfo{
+				ID:       guest.ID,
 				Name:     guest.Name,
 				QRCode:   guest.QRCode,
 				Category: guest.GuestCategory.Name,
@@ -1357,4 +1363,158 @@ func (s *service) mapSectionToResponse(sec *models.InvitationSection) SectionRes
 		CreatedAt:  sec.CreatedAt,
 		UpdatedAt:  sec.UpdatedAt,
 	}
+}
+
+// --- Public RSVP & Guestbook Service ---
+
+var guestbookDefaultLimit = 20
+const guestbookMaxLimit = 100
+
+func guestAttendanceFromRSVPStatus(status string) string {
+	switch status {
+	case "hadir":
+		return "going"
+	case "tidak_hadir":
+		return "not_going"
+	default:
+		return "pending"
+	}
+}
+
+func (s *service) SubmitRSVP(ctx context.Context, req CreateRSVPRequest) (PublicRSVPResponse, int, error) {
+	if err := validator.ValidateStruct(req); err != nil {
+		return PublicRSVPResponse{}, http.StatusBadRequest, err
+	}
+
+	guest, err := s.repo.GetGuestByUUID(ctx, req.GuestID)
+	if err != nil {
+		return PublicRSVPResponse{}, http.StatusInternalServerError, err
+	}
+	if guest == nil {
+		return PublicRSVPResponse{}, http.StatusNotFound, ErrGuestNotFound
+	}
+
+	if req.WeddingEventID != nil && *req.WeddingEventID != "" {
+		event, err := s.repo.GetEventByID(ctx, *req.WeddingEventID)
+		if err != nil {
+			return PublicRSVPResponse{}, http.StatusInternalServerError, err
+		}
+		if event == nil {
+			return PublicRSVPResponse{}, http.StatusNotFound, ErrEventNotFound
+		}
+	} else {
+		req.WeddingEventID = nil
+	}
+
+	existing, err := s.repo.GetRSVPByGuestAndEvent(ctx, req.GuestID, req.WeddingEventID)
+	if err != nil {
+		return PublicRSVPResponse{}, http.StatusInternalServerError, err
+	}
+
+	var submission *models.RSVPSubmission
+	if existing != nil {
+		existing.AttendanceStatus = req.AttendanceStatus
+		existing.NumberOfGuests = req.NumberOfGuests
+		existing.SubmittedAt = time.Now()
+		if err := s.repo.UpdateRSVP(ctx, existing); err != nil {
+			return PublicRSVPResponse{}, http.StatusInternalServerError, err
+		}
+		submission = existing
+	} else {
+		submission = &models.RSVPSubmission{
+			GuestID:          req.GuestID,
+			WeddingEventID:   req.WeddingEventID,
+			AttendanceStatus: req.AttendanceStatus,
+			NumberOfGuests:   req.NumberOfGuests,
+			SubmittedAt:      time.Now(),
+		}
+		if err := s.repo.CreateRSVP(ctx, submission); err != nil {
+			return PublicRSVPResponse{}, http.StatusInternalServerError, err
+		}
+	}
+
+	if err := s.repo.UpdateGuestAttendance(ctx, req.GuestID, guestAttendanceFromRSVPStatus(req.AttendanceStatus)); err != nil {
+		return PublicRSVPResponse{}, http.StatusInternalServerError, err
+	}
+
+	return PublicRSVPResponse{
+		ID:               submission.ID,
+		GuestID:          submission.GuestID,
+		WeddingEventID:   submission.WeddingEventID,
+		AttendanceStatus: submission.AttendanceStatus,
+		NumberOfGuests:   submission.NumberOfGuests,
+		SubmittedAt:      submission.SubmittedAt,
+	}, http.StatusCreated, nil
+}
+
+func (s *service) ListPublicGuestbook(ctx context.Context, limit int) (PublicGuestbookResponse, int, error) {
+	if limit <= 0 {
+		limit = guestbookDefaultLimit
+	}
+	if limit > guestbookMaxLimit {
+		limit = guestbookMaxLimit
+	}
+
+	total, err := s.repo.CountGuestbook(ctx)
+	if err != nil {
+		return PublicGuestbookResponse{}, http.StatusInternalServerError, err
+	}
+
+	entries, err := s.repo.ListGuestbook(ctx, limit, 0)
+	if err != nil {
+		return PublicGuestbookResponse{}, http.StatusInternalServerError, err
+	}
+
+	mapped := make([]PublicGuestbookEntry, 0, len(entries))
+	for i := range entries {
+		entry := &entries[i]
+		mapped = append(mapped, PublicGuestbookEntry{
+			ID:          entry.ID,
+			GuestName:   entry.GuestName,
+			MessageText: entry.MessageText,
+			ReplyText:   entry.ReplyText,
+			CreatedAt:   entry.CreatedAt,
+		})
+	}
+
+	return PublicGuestbookResponse{Entries: mapped, Total: total}, http.StatusOK, nil
+}
+
+func (s *service) SubmitGuestbook(ctx context.Context, req CreateGuestbookRequest) (PublicGuestbookEntry, int, error) {
+	if err := validator.ValidateStruct(req); err != nil {
+		return PublicGuestbookEntry{}, http.StatusBadRequest, err
+	}
+
+	name := req.GuestName
+	if req.GuestID != nil && *req.GuestID != "" {
+		guest, err := s.repo.GetGuestByUUID(ctx, *req.GuestID)
+		if err != nil {
+			return PublicGuestbookEntry{}, http.StatusInternalServerError, err
+		}
+		if guest == nil {
+			return PublicGuestbookEntry{}, http.StatusNotFound, ErrGuestNotFound
+		}
+		if name == "" {
+			name = guest.Name
+		}
+	} else {
+		req.GuestID = nil
+	}
+
+	entry := &models.GuestbookEntry{
+		GuestID:     req.GuestID,
+		GuestName:   name,
+		MessageText: req.MessageText,
+	}
+	if err := s.repo.CreateGuestbookEntry(ctx, entry); err != nil {
+		return PublicGuestbookEntry{}, http.StatusInternalServerError, err
+	}
+
+	return PublicGuestbookEntry{
+		ID:          entry.ID,
+		GuestName:   entry.GuestName,
+		MessageText: entry.MessageText,
+		ReplyText:   entry.ReplyText,
+		CreatedAt:   entry.CreatedAt,
+	}, http.StatusCreated, nil
 }

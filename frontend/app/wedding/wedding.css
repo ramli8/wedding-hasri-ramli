@@ -1,0 +1,336 @@
+/* ===== /wedding — Noir Editorial (Khanvite-inspired) =====
+   Token & helper hanya untuk modul /wedding. Jangan mengubah token global/admin. */
+
+.wedding {
+  --wd-bg: #0f0f10;
+  --wd-surface: #17171a;
+  --wd-ink: #f4f4f4;
+  --wd-card: #1c1c1e;
+  --wd-card-ink: #f4f4f4;
+  --wd-muted: #8e8e93;
+  --wd-line: rgba(244, 244, 244, 0.14);
+  --wd-line-strong: rgba(244, 244, 244, 0.32);
+  --wd-line-inverse: rgba(15, 15, 16, 0.4);
+  --wd-accent: #ece9e2;
+  --wd-accent-soft: rgba(236, 233, 226, 0.1);
+  --wd-accent-line: rgba(236, 233, 226, 0.35);
+  --wd-font-serif: var(--font-cormorant), serif;
+  --wd-font-sans: var(--font-inter), sans-serif;
+  --wd-font-script: var(--font-great-vibes), cursive;
+  --wd-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --wd-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --wd-ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+
+  background-color: var(--wd-bg);
+  background-image: radial-gradient(
+    ellipse 110% 70% at 50% -10%,
+    rgba(244, 244, 244, 0.04),
+    transparent 60%
+  );
+  color: var(--wd-ink);
+  font-family: var(--wd-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Film grain di atas seluruh halaman — sengaja menutupi cover & lightbox
+   agar terasa satu lembar film yang sama. */
+.wedding::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+.wedding :focus-visible {
+  outline: 1px solid var(--wd-accent);
+  outline-offset: 3px;
+}
+
+.wedding ::selection {
+  background: var(--wd-ink);
+  color: var(--wd-bg);
+}
+
+/* ===== Typography ===== */
+
+.wd-display {
+  font-family: var(--wd-font-serif);
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+}
+
+.wd-script {
+  font-family: var(--wd-font-script);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.wd-label {
+  font-family: var(--wd-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--wd-muted);
+}
+
+.wd-date-numerals {
+  font-family: var(--wd-font-serif);
+  font-weight: 300;
+  font-size: clamp(4.5rem, 24vw, 9.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.02em;
+}
+
+/* ===== Surfaces ===== */
+
+.wd-card {
+  background: var(--wd-card);
+  color: var(--wd-card-ink);
+  border-radius: 1.75rem;
+}
+
+.wd-photo {
+  filter: grayscale(1) contrast(1.05);
+}
+
+.wd-hairline {
+  border-color: var(--wd-line);
+}
+
+.wd-hairline-t {
+  border-top: 1px solid var(--wd-line);
+}
+
+.wd-hairline-b {
+  border-bottom: 1px solid var(--wd-line);
+}
+
+/* ===== Layout ===== */
+
+.wd-section {
+  padding: clamp(4.5rem, 13vw, 9rem) 1.5rem;
+}
+
+.wd-container {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.wd-section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .wd-container {
+    max-width: 56rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wd-container {
+    max-width: 64rem;
+  }
+}
+
+/* ===== Cover ===== */
+
+.wd-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  animation: wd-scroll-bob 2.2s var(--wd-ease) infinite;
+}
+
+@keyframes wd-scroll-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-scroll-hint {
+    animation: none;
+  }
+}
+
+/* ===== Motion ===== */
+
+.wd-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s var(--wd-ease),
+    transform 0.7s var(--wd-ease);
+}
+
+.wd-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ===== Ornamen & utilitas noir ===== */
+
+.wd-label--accent {
+  color: var(--wd-accent);
+}
+
+/* Ken Burns super-lambat untuk foto cover. */
+.wd-kenburns {
+  animation: wd-kenburns 22s var(--wd-ease) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes wd-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+.wd-rise {
+  opacity: 0;
+  animation: wd-rise 0.9s var(--wd-ease-spring) forwards;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@keyframes wd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Tick halus untuk digit countdown — elemen di-remount per perubahan nilai. */
+.wd-tick {
+  animation: wd-tick 0.35s var(--wd-ease-out-expo);
+}
+
+@keyframes wd-tick {
+  from {
+    opacity: 0.25;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Bungkus container dengan .wd-hover-color, foto di dalamnya memakai
+   .wd-photo .wd-photo-hover agar grayscale→warna saat hover/focus. */
+.wd-photo-hover {
+  transition: filter 0.6s var(--wd-ease-out-expo), transform 0.7s var(--wd-ease-out-expo);
+}
+
+.wd-hover-color:hover .wd-photo-hover,
+.wd-hover-color:focus-within .wd-photo-hover {
+  filter: grayscale(0) contrast(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wedding::after {
+    display: none;
+  }
+
+  .wd-kenburns {
+    animation: none;
+  }
+
+  .wd-rise {
+    animation: none;
+    opacity: 1;
+  }
+
+  .wd-tick {
+    animation: none;
+  }
+
+  .wd-loading-pulse {
+    animation: none;
+    opacity: 1;
+  }
+
+  .wd-photo-hover {
+    transition: none;
+  }
+}
+
+/* Loading state — pulse lembut, bukan layar kosong. */
+.wd-loading-pulse {
+  animation: wd-loading-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes wd-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===== Cover veil (transisi buka undangan) ===== */
+
+.wedding .wd-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: var(--wd-bg);
+  opacity: 0;
+  transition: opacity 0.26s ease-out;
+}
+
+.wedding .wd-veil.is-visible {
+  opacity: 1;
+}
+
+.wedding .wd-cover-exit {
+  animation: wd-cover-exit 0.95s var(--wd-ease) forwards;
+  will-change: transform;
+}
+
+/* Terasa seperti scroll halus melewati cover: glide ke atas dengan
+   easeOutQuint (senada Lenis) — awal lembut, deselerasi panjang. */
+@keyframes wd-cover-exit {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}

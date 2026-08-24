@@ -420,6 +420,7 @@ type PublicSection struct {
 }
 
 type PublicGuestInfo struct {
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	QRCode   string `json:"qr_code"`
 	Category string `json:"category"`
@@ -438,4 +439,43 @@ type InvitationResponse struct {
 	Sections            []PublicSection      `json:"sections"`
 	CountdownTarget     *time.Time           `json:"countdown_target"`
 	Guest               *PublicGuestInfo     `json:"guest"`
+}
+
+// --- Public RSVP DTOs ---
+
+type CreateRSVPRequest struct {
+	GuestID          string  `json:"guest_id" validate:"required,uuid"`
+	AttendanceStatus string  `json:"attendance_status" validate:"required,oneof=hadir tidak_hadir ragu"`
+	NumberOfGuests   int     `json:"number_of_guests" validate:"required,min=1,max=20"`
+	WeddingEventID   *string `json:"wedding_event_id" validate:"omitempty,uuid"`
+}
+
+type PublicRSVPResponse struct {
+	ID               string    `json:"id"`
+	GuestID          string    `json:"guest_id"`
+	WeddingEventID   *string   `json:"wedding_event_id"`
+	AttendanceStatus string    `json:"attendance_status"`
+	NumberOfGuests   int       `json:"number_of_guests"`
+	SubmittedAt      time.Time `json:"submitted_at"`
+}
+
+// --- Public Guestbook (ucapan) DTOs ---
+
+type CreateGuestbookRequest struct {
+	GuestID     *string `json:"guest_id" validate:"omitempty,uuid"`
+	GuestName   string  `json:"guest_name" validate:"required,min=1,max=255"`
+	MessageText string  `json:"message_text" validate:"required,min=1,max=2000"`
+}
+
+type PublicGuestbookEntry struct {
+	ID          string    `json:"id"`
+	GuestName   string    `json:"guest_name"`
+	MessageText string    `json:"message_text"`
+	ReplyText   *string   `json:"reply_text"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type PublicGuestbookResponse struct {
+	Entries []PublicGuestbookEntry `json:"entries"`
+	Total   int64                  `json:"total"`
 }

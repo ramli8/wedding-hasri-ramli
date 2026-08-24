@@ -23,6 +23,7 @@ var (
 	ErrWishlistItemNotFound   = errors.New("wishlist item not found")
 	ErrSectionNotFound        = errors.New("invitation section not found")
 	ErrSectionAlreadyExists   = errors.New("invitation section already exists")
+	ErrGuestNotFound          = errors.New("guest not found")
 )
 
 type Repository interface {
@@ -87,6 +88,15 @@ type Repository interface {
 
 	GetGuestByUUID(ctx context.Context, id string) (*models.Guest, error)
 	MarkInvitationOpened(ctx context.Context, guestID string) error
+
+	GetRSVPByGuestAndEvent(ctx context.Context, guestID string, weddingEventID *string) (*models.RSVPSubmission, error)
+	CreateRSVP(ctx context.Context, submission *models.RSVPSubmission) error
+	UpdateRSVP(ctx context.Context, submission *models.RSVPSubmission) error
+	UpdateGuestAttendance(ctx context.Context, guestID string, status string) error
+
+	ListGuestbook(ctx context.Context, limit int, offset int) ([]models.GuestbookEntry, error)
+	CountGuestbook(ctx context.Context) (int64, error)
+	CreateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error
 }
 
 type repository struct {
@@ -488,4 +498,61 @@ func (r *repository) MarkInvitationOpened(ctx context.Context, guestID string) e
 		Model(&models.Guest{}).
 		Where("id = ? AND invitation_opened_at IS NULL", guestID).
 		Update("invitation_opened_at", gorm.Expr("NOW()")).Error
+}
+
+func (r *repository) GetRSVPByGuestAndEvent(ctx context.Context, guestID string, weddingEventID *string) (*models.RSVPSubmission, error) {
+	var submission models.RSVPSubmission
+	query := r.db.GetDB().WithContext(ctx).Where("guest_id = ?", guestID)
+	if weddingEventID == nil {
+		query = query.Where("wedding_event_id IS NULL")
+	} else {
+		query = query.Where("wedding_event_id = ?", *weddingEventID)
+	}
+	err := query.First(&submission).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &submission, nil
+}
+
+func (r *repository) CreateRSVP(ctx context.Context, submission *models.RSVPSubmission) error {
+	return r.db.GetDB().WithContext(ctx).Create(submission).Error
+}
+
+func (r *repository) UpdateRSVP(ctx context.Context, submission *models.RSVPSubmission) error {
+	return r.db.GetDB().WithContext(ctx).Save(submission).Error
+}
+
+func (r *repository) UpdateGuestAttendance(ctx context.Context, guestID string, status string) error {
+	return r.db.GetDB().WithContext(ctx).
+		Model(&models.Guest{}).
+		Where("id = ?", guestID).
+		Update("status_attending", status).Error
+}
+
+func (r *repository) ListGuestbook(ctx context.Context, limit int, offset int) ([]models.GuestbookEntry, error) {
+	var entries []models.GuestbookEntry
+	err := r.db.GetDB().WithContext(ctx).
+		Where("is_hidden = ?", false).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&entries).Error
+	return entries, err
+}
+
+func (r *repository) CountGuestbook(ctx context.Context) (int64, error) {
+	var total int64
+	err := r.db.GetDB().WithContext(ctx).
+		Model(&models.GuestbookEntry{}).
+		Where("is_hidden = ?", false).
+		Count(&total).Error
+	return total, err
+}
+
+func (r *repository) CreateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error {
+	return r.db.GetDB().WithContext(ctx).Create(entry).Error
 }

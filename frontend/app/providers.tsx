@@ -3,16 +3,20 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/src/lib/query-client'
 import { ThemeProvider } from '@/src/presentation/components/theme-provider'
-import { ToastContainer } from 'react-toastify'
 import { ToastifyWrapper } from '@/src/presentation/components/ui/toastify-wrapper'
 import { NextIntlClientProvider } from 'next-intl'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { useLocaleStore } from '@/src/infrastructure/stores/locale-store'
 import { ReactNode, useEffect, useState } from 'react'
 
 export function Providers({ children }: { children: ReactNode }) {
     const { locale, hasHydrated } = useLocaleStore();
     const [messages, setMessages] = useState<any>(null);
+    const pathname = usePathname();
+    // Undangan /wedding tidak memakai terjemahan dinamis —
+    // jangan tahan render di balik splash loading locale.
+    const isInvitationRoute = pathname?.startsWith('/wedding') ?? false;
 
     useEffect(() => {
         if (!hasHydrated) {
@@ -21,11 +25,14 @@ export function Providers({ children }: { children: ReactNode }) {
     }, [hasHydrated]);
 
     useEffect(() => {
+        if (isInvitationRoute) return;
         // Load messages for current locale
         import(`../locales/${hasHydrated ? locale : 'id'}.json`)
             .then((msgs) => setMessages(msgs.default))
             .catch(() => setMessages({}));
-    }, [locale, hasHydrated]);
+    }, [locale, hasHydrated, isInvitationRoute]);
+
+    const shouldShowLoadingScreen = !isInvitationRoute && !messages;
 
     const loadingScreen = (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#faf9f5] dark:bg-[#181715]">
@@ -72,14 +79,14 @@ export function Providers({ children }: { children: ReactNode }) {
             enableSystem
             disableTransitionOnChange
         >
-            {!messages ? loadingScreen : (
-                <NextIntlClientProvider locale={hasHydrated ? locale : 'id'} messages={messages}>
+            {!shouldShowLoadingScreen ? (
+                <NextIntlClientProvider locale={hasHydrated ? locale : 'id'} messages={messages ?? {}}>
                     <QueryClientProvider client={queryClient}>
                         {children}
                         <ToastifyWrapper />
                     </QueryClientProvider>
                 </NextIntlClientProvider>
-            )}
+            ) : loadingScreen}
         </ThemeProvider>
     )
 }

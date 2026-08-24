@@ -7,6 +7,8 @@ type UseScrollRevealOptions = {
   threshold?: number;
   rootMargin?: string;
   once?: boolean;
+  /** false = tahan reveal (mis. saat cover masih menutupi layar). */
+  enabled?: boolean;
 };
 
 export function useScrollReveal<T extends HTMLElement = HTMLElement>(
@@ -16,7 +18,7 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || options?.enabled === false) return;
 
     if (prefersReducedMotion()) {
       el.classList.add("is-revealed");
@@ -40,7 +42,7 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [options?.threshold, options?.once, options?.rootMargin]);
+  }, [options?.enabled, options?.threshold, options?.once, options?.rootMargin]);
 
   return ref;
 }

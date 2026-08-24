@@ -3,6 +3,7 @@ package invitation
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/base-go/backend/pkg/response"
 	"github.com/go-chi/chi/v5"
@@ -37,6 +38,77 @@ func (h Handler) decodeJSON(w http.ResponseWriter, r *http.Request, dst interfac
 // @Router /invitation [get]
 func (h Handler) GetPublicInvitation(w http.ResponseWriter, r *http.Request) {
 	res, statusCode, err := h.service.GetPublicInvitation(r.Context(), r.URL.Query().Get("guest"))
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// SubmitRSVP godoc
+// @Summary Submit RSVP (public)
+// @Description Guest confirms attendance for the wedding. Upsert per guest+event; updates guest attendance status.
+// @Tags Invitation
+// @Accept json
+// @Produce json
+// @Param request body CreateRSVPRequest true "RSVP payload"
+// @Success 201 {object} PublicRSVPResponse
+// @Failure 400 {object} map[string]string "Invalid payload"
+// @Failure 404 {object} map[string]string "Guest or event not found"
+// @Router /invitation/rsvp [post]
+func (h Handler) SubmitRSVP(w http.ResponseWriter, r *http.Request) {
+	var req CreateRSVPRequest
+	if !h.decodeJSON(w, r, &req) {
+		return
+	}
+	res, statusCode, err := h.service.SubmitRSVP(r.Context(), req)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// ListGuestbook godoc
+// @Summary List public ucapan (public)
+// @Description Public guestbook entries (not hidden), newest first.
+// @Tags Invitation
+// @Produce json
+// @Param limit query int false "Max entries (default 20, max 100)"
+// @Success 200 {object} PublicGuestbookResponse
+// @Router /invitation/guestbook [get]
+func (h Handler) ListGuestbook(w http.ResponseWriter, r *http.Request) {
+	limit := 0
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
+	}
+	res, statusCode, err := h.service.ListPublicGuestbook(r.Context(), limit)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// SubmitGuestbook godoc
+// @Summary Submit ucapan (public)
+// @Description Guest leaves a message/prayer in the public guestbook.
+// @Tags Invitation
+// @Accept json
+// @Produce json
+// @Param request body CreateGuestbookRequest true "Guestbook payload"
+// @Success 201 {object} PublicGuestbookEntry
+// @Failure 400 {object} map[string]string "Invalid payload"
+// @Failure 404 {object} map[string]string "Guest not found"
+// @Router /invitation/guestbook [post]
+func (h Handler) SubmitGuestbook(w http.ResponseWriter, r *http.Request) {
+	var req CreateGuestbookRequest
+	if !h.decodeJSON(w, r, &req) {
+		return
+	}
+	res, statusCode, err := h.service.SubmitGuestbook(r.Context(), req)
 	if err != nil {
 		response.ResponseError(w, statusCode, err.Error())
 		return

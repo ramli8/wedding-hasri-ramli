@@ -164,6 +164,16 @@ export const invitationStaticData: InvitationDetail = {
     {
       provider_name: 'QRIS',
       account_id: 'Hasri & Ramli',
+      qr_code_image_url: '/images/dummy-qris.png',
+    },
+    {
+      provider_name: 'GoPay',
+      account_id: '0812 3456 7890',
+      qr_code_image_url: null,
+    },
+    {
+      provider_name: 'ShopeePay',
+      account_id: '0812 3456 7890',
       qr_code_image_url: null,
     },
   ],

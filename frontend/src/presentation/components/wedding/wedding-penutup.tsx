@@ -13,6 +13,11 @@ export function WeddingPenutup() {
   const photo = wedding.content.cover.photos.at(-1);
   const bride = couples.find((c) => c.side === "wanita")?.full_name;
   const groom = couples.find((c) => c.side === "pria")?.full_name;
+  const brideName = bride ?? wedding.bride_name;
+  const groomName = groom ?? wedding.groom_name;
+  const year = wedding.wedding_date
+    ? new Date(wedding.wedding_date).getFullYear().toString()
+    : null;
 
   return (
     <section id="penutup" className="wd-section">
@@ -27,10 +32,13 @@ export function WeddingPenutup() {
                 sizes="(min-width: 768px) 64rem, 100vw"
                 className="wd-photo object-cover"
               />
-              <div className="absolute inset-0 bg-black/45" />
-              <p className="wd-script absolute inset-0 flex items-center justify-center text-[2.5rem] text-white/90 md:text-[3.5rem]">
-                Terima Kasih
-              </p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 pb-7">
+                <p className="wd-label text-white/60">Dengan Cinta</p>
+                <p className="wd-script text-[2.5rem] leading-tight text-white/90 md:text-[3.5rem]">
+                  Terima Kasih
+                </p>
+              </div>
             </div>
           </WeddingReveal>
         ) : null}
@@ -44,22 +52,30 @@ export function WeddingPenutup() {
         ) : null}
 
         <WeddingReveal delay={120}>
-          <div className="flex flex-col items-center gap-2">
-            {wedding.wedding_date ? (
-              <p className="wd-label">{new Date(wedding.wedding_date).getFullYear()}</p>
-            ) : null}
-            <p className="wd-display text-[2rem] md:text-[2.5rem]">
-              {bride ?? wedding.bride_name}
-              <span className="mx-2 italic opacity-70">&amp;</span>
-              {groom ?? wedding.groom_name}
-            </p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="wd-label">Kami Yang Berbahagia</p>
+            <div className="flex flex-col items-center gap-1">
+              <p className="wd-display text-[2.25rem] leading-tight md:text-[2.75rem]">
+                {groomName}
+              </p>
+              <p
+                aria-hidden
+                className="wd-script -my-1 text-[2.25rem] leading-none text-[var(--wd-accent)]/80 md:text-[2.75rem]"
+              >
+                &amp;
+              </p>
+              <p className="wd-display text-[2.25rem] leading-tight md:text-[2.75rem]">
+                {brideName}
+              </p>
+            </div>
+            {year ? <p className="wd-label mt-2">{year}</p> : null}
           </div>
         </WeddingReveal>
 
-        <WeddingReveal delay={160}>
-          <div className="flex flex-col items-center gap-4 border-t border-[var(--wd-line)] pt-6">
+        <WeddingReveal delay={160} className="w-full">
+          <div className="flex flex-col items-center gap-4 border-t border-[var(--wd-line)] pt-7">
             {footer.social_links.length > 0 ? (
-              <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
                 {footer.social_links.map((link, index) =>
                   Object.entries(link).map(([key, url]) => (
                     <a
@@ -67,7 +83,7 @@ export function WeddingPenutup() {
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[12px] font-semibold uppercase tracking-widest text-[var(--wd-muted)] transition-colors hover:text-[var(--wd-ink)]"
+                      className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--wd-muted)] underline decoration-[var(--wd-line)] underline-offset-4 transition-colors duration-200 hover:text-[var(--wd-accent)] hover:decoration-[var(--wd-accent-line)]"
                     >
                       {key}
                     </a>

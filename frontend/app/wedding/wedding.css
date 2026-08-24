@@ -122,6 +122,16 @@
   filter: grayscale(0) contrast(1);
 }
 
+/* Galeri — zoom halus pada foto saat disentuh/di-hover. */
+.wd-photo-zoom {
+  transition: transform 600ms var(--wd-ease);
+}
+
+.group:hover .wd-photo-zoom,
+.group:active .wd-photo-zoom {
+  transform: scale(1.05);
+}
+
 /* Tahun hollow editorial — numeral serif transparan dengan stroke ivory,
    overlap di atas sudut foto pada section kisah. */
 .wd-year-hollow {

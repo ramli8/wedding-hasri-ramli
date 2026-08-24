@@ -116,11 +116,20 @@ export const invitationStaticData: InvitationDetail = {
   ],
   gallery: [
     { image_url: '/images/cover-1.png', caption: null },
-    { image_url: '/images/cover-2.png', caption: null },
-    { image_url: '/images/cover-3.png', caption: null },
-    { image_url: '/images/cover-4.png', caption: null },
+    { image_url: '/images/gallery-a.jpg', caption: null },
+    { image_url: '/images/gallery-b.jpg', caption: null },
+    { image_url: '/images/gallery-c.jpg', caption: null },
+    { image_url: '/images/cover-3.png', caption: 'Awal cerita kami' },
+    { image_url: '/images/gallery-f.jpg', caption: null },
+    { image_url: '/images/gallery-e.jpg', caption: null },
+    { image_url: '/images/gallery-d.jpg', caption: null },
+    { image_url: '/images/gallery-g.jpg', caption: null },
+    {
+      image_url: '/images/cover-ori.jpg',
+      caption: 'Tawa kecil yang selalu ingin kami ulang',
+    },
+    { image_url: '/images/gallery-h.jpg', caption: null },
     { image_url: '/images/cover-5.png', caption: null },
-    { image_url: '/images/cover-ori.jpg', caption: null },
   ],
   faqs: [
     {

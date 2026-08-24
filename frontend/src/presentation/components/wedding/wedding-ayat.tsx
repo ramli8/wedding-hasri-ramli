@@ -12,38 +12,59 @@ export function WeddingAyat() {
 
   return (
     <section id="ayat" className="wd-section">
-      <div className="wd-container flex flex-col items-center gap-8 text-center md:max-w-[42rem] lg:max-w-[48rem]">
+      <div className="wd-container flex flex-col items-center gap-10 text-center md:max-w-[44rem] lg:max-w-[50rem]">
         {opening.greeting ? (
-          <WeddingReveal>
-            <p className="wd-label">Assalamu&rsquo;alaikum Warahmatullahi Wabarakatuh</p>
-            <p className="mt-5 text-[14px] leading-relaxed text-[var(--wd-ink)]/80 md:text-[15px]">
+          <WeddingReveal className="flex flex-col items-center gap-5">
+            <p className="wd-label">
+              Assalamu&rsquo;alaikum Warahmatullahi Wabarakatuh
+            </p>
+            <p className="max-w-[30rem] text-[14px] leading-relaxed text-[var(--wd-ink)]/80 md:text-[15px]">
               {opening.greeting}
             </p>
           </WeddingReveal>
         ) : null}
 
         {opening.arabic ? (
-          <WeddingReveal delay={100}>
-            <div className="flex flex-col items-center gap-6 border-t border-[var(--wd-line)] pt-10 md:pt-14">
-              {opening.eyebrow ? <p className="wd-label">{opening.eyebrow}</p> : null}
+          <div className="flex w-full flex-col items-center gap-7 px-4 md:gap-8">
+            <WeddingReveal className="flex flex-col items-center gap-7">
+              <span
+                aria-hidden
+                className="block h-px w-12 bg-[var(--wd-line-strong)]"
+              />
+              {opening.eyebrow ? (
+                <p className="wd-label wd-label--accent">{opening.eyebrow}</p>
+              ) : null}
+            </WeddingReveal>
+
+            <WeddingReveal delay={90}>
               <p
                 dir="rtl"
                 lang="ar"
-                className="text-[1.375rem] leading-[2.2] text-[var(--wd-ink)] md:text-[1.75rem] md:leading-[2.3]"
+                className="max-w-[34rem] text-[1.5rem] leading-[2.1] text-[var(--wd-accent)] md:text-[1.875rem] md:leading-[2.15]"
                 style={{ fontFamily: "var(--font-amiri), serif" }}
               >
                 {opening.arabic}
               </p>
-              {opening.translation ? (
-                <p className="max-w-[36rem] text-[13px] italic leading-relaxed text-[var(--wd-muted)] md:text-[14px]">
+            </WeddingReveal>
+
+            {opening.translation ? (
+              <WeddingReveal delay={180}>
+                <blockquote className="max-w-[36rem] text-[13px] italic leading-relaxed text-[var(--wd-muted)] [font-family:var(--wd-font-serif)] md:text-[14.5px]">
                   &ldquo;{opening.translation}&rdquo;
-                </p>
-              ) : null}
+                </blockquote>
+              </WeddingReveal>
+            ) : null}
+
+            <WeddingReveal delay={260} className="flex flex-col items-center gap-7">
               {opening.source ? (
-                <p className="wd-label text-[var(--wd-ink)]">{opening.source}</p>
+                <figcaption className="wd-label">{opening.source}</figcaption>
               ) : null}
-            </div>
-          </WeddingReveal>
+              <span
+                aria-hidden
+                className="block h-px w-12 bg-[var(--wd-line-strong)]"
+              />
+            </WeddingReveal>
+          </div>
         ) : null}
       </div>
     </section>

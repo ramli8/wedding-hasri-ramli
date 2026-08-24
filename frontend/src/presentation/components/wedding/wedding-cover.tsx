@@ -39,7 +39,7 @@ export function WeddingCover() {
     return () => timeouts.forEach((t) => window.clearTimeout(t));
   }, []);
 
-  if (!data || opened || hidden) return null;
+  if (!data || hidden || (opened && !exiting)) return null;
 
   const { wedding, guest } = data;
   const photos = wedding.content.cover.photos;
@@ -59,11 +59,11 @@ export function WeddingCover() {
     }
 
     setExiting(true);
+    // Koreografi: konten (reveal) menyala saat cover masih meluncur —
+    // elemen ayat ikut bangun tepat ketika tepi bawah cover melewatinya.
+    timeoutsRef.current.push(window.setTimeout(() => open(), 380));
     timeoutsRef.current.push(
-      window.setTimeout(() => {
-        open();
-        setHidden(true);
-      }, 900),
+      window.setTimeout(() => setHidden(true), 930),
     );
   };
 

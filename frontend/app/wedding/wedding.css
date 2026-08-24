@@ -20,6 +20,7 @@
   --wd-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --wd-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --wd-ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --wd-ease-reveal: cubic-bezier(0.33, 1, 0.68, 1);
 
   background-color: var(--wd-bg);
   background-image: radial-gradient(
@@ -176,10 +177,10 @@
 
 .wd-reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(22px);
   transition:
-    opacity 0.7s var(--wd-ease),
-    transform 0.7s var(--wd-ease);
+    opacity 0.8s var(--wd-ease-reveal),
+    transform 0.8s var(--wd-ease-reveal);
 }
 
 .wd-reveal.is-revealed {

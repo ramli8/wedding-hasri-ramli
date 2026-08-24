@@ -16,7 +16,7 @@ export function WeddingKisah() {
       <div className="wd-container flex flex-col items-center gap-10 text-center">
         <WeddingReveal className="wd-section-head">
           <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            our journey
+            Perjalanan Kami
           </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Kisah Kami</h2>
           <div className="h-px w-10 bg-[var(--wd-line-strong)]" aria-hidden />

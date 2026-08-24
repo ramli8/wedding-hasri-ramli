@@ -29,7 +29,7 @@ export function WeddingPenutup() {
               />
               <div className="absolute inset-0 bg-black/45" />
               <p className="wd-script absolute inset-0 flex items-center justify-center text-[2.5rem] text-white/90 md:text-[3.5rem]">
-                thank you
+                Terima Kasih
               </p>
             </div>
           </WeddingReveal>

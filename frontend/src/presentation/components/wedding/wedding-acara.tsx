@@ -120,7 +120,7 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
         {!hideHeader ? (
           <WeddingReveal className="wd-section-head">
             <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-              save the date
+              Hari yang Dinanti
             </p>
             <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Acara</h2>
           </WeddingReveal>

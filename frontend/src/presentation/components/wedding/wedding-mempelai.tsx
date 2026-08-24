@@ -13,6 +13,10 @@ function initialsOf(name: string): string {
     .join("");
 }
 
+function roleOf(side: string): string {
+  return side === "wanita" ? "Putri" : "Putra";
+}
+
 export function WeddingMempelai() {
   const { data } = useInvitation();
   if (!data) return null;
@@ -25,73 +29,84 @@ export function WeddingMempelai() {
 
   return (
     <section id="mempelai" className="wd-section">
-      <div className="wd-container flex flex-col items-center gap-10 text-center">
+      <div className="wd-container flex flex-col items-center gap-10 text-center lg:max-w-[64rem]">
         <WeddingReveal className="wd-section-head">
           <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            with love
+            Dengan Cinta
           </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Mempelai</h2>
-          <div className="h-px w-10 bg-[var(--wd-line-strong)]" aria-hidden />
         </WeddingReveal>
 
-        <div className="relative flex w-full flex-col items-center gap-10 md:flex-row md:items-stretch md:justify-center md:gap-0">
+        <div className="relative flex w-full flex-col gap-6 md:flex-row md:items-stretch md:justify-center md:gap-3">
           <span
-            className="wd-script absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 text-[3.5rem] text-[var(--wd-accent)] md:block"
+            className="wd-script absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 text-[4rem] text-[var(--wd-accent)] md:block"
             aria-hidden
           >
             &amp;
           </span>
+
           {[bride, groom].map((couple, index) =>
             couple ? (
               <WeddingReveal
                 key={couple.side}
                 delay={index * 120}
-                className="flex w-full flex-col items-center gap-5 md:w-auto md:flex-1 md:px-10"
+                className="w-full md:flex-1"
               >
-                <div className="wd-hover-color relative w-fit">
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-t-full rounded-b-[1.5rem] border border-[var(--wd-accent-line)]"
-                  />
-                  <div className="relative aspect-[4/5] w-64 overflow-hidden rounded-t-full rounded-b-[1.5rem] bg-[var(--wd-card)] md:w-full md:max-w-[20rem]">
+                <figure className="wd-hover-color group relative overflow-hidden rounded-[1.5rem] bg-[var(--wd-surface)]">
+                  <div className="relative aspect-[3/4] w-full">
                     {couple.photo_url ? (
                       <Image
                         src={couple.photo_url}
                         alt={couple.full_name}
                         fill
-                        sizes="(min-width: 768px) 20rem, 16rem"
+                        sizes="(min-width:768px) 31rem, 100vw"
                         className="wd-photo wd-photo-hover object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="wd-display text-[3rem] text-[var(--wd-card-ink)]/40">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="wd-display text-[6rem] leading-none text-[var(--wd-ink)]/15">
                           {initialsOf(couple.full_name)}
                         </span>
                       </div>
                     )}
-                  </div>
-                </div>
 
-                <div className="flex flex-col items-center gap-1.5">
-                  <p className="wd-label">{couple.side === "wanita" ? "Putri" : "Putra"}</p>
-                  <p className="wd-display text-[1.75rem] md:text-[2rem]">
-                    {couple.full_name}
-                  </p>
-                  {couple.gelar ? (
-                    <p className="text-[13px] italic text-[var(--wd-muted)]">
-                      {couple.gelar}
-                    </p>
-                  ) : null}
+                    <div
+                      aria-hidden
+                      className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 via-black/35 to-transparent"
+                    />
+
+                    <figcaption className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1.5 p-6 pb-7">
+                      {couple.parents_line ? (
+                        <span className="max-w-[24rem] text-[12px] italic leading-relaxed text-white/70 [font-family:var(--wd-font-serif)] md:text-[13px]">
+                          {couple.parents_line}
+                        </span>
+                      ) : couple.gelar ? (
+                        <span className="text-[12px] italic text-white/70 [font-family:var(--wd-font-serif)]">
+                          {couple.gelar}
+                        </span>
+                      ) : null}
+                      <span className="wd-display text-[2rem] leading-none text-white md:text-[2.25rem]">
+                        {couple.full_name}
+                      </span>
+                    </figcaption>
+                  </div>
+                </figure>
+
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <span className="wd-label">{roleOf(couple.side)}</span>
                   {couple.instagram_handle ? (
-                    <a
-                      href={`https://instagram.com/${couple.instagram_handle.replace(/^@/, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors hover:text-[var(--wd-ink)]"
-                    >
-                      <Instagram className="h-3.5 w-3.5" />
-                      {couple.instagram_handle}
-                    </a>
+                    <>
+                      <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--wd-muted)]" />
+                      <a
+                        href={`https://instagram.com/${couple.instagram_handle.replace(/^@/, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors hover:text-[var(--wd-ink)]"
+                      >
+                        <Instagram className="h-3.5 w-3.5" />
+                        {couple.instagram_handle}
+                      </a>
+                    </>
                   ) : null}
                 </div>
               </WeddingReveal>

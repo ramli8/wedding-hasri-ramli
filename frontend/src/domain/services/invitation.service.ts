@@ -59,6 +59,8 @@ export interface InvitationCouple {
   gelar: string | null;
   photo_url: string | null;
   instagram_handle: string | null;
+  /** Sementara diisi static data — field backend permanen menyusul di tiket #15. */
+  parents_line?: string | null;
 }
 
 export interface InvitationEvent {

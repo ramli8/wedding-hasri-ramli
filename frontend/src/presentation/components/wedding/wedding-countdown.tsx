@@ -59,7 +59,7 @@ export function WeddingCountdown() {
       <div className="wd-container flex flex-col items-center gap-8 text-center">
         <WeddingReveal className="wd-section-head">
           <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            counting down
+            Detik demi Detik
           </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Menuju Hari Bahagia</h2>
         </WeddingReveal>

@@ -65,9 +65,6 @@ export function WeddingUcapan() {
     <section id="ucapan" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-8 text-center md:max-w-[36rem]">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            wishes & prayers
-          </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Ucapan &amp; Doa</h2>
           <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
             Tuliskan ucapan dan doa terbaik untuk perjalanan baru kami.

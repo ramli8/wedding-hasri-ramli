@@ -14,6 +14,7 @@ export interface InvitationMusicContent {
 }
 
 export interface InvitationOpeningContent {
+  salam: string | null;
   eyebrow: string | null;
   arabic: string | null;
   translation: string | null;

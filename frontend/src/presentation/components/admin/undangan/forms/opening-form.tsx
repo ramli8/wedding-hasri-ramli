@@ -12,6 +12,7 @@ import type { WeddingResponse, OpeningContent } from "@/src/domain/services/wedd
 import { buildSaveRequest } from "../wedding-save";
 
 const EMPTY: OpeningContent = {
+  salam: null,
   eyebrow: null,
   arabic: null,
   translation: null,
@@ -45,6 +46,35 @@ export function OpeningForm({ data }: { data?: WeddingResponse }) {
     <div className="space-y-4">
       <Card>
         <CardContent className="space-y-4 p-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="salam" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+              Salam Pembuka
+            </Label>
+            <Input
+              id="salam"
+              value={form.salam ?? ""}
+              onChange={(e) => set({ salam: e.target.value.trim() || null })}
+              placeholder="Assalamu'alaikum Warahmatullahi Wabarakatuh"
+              className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="greeting" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+              Paragraf Undangan
+            </Label>
+            <Textarea
+              id="greeting"
+              value={form.greeting ?? ""}
+              onChange={(e) => set({ greeting: e.target.value.trim() || null })}
+              rows={3}
+              placeholder="Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i…"
+              className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+            />
+            <p className="pl-1 text-[10.5px] leading-relaxed text-muted-foreground">
+              Tampil tepat di bawah Salam Pembuka.
+            </p>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="eyebrow" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
               Label Kecil
@@ -90,18 +120,6 @@ export function OpeningForm({ data }: { data?: WeddingResponse }) {
               value={form.source ?? ""}
               onChange={(e) => set({ source: e.target.value.trim() || null })}
               placeholder="QS. Ar-Rum: 21"
-              className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="greeting" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
-              Salam Pembuka
-            </Label>
-            <Textarea
-              id="greeting"
-              value={form.greeting ?? ""}
-              onChange={(e) => set({ greeting: e.target.value.trim() || null })}
-              rows={2}
               className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
             />
           </div>

@@ -25,6 +25,19 @@ Data inti: tamu (guest) + check-in QR, kategori tamu, kondangan (tamu undangan/h
   (mis. `guests.create`, `vendors.categories.update`). Ada konsep **module access** per role.
 - **Super Admin / Admin** — role yang diizinkan akses modul admin (middleware `RequireRole`).
 
+## Konten undangan dinamis (behavior kontrak)
+
+- Seluruh konten halaman `/` bersumber dari backend (`GET /v1/invitation`) — **tidak ada nilai
+  default implisit di frontend**. Field kosong/null di admin → elemen terkait **tidak dirender**
+  (bukan diisi otomatis). Terverifikasi untuk section Pembuka; prinsipnya berlaku semua section.
+- Section yang dirender = baris aktif di tabel `invitation_sections` (`section_key` + `order_index`);
+  section tanpa baris tidak muncul walau datanya ada.
+- Cover punya 3 slot gambar tetap per perangkat (`image_desktop/tablet/mobile`) dengan fallback
+  antar-slot; slot kosong + fallback kosong → tanpa foto latar. Nama panggilan mempelai
+  (`wedding_couples.nickname`) dipakai di cover, fallback nama lengkap.
+- Upload media lewat `/api/upload` (folder whitelist); penghapusan file fisik via
+  `DELETE /api/upload?url=` saat slot diganti/kosongkan agar storage tidak membengkak.
+
 ## Istilah arsitektur
 
 - **Module backend** (`backend/internal/<modul>/`) — `dto.go`, `handler.go` (tipis), `service.go`

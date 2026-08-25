@@ -16,6 +16,7 @@ export const invitationStaticData: InvitationDetail = {
       },
       music: { file_url: "/audio/musik-undangan.mp3" },
       opening: {
+        salam: "Assalamu'alaikum Warahmatullahi Wabarakatuh",
         eyebrow: "Firman Allah",
         arabic:
           "وَمِنْ ءَايَـٰتِهِۦٓ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَٰجًا لِّتَسْكُنُوٓا۟ إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِى ذَٰلِكَ لَـَٔايَـٰتٍ لِّقَوْمٍ يَتَفَكَّرُونَ",

@@ -16,6 +16,7 @@ export interface MusicContent {
 }
 
 export interface OpeningContent {
+  salam: string | null;
   eyebrow: string | null;
   arabic: string | null;
   translation: string | null;
@@ -59,7 +60,7 @@ export const DEFAULT_WEDDING_CONTENT: WeddingContent = {
     button_text: 'Buka Undangan',
   },
   music: { file_url: null },
-  opening: { eyebrow: null, arabic: null, translation: null, source: null, greeting: null },
+  opening: { salam: null, eyebrow: null, arabic: null, translation: null, source: null, greeting: null },
   dress_code: { description: null, color_palette: [], image_url: null },
   livestream: { platform: null, url: null, datetime: null, notes: null },
   footer: { thank_you_message: null, made_by_credit: null, social_links: [] },

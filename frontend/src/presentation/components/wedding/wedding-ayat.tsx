@@ -15,9 +15,7 @@ export function WeddingAyat() {
       <div className="wd-container flex flex-col items-center gap-10 text-center md:max-w-[44rem] lg:max-w-[50rem]">
         {opening.greeting ? (
           <WeddingReveal className="flex flex-col items-center gap-5">
-            <p className="wd-label">
-              Assalamu&rsquo;alaikum Warahmatullahi Wabarakatuh
-            </p>
+            <p className="wd-label">{opening.salam}</p>
             <p className="max-w-[30rem] text-[14px] leading-relaxed text-[var(--wd-ink)]/80 md:text-[15px]">
               {opening.greeting}
             </p>

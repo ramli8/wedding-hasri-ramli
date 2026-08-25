@@ -290,6 +290,7 @@ type MusicContent struct {
 }
 
 type OpeningContent struct {
+	Salam       *string `json:"salam"`
 	Eyebrow     *string `json:"eyebrow"`
 	Arabic      *string `json:"arabic"`
 	Translation *string `json:"translation"`

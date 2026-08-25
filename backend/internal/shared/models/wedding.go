@@ -93,6 +93,7 @@ type WeddingStoryEvent struct {
 	EventDate   *string   `gorm:"type:varchar(50);default:null"`
 	Title       string    `gorm:"type:varchar(255);not null"`
 	Description *string   `gorm:"type:text;default:null"`
+	Detail      *string   `gorm:"type:text;default:null"`
 	ImageURL    *string   `gorm:"type:text;default:null"`
 	OrderIndex  int       `gorm:"not null;default:0"`
 	CreatedAt   time.Time `gorm:"not null;default:now()"`
@@ -134,6 +135,7 @@ type WeddingBankAccount struct {
 	BankName          string    `gorm:"type:varchar(100);not null"`
 	AccountNumber     string    `gorm:"type:varchar(100);not null"`
 	AccountHolderName string    `gorm:"type:varchar(255);not null"`
+	ImageURL          *string   `gorm:"type:text;default:null"`
 	IsActive          bool      `gorm:"not null;default:true"`
 	CreatedAt         time.Time `gorm:"not null;default:now()"`
 	UpdatedAt         time.Time `gorm:"not null;default:now()"`
@@ -148,6 +150,7 @@ type WeddingEwallet struct {
 	ProviderName   string    `gorm:"type:varchar(100);not null"`
 	AccountID      string    `gorm:"type:varchar(255);not null"`
 	QrCodeImageURL *string   `gorm:"type:text;default:null"`
+	IsQris         bool      `gorm:"not null;default:false"`
 	IsActive       bool      `gorm:"not null;default:true"`
 	CreatedAt      time.Time `gorm:"not null;default:now()"`
 	UpdatedAt      time.Time `gorm:"not null;default:now()"`
@@ -158,19 +161,31 @@ func (WeddingEwallet) TableName() string {
 }
 
 type WeddingWishlistItem struct {
-	ID               string     `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	ItemName         string     `gorm:"type:varchar(255);not null"`
-	ItemImageURL     *string    `gorm:"type:text;default:null"`
-	ItemLink         *string    `gorm:"type:text;default:null"`
-	ClaimedByGuestID *string    `gorm:"type:uuid;default:null;index"`
-	ClaimedByGuest   *Guest     `gorm:"foreignKey:ClaimedByGuestID"`
-	ClaimedAt        *time.Time `gorm:"type:timestamptz;default:null"`
-	CreatedAt        time.Time  `gorm:"not null;default:now()"`
-	UpdatedAt        time.Time  `gorm:"not null;default:now()"`
+	ID           string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ItemName     string    `gorm:"type:varchar(255);not null"`
+	ItemImageURL *string   `gorm:"type:text;default:null"`
+	ItemLink     *string   `gorm:"type:text;default:null"`
+	StockTotal   int       `gorm:"not null;default:1"`
+	CreatedAt    time.Time `gorm:"not null;default:now()"`
+	UpdatedAt    time.Time `gorm:"not null;default:now()"`
 }
 
 func (WeddingWishlistItem) TableName() string {
 	return "wedding_wishlist_items"
+}
+
+// WeddingWishlistClaim — satu tamu hanya boleh satu klaim (UNIQUE guest_id).
+type WeddingWishlistClaim struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ItemID    string    `gorm:"type:uuid;not null;index"`
+	Item      *WeddingWishlistItem `gorm:"foreignKey:ItemID"`
+	GuestID   string    `gorm:"type:uuid;not null;uniqueIndex"`
+	Guest     *Guest    `gorm:"foreignKey:GuestID"`
+	CreatedAt time.Time `gorm:"type:timestamptz;not null;default:now()"`
+}
+
+func (WeddingWishlistClaim) TableName() string {
+	return "wedding_wishlist_claims"
 }
 
 type InvitationSection struct {

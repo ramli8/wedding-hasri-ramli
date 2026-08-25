@@ -3,6 +3,7 @@ package invitation
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/base-go/backend/internal/shared/models"
 	"github.com/base-go/backend/pkg/database"
@@ -24,7 +25,32 @@ var (
 	ErrSectionNotFound        = errors.New("invitation section not found")
 	ErrSectionAlreadyExists   = errors.New("invitation section already exists")
 	ErrGuestNotFound          = errors.New("guest not found")
+	ErrGuestbookEntryNotFound = errors.New("guestbook entry not found")
+	ErrWishlistAlreadyClaimed = errors.New("wishlist already claimed by this guest")
+	ErrWishlistStockEmpty     = errors.New("wishlist item out of stock")
 )
+
+// Baris hasil query ringkasan RSVP (join guests/events/categories).
+type RSVPSummaryRow struct {
+	SubmissionID     string
+	GuestName        string
+	CategoryName     *string
+	EventName        *string
+	AttendanceStatus string
+	NumberOfGuests   int
+	SubmittedAt      time.Time
+}
+
+type ClaimCountRow struct {
+	ItemID string
+	Count  int
+}
+
+type ClaimDetailRow struct {
+	ItemID    string
+	GuestName string
+	CreatedAt time.Time
+}
 
 type Repository interface {
 	GetWedding(ctx context.Context) (*models.Wedding, error)
@@ -97,6 +123,20 @@ type Repository interface {
 	ListGuestbook(ctx context.Context, limit int, offset int) ([]models.GuestbookEntry, error)
 	CountGuestbook(ctx context.Context) (int64, error)
 	CreateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error
+	GetGuestbookEntryByID(ctx context.Context, id string) (*models.GuestbookEntry, error)
+	UpdateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error
+	DeleteGuestbookEntry(ctx context.Context, id string) error
+	ListAllGuestbook(ctx context.Context) ([]models.GuestbookEntry, error)
+
+	CountClaimsByItem(ctx context.Context, itemID string) (int64, error)
+	ClaimCountsByItem(ctx context.Context) ([]ClaimCountRow, error)
+	ListClaimDetails(ctx context.Context) ([]ClaimDetailRow, error)
+	GuestHasClaim(ctx context.Context, guestID string) (bool, error)
+	ClaimWishlistItem(ctx context.Context, itemID string, guestID string) (int64, error)
+	UnclaimWishlistItem(ctx context.Context, guestID string) error
+
+	ListRSVPSubmissions(ctx context.Context) ([]RSVPSummaryRow, error)
+	CountGuests(ctx context.Context) (int64, error)
 }
 
 type repository struct {
@@ -555,4 +595,156 @@ func (r *repository) CountGuestbook(ctx context.Context) (int64, error) {
 
 func (r *repository) CreateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error {
 	return r.db.GetDB().WithContext(ctx).Create(entry).Error
+}
+
+// ===== Wishlist klaim (1 tamu = 1 barang) =====
+
+func (r *repository) CountClaimsByItem(ctx context.Context, itemID string) (int64, error) {
+	var n int64
+	err := r.db.GetDB().WithContext(ctx).Model(&models.WeddingWishlistClaim{}).
+		Where("item_id = ?", itemID).Count(&n).Error
+	return n, err
+}
+
+func (r *repository) ClaimCountsByItem(ctx context.Context) ([]ClaimCountRow, error) {
+	rows := []ClaimCountRow{}
+	err := r.db.GetDB().WithContext(ctx).Model(&models.WeddingWishlistClaim{}).
+		Select("item_id, COUNT(*) as count").
+		Group("item_id").Scan(&rows).Error
+	return rows, err
+}
+
+func (r *repository) ListClaimDetails(ctx context.Context) ([]ClaimDetailRow, error) {
+	type raw struct {
+		ItemID    string
+		GuestName string
+		CreatedAt time.Time
+	}
+	var rows []raw
+	err := r.db.GetDB().WithContext(ctx).
+		Table("wedding_wishlist_claims c").
+		Select("c.item_id, g.name as guest_name, c.created_at").
+		Joins("JOIN guests g ON g.id = c.guest_id").
+		Order("c.created_at ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make([]ClaimDetailRow, len(rows))
+	for i, r := range rows {
+		result[i] = ClaimDetailRow{ItemID: r.ItemID, GuestName: r.GuestName, CreatedAt: r.CreatedAt}
+	}
+	return result, nil
+}
+
+func (r *repository) GuestHasClaim(ctx context.Context, guestID string) (bool, error) {
+	var n int64
+	err := r.db.GetDB().WithContext(ctx).Model(&models.WeddingWishlistClaim{}).
+		Where("guest_id = ?", guestID).Count(&n).Error
+	return n > 0, err
+}
+
+// ClaimWishlistItem — transaksi atomik: kunci baris item, cek kuota tamu &
+// stok, lalu sisipkan klaim. Mengembalikan jumlah klaim terkini utk item tsb.
+func (r *repository) ClaimWishlistItem(ctx context.Context, itemID string, guestID string) (int64, error) {
+	var claimed int64
+
+	err := r.db.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var item models.WeddingWishlistItem
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&item, "id = ?", itemID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrWishlistItemNotFound
+			}
+			return err
+		}
+
+		var has int64
+		if err := tx.Model(&models.WeddingWishlistClaim{}).
+			Where("guest_id = ?", guestID).Count(&has).Error; err != nil {
+			return err
+		}
+		if has > 0 {
+			return ErrWishlistAlreadyClaimed
+		}
+
+		var current int64
+		if err := tx.Model(&models.WeddingWishlistClaim{}).
+			Where("item_id = ?", itemID).Count(&current).Error; err != nil {
+			return err
+		}
+		if int(current) >= item.StockTotal {
+			return ErrWishlistStockEmpty
+		}
+
+		claim := models.WeddingWishlistClaim{ItemID: item.ID, GuestID: guestID}
+		if err := tx.Create(&claim).Error; err != nil {
+			return err
+		}
+
+		return tx.Model(&models.WeddingWishlistClaim{}).
+			Where("item_id = ?", itemID).Count(&claimed).Error
+	})
+
+	return claimed, err
+}
+
+func (r *repository) UnclaimWishlistItem(ctx context.Context, guestID string) error {
+	return r.db.GetDB().WithContext(ctx).
+		Where("guest_id = ?", guestID).
+		Delete(&models.WeddingWishlistClaim{}).Error
+}
+
+// ===== Ucapan: kelola balasan admin =====
+
+func (r *repository) GetGuestbookEntryByID(ctx context.Context, id string) (*models.GuestbookEntry, error) {
+	var entry models.GuestbookEntry
+	err := r.db.GetDB().WithContext(ctx).First(&entry, "id = ?", id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrGuestbookEntryNotFound
+		}
+		return nil, err
+	}
+	return &entry, nil
+}
+
+func (r *repository) UpdateGuestbookEntry(ctx context.Context, entry *models.GuestbookEntry) error {
+	return r.db.GetDB().WithContext(ctx).Save(entry).Error
+}
+
+func (r *repository) DeleteGuestbookEntry(ctx context.Context, id string) error {
+	return r.db.GetDB().WithContext(ctx).Delete(&models.GuestbookEntry{}, "id = ?", id).Error
+}
+
+func (r *repository) ListAllGuestbook(ctx context.Context) ([]models.GuestbookEntry, error) {
+	var entries []models.GuestbookEntry
+	err := r.db.GetDB().WithContext(ctx).Order("created_at DESC").Find(&entries).Error
+	return entries, err
+}
+
+// ===== Ringkasan konfirmasi kehadiran =====
+
+func (r *repository) ListRSVPSubmissions(ctx context.Context) ([]RSVPSummaryRow, error) {
+	rows := []RSVPSummaryRow{}
+	err := r.db.GetDB().WithContext(ctx).Raw(`
+		SELECT rs.id AS submission_id,
+		       COALESCE(g.name, '-') AS guest_name,
+		       gc.name AS category_name,
+		       COALESCE(we.name, '-') AS event_name,
+		       rs.attendance_status AS attendance_status,
+		       rs.number_of_guests AS number_of_guests,
+		       rs.submitted_at AS submitted_at
+		FROM rsvp_submissions rs
+		LEFT JOIN guests g ON g.id = rs.guest_id
+		LEFT JOIN wedding_events we ON we.id = rs.wedding_event_id
+		LEFT JOIN guest_categories gc ON gc.id = g.guest_category_id
+		ORDER BY rs.submitted_at DESC`).Scan(&rows).Error
+	return rows, err
+}
+
+func (r *repository) CountGuests(ctx context.Context) (int64, error) {
+	var n int64
+	err := r.db.GetDB().WithContext(ctx).Model(&models.Guest{}).Count(&n).Error
+	return n, err
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Inbox, Loader2, Plus, Trash2, X } from "lucide-react";
+import { BookOpenText, CalendarDays, Inbox, Loader2, Plus, Trash2, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { Input } from "@/src/presentation/components/ui/input";
 import { Label } from "@/src/presentation/components/ui/label";
@@ -25,11 +25,13 @@ import {
 import type { StoryResponse } from "@/src/domain/services/wedding.service";
 import { TabLoading } from "./tab-loading";
 import { MediaInput } from "./media-input";
+import { deleteUploadedFiles } from "./upload-cleanup";
 
 interface StoryFormState {
   eventDate: string;
   title: string;
   description: string;
+  detail: string;
   imageUrl: string | null;
   orderIndex: number;
 }
@@ -38,6 +40,7 @@ const EMPTY_FORM: StoryFormState = {
   eventDate: "",
   title: "",
   description: "",
+  detail: "",
   imageUrl: null,
   orderIndex: 0,
 };
@@ -65,6 +68,7 @@ export function StoryTab() {
       eventDate: story.event_date ?? "",
       title: story.title,
       description: story.description ?? "",
+      detail: story.detail ?? "",
       imageUrl: story.image_url,
       orderIndex: story.order_index,
     });
@@ -80,15 +84,21 @@ export function StoryTab() {
       event_date: form.eventDate.trim() || null,
       title: form.title.trim(),
       description: form.description.trim() || null,
+      detail: form.detail.trim() || null,
       image_url: form.imageUrl,
       order_index: Number.isNaN(form.orderIndex) ? 0 : form.orderIndex,
     };
 
     if (editingId) {
+      const previousImage =
+        (data ?? []).find((s) => s.id === editingId)?.image_url ?? null;
       updateStory.mutate(
         { id: editingId, req: payload },
         {
           onSuccess: () => {
+            if (previousImage && previousImage !== payload.image_url) {
+              deleteUploadedFiles([previousImage]);
+            }
             toast.success("Kisah tersimpan");
             setSheetOpen(false);
           },
@@ -108,8 +118,12 @@ export function StoryTab() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    const media = deleteTarget.image_url;
     deleteStory.mutate(deleteTarget.id, {
-      onSuccess: () => toast.success("Kisah dihapus"),
+      onSuccess: () => {
+        deleteUploadedFiles([media]);
+        toast.success("Kisah dihapus");
+      },
       onError: () => toast.error("Gagal menghapus kisah"),
       onSettled: () => setDeleteTarget(null),
     });
@@ -150,6 +164,11 @@ export function StoryTab() {
                   </p>
                 )}
                 <p className="text-[14px] font-semibold">{story.title}</p>
+                {story.detail && (
+                  <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    <BookOpenText className="h-3 w-3" /> Ada detail
+                  </span>
+                )}
                 {story.description && (
                   <p className="mt-1 whitespace-pre-line text-[12px] leading-relaxed text-muted-foreground">
                     {story.description}
@@ -242,12 +261,24 @@ export function StoryTab() {
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
-                  placeholder="Ceritakan momen ini..."
+                  placeholder="Ringkasan singkat..."
+                  className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="story-detail" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Detail (Opsional)</Label>
+                <Textarea
+                  id="story-detail"
+                  value={form.detail}
+                  onChange={(e) => setForm((f) => ({ ...f, detail: e.target.value }))}
+                  rows={6}
+                  placeholder="Narasi panjang — tamu bisa buka lewat tombol Baca Selengkapnya bila diisi."
                   className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <MediaInput
                 label="Foto (Opsional)"
+                hint="Rekomendasi 1200 × 1500 px"
                 value={form.imageUrl}
                 onChange={(v) => setForm((f) => ({ ...f, imageUrl: v }))}
                 accept="image/*"

@@ -40,7 +40,6 @@ export function WeddingUcapan() {
   const guest = data?.guest ?? null;
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, true>>({});
@@ -66,11 +65,11 @@ export function WeddingUcapan() {
   const threads = guestbook.data?.threads ?? [];
   const total = guestbook.data?.total_messages ?? 0;
   const totalThreads = guestbook.data?.total_threads ?? threads.length;
-  const canSubmit = Boolean((guest?.name ?? name).trim()) && message.trim().length > 0;
+  const canSubmit = Boolean(guest) && message.trim().length > 0;
 
   const handleSubmit = () => {
-    if (!guest && !name.trim()) {
-      toast.info("Mohon isi nama Anda.");
+    if (!guest) {
+      toast.info("Ucapan hanya untuk tamu undangan resmi melalui link personal.");
       return;
     }
     if (!message.trim()) {
@@ -81,8 +80,7 @@ export function WeddingUcapan() {
     haptic(10);
     submitGuestbook.mutate(
       {
-        guest_id: guest ? guest.id : null,
-        guest_name: (guest?.name ?? name).trim(),
+        guest_id: guest.id,
         message_text: message.trim(),
       },
       {
@@ -108,20 +106,22 @@ export function WeddingUcapan() {
           </p>
         </WeddingReveal>
 
-        <WeddingReveal delay={80}>
-          <button
-            type="button"
-            onClick={() => {
-              haptic(8);
-              setSheetOpen(true);
-            }}
-            aria-haspopup="dialog"
-            className="inline-flex h-[52px] items-center gap-2 rounded-full bg-[var(--wd-accent)] px-8 text-[12px] font-bold tracking-wide text-[var(--wd-on-accent)] transition-all duration-200 active:scale-[0.98]"
-          >
-            <PenLine className="h-4 w-4" aria-hidden />
-            Tulis Ucapan
-          </button>
-        </WeddingReveal>
+        {guest ? (
+          <WeddingReveal delay={80}>
+            <button
+              type="button"
+              onClick={() => {
+                haptic(8);
+                setSheetOpen(true);
+              }}
+              aria-haspopup="dialog"
+              className="inline-flex h-[52px] items-center gap-2 rounded-full bg-[var(--wd-accent)] px-8 text-[12px] font-bold tracking-wide text-[var(--wd-on-accent)] transition-all duration-200 active:scale-[0.98]"
+            >
+              <PenLine className="h-4 w-4" aria-hidden />
+              Tulis Ucapan
+            </button>
+          </WeddingReveal>
+        ) : null}
 
         <WeddingReveal delay={120} className="w-full">
           <div className="flex w-full items-center gap-4">
@@ -287,21 +287,7 @@ export function WeddingUcapan() {
                   <p className="truncate text-[14px] font-semibold">{guest.name}</p>
                 </div>
               </div>
-            ) : (
-              <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--sheet-muted)]">
-                  Nama Anda
-                </span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Tulis nama Anda"
-                  maxLength={255}
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-[14px] text-[var(--sheet-ink)] outline-none transition-colors placeholder:text-[var(--sheet-muted)]/70 focus:border-[var(--sheet-accent-line)]"
-                />
-              </label>
-            )}
+            ) : null}
 
             <div className="flex flex-col gap-1.5">
               <textarea

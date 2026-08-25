@@ -133,7 +133,7 @@ export default function RolesPage() {
             setIsDeleteDialogOpen(false);
             setSelectedRole(null);
             await loadData();
-            toast.error('Peran berhasil dihapus', { icon: '🗑️' });
+            toast.error('Peran berhasil dihapus');
         } catch (err: any) {
             const errorMsg = err.response?.data?.message || 'Failed to delete role';
             setError(errorMsg);

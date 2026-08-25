@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { FileAudio, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import apiClient from "@/src/domain/services/api-client";
+import { useAuthStore } from "@/src/infrastructure/stores/auth-store";
 import { Button } from "@/src/presentation/components/ui/button";
 import { cn } from "@/src/lib/utils";
 
@@ -13,6 +13,8 @@ interface MediaInputProps {
   accept: string;
   folder: string;
   label?: string;
+  /** Hint ukuran file yang direkomendasikan, cth: "Rekomendasi 800 × 800 px" */
+  hint?: string;
   preview?: "image" | "audio" | "none";
   className?: string;
 }
@@ -23,6 +25,7 @@ export function MediaInput({
   accept,
   folder,
   label,
+  hint,
   preview = "image",
   className,
 }: MediaInputProps) {
@@ -35,13 +38,21 @@ export function MediaInput({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);
-      const res = await apiClient.post<{ path: string }>("/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const { accessToken } = useAuthStore.getState();
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        body: formData,
       });
-      onChange(res.data.path);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Gagal mengunggah");
+      }
+      const { path } = await res.json();
+      onChange(path);
       toast.success("File terunggah");
-    } catch {
-      toast.error("Gagal mengunggah file");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengunggah file");
     } finally {
       setUploading(false);
     }
@@ -51,6 +62,9 @@ export function MediaInput({
     <div className={cn("space-y-1.5", className)}>
       {label && (
         <label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">{label}</label>
+      )}
+      {hint && (
+        <p className="-mt-0.5 pl-1 text-[10px] font-medium tracking-wide text-muted-foreground/70">{hint}</p>
       )}
       <input
         ref={inputRef}

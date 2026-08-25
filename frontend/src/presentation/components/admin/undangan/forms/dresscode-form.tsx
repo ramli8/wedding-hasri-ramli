@@ -12,6 +12,7 @@ import { useUpdateWedding } from "@/src/application/hooks/use-wedding-query";
 import type { WeddingResponse } from "@/src/domain/services/wedding.service";
 import { buildSaveRequest } from "../wedding-save";
 import { MediaInput } from "../media-input";
+import { deleteUploadedFiles } from "../upload-cleanup";
 
 export function DressCodeForm({ data }: { data?: WeddingResponse }) {
   const updateWedding = useUpdateWedding();
@@ -19,6 +20,7 @@ export function DressCodeForm({ data }: { data?: WeddingResponse }) {
   const [palette, setPalette] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [initialImageUrl, setInitialImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (data && !initialized) {
@@ -26,6 +28,7 @@ export function DressCodeForm({ data }: { data?: WeddingResponse }) {
       setDescription(dressCode?.description ?? "");
       setPalette(dressCode?.color_palette?.length ? [...dressCode.color_palette] : []);
       setImageUrl(dressCode?.image_url ?? null);
+      setInitialImageUrl(dressCode?.image_url ?? null);
       setInitialized(true);
     }
   }, [data, initialized]);
@@ -42,7 +45,13 @@ export function DressCodeForm({ data }: { data?: WeddingResponse }) {
         },
       }),
       {
-        onSuccess: () => toast.success("Dress code tersimpan"),
+        onSuccess: () => {
+          if (initialImageUrl && initialImageUrl !== imageUrl) {
+            deleteUploadedFiles([initialImageUrl]);
+            setInitialImageUrl(imageUrl);
+          }
+          toast.success("Dress code tersimpan");
+        },
         onError: () => toast.error("Gagal menyimpan dress code"),
       }
     );
@@ -122,6 +131,7 @@ export function DressCodeForm({ data }: { data?: WeddingResponse }) {
 
           <MediaInput
             label="Moodboard (opsional)"
+            hint="Rekomendasi 1920 × 1080 px"
             value={imageUrl}
             onChange={setImageUrl}
             accept="image/jpeg,image/png,image/webp,image/gif"

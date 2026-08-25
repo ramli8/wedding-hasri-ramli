@@ -74,6 +74,8 @@ export const invitationStaticData: InvitationDetail = {
       name: "Akad Nikah",
       event_date: "2026-12-11T08:00:00+07:00",
       start_time: "2026-12-11T08:00:00+07:00",
+      end_time: null,
+      order_index: 1,
       venue_name: "Ballroom Nama Venue",
       address_full: "Jl. Contoh Alamat No. 123, Kota",
       gmaps_url: "https://maps.google.com/?q=Ballroom+Nama+Venue",
@@ -85,6 +87,8 @@ export const invitationStaticData: InvitationDetail = {
       name: "Resepsi",
       event_date: "2026-12-12T11:00:00+07:00",
       start_time: "2026-12-12T11:00:00+07:00",
+      end_time: null,
+      order_index: 2,
       venue_name: "Ballroom Nama Venue",
       address_full: "Jl. Contoh Alamat No. 123, Kota",
       gmaps_url: "https://maps.google.com/?q=Ballroom+Nama+Venue",
@@ -160,11 +164,13 @@ export const invitationStaticData: InvitationDetail = {
       bank_name: "BCA",
       account_number: "1234567890",
       account_holder_name: "Ramli",
+      image_url: null,
     },
     {
       bank_name: "Mandiri",
       account_number: "0987654321",
       account_holder_name: "Hasri",
+      image_url: null,
     },
   ],
   ewallets: [
@@ -172,20 +178,24 @@ export const invitationStaticData: InvitationDetail = {
       provider_name: "QRIS",
       account_id: "Hasri & Ramli",
       qr_code_image_url: "/images/dummy-qris.png",
+      is_qris: true,
     },
     {
       provider_name: "GoPay",
       account_id: "0812 3456 7890",
       qr_code_image_url: null,
+      is_qris: false,
     },
     {
       provider_name: "ShopeePay",
       account_id: "0812 3456 7890",
       qr_code_image_url: null,
+      is_qris: false,
     },
   ],
   wishlist: [
     {
+      id: "wl-air-fryer",
       item_name: "Air Fryer 4.5L",
       item_image_url: null,
       item_link: "https://www.tokopedia.com/search?q=air+fryer+4.5l",
@@ -194,6 +204,7 @@ export const invitationStaticData: InvitationDetail = {
       claimed_count: 1,
     },
     {
+      id: "wl-rice-cooker",
       item_name: "Rice Cooker Digital",
       item_image_url: null,
       item_link: null,
@@ -202,6 +213,7 @@ export const invitationStaticData: InvitationDetail = {
       claimed_count: 1,
     },
     {
+      id: "wl-panci-granit",
       item_name: "Set Panci Granit",
       item_image_url: null,
       item_link: "https://www.tokopedia.com/search?q=set+panci+granit",
@@ -210,6 +222,7 @@ export const invitationStaticData: InvitationDetail = {
       claimed_count: 0,
     },
     {
+      id: "wl-vacuum-cleaner",
       item_name: "Vacuum Cleaner Portable",
       item_image_url: null,
       item_link: null,
@@ -218,6 +231,7 @@ export const invitationStaticData: InvitationDetail = {
       claimed_count: 0,
     },
     {
+      id: "wl-mesin-kopi",
       item_name: "Mesin Kopi Espresso",
       item_image_url: null,
       item_link: "https://www.tokopedia.com/search?q=mesin+kopi+espresso",
@@ -226,6 +240,7 @@ export const invitationStaticData: InvitationDetail = {
       claimed_count: 2,
     },
     {
+      id: "wl-sprei-king",
       item_name: "Sprei King Size 180×200",
       item_image_url: null,
       item_link: null,
@@ -251,4 +266,5 @@ export const invitationStaticData: InvitationDetail = {
   ],
   countdown_target: "2026-12-12T11:00:00+07:00",
   guest: null,
+  guest_rsvp: null,
 };

@@ -24,6 +24,7 @@ import {
 import type { GalleryItemResponse } from "@/src/domain/services/wedding.service";
 import { TabLoading } from "./tab-loading";
 import { MediaInput } from "./media-input";
+import { deleteUploadedFiles } from "./upload-cleanup";
 
 interface GalleryFormState {
   imageUrl: string | null;
@@ -76,10 +77,15 @@ export function GalleryTab() {
     };
 
     if (editingId) {
+      const previousImage =
+        (data ?? []).find((g) => g.id === editingId)?.image_url ?? null;
       updateGalleryItem.mutate(
         { id: editingId, req: payload },
         {
           onSuccess: () => {
+            if (previousImage && previousImage !== payload.image_url) {
+              deleteUploadedFiles([previousImage]);
+            }
             toast.success("Foto tersimpan");
             setSheetOpen(false);
           },
@@ -99,8 +105,12 @@ export function GalleryTab() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    const media = deleteTarget.image_url;
     deleteGalleryItem.mutate(deleteTarget.id, {
-      onSuccess: () => toast.success("Foto dihapus"),
+      onSuccess: () => {
+        deleteUploadedFiles([media]);
+        toast.success("Foto dihapus");
+      },
       onError: () => toast.error("Gagal menghapus foto"),
       onSettled: () => setDeleteTarget(null),
     });
@@ -189,6 +199,7 @@ export function GalleryTab() {
             <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
               <MediaInput
                 label="Foto"
+                hint="Rekomendasi 1600 × 2000 px"
                 value={form.imageUrl}
                 onChange={(v) => setForm((f) => ({ ...f, imageUrl: v }))}
                 accept="image/*"

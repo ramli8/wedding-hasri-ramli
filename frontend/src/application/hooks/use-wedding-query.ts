@@ -21,6 +21,9 @@ import {
   CreateSectionRequest,
   UpdateSectionRequest,
 } from '@/src/domain/services/wedding.service';
+import type {
+  GuestbookReplyRequest,
+} from '@/src/domain/services/wedding.service';
 
 export const WEDDING_KEYS = {
   all: ['wedding'] as const,
@@ -34,6 +37,8 @@ export const WEDDING_KEYS = {
   ewallets: () => [...WEDDING_KEYS.all, 'ewallets'] as const,
   wishlist: () => [...WEDDING_KEYS.all, 'wishlist'] as const,
   sections: () => [...WEDDING_KEYS.all, 'sections'] as const,
+  guestbook: () => [...WEDDING_KEYS.all, 'guestbook'] as const,
+  rsvpSummary: () => [...WEDDING_KEYS.all, 'rsvp-summary'] as const,
 };
 
 // --- Wedding singleton ---
@@ -403,5 +408,48 @@ export function useUpdateSection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WEDDING_KEYS.sections() });
     },
+  });
+}
+
+// --- Ucapan: balasan admin ---
+
+export function useAdminGuestbook() {
+  return useQuery({
+    queryKey: WEDDING_KEYS.guestbook(),
+    queryFn: () => weddingService.getAdminGuestbook(),
+    staleTime: 30000,
+  });
+}
+
+export function useReplyGuestbook() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, req }: { id: string; req: GuestbookReplyRequest }) =>
+      weddingService.replyGuestbook(id, req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: WEDDING_KEYS.guestbook() });
+      queryClient.invalidateQueries({ queryKey: ['invitation'] });
+    },
+  });
+}
+
+export function useDeleteGuestbook() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => weddingService.deleteGuestbook(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: WEDDING_KEYS.guestbook() });
+      queryClient.invalidateQueries({ queryKey: ['invitation'] });
+    },
+  });
+}
+
+// --- Ringkasan konfirmasi kehadiran ---
+
+export function useRsvpSummary() {
+  return useQuery({
+    queryKey: WEDDING_KEYS.rsvpSummary(),
+    queryFn: () => weddingService.getRsvpSummary(),
+    staleTime: 30000,
   });
 }

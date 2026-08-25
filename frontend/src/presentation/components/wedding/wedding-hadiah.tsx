@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, ExternalLink, Gift, ScanLine } from "lucide-react";
+import { isAxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Copy, ExternalLink, Gift, Loader2, ScanLine } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   Drawer,
@@ -9,48 +11,35 @@ import {
   DrawerDescription,
   DrawerTitle,
 } from "@/src/presentation/components/ui/drawer";
-import { useInvitation } from "@/src/application/hooks/use-invitation-query";
+import { invitationKeys, useInvitation } from "@/src/application/hooks/use-invitation-query";
+import { invitationService } from "@/src/domain/services/invitation.service";
 import type {
   InvitationEwallet,
   InvitationWishlistItem,
 } from "@/src/domain/services/invitation.service";
 import { WeddingReveal } from "./wedding-reveal";
-import { getGiftBrand } from "@/src/lib/invitation/gift-logos";
 import { haptic } from "@/src/lib/invitation/haptics";
 
-const WISHLIST_CLAIMS_KEY = "wd-wishlist-claims";
+// Hanya petunjuk UI ("Dipilihmu") — penegakan aturan 1 tamu = 1 kado ada di backend.
+const WISHLIST_CLAIM_KEY = "wd-wishlist-claim-item-id";
 
-function readMyClaims(): string[] {
-  if (typeof window === "undefined") return [];
+function readMyClaim(): string | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(WISHLIST_CLAIMS_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string") : [];
+    return window.localStorage.getItem(WISHLIST_CLAIM_KEY);
   } catch {
-    return [];
+    return null;
   }
-}
-
-function BrandChip({ name }: { name: string }) {
-  const brand = getGiftBrand(name);
-  const fontSize = Math.min(12, Math.floor(36 / brand.label.length) + 5);
-  return (
-    <span
-      aria-hidden
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg px-0.5 text-center font-extrabold uppercase leading-none tracking-tight"
-      style={{ backgroundColor: brand.bg, color: brand.fg, fontSize }}
-    >
-      {brand.label}
-    </span>
-  );
 }
 
 export function WeddingHadiah() {
   const { data } = useInvitation();
+  const queryClient = useQueryClient();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [qrWallet, setQrWallet] = useState<InvitationEwallet | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
-  const [myClaims, setMyClaims] = useState<string[]>(readMyClaims);
+  const [myClaimId, setMyClaimId] = useState<string | null>(readMyClaim);
+  const [claimPendingId, setClaimPendingId] = useState<string | null>(null);
   if (!data) return null;
 
   const { bank_accounts: bankAccounts, ewallets, wishlist } = data;
@@ -64,16 +53,65 @@ export function WeddingHadiah() {
     return null;
   }
 
-  const claimItem = (item: InvitationWishlistItem) => {
-    const next = Array.from(new Set([...myClaims, item.item_name]));
-    setMyClaims(next);
-    try {
-      window.localStorage.setItem(WISHLIST_CLAIMS_KEY, JSON.stringify(next));
-    } catch {
-      // storage penuh / diblokir — klaim tetap tampil di sesi ini
+  const claimItem = async (item: InvitationWishlistItem) => {
+    const guest = data.guest;
+    if (!guest?.id) {
+      toast.info("Buka undangan lewat tautan pribadimu untuk bisa memilih kado.");
+      return;
     }
-    haptic(10);
-    toast.success(`Terima kasih! "${item.item_name}" sudah kami catat atas nama Anda.`);
+    setClaimPendingId(item.id);
+    try {
+      await invitationService.claimWishlistItem(item.id, guest.id);
+      haptic(10);
+      setMyClaimId(item.id);
+      try {
+        window.localStorage.setItem(WISHLIST_CLAIM_KEY, item.id);
+      } catch {
+        // storage penuh / diblokir — klaim tetap tercatat di backend
+      }
+      toast.success(`Terima kasih! "${item.item_name}" sudah kami catat atas nama Anda.`);
+      await queryClient.invalidateQueries({ queryKey: [...invitationKeys.all] });
+    } catch (err) {
+      if (isAxiosError(err)) {
+        const message =
+          typeof err.response?.data?.error === "string"
+            ? err.response.data.error
+            : null;
+        toast.error(
+          message ??
+            "Gagal memilih kado. Coba lagi atau pilih yang lain, ya."
+        );
+      } else {
+        toast.error("Gagal memilih kado. Periksa koneksi lalu coba lagi.");
+      }
+    } finally {
+      setClaimPendingId(null);
+    }
+  };
+
+  const unclaimItem = async (item: InvitationWishlistItem) => {
+    const guest = data.guest;
+    if (!guest?.id) return;
+    setClaimPendingId(item.id);
+    try {
+      await invitationService.unclaimWishlistItem(item.id, guest.id);
+      haptic(10);
+      setMyClaimId(null);
+      try {
+        window.localStorage.removeItem(WISHLIST_CLAIM_KEY);
+      } catch { /* ignore */ }
+      toast.success(`"${item.item_name}" sudah dibatalkan.`);
+      await queryClient.invalidateQueries({ queryKey: [...invitationKeys.all] });
+    } catch (err) {
+      if (isAxiosError(err)) {
+        const message = typeof err.response?.data?.error === "string" ? err.response.data.error : null;
+        toast.error(message ?? "Gagal membatalkan klaim.");
+      } else {
+        toast.error("Gagal membatalkan klaim. Coba lagi.");
+      }
+    } finally {
+      setClaimPendingId(null);
+    }
   };
 
   const handleCopy = async (
@@ -122,7 +160,16 @@ export function WeddingHadiah() {
                   const copied = copiedKey === key;
                   return (
                     <li key={key} className="flex items-center gap-3.5 py-4">
-                      <BrandChip name={account.bank_name} />
+                      {account.image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={account.image_url}
+                          alt={account.bank_name}
+                          className="h-11 w-11 shrink-0 rounded-lg border border-white/20 object-cover"
+                        />
+                      ) : (
+                        <span className="h-11 w-11 shrink-0" aria-hidden />
+                      )}
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <p className="truncate text-left text-[14px] font-semibold">
                           {account.bank_name}
@@ -168,10 +215,10 @@ export function WeddingHadiah() {
               <ul className="divide-y divide-[var(--wd-line)]">
                 {ewallets.map((wallet) => {
                   const copied = copiedKey === wallet.provider_name;
-                  const hasQr = Boolean(wallet.qr_code_image_url);
+                  const hasQr = wallet.is_qris && Boolean(wallet.qr_code_image_url);
                   return (
                     <li key={wallet.provider_name} className="flex items-center gap-3.5 py-4">
-                      {wallet.qr_code_image_url ? (
+                      {hasQr && wallet.qr_code_image_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={wallet.qr_code_image_url}
@@ -179,7 +226,7 @@ export function WeddingHadiah() {
                           className="h-11 w-11 shrink-0 rounded-lg border border-white/20 bg-white object-cover"
                         />
                       ) : (
-                        <BrandChip name={wallet.provider_name} />
+                        <span className="h-11 w-11 shrink-0" aria-hidden />
                       )}
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <p className="truncate text-[14px] font-semibold">
@@ -229,6 +276,8 @@ export function WeddingHadiah() {
           </WeddingReveal>
         ) : null}
 
+        {data.guest ? (
+          <>
         {shippingAddress ? (
           <WeddingReveal delay={100} className="w-full max-w-md">
             <div className="flex w-full items-center gap-4">
@@ -273,6 +322,8 @@ export function WeddingHadiah() {
             </button>
           </WeddingReveal>
         ) : null}
+          </>
+        ) : null}
       </div>
 
       <Drawer
@@ -296,13 +347,17 @@ export function WeddingHadiah() {
                 const stockTotal = item.stock_total ?? 1;
                 const baseClaimed =
                   item.claimed_count ?? (item.is_claimed ? 1 : 0);
-                const mine = myClaims.includes(item.item_name);
-                const hasClaimed = myClaims.length > 0;
-                const claimed = Math.min(baseClaimed + (mine ? 1 : 0), stockTotal);
+                const mine = myClaimId === item.id;
+                const hasClaimed = Boolean(myClaimId);
+                const claimed = Math.min(
+                  baseClaimed + (mine && item.claimed_count == null ? 1 : 0),
+                  stockTotal,
+                );
                 const soldOut = claimed >= stockTotal;
+                const pending = claimPendingId === item.id;
                 return (
                   <li
-                    key={item.item_name}
+                    key={item.id || item.item_name}
                     className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
                   >
                     <span
@@ -331,6 +386,13 @@ export function WeddingHadiah() {
                       <p className="mt-1 text-[11px] text-[var(--sheet-muted)]">
                         {claimed} dari {stockTotal} sudah dipilih
                       </p>
+                      {item.claimed_by_names && item.claimed_by_names.length > 0 ? (
+                        <p className="mt-0.5 text-[10px] text-[var(--sheet-muted)]/70">
+                          {item.claimed_by_names.length === 1
+                            ? `Diklaim oleh ${item.claimed_by_names[0]}`
+                            : `Diklaim oleh ${item.claimed_by_names.slice(0, 2).join(", ")}${item.claimed_by_names.length > 2 ? ` & ${item.claimed_by_names.length - 2} lainnya` : ""}`}
+                        </p>
+                      ) : null}
                       {item.item_link ? (
                         <a
                           href={item.item_link}
@@ -344,27 +406,37 @@ export function WeddingHadiah() {
                       ) : null}
                     </div>
                     {mine ? (
-                      <span className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-[var(--sheet-accent-line)] px-3 text-[11px] font-bold text-[var(--sheet-accent)]">
-                        <Check className="h-3 w-3" aria-hidden />
-                        Dipilihmu
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void unclaimItem(item)}
+                        disabled={pending}
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[var(--sheet-accent-line)] bg-white/5 px-4 text-[11px] font-bold tracking-wide text-[var(--sheet-accent)] transition-all duration-200 active:scale-95"
+                      >
+                        {pending ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden /> : <Check className="h-3 w-3" aria-hidden />}
+                        {pending ? "Membatalkan..." : "Batal Klaim"}
+                      </button>
                     ) : soldOut ? (
                       <span className="inline-flex h-9 shrink-0 items-center rounded-full border border-white/10 px-3 text-[11px] font-bold text-[var(--sheet-muted)] opacity-60">
                         Habis
                       </span>
+                    ) : !data.guest ? (
+                      <span className="inline-flex h-9 shrink-0 items-center rounded-full border border-white/10 px-3 text-[11px] font-bold text-[var(--sheet-muted)] opacity-60">
+                        Khusus Tamu
+                      </span>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => claimItem(item)}
-                        disabled={hasClaimed}
+                        onClick={() => void claimItem(item)}
+                        disabled={hasClaimed || pending}
                         title={
                           hasClaimed
                             ? "Satu tamu hanya bisa memilih satu hadiah"
                             : undefined
                         }
-                        className="inline-flex h-9 shrink-0 items-center rounded-full bg-[var(--sheet-accent)] px-4 text-[11px] font-bold tracking-wide text-[var(--sheet-on-accent)] transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--sheet-accent)] px-4 text-[11px] font-bold tracking-wide text-[var(--sheet-on-accent)] transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                       >
-                        {hasClaimed ? "Kuota Terpakai" : "Klaim"}
+                        {pending && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}
+                        {pending ? "Memilih..." : "Klaim"}
                       </button>
                     )}
                   </li>
@@ -372,7 +444,9 @@ export function WeddingHadiah() {
               })}
             </ul>
             <p className="mt-4 text-center text-[11px] leading-relaxed text-[var(--sheet-muted)]/80">
-              Satu tamu hanya dapat memilih satu hadiah — supaya stok tercatat adil untuk tamu lain.
+              {data.guest
+                ? "Satu tamu hanya dapat memilih satu hadiah — supaya stok tercatat adil untuk tamu lain."
+                : "Pemilihan kado hanya untuk pemegang tautan undangan pribadi — buka undangan lewat link yang Anda terima, ya."}
             </p>
           </div>
         </DrawerContent>

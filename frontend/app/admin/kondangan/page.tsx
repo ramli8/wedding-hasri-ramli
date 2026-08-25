@@ -175,7 +175,7 @@ export default function CatatanKondanganPage() {
     if (deleteRelationId) {
       deleteRelMut.mutate(deleteRelationId, {
         onSuccess: () => {
-          toast.error("Relasi berhasil dihapus", { icon: "🗑️" });
+          toast.error("Relasi berhasil dihapus");
           setDeleteRelationId(null);
         },
         onError: (error: any) => {
@@ -242,7 +242,7 @@ export default function CatatanKondanganPage() {
     if (deleteKondanganId) {
       deleteMut.mutate(deleteKondanganId, {
         onSuccess: () => {
-          toast.error("Catatan berhasil dihapus", { icon: "🗑️" });
+          toast.error("Catatan berhasil dihapus");
           setDeleteKondanganId(null);
         },
       });

@@ -82,6 +82,8 @@ export function WeddingCover() {
     );
   };
 
+
+
   return (
     <section
       aria-label="Cover undangan"
@@ -162,12 +164,12 @@ export function WeddingCover() {
             </div>
 
             <div className="mt-6 flex flex-col items-center gap-4">
-              <p className="text-[12px] tracking-wide text-white/70">
-                {guestGreetingLabel ? `${guestGreetingLabel} ` : ""}
-                <span className="font-semibold text-white">
-                  {guest?.name ?? "Bapak/Ibu/Saudara/i"}
-                </span>
-              </p>
+              {guest?.name ? (
+                <p className="text-[12px] tracking-wide text-white/70">
+                  {guestGreetingLabel ? `${guestGreetingLabel} ` : ""}
+                  <span className="font-semibold text-white">{guest.name}</span>
+                </p>
+              ) : null}
               <button
                 type="button"
                 onClick={handleOpen}

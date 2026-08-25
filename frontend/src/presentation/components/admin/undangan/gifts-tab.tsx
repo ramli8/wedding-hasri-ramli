@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Inbox, Loader2, Plus, Smartphone, Trash2, X } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  Gift,
+  Inbox,
+  Layers,
+  Loader2,
+  Plus,
+  Smartphone,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { Card, CardContent } from "@/src/presentation/components/ui/card";
 import { Input } from "@/src/presentation/components/ui/input";
@@ -27,49 +38,77 @@ import {
   useCreateEwallet,
   useUpdateEwallet,
   useDeleteEwallet,
+  useWishlistItems,
+  useCreateWishlistItem,
+  useUpdateWishlistItem,
+  useDeleteWishlistItem,
   useUpdateWedding,
 } from "@/src/application/hooks/use-wedding-query";
 import type {
   BankAccountResponse,
   EwalletResponse,
   WeddingResponse,
+  WishlistItemResponse,
 } from "@/src/domain/services/wedding.service";
 import { buildSaveRequest } from "./wedding-save";
 import { TabLoading } from "./tab-loading";
 import { MediaInput } from "./media-input";
+import { deleteUploadedFiles } from "./upload-cleanup";
 
-type GiftSegment = "bank" | "ewallet";
+type GiftSegment = "bank" | "ewallet" | "wishlist";
 
 interface BankFormState {
   bankName: string;
   accountNumber: string;
   accountHolderName: string;
+  imageUrl: string | null;
 }
 
 interface EwalletFormState {
   providerName: string;
   accountId: string;
   qrCodeImageUrl: string | null;
+  isQris: boolean;
+}
+
+interface WishlistFormState {
+  itemName: string;
+  itemImageUrl: string | null;
+  itemLink: string;
+  stockTotal: number;
 }
 
 const EMPTY_BANK_FORM: BankFormState = {
   bankName: "",
   accountNumber: "",
   accountHolderName: "",
+  imageUrl: null,
 };
 
 const EMPTY_EWALLET_FORM: EwalletFormState = {
   providerName: "",
   accountId: "",
   qrCodeImageUrl: null,
+  isQris: false,
 };
+
+const EMPTY_WISHLIST_FORM: WishlistFormState = {
+  itemName: "",
+  itemImageUrl: null,
+  itemLink: "",
+  stockTotal: 1,
+};
+
+const SEGMENTS: { key: GiftSegment; label: string; icon: typeof Building2 }[] = [
+  { key: "bank", label: "Bank", icon: Building2 },
+  { key: "ewallet", label: "E-Wallet", icon: Smartphone },
+  { key: "wishlist", label: "Wishlist", icon: Gift },
+];
 
 export function GiftsTab({ data }: { data?: WeddingResponse }) {
   const [segment, setSegment] = useState<GiftSegment>("bank");
   const updateWedding = useUpdateWedding();
-  const [address, setAddress] = useState(
-    data?.gift_shipping_address ?? ""
-  );
+  const [address, setAddress] = useState(data?.gift_shipping_address ?? "");
   useEffect(() => {
     setAddress(data?.gift_shipping_address ?? "");
   }, [data?.gift_shipping_address]);
@@ -86,30 +125,43 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
 
   const { data: banks, isLoading: banksLoading } = useBankAccounts();
   const { data: ewallets, isLoading: ewalletsLoading } = useEwallets();
+  const { data: wishlist, isLoading: wishlistLoading } = useWishlistItems();
   const createBankAccount = useCreateBankAccount();
   const updateBankAccount = useUpdateBankAccount();
   const deleteBankAccount = useDeleteBankAccount();
   const createEwallet = useCreateEwallet();
   const updateEwallet = useUpdateEwallet();
   const deleteEwallet = useDeleteEwallet();
+  const createWishlistItem = useCreateWishlistItem();
+  const updateWishlistItem = useUpdateWishlistItem();
+  const deleteWishlistItem = useDeleteWishlistItem();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [editingEwalletId, setEditingEwalletId] = useState<string | null>(null);
+  const [editingWishlistId, setEditingWishlistId] = useState<string | null>(null);
   const [bankForm, setBankForm] = useState<BankFormState>(EMPTY_BANK_FORM);
   const [ewalletForm, setEwalletForm] = useState<EwalletFormState>(EMPTY_EWALLET_FORM);
+  const [wishlistForm, setWishlistForm] = useState<WishlistFormState>(EMPTY_WISHLIST_FORM);
   const [deleteBank, setDeleteBank] = useState<BankAccountResponse | null>(null);
   const [deleteEwalletTarget, setDeleteEwalletTarget] = useState<EwalletResponse | null>(null);
+  const [deleteWishlistTarget, setDeleteWishlistTarget] = useState<WishlistItemResponse | null>(null);
 
-  const isLoading = segment === "bank" ? banksLoading : ewalletsLoading;
+  const isLoading =
+    (segment === "bank" && banksLoading) ||
+    (segment === "ewallet" && ewalletsLoading) ||
+    (segment === "wishlist" && wishlistLoading);
 
   const openCreate = () => {
     if (segment === "bank") {
       setEditingBankId(null);
       setBankForm(EMPTY_BANK_FORM);
-    } else {
+    } else if (segment === "ewallet") {
       setEditingEwalletId(null);
       setEwalletForm(EMPTY_EWALLET_FORM);
+    } else {
+      setEditingWishlistId(null);
+      setWishlistForm(EMPTY_WISHLIST_FORM);
     }
     setSheetOpen(true);
   };
@@ -121,6 +173,7 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       bankName: account.bank_name,
       accountNumber: account.account_number,
       accountHolderName: account.account_holder_name,
+      imageUrl: account.image_url,
     });
     setSheetOpen(true);
   };
@@ -132,6 +185,19 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       providerName: ewallet.provider_name,
       accountId: ewallet.account_id,
       qrCodeImageUrl: ewallet.qr_code_image_url,
+      isQris: ewallet.is_qris,
+    });
+    setSheetOpen(true);
+  };
+
+  const openEditWishlist = (item: WishlistItemResponse) => {
+    setSegment("wishlist");
+    setEditingWishlistId(item.id);
+    setWishlistForm({
+      itemName: item.item_name,
+      itemImageUrl: item.item_image_url,
+      itemLink: item.item_link ?? "",
+      stockTotal: item.stock_total,
     });
     setSheetOpen(true);
   };
@@ -146,12 +212,17 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
         bank_name: bankForm.bankName.trim(),
         account_number: bankForm.accountNumber.trim(),
         account_holder_name: bankForm.accountHolderName.trim(),
+        image_url: bankForm.imageUrl,
       };
       if (editingBankId) {
+        const previous = banks?.find((b) => b.id === editingBankId)?.image_url ?? null;
         updateBankAccount.mutate(
           { id: editingBankId, req: payload },
           {
             onSuccess: () => {
+              if (previous && previous !== payload.image_url) {
+                deleteUploadedFiles([previous]);
+              }
               toast.success("Rekening tersimpan");
               setSheetOpen(false);
             },
@@ -167,7 +238,7 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           onError: () => toast.error("Gagal menambah rekening"),
         });
       }
-    } else {
+    } else if (segment === "ewallet") {
       if (!ewalletForm.providerName.trim() || !ewalletForm.accountId.trim()) {
         toast.error("Provider dan account ID wajib diisi");
         return;
@@ -176,12 +247,18 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
         provider_name: ewalletForm.providerName.trim(),
         account_id: ewalletForm.accountId.trim(),
         qr_code_image_url: ewalletForm.qrCodeImageUrl,
+        is_qris: ewalletForm.isQris,
       };
       if (editingEwalletId) {
+        const previous =
+          ewallets?.find((e) => e.id === editingEwalletId)?.qr_code_image_url ?? null;
         updateEwallet.mutate(
           { id: editingEwalletId, req: payload },
           {
             onSuccess: () => {
+              if (previous && previous !== payload.qr_code_image_url) {
+                deleteUploadedFiles([previous]);
+              }
               toast.success("E-Wallet tersimpan");
               setSheetOpen(false);
             },
@@ -197,21 +274,77 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           onError: () => toast.error("Gagal menambah e-wallet"),
         });
       }
+    } else {
+      if (!wishlistForm.itemName.trim()) {
+        toast.error("Nama kado wajib diisi");
+        return;
+      }
+      const payload = {
+        item_name: wishlistForm.itemName.trim(),
+        item_image_url: wishlistForm.itemImageUrl,
+        item_link: wishlistForm.itemLink.trim() || null,
+        stock_total: Number.isNaN(wishlistForm.stockTotal)
+          ? 1
+          : Math.max(1, wishlistForm.stockTotal),
+      };
+      if (editingWishlistId) {
+        const previous =
+          wishlist?.find((w) => w.id === editingWishlistId)?.item_image_url ?? null;
+        updateWishlistItem.mutate(
+          { id: editingWishlistId, req: payload },
+          {
+            onSuccess: () => {
+              if (previous && previous !== payload.item_image_url) {
+                deleteUploadedFiles([previous]);
+              }
+              toast.success("Kado tersimpan");
+              setSheetOpen(false);
+            },
+            onError: () => toast.error("Gagal menyimpan kado"),
+          }
+        );
+      } else {
+        createWishlistItem.mutate(payload, {
+          onSuccess: () => {
+            toast.success("Kado ditambahkan");
+            setSheetOpen(false);
+          },
+          onError: () => toast.error("Gagal menambah kado"),
+        });
+      }
     }
   };
 
   const handleDelete = () => {
     if (deleteBank) {
+      const media = deleteBank.image_url;
       deleteBankAccount.mutate(deleteBank.id, {
-        onSuccess: () => toast.success("Rekening dihapus"),
+        onSuccess: () => {
+          deleteUploadedFiles([media]);
+          toast.success("Rekening dihapus");
+        },
         onError: () => toast.error("Gagal menghapus rekening"),
         onSettled: () => setDeleteBank(null),
       });
     } else if (deleteEwalletTarget) {
+      const media = deleteEwalletTarget.qr_code_image_url;
       deleteEwallet.mutate(deleteEwalletTarget.id, {
-        onSuccess: () => toast.success("E-Wallet dihapus"),
+        onSuccess: () => {
+          deleteUploadedFiles([media]);
+          toast.success("E-Wallet dihapus");
+        },
         onError: () => toast.error("Gagal menghapus e-wallet"),
         onSettled: () => setDeleteEwalletTarget(null),
+      });
+    } else if (deleteWishlistTarget) {
+      const media = deleteWishlistTarget.item_image_url;
+      deleteWishlistItem.mutate(deleteWishlistTarget.id, {
+        onSuccess: () => {
+          deleteUploadedFiles([media]);
+          toast.success("Kado dihapus");
+        },
+        onError: () => toast.error("Gagal menghapus kado"),
+        onSettled: () => setDeleteWishlistTarget(null),
       });
     }
   };
@@ -236,9 +369,25 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
     createBankAccount.isPending ||
     updateBankAccount.isPending ||
     createEwallet.isPending ||
-    updateEwallet.isPending;
-  const deletePending = deleteBankAccount.isPending || deleteEwallet.isPending;
-  const editingId = segment === "bank" ? editingBankId : editingEwalletId;
+    updateEwallet.isPending ||
+    createWishlistItem.isPending ||
+    updateWishlistItem.isPending;
+  const deletePending =
+    deleteBankAccount.isPending ||
+    deleteEwallet.isPending ||
+    deleteWishlistItem.isPending;
+  const editingId = segment === "bank" ? editingBankId : segment === "ewallet" ? editingEwalletId : editingWishlistId;
+
+  const counts: Record<GiftSegment, number> = {
+    bank: (banks ?? []).length,
+    ewallet: (ewallets ?? []).length,
+    wishlist: (wishlist ?? []).length,
+  };
+  const segmentLabels: Record<GiftSegment, string> = {
+    bank: "rekening",
+    ewallet: "e-wallet",
+    wishlist: "kado",
+  };
 
   return (
     <div className="space-y-4">
@@ -272,26 +421,32 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
 
       {/* Segmented pill */}
       <div className="flex bg-muted/40 p-1 rounded-xl h-11">
-        <button
-          onClick={() => setSegment("bank")}
-          className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-semibold rounded-lg transition-all ${
-            segment === "bank"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Building2 className="h-4 w-4" /> Rekening Bank
-        </button>
-        <button
-          onClick={() => setSegment("ewallet")}
-          className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-semibold rounded-lg transition-all ${
-            segment === "ewallet"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Smartphone className="h-4 w-4" /> E-Wallet
-        </button>
+        {SEGMENTS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setSegment(key)}
+            className={`flex-1 flex items-center justify-center gap-1 text-[12px] sm:text-[13px] font-semibold rounded-lg transition-all ${
+              segment === key
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Count row */}
+      <div className="flex items-center justify-between px-2 min-h-[32px]">
+        <span className="text-sm font-semibold tracking-tight">
+          Semua {segment === "bank" ? "Rekening" : segment === "ewallet" ? "E-Wallet" : "Kado"} ({counts[segment]})
+        </span>
+        {segment === "wishlist" && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+            <Layers className="w-3.5 h-3.5" />
+            1 tamu = 1 kado
+          </span>
+        )}
       </div>
 
       {segment === "bank" && (
@@ -310,9 +465,6 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                   <div className="flex items-start justify-between gap-3">
                     <button onClick={() => openEditBank(account)} className="min-w-0 text-left">
                       <p className="truncate text-[14px] font-semibold">{account.bank_name}</p>
-                      <p className="mt-0.5 text-[13px] font-medium tracking-wide text-muted-foreground">
-                        {account.account_number}
-                      </p>
                       <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
                         a.n. {account.account_holder_name}
                       </p>
@@ -322,6 +474,11 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                       onCheckedChange={(checked) => handleToggleBank(account, checked)}
                       aria-label="Aktifkan rekening"
                     />
+                  </div>
+                  {/* InfoBox nomor rekening */}
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-4 py-2.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-primary/70">No. Rekening</span>
+                    <span className="text-[15px] font-bold tabular-nums tracking-wide">{account.account_number}</span>
                   </div>
                   <div className="grid grid-cols-2 mt-4 pt-3 border-t border-border/40 divide-x divide-border/40">
                     <button
@@ -405,10 +562,93 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
         </>
       )}
 
+      {segment === "wishlist" && (
+        <>
+          {(wishlist ?? []).length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <Inbox className="h-16 w-16 opacity-20" />
+              <p className="text-[13px] text-muted-foreground">
+                Belum ada kado. Tambahkan daftar keinginan pertama.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(wishlist ?? []).map((item) => (
+                <div key={item.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start gap-3">
+                    {item.item_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.item_image_url}
+                        alt={item.item_name}
+                        className="h-14 w-14 shrink-0 rounded-xl border border-border/60 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground">
+                        <Gift className="h-6 w-6" />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[14px] font-semibold">{item.item_name}</p>
+                      {item.item_link && (
+                        <a
+                          href={item.item_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-[12px] font-medium text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span className="truncate">Link produk</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {/* InfoBox stok */}
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-4 py-2.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-primary/70">
+                      Sudah dipilih
+                    </span>
+                    <span className="text-[13px] font-bold tabular-nums">
+                      {item.claimed_count} dari {item.stock_total}
+                    </span>
+                  </div>
+                  {item.claimed_by_names && item.claimed_by_names.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {item.claimed_by_names.map((name) => (
+                        <span
+                          key={name}
+                          className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-2 mt-4 pt-3 border-t border-border/40 divide-x divide-border/40">
+                    <button
+                      onClick={() => openEditWishlist(item)}
+                      className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground hover:text-primary transition-colors active:bg-muted/30 rounded-l-md"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setDeleteWishlistTarget(item)}
+                      className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-medium text-muted-foreground hover:text-destructive transition-colors active:bg-muted/30 rounded-r-md"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* FAB */}
       <button
         onClick={openCreate}
-        aria-label={segment === "bank" ? "Tambah rekening" : "Tambah e-wallet"}
+        aria-label={`Tambah ${segmentLabels[segment]}`}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all active:scale-95"
       >
         <Plus className="h-6 w-6" />
@@ -427,10 +667,14 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                 {editingId
                   ? segment === "bank"
                     ? "Edit Rekening"
-                    : "Edit E-Wallet"
+                    : segment === "ewallet"
+                      ? "Edit E-Wallet"
+                      : "Edit Kado"
                   : segment === "bank"
                     ? "Tambah Rekening"
-                    : "Tambah E-Wallet"}
+                    : segment === "ewallet"
+                      ? "Tambah E-Wallet"
+                      : "Tambah Kado"}
               </h2>
               <button
                 onClick={() => setSheetOpen(false)}
@@ -440,7 +684,7 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
               </button>
             </div>
 
-            {segment === "bank" ? (
+            {segment === "bank" && (
               <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
                 <div className="space-y-1.5">
                   <Label htmlFor="bank-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Bank</Label>
@@ -473,8 +717,19 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                 </div>
+                <MediaInput
+                  label="Foto Buku Tabungan (Opsional)"
+                  hint="Rekomendasi 800 × 800 px"
+                  value={bankForm.imageUrl}
+                  onChange={(v) => setBankForm((f) => ({ ...f, imageUrl: v }))}
+                  accept="image/*"
+                  folder="wedding"
+                  preview="image"
+                />
               </div>
-            ) : (
+            )}
+
+            {segment === "ewallet" && (
               <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
                 <div className="space-y-1.5">
                   <Label htmlFor="ewallet-provider" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Provider</Label>
@@ -498,12 +753,71 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                 </div>
                 <MediaInput
                   label="QR Code (Opsional)"
+                  hint="Rekomendasi 800 × 800 px"
                   value={ewalletForm.qrCodeImageUrl}
                   onChange={(v) => setEwalletForm((f) => ({ ...f, qrCodeImageUrl: v }))}
                   accept="image/*"
                   folder="wedding"
                   preview="image"
                 />
+                <label className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 cursor-pointer">
+                  <div className="space-y-0.5">
+                    <span className="text-[13px] font-medium">Tampilkan sebagai QRIS</span>
+                    <p className="text-[11px] text-muted-foreground">QR scanner hanya muncul untuk QRIS</p>
+                  </div>
+                  <Switch
+                    checked={ewalletForm.isQris}
+                    onCheckedChange={(v) => setEwalletForm((f) => ({ ...f, isQris: v }))}
+                  />
+                </label>
+              </div>
+            )}
+
+            {segment === "wishlist" && (
+              <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
+                <div className="space-y-1.5">
+                  <Label htmlFor="wishlist-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Kado</Label>
+                  <Input
+                    id="wishlist-name"
+                    value={wishlistForm.itemName}
+                    onChange={(e) => setWishlistForm((f) => ({ ...f, itemName: e.target.value }))}
+                    placeholder="Cth: Air Fryer"
+                    className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                  />
+                </div>
+                <MediaInput
+                  label="Foto Kado (Opsional)"
+                  hint="Rekomendasi 800 × 800 px"
+                  value={wishlistForm.itemImageUrl}
+                  onChange={(v) => setWishlistForm((f) => ({ ...f, itemImageUrl: v }))}
+                  accept="image/*"
+                  folder="wedding"
+                  preview="image"
+                />
+                <div className="space-y-1.5">
+                  <Label htmlFor="wishlist-link" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Link Toko (Opsional)</Label>
+                  <Input
+                    id="wishlist-link"
+                    value={wishlistForm.itemLink}
+                    onChange={(e) => setWishlistForm((f) => ({ ...f, itemLink: e.target.value }))}
+                    placeholder="https://tokopedia.com/..."
+                    className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="wishlist-stock" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Jumlah Unit</Label>
+                  <Input
+                    id="wishlist-stock"
+                    type="number"
+                    min={1}
+                    value={wishlistForm.stockTotal}
+                    onChange={(e) => setWishlistForm((f) => ({ ...f, stockTotal: parseInt(e.target.value, 10) }))}
+                    className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+                  />
+                  <p className="pl-1 text-[10px] font-medium tracking-wide text-muted-foreground/70">
+                    Satu tamu hanya bisa memilih satu kado.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -526,23 +840,26 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
 
       {/* Delete confirm */}
       <AlertDialog
-        open={deleteBank !== null || deleteEwalletTarget !== null}
+        open={deleteBank !== null || deleteEwalletTarget !== null || deleteWishlistTarget !== null}
         onOpenChange={(open) => {
           if (!open) {
             setDeleteBank(null);
             setDeleteEwalletTarget(null);
+            setDeleteWishlistTarget(null);
           }
         }}
       >
         <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
           <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
             <AlertDialogTitle className="text-base">
-              {deleteBank ? "Hapus rekening?" : "Hapus e-wallet?"}
+              {deleteBank ? "Hapus rekening?" : deleteEwalletTarget ? "Hapus e-wallet?" : "Hapus kado?"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[13px]">
               {deleteBank
                 ? `Rekening ${deleteBank.bank_name} akan dihapus permanen.`
-                : `E-Wallet ${deleteEwalletTarget?.provider_name} akan dihapus permanen.`}
+                : deleteEwalletTarget
+                  ? `E-Wallet ${deleteEwalletTarget.provider_name} akan dihapus permanen.`
+                  : `Kado "${deleteWishlistTarget?.item_name}" akan dihapus permanen.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">

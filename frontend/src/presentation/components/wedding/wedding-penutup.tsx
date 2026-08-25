@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { Share2 } from "lucide-react";
+import { toast } from "react-toastify";
 import { useInvitation } from "@/src/application/hooks/use-invitation-query";
 import { WeddingReveal } from "./wedding-reveal";
+import { haptic } from "@/src/lib/invitation/haptics";
 
 export function WeddingPenutup() {
   const { data } = useInvitation();
@@ -14,13 +17,34 @@ export function WeddingPenutup() {
     wedding.content.cover.image_desktop ||
     wedding.content.cover.image_tablet ||
     wedding.content.cover.image_mobile;
-  const bride = couples.find((c) => c.side === "wanita")?.full_name;
-  const groom = couples.find((c) => c.side === "pria")?.full_name;
+const bride = couples.find((c) => c.side === "wanita")?.nickname || couples.find((c) => c.side === "wanita")?.full_name;
+const groom = couples.find((c) => c.side === "pria")?.nickname || couples.find((c) => c.side === "pria")?.full_name;
   const brideName = bride ?? wedding.bride_name;
   const groomName = groom ?? wedding.groom_name;
   const year = wedding.wedding_date
     ? new Date(wedding.wedding_date).getFullYear().toString()
     : null;
+
+  // Bagikan versi generik tanpa ?guest= — nama penerima tidak ikut terbocor.
+  const handleShare = async () => {
+    haptic(8);
+    const genericUrl = `${window.location.origin}/`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Undangan Pernikahan",
+          text: `${groomName.split(" ")[0]} & ${brideName.split(" ")[0]} — Kami mengundang Anda`,
+          url: genericUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(genericUrl);
+        toast.success("Tautan undangan tersalin");
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      toast.error("Gagal membagikan undangan");
+    }
+  };
 
   return (
     <section id="penutup" className="wd-section">
@@ -76,6 +100,14 @@ export function WeddingPenutup() {
 
         <WeddingReveal delay={160} className="w-full">
           <div className="flex flex-col items-center gap-4 border-t border-[var(--wd-line)] pt-7">
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--wd-line-strong)] px-6 text-[12px] font-bold tracking-wide transition-all duration-200 hover:border-[var(--wd-accent-line)] active:scale-[0.97]"
+            >
+              <Share2 className="h-4 w-4 text-[var(--wd-accent)]" aria-hidden />
+              Bagikan Undangan
+            </button>
             {footer.social_links.length > 0 ? (
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
                 {footer.social_links.map((link, index) =>

@@ -109,7 +109,7 @@ ON CONFLICT (role_id, module_name) DO NOTHING;
 -- Seed Super Admin user account
 INSERT INTO users (email, password_hash, name, is_active, email_verified) VALUES
 ('admin@gns.com', '$2a$12$XY/mig5k4jgmhwIog70zD.PbGEQ8YdHD1wBsEiUdXfOmOORX/Cfx2', 'Super Admin', TRUE, TRUE)
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO UPDATE SET deleted_at = NULL, is_active = TRUE;
 
 -- Assign Super Admin role to the admin user
 INSERT INTO user_roles (user_id, role_id)

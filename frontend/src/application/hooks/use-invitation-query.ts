@@ -13,10 +13,28 @@ export const invitationKeys = {
     [...invitationKeys.all, 'guestbook', limit] as const,
 };
 
+/**
+ * Tamu aktif untuk seluruh halaman undangan. Diisi sekali oleh WeddingPage
+ * dari searchParams server-component, lalu dipakai semua pemanggil
+ * useInvitation() tanpa argumen agar satu cache entry yang sama
+ * (personalisasi tamu ikut terkirim ke backend).
+ */
+let activeGuestId: string | null = null;
+
+export function setActiveGuestId(guestId?: string | null): void {
+  activeGuestId = guestId ?? null;
+}
+
+export function getActiveGuestId(): string | null {
+  return activeGuestId;
+}
+
 export function useInvitation(guestId?: string | null) {
+  const effective =
+    guestId === undefined ? activeGuestId : guestId;
   return useQuery({
-    queryKey: invitationKeys.detail(guestId),
-    queryFn: () => invitationService.getPublicInvitation(guestId),
+    queryKey: invitationKeys.detail(effective),
+    queryFn: () => invitationService.getPublicInvitation(effective),
     staleTime: 60_000,
   });
 }
@@ -31,8 +49,15 @@ export function useGuestbook(limit = 20) {
 }
 
 export function useSubmitRsvp() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: SubmitRsvpPayload) => invitationService.submitRsvp(payload),
+    onSuccess: (_, variables) => {
+      // Segarkan detail undangan agar guest_rsvp (jawaban tersimpan) ikut baru.
+      queryClient.invalidateQueries({
+        queryKey: invitationKeys.detail(variables.guest_id),
+      });
+    },
   });
 }
 

@@ -171,6 +171,7 @@ export interface StoryResponse {
   event_date: string | null;
   title: string;
   description: string | null;
+  detail: string | null;
   image_url: string | null;
   order_index: number;
   created_at: string;
@@ -181,6 +182,7 @@ export interface CreateStoryRequest {
   event_date?: string | null;
   title: string;
   description?: string | null;
+  detail?: string | null;
   image_url?: string | null;
   order_index?: number;
 }
@@ -189,6 +191,7 @@ export interface UpdateStoryRequest {
   event_date?: string | null;
   title?: string;
   description?: string | null;
+  detail?: string | null;
   image_url?: string | null;
   order_index?: number;
 }
@@ -246,6 +249,7 @@ export interface BankAccountResponse {
   bank_name: string;
   account_number: string;
   account_holder_name: string;
+  image_url: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -255,6 +259,7 @@ export interface CreateBankAccountRequest {
   bank_name: string;
   account_number: string;
   account_holder_name: string;
+  image_url?: string | null;
   is_active?: boolean;
 }
 
@@ -262,6 +267,7 @@ export interface UpdateBankAccountRequest {
   bank_name?: string;
   account_number?: string;
   account_holder_name?: string;
+  image_url?: string | null;
   is_active?: boolean;
 }
 
@@ -272,6 +278,7 @@ export interface EwalletResponse {
   provider_name: string;
   account_id: string;
   qr_code_image_url: string | null;
+  is_qris: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -298,8 +305,9 @@ export interface WishlistItemResponse {
   item_name: string;
   item_image_url: string | null;
   item_link: string | null;
-  is_claimed: boolean;
-  claimed_at?: string | null;
+  stock_total: number;
+  claimed_count: number;
+  claimed_by_names?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -308,12 +316,14 @@ export interface CreateWishlistItemRequest {
   item_name: string;
   item_image_url?: string | null;
   item_link?: string | null;
+  stock_total?: number;
 }
 
 export interface UpdateWishlistItemRequest {
   item_name?: string;
   item_image_url?: string | null;
   item_link?: string | null;
+  stock_total?: number;
 }
 
 // --- Sections ---
@@ -336,6 +346,43 @@ export interface CreateSectionRequest {
 export interface UpdateSectionRequest {
   is_enabled?: boolean;
   order_index?: number;
+}
+
+// --- Ucapan: balasan admin ---
+
+export interface AdminGuestbookEntry {
+  id: string;
+  guest_name: string;
+  message_text: string;
+  reply_text: string | null;
+  replied_at: string | null;
+  is_hidden: boolean;
+  created_at: string;
+}
+
+export interface GuestbookReplyRequest {
+  reply_text: string;
+}
+
+// --- Ringkasan konfirmasi kehadiran ---
+
+export interface RsvpSummaryItem {
+  id: string;
+  guest_name: string;
+  category_name: string | null;
+  event_name: string | null;
+  attendance_status: string;
+  number_of_guests: number;
+  submitted_at: string;
+}
+
+export interface RsvpSummaryResponse {
+  hadir: number;
+  berhalangan: number;
+  total_guests: number;
+  belum_konfirmasi: number;
+  total_orang_hadir: number;
+  items: RsvpSummaryItem[];
 }
 
 const BASE = '/v1/wedding';
@@ -495,6 +542,28 @@ export const weddingService = {
   },
   async updateSection(id: string, req: UpdateSectionRequest): Promise<SectionResponse> {
     const response = await apiClient.put<SectionResponse>(`${BASE}/sections/${id}`, req);
+    return response.data;
+  },
+
+  // Ucapan: daftar & balasan admin
+  async getAdminGuestbook(): Promise<AdminGuestbookEntry[]> {
+    const response = await apiClient.get<AdminGuestbookEntry[]>(`${BASE}/guestbook`);
+    return response.data;
+  },
+  async replyGuestbook(id: string, req: GuestbookReplyRequest): Promise<AdminGuestbookEntry> {
+    const response = await apiClient.put<AdminGuestbookEntry>(
+      `${BASE}/guestbook/${id}/reply`,
+      req,
+    );
+    return response.data;
+  },
+  async deleteGuestbook(id: string): Promise<void> {
+    await apiClient.delete(`${BASE}/guestbook/${id}`);
+  },
+
+  // Ringkasan konfirmasi kehadiran
+  async getRsvpSummary(): Promise<RsvpSummaryResponse> {
+    const response = await apiClient.get<RsvpSummaryResponse>(`${BASE}/rsvp/summary`);
     return response.data;
   },
 };

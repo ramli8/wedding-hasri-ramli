@@ -1276,6 +1276,207 @@ const docTemplate = `{
                 }
             }
         },
+        "/invitation/guestbook": {
+            "get": {
+                "description": "Public guestbook entries (not hidden), newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "List public ucapan (public)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Max entries (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.PublicGuestbookResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Registered guest leaves a message/prayer. Requires a valid guest UUID; the display name is taken from the guest record.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Submit ucapan (public)",
+                "parameters": [
+                    {
+                        "description": "Guestbook payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateGuestbookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.PublicGuestbookEntry"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invitation/rsvp": {
+            "post": {
+                "description": "Guest confirms attendance for the wedding. Upsert per guest+event; updates guest attendance status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Submit RSVP (public)",
+                "parameters": [
+                    {
+                        "description": "RSVP payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.CreateRSVPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.PublicRSVPResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid payload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guest or event not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invitation/wishlist": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Daftar wishlist publik (stok + sisa per barang)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.PublicWishlistItem"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invitation/wishlist/{itemID}/claim": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invitation"
+                ],
+                "summary": "Tamu mengklaim barang wishlist (1 tamu = 1 barang)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wishlist item ID",
+                        "name": "itemID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Guest UUID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.ClaimWishlistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.PublicClaimResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/rbac/check-module-access": {
             "post": {
                 "security": [
@@ -4141,6 +4342,87 @@ const docTemplate = `{
                 }
             }
         },
+        "/wedding/guestbook": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding"
+                ],
+                "summary": "List semua ucapan (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_invitation.AdminGuestbookEntry"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/guestbook/{id}/reply": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding"
+                ],
+                "summary": "Admin membalas ucapan tamu",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Guestbook entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Balasan",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.GuestbookReplyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.AdminGuestbookEntry"
+                        }
+                    }
+                }
+            }
+        },
+        "/wedding/rsvp/summary": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wedding"
+                ],
+                "summary": "Ringkasan konfirmasi kehadiran (admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_invitation.RSVPSummaryResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/wedding/sections": {
             "get": {
                 "produces": [
@@ -5252,6 +5534,32 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_invitation.AdminGuestbookEntry": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "guest_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "message_text": {
+                    "type": "string"
+                },
+                "replied_at": {
+                    "type": "string"
+                },
+                "reply_text": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_invitation.BankAccountResponse": {
             "type": "object",
             "properties": {
@@ -5270,10 +5578,24 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.ClaimWishlistRequest": {
+            "type": "object",
+            "required": [
+                "guest_id"
+            ],
+            "properties": {
+                "guest_id": {
                     "type": "string"
                 }
             }
@@ -5296,6 +5618,9 @@ const docTemplate = `{
                 "instagram_handle": {
                     "type": "string"
                 },
+                "nickname": {
+                    "type": "string"
+                },
                 "photo_url": {
                     "type": "string"
                 },
@@ -5313,11 +5638,20 @@ const docTemplate = `{
                 "button_text": {
                     "type": "string"
                 },
-                "photos": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "guest_greeting_label": {
+                    "type": "string"
+                },
+                "image_desktop": {
+                    "type": "string"
+                },
+                "image_mobile": {
+                    "type": "string"
+                },
+                "image_tablet": {
+                    "type": "string"
+                },
+                "save_the_date_label": {
+                    "type": "string"
                 }
             }
         },
@@ -5344,6 +5678,9 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 1
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 }
@@ -5369,6 +5706,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 50
                 },
+                "nickname": {
+                    "type": "string",
+                    "maxLength": 100
+                },
                 "photo_url": {
                     "type": "string"
                 },
@@ -5388,6 +5729,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "address_full": {
+                    "type": "string"
+                },
+                "end_time": {
                     "type": "string"
                 },
                 "event_date": {
@@ -5483,6 +5827,53 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_invitation.CreateGuestbookRequest": {
+            "type": "object",
+            "required": [
+                "guest_id",
+                "message_text"
+            ],
+            "properties": {
+                "guest_id": {
+                    "description": "Wajib: ucapan hanya untuk tamu resmi (anti-spam, nama diambil dari data tamu).",
+                    "type": "string"
+                },
+                "message_text": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1
+                }
+            }
+        },
+        "internal_invitation.CreateRSVPRequest": {
+            "type": "object",
+            "required": [
+                "attendance_status",
+                "guest_id",
+                "number_of_guests"
+            ],
+            "properties": {
+                "attendance_status": {
+                    "type": "string",
+                    "enum": [
+                        "hadir",
+                        "tidak_hadir",
+                        "ragu"
+                    ]
+                },
+                "guest_id": {
+                    "type": "string"
+                },
+                "number_of_guests": {
+                    "type": "integer",
+                    "maximum": 20,
+                    "minimum": 1
+                },
+                "wedding_event_id": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_invitation.CreateSectionRequest": {
             "type": "object",
             "required": [
@@ -5509,6 +5900,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "detail": {
                     "type": "string"
                 },
                 "event_date": {
@@ -5544,6 +5938,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "minLength": 1
+                },
+                "stock_total": {
+                    "type": "integer",
+                    "maximum": 99,
+                    "minimum": 1
                 }
             }
         },
@@ -5571,6 +5970,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "end_time": {
                     "type": "string"
                 },
                 "event_date": {
@@ -5697,6 +6099,30 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_invitation.GuestRsvpInfo": {
+            "type": "object",
+            "properties": {
+                "attendance_status": {
+                    "type": "string"
+                },
+                "number_of_guests": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.GuestbookReplyRequest": {
+            "type": "object",
+            "required": [
+                "reply_text"
+            ],
+            "properties": {
+                "reply_text": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                }
+            }
+        },
         "internal_invitation.InvitationResponse": {
             "type": "object",
             "properties": {
@@ -5741,6 +6167,9 @@ const docTemplate = `{
                 },
                 "guest": {
                     "$ref": "#/definitions/internal_invitation.PublicGuestInfo"
+                },
+                "guest_rsvp": {
+                    "$ref": "#/definitions/internal_invitation.GuestRsvpInfo"
                 },
                 "sections": {
                     "type": "array",
@@ -5802,6 +6231,9 @@ const docTemplate = `{
                 "greeting": {
                     "type": "string"
                 },
+                "salam": {
+                    "type": "string"
+                },
                 "source": {
                     "type": "string"
                 },
@@ -5821,6 +6253,26 @@ const docTemplate = `{
                 },
                 "bank_name": {
                     "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicClaimResponse": {
+            "type": "object",
+            "properties": {
+                "claimed_count": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "stock_total": {
+                    "type": "integer"
                 }
             }
         },
@@ -5836,6 +6288,9 @@ const docTemplate = `{
                 "instagram_handle": {
                     "type": "string"
                 },
+                "nickname": {
+                    "type": "string"
+                },
                 "photo_url": {
                     "type": "string"
                 },
@@ -5848,6 +6303,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address_full": {
+                    "type": "string"
+                },
+                "end_time": {
                     "type": "string"
                 },
                 "event_date": {
@@ -5867,6 +6325,9 @@ const docTemplate = `{
                 },
                 "notes": {
                     "type": "string"
+                },
+                "order_index": {
+                    "type": "integer"
                 },
                 "start_time": {
                     "type": "string"
@@ -5918,10 +6379,70 @@ const docTemplate = `{
                 "category": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
                 "qr_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicGuestbookEntry": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "guest_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message_text": {
+                    "type": "string"
+                },
+                "reply_text": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.PublicGuestbookResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.PublicGuestbookEntry"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.PublicRSVPResponse": {
+            "type": "object",
+            "properties": {
+                "attendance_status": {
+                    "type": "string"
+                },
+                "guest_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "number_of_guests": {
+                    "type": "integer"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "wedding_event_id": {
                     "type": "string"
                 }
             }
@@ -5941,6 +6462,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "detail": {
                     "type": "string"
                 },
                 "event_date": {
@@ -5977,8 +6501,11 @@ const docTemplate = `{
         "internal_invitation.PublicWishlistItem": {
             "type": "object",
             "properties": {
-                "is_claimed": {
-                    "type": "boolean"
+                "claimed_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
                 },
                 "item_image_url": {
                     "type": "string"
@@ -5988,6 +6515,61 @@ const docTemplate = `{
                 },
                 "item_name": {
                     "type": "string"
+                },
+                "stock_total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_invitation.RSVPSummaryItem": {
+            "type": "object",
+            "properties": {
+                "attendance_status": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "event_name": {
+                    "type": "string"
+                },
+                "guest_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "number_of_guests": {
+                    "type": "integer"
+                },
+                "submitted_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_invitation.RSVPSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "belum_konfirmasi": {
+                    "type": "integer"
+                },
+                "berhalangan": {
+                    "type": "integer"
+                },
+                "hadir": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_invitation.RSVPSummaryItem"
+                    }
+                },
+                "total_guests": {
+                    "type": "integer"
+                },
+                "total_orang_hadir": {
+                    "type": "integer"
                 }
             }
         },
@@ -6021,6 +6603,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "detail": {
                     "type": "string"
                 },
                 "event_date": {
@@ -6061,6 +6646,9 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 1
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 }
@@ -6082,6 +6670,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 50
                 },
+                "nickname": {
+                    "type": "string",
+                    "maxLength": 100
+                },
                 "photo_url": {
                     "type": "string"
                 },
@@ -6098,6 +6690,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address_full": {
+                    "type": "string"
+                },
+                "end_time": {
                     "type": "string"
                 },
                 "event_date": {
@@ -6199,6 +6794,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "detail": {
+                    "type": "string"
+                },
                 "event_date": {
                     "type": "string",
                     "maxLength": 50
@@ -6257,6 +6855,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "minLength": 1
+                },
+                "stock_total": {
+                    "type": "integer",
+                    "maximum": 99,
+                    "minimum": 1
                 }
             }
         },
@@ -6312,17 +6915,14 @@ const docTemplate = `{
         "internal_invitation.WishlistItemResponse": {
             "type": "object",
             "properties": {
-                "claimed_at": {
-                    "type": "string"
+                "claimed_count": {
+                    "type": "integer"
                 },
                 "created_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
-                },
-                "is_claimed": {
-                    "type": "boolean"
                 },
                 "item_image_url": {
                     "type": "string"
@@ -6332,6 +6932,9 @@ const docTemplate = `{
                 },
                 "item_name": {
                     "type": "string"
+                },
+                "stock_total": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"

@@ -2,6 +2,7 @@ package invitation
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -94,7 +95,7 @@ func (h Handler) ListGuestbook(w http.ResponseWriter, r *http.Request) {
 
 // SubmitGuestbook godoc
 // @Summary Submit ucapan (public)
-// @Description Guest leaves a message/prayer in the public guestbook.
+// @Description Registered guest leaves a message/prayer. Requires a valid guest UUID; the display name is taken from the guest record.
 // @Tags Invitation
 // @Accept json
 // @Produce json
@@ -102,6 +103,7 @@ func (h Handler) ListGuestbook(w http.ResponseWriter, r *http.Request) {
 // @Success 201 {object} PublicGuestbookEntry
 // @Failure 400 {object} map[string]string "Invalid payload"
 // @Failure 404 {object} map[string]string "Guest not found"
+// @Failure 429 {object} map[string]string "Too many requests"
 // @Router /invitation/guestbook [post]
 func (h Handler) SubmitGuestbook(w http.ResponseWriter, r *http.Request) {
 	var req CreateGuestbookRequest
@@ -1047,4 +1049,151 @@ func (h Handler) DeleteSection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.ResponseJSON(w, statusCode, map[string]string{"message": "section deleted"})
+}
+
+// ListAdminGuestbook godoc
+// @Summary List semua ucapan (admin)
+// @Tags Wedding
+// @Produce json
+// @Success 200 {array} AdminGuestbookEntry
+// @Router /wedding/guestbook [get]
+func (h Handler) ListAdminGuestbook(w http.ResponseWriter, r *http.Request) {
+	res, statusCode, err := h.service.ListAdminGuestbook(r.Context())
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// ReplyGuestbook godoc
+// @Summary Admin membalas ucapan tamu
+// @Tags Wedding
+// @Accept json
+// @Produce json
+// @Param id path string true "Guestbook entry ID"
+// @Param request body GuestbookReplyRequest true "Balasan"
+// @Success 200 {object} AdminGuestbookEntry
+// @Router /wedding/guestbook/{id}/reply [put]
+func (h Handler) ReplyGuestbook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var req GuestbookReplyRequest
+	if !h.decodeJSON(w, r, &req) {
+		return
+	}
+
+	res, statusCode, err := h.service.ReplyToGuestbook(r.Context(), id, req)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// DeleteGuestbook godoc
+// @Summary Hapus ucapan tamu
+// @Tags Wedding Guestbook
+// @Param id path string true "Guestbook Entry ID"
+// @Success 200 {object} map[string]string
+// @Router /wedding/guestbook/{id} [delete]
+func (h Handler) DeleteGuestbook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	statusCode, err := h.service.DeleteGuestbookEntry(r.Context(), id)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, http.StatusOK, map[string]string{"message": "Ucapan dihapus"})
+}
+
+// GetRSVPSummary godoc
+// @Summary Ringkasan konfirmasi kehadiran (admin)
+// @Tags Wedding
+// @Produce json
+// @Success 200 {object} RSVPSummaryResponse
+// @Router /wedding/rsvp/summary [get]
+func (h Handler) GetRSVPSummary(w http.ResponseWriter, r *http.Request) {
+	res, statusCode, err := h.service.GetRSVPSummary(r.Context())
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// ListPublicWishlist godoc
+// @Summary Daftar wishlist publik (stok + sisa per barang)
+// @Tags Invitation
+// @Produce json
+// @Success 200 {array} PublicWishlistItem
+// @Router /invitation/wishlist [get]
+func (h Handler) ListPublicWishlist(w http.ResponseWriter, r *http.Request) {
+	res, statusCode, err := h.service.ListPublicWishlistItems(r.Context())
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// ClaimPublicWishlist godoc
+// @Summary Tamu mengklaim barang wishlist (1 tamu = 1 barang)
+// @Tags Invitation
+// @Accept json
+// @Produce json
+// @Param itemID path string true "Wishlist item ID"
+// @Param request body ClaimWishlistRequest true "Guest UUID"
+// @Success 200 {object} PublicClaimResponse
+// @Router /invitation/wishlist/{itemID}/claim [post]
+func (h Handler) ClaimPublicWishlist(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemID")
+
+	var req ClaimWishlistRequest
+	if !h.decodeJSON(w, r, &req) {
+		return
+	}
+
+	res, statusCode, err := h.service.ClaimPublicWishlistItem(r.Context(), itemID, req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrWishlistAlreadyClaimed):
+			response.ResponseError(w, http.StatusConflict, "Anda sudah memilih hadiah sebelumnya")
+			return
+		case errors.Is(err, ErrWishlistStockEmpty):
+			response.ResponseError(w, http.StatusConflict, "Stok hadiah ini sudah habis")
+			return
+		case errors.Is(err, ErrGuestNotFound), errors.Is(err, ErrWishlistItemNotFound):
+			response.ResponseError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, statusCode, res)
+}
+
+// UnclaimPublicWishlist godoc
+// @Summary Batalkan klaim wishlist
+// @Tags Invitation Wishlist
+// @Accept json
+// @Produce json
+// @Param itemID path string true "Wishlist Item ID"
+// @Param request body ClaimWishlistRequest true "Guest ID"
+// @Success 200 {object} map[string]string
+// @Router /invitation/wishlist/{itemID}/claim [delete]
+func (h Handler) UnclaimPublicWishlist(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemID")
+
+	var req ClaimWishlistRequest
+	if !h.decodeJSON(w, r, &req) {
+		return
+	}
+
+	statusCode, err := h.service.UnclaimPublicWishlistItem(r.Context(), itemID, req)
+	if err != nil {
+		response.ResponseError(w, statusCode, err.Error())
+		return
+	}
+	response.ResponseJSON(w, http.StatusOK, map[string]string{"message": "Klaim dibatalkan"})
 }

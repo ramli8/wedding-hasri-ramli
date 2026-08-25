@@ -3,7 +3,9 @@ package invitation
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/base-go/backend/internal/shared/models"
@@ -60,6 +62,13 @@ type Service interface {
 	ListWishlistItems(ctx context.Context) ([]WishlistItemResponse, int, error)
 	GetWishlistItem(ctx context.Context, id string) (WishlistItemResponse, int, error)
 	UpdateWishlistItem(ctx context.Context, id string, req UpdateWishlistItemRequest) (WishlistItemResponse, int, error)
+	ReplyToGuestbook(ctx context.Context, id string, req GuestbookReplyRequest) (AdminGuestbookEntry, int, error)
+	DeleteGuestbookEntry(ctx context.Context, id string) (int, error)
+	ListAdminGuestbook(ctx context.Context) ([]AdminGuestbookEntry, int, error)
+	ClaimPublicWishlistItem(ctx context.Context, itemID string, req ClaimWishlistRequest) (PublicClaimResponse, int, error)
+	UnclaimPublicWishlistItem(ctx context.Context, itemID string, req ClaimWishlistRequest) (int, error)
+	ListPublicWishlistItems(ctx context.Context) ([]PublicWishlistItem, int, error)
+	GetRSVPSummary(ctx context.Context) (RSVPSummaryResponse, int, error)
 	DeleteWishlistItem(ctx context.Context, id string) (int, error)
 
 	CreateSection(ctx context.Context, req CreateSectionRequest) (SectionResponse, int, error)
@@ -390,6 +399,7 @@ func (s *service) CreateStory(ctx context.Context, req CreateStoryRequest) (Stor
 		EventDate:   req.EventDate,
 		Title:       req.Title,
 		Description: req.Description,
+		Detail:      req.Detail,
 		ImageURL:    req.ImageURL,
 		OrderIndex:  req.OrderIndex,
 	}
@@ -438,6 +448,9 @@ func (s *service) UpdateStory(ctx context.Context, id string, req UpdateStoryReq
 	}
 	if req.Description != nil {
 		story.Description = req.Description
+	}
+	if req.Detail != nil {
+		story.Detail = req.Detail
 	}
 	if req.ImageURL != nil {
 		story.ImageURL = req.ImageURL
@@ -661,6 +674,7 @@ func (s *service) CreateBankAccount(ctx context.Context, req CreateBankAccountRe
 		BankName:          req.BankName,
 		AccountNumber:     req.AccountNumber,
 		AccountHolderName: req.AccountHolderName,
+		ImageURL:          req.ImageURL,
 		IsActive:          isActive,
 	}
 
@@ -709,6 +723,9 @@ func (s *service) UpdateBankAccount(ctx context.Context, id string, req UpdateBa
 	if req.AccountHolderName != nil {
 		account.AccountHolderName = *req.AccountHolderName
 	}
+	if req.ImageURL != nil {
+		account.ImageURL = req.ImageURL
+	}
 	if req.IsActive != nil {
 		account.IsActive = *req.IsActive
 	}
@@ -751,11 +768,16 @@ func (s *service) CreateEwallet(ctx context.Context, req CreateEwalletRequest) (
 	if req.IsActive != nil {
 		isActive = *req.IsActive
 	}
+	isQris := false
+	if req.IsQris != nil {
+		isQris = *req.IsQris
+	}
 
 	ewallet := &models.WeddingEwallet{
 		ProviderName:   req.ProviderName,
 		AccountID:      req.AccountID,
 		QrCodeImageURL: req.QrCodeImageURL,
+		IsQris:         isQris,
 		IsActive:       isActive,
 	}
 
@@ -804,6 +826,9 @@ func (s *service) UpdateEwallet(ctx context.Context, id string, req UpdateEwalle
 	if req.QrCodeImageURL != nil {
 		ewallet.QrCodeImageURL = req.QrCodeImageURL
 	}
+	if req.IsQris != nil {
+		ewallet.IsQris = *req.IsQris
+	}
 	if req.IsActive != nil {
 		ewallet.IsActive = *req.IsActive
 	}
@@ -842,16 +867,21 @@ func (s *service) CreateWishlistItem(ctx context.Context, req CreateWishlistItem
 		return WishlistItemResponse{}, http.StatusBadRequest, err
 	}
 
+	stockTotal := 1
+	if req.StockTotal != nil && *req.StockTotal >= 1 {
+		stockTotal = *req.StockTotal
+	}
 	item := &models.WeddingWishlistItem{
 		ItemName:     req.ItemName,
 		ItemImageURL: req.ItemImageURL,
 		ItemLink:     req.ItemLink,
+		StockTotal:   stockTotal,
 	}
 
 	if err := s.repo.CreateWishlistItem(ctx, item); err != nil {
 		return WishlistItemResponse{}, http.StatusInternalServerError, err
 	}
-	return s.mapWishlistItemToResponse(item), http.StatusCreated, nil
+	return s.mapWishlistItemToResponse(item, 0, nil), http.StatusCreated, nil
 }
 
 func (s *service) ListWishlistItems(ctx context.Context) ([]WishlistItemResponse, int, error) {
@@ -859,9 +889,17 @@ func (s *service) ListWishlistItems(ctx context.Context) ([]WishlistItemResponse
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
+	counts, err := s.wishlistClaimCounts(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	details, err := s.wishlistClaimDetailsMap(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
 	responses := make([]WishlistItemResponse, len(items))
 	for i := range items {
-		responses[i] = s.mapWishlistItemToResponse(&items[i])
+		responses[i] = s.mapWishlistItemToResponse(&items[i], counts[items[i].ID], details[items[i].ID])
 	}
 	return responses, http.StatusOK, nil
 }
@@ -871,7 +909,15 @@ func (s *service) GetWishlistItem(ctx context.Context, id string) (WishlistItemR
 	if err != nil {
 		return WishlistItemResponse{}, statusCode, err
 	}
-	return s.mapWishlistItemToResponse(item), http.StatusOK, nil
+	claimedCount, err := s.repo.CountClaimsByItem(ctx, item.ID)
+	if err != nil {
+		return WishlistItemResponse{}, http.StatusInternalServerError, err
+	}
+	names, err := s.claimNamesByItem(ctx, item.ID)
+	if err != nil {
+		return WishlistItemResponse{}, http.StatusInternalServerError, err
+	}
+	return s.mapWishlistItemToResponse(item, int(claimedCount), names), http.StatusOK, nil
 }
 
 func (s *service) UpdateWishlistItem(ctx context.Context, id string, req UpdateWishlistItemRequest) (WishlistItemResponse, int, error) {
@@ -897,7 +943,15 @@ func (s *service) UpdateWishlistItem(ctx context.Context, id string, req UpdateW
 	if err := s.repo.UpdateWishlistItem(ctx, item); err != nil {
 		return WishlistItemResponse{}, http.StatusInternalServerError, err
 	}
-	return s.mapWishlistItemToResponse(item), http.StatusOK, nil
+	claimedCount, err := s.repo.CountClaimsByItem(ctx, item.ID)
+	if err != nil {
+		return WishlistItemResponse{}, http.StatusInternalServerError, err
+	}
+	names, err := s.claimNamesByItem(ctx, item.ID)
+	if err != nil {
+		return WishlistItemResponse{}, http.StatusInternalServerError, err
+	}
+	return s.mapWishlistItemToResponse(item, int(claimedCount), names), http.StatusOK, nil
 }
 
 func (s *service) DeleteWishlistItem(ctx context.Context, id string) (int, error) {
@@ -1146,6 +1200,7 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 			EventDate:   st.EventDate,
 			Title:       st.Title,
 			Description: st.Description,
+			Detail:      st.Detail,
 			ImageURL:    st.ImageURL,
 		})
 	}
@@ -1175,6 +1230,7 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 			BankName:          a.BankName,
 			AccountNumber:     a.AccountNumber,
 			AccountHolderName: a.AccountHolderName,
+			ImageURL:          a.ImageURL,
 		})
 	}
 
@@ -1187,16 +1243,34 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 			ProviderName:   e.ProviderName,
 			AccountID:      e.AccountID,
 			QrCodeImageURL: e.QrCodeImageURL,
+			IsQris:         e.IsQris,
 		})
+	}
+
+	claimCounts, err := s.repo.ClaimCountsByItem(ctx)
+	if err != nil {
+		return res, http.StatusInternalServerError, err
+	}
+	countMap := make(map[string]int, len(claimCounts))
+	for _, cc := range claimCounts {
+		countMap[cc.ItemID] = cc.Count
+	}
+
+	claimNames, err := s.wishlistClaimDetailsMap(ctx)
+	if err != nil {
+		return res, http.StatusInternalServerError, err
 	}
 
 	for i := range wishlistItems {
 		w := &wishlistItems[i]
 		res.Wishlist = append(res.Wishlist, PublicWishlistItem{
-			ItemName:     w.ItemName,
-			ItemImageURL: w.ItemImageURL,
-			ItemLink:     w.ItemLink,
-			IsClaimed:    w.ClaimedByGuestID != nil,
+			ID:            w.ID,
+			ItemName:      w.ItemName,
+			ItemImageURL:  w.ItemImageURL,
+			ItemLink:      w.ItemLink,
+			StockTotal:    w.StockTotal,
+			ClaimedCount:  countMap[w.ID],
+			ClaimedByName: claimNames[w.ID],
 		})
 	}
 
@@ -1226,6 +1300,12 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 				Name:     guest.Name,
 				QRCode:   guest.QRCode,
 				Category: guest.GuestCategory.Name,
+			}
+			if existing, err := s.repo.GetRSVPByGuestAndEvent(ctx, guest.ID, nil); err == nil && existing != nil {
+				res.GuestRsvp = &GuestRsvpInfo{
+					AttendanceStatus: string(existing.AttendanceStatus),
+					NumberOfGuests:   existing.NumberOfGuests,
+				}
 			}
 			if guest.InvitationOpenedAt == nil {
 				if err := s.repo.MarkInvitationOpened(ctx, guest.ID); err != nil {
@@ -1294,6 +1374,7 @@ func (s *service) mapStoryToResponse(st *models.WeddingStoryEvent) StoryResponse
 		EventDate:   st.EventDate,
 		Title:       st.Title,
 		Description: st.Description,
+		Detail:      st.Detail,
 		ImageURL:    st.ImageURL,
 		OrderIndex:  st.OrderIndex,
 		CreatedAt:   st.CreatedAt,
@@ -1329,6 +1410,7 @@ func (s *service) mapBankAccountToResponse(a *models.WeddingBankAccount) BankAcc
 		BankName:          a.BankName,
 		AccountNumber:     a.AccountNumber,
 		AccountHolderName: a.AccountHolderName,
+		ImageURL:          a.ImageURL,
 		IsActive:          a.IsActive,
 		CreatedAt:         a.CreatedAt,
 		UpdatedAt:         a.UpdatedAt,
@@ -1341,23 +1423,60 @@ func (s *service) mapEwalletToResponse(e *models.WeddingEwallet) EwalletResponse
 		ProviderName:   e.ProviderName,
 		AccountID:      e.AccountID,
 		QrCodeImageURL: e.QrCodeImageURL,
+		IsQris:         e.IsQris,
 		IsActive:       e.IsActive,
 		CreatedAt:      e.CreatedAt,
 		UpdatedAt:      e.UpdatedAt,
 	}
 }
 
-func (s *service) mapWishlistItemToResponse(i *models.WeddingWishlistItem) WishlistItemResponse {
+func (s *service) mapWishlistItemToResponse(i *models.WeddingWishlistItem, claimedCount int, claimNames []string) WishlistItemResponse {
 	return WishlistItemResponse{
-		ID:           i.ID,
-		ItemName:     i.ItemName,
-		ItemImageURL: i.ItemImageURL,
-		ItemLink:     i.ItemLink,
-		IsClaimed:    i.ClaimedByGuestID != nil,
-		ClaimedAt:    i.ClaimedAt,
-		CreatedAt:    i.CreatedAt,
-		UpdatedAt:    i.UpdatedAt,
+		ID:            i.ID,
+		ItemName:      i.ItemName,
+		ItemImageURL:  i.ItemImageURL,
+		ItemLink:      i.ItemLink,
+		StockTotal:    i.StockTotal,
+		ClaimedCount:  claimedCount,
+		ClaimedByName: claimNames,
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 	}
+}
+
+// Hitung klaim per item sekaligus untuk menghindari N+1 query.
+func (s *service) wishlistClaimCounts(ctx context.Context) (map[string]int, error) {
+	rows, err := s.repo.ClaimCountsByItem(ctx)
+	if err != nil {
+		return nil, err
+	}
+	counts := make(map[string]int, len(rows))
+	for _, row := range rows {
+		counts[row.ItemID] = row.Count
+	}
+	return counts, nil
+}
+
+// Nama-nama tamu yang mengklaim per item (untuk tampilan admin & publik).
+func (s *service) wishlistClaimDetailsMap(ctx context.Context) (map[string][]string, error) {
+	rows, err := s.repo.ListClaimDetails(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string][]string, len(rows))
+	for _, r := range rows {
+		m[r.ItemID] = append(m[r.ItemID], r.GuestName)
+	}
+	return m, nil
+}
+
+// Nama tamu yang mengklaim satu item spesifik.
+func (s *service) claimNamesByItem(ctx context.Context, itemID string) ([]string, error) {
+	all, err := s.wishlistClaimDetailsMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return all[itemID], nil
 }
 
 func (s *service) mapSectionToResponse(sec *models.InvitationSection) SectionResponse {
@@ -1387,8 +1506,12 @@ func guestAttendanceFromRSVPStatus(status string) string {
 	}
 }
 
-func (s *service) SubmitRSVP(ctx context.Context, req CreateRSVPRequest) (PublicRSVPResponse, int, error) {
-	if err := validator.ValidateStruct(req); err != nil {
+// isUniqueViolation mendeteksi pelanggaran unique constraint (SQLSTATE 23505).
+func isUniqueViolation(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "SQLSTATE 23505")
+}
+
+func (s *service) SubmitRSVP(ctx context.Context, req CreateRSVPRequest) (PublicRSVPResponse, int, error) {	if err := validator.ValidateStruct(req); err != nil {
 		return PublicRSVPResponse{}, http.StatusBadRequest, err
 	}
 
@@ -1435,7 +1558,24 @@ func (s *service) SubmitRSVP(ctx context.Context, req CreateRSVPRequest) (Public
 			SubmittedAt:      time.Now(),
 		}
 		if err := s.repo.CreateRSVP(ctx, submission); err != nil {
-			return PublicRSVPResponse{}, http.StatusInternalServerError, err
+			// Dua submit barengan bisa kena unique (guest+event) —
+			// fallback ke update agar tamu tetap mendapat jawaban sukses.
+			if isUniqueViolation(err) {
+				existing2, getErr := s.repo.GetRSVPByGuestAndEvent(ctx, req.GuestID, req.WeddingEventID)
+				if getErr == nil && existing2 != nil {
+					existing2.AttendanceStatus = req.AttendanceStatus
+					existing2.NumberOfGuests = req.NumberOfGuests
+					existing2.SubmittedAt = time.Now()
+					if err := s.repo.UpdateRSVP(ctx, existing2); err != nil {
+						return PublicRSVPResponse{}, http.StatusInternalServerError, err
+					}
+					submission = existing2
+				} else {
+					return PublicRSVPResponse{}, http.StatusInternalServerError, err
+				}
+			} else {
+				return PublicRSVPResponse{}, http.StatusInternalServerError, err
+			}
 		}
 	}
 
@@ -1491,25 +1631,19 @@ func (s *service) SubmitGuestbook(ctx context.Context, req CreateGuestbookReques
 		return PublicGuestbookEntry{}, http.StatusBadRequest, err
 	}
 
-	name := req.GuestName
-	if req.GuestID != nil && *req.GuestID != "" {
-		guest, err := s.repo.GetGuestByUUID(ctx, *req.GuestID)
-		if err != nil {
-			return PublicGuestbookEntry{}, http.StatusInternalServerError, err
-		}
-		if guest == nil {
-			return PublicGuestbookEntry{}, http.StatusNotFound, ErrGuestNotFound
-		}
-		if name == "" {
-			name = guest.Name
-		}
-	} else {
-		req.GuestID = nil
+	// Ucapan terkunci ke tamu resmi: nama selalu dari data tamu,
+	// sehingga entri anonim / nama palsu tidak mungkin lewat API.
+	guest, err := s.repo.GetGuestByUUID(ctx, req.GuestID)
+	if err != nil {
+		return PublicGuestbookEntry{}, http.StatusInternalServerError, err
+	}
+	if guest == nil {
+		return PublicGuestbookEntry{}, http.StatusNotFound, ErrGuestNotFound
 	}
 
 	entry := &models.GuestbookEntry{
-		GuestID:     req.GuestID,
-		GuestName:   name,
+		GuestID:     &guest.ID,
+		GuestName:   guest.Name,
 		MessageText: req.MessageText,
 	}
 	if err := s.repo.CreateGuestbookEntry(ctx, entry); err != nil {
@@ -1523,4 +1657,203 @@ func (s *service) SubmitGuestbook(ctx context.Context, req CreateGuestbookReques
 		ReplyText:   entry.ReplyText,
 		CreatedAt:   entry.CreatedAt,
 	}, http.StatusCreated, nil
+}
+
+// ===== Ucapan: balasan admin =====
+
+func (s *service) adminGuestbookEntry(e *models.GuestbookEntry) AdminGuestbookEntry {
+	return AdminGuestbookEntry{
+		ID:          e.ID,
+		GuestName:   e.GuestName,
+		MessageText: e.MessageText,
+		ReplyText:   e.ReplyText,
+		RepliedAt:   e.RepliedAt,
+		IsHidden:    e.IsHidden,
+		CreatedAt:   e.CreatedAt,
+	}
+}
+
+func (s *service) ListAdminGuestbook(ctx context.Context) ([]AdminGuestbookEntry, int, error) {
+	entries, err := s.repo.ListAllGuestbook(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	res := make([]AdminGuestbookEntry, 0, len(entries))
+	for i := range entries {
+		res = append(res, s.adminGuestbookEntry(&entries[i]))
+	}
+	return res, http.StatusOK, nil
+}
+
+func (s *service) ReplyToGuestbook(ctx context.Context, id string, req GuestbookReplyRequest) (AdminGuestbookEntry, int, error) {
+	entry, err := s.repo.GetGuestbookEntryByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrGuestbookEntryNotFound) {
+			return AdminGuestbookEntry{}, http.StatusNotFound, ErrGuestbookEntryNotFound
+		}
+		return AdminGuestbookEntry{}, http.StatusInternalServerError, err
+	}
+
+	now := time.Now()
+	reply := req.ReplyText
+	entry.ReplyText = &reply
+	entry.RepliedAt = &now
+
+	if err := s.repo.UpdateGuestbookEntry(ctx, entry); err != nil {
+		return AdminGuestbookEntry{}, http.StatusInternalServerError, err
+	}
+	return s.adminGuestbookEntry(entry), http.StatusOK, nil
+}
+
+func (s *service) DeleteGuestbookEntry(ctx context.Context, id string) (int, error) {
+	_, err := s.repo.GetGuestbookEntryByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, ErrGuestbookEntryNotFound) {
+			return http.StatusNotFound, ErrGuestbookEntryNotFound
+		}
+		return http.StatusInternalServerError, err
+	}
+	if err := s.repo.DeleteGuestbookEntry(ctx, id); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	return http.StatusOK, nil
+}
+
+// ===== Wishlist: klaim publik (1 tamu = 1 barang, stok atomik) =====
+
+func (s *service) ListPublicWishlistItems(ctx context.Context) ([]PublicWishlistItem, int, error) {
+	items, err := s.repo.ListWishlistItems(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	claimCounts, err := s.repo.ClaimCountsByItem(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+	countMap := make(map[string]int, len(claimCounts))
+	for _, cc := range claimCounts {
+		countMap[cc.ItemID] = cc.Count
+	}
+
+	claimNames, err := s.wishlistClaimDetailsMap(ctx)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	res := make([]PublicWishlistItem, 0, len(items))
+	for i := range items {
+		w := &items[i]
+		res = append(res, PublicWishlistItem{
+			ID:            w.ID,
+			ItemName:      w.ItemName,
+			ItemImageURL:  w.ItemImageURL,
+			ItemLink:      w.ItemLink,
+			StockTotal:    w.StockTotal,
+			ClaimedCount:  countMap[w.ID],
+			ClaimedByName: claimNames[w.ID],
+		})
+	}
+	return res, http.StatusOK, nil
+}
+
+func (s *service) ClaimPublicWishlistItem(ctx context.Context, itemID string, req ClaimWishlistRequest) (PublicClaimResponse, int, error) {
+	guest, err := s.repo.GetGuestByUUID(ctx, req.GuestID)
+	if err != nil {
+		return PublicClaimResponse{}, http.StatusInternalServerError, err
+	}
+	if guest == nil {
+		return PublicClaimResponse{}, http.StatusNotFound, ErrGuestNotFound
+	}
+
+	item, statusCode, err := s.getWishlistItem(ctx, itemID)
+	if err != nil {
+		return PublicClaimResponse{}, statusCode, err
+	}
+
+	claimedCount, err := s.repo.ClaimWishlistItem(ctx, item.ID, guest.ID)
+	switch {
+	case errors.Is(err, ErrWishlistAlreadyClaimed):
+		return PublicClaimResponse{}, http.StatusConflict, ErrWishlistAlreadyClaimed
+	case errors.Is(err, ErrWishlistStockEmpty):
+		return PublicClaimResponse{}, http.StatusConflict, ErrWishlistStockEmpty
+	case errors.Is(err, ErrWishlistItemNotFound):
+		return PublicClaimResponse{}, http.StatusNotFound, ErrWishlistItemNotFound
+	case err != nil:
+		return PublicClaimResponse{}, http.StatusInternalServerError, err
+	}
+
+	return PublicClaimResponse{
+		ItemID:       item.ID,
+		ItemName:     item.ItemName,
+		StockTotal:   item.StockTotal,
+		ClaimedCount: int(claimedCount),
+	}, http.StatusOK, nil
+}
+
+func (s *service) UnclaimPublicWishlistItem(ctx context.Context, itemID string, req ClaimWishlistRequest) (int, error) {
+	guest, err := s.repo.GetGuestByUUID(ctx, req.GuestID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if guest == nil {
+		return http.StatusNotFound, ErrGuestNotFound
+	}
+
+	if _, _, err := s.getWishlistItem(ctx, itemID); err != nil {
+		return http.StatusNotFound, err
+	}
+
+	if err := s.repo.UnclaimWishlistItem(ctx, guest.ID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+	return http.StatusOK, nil
+}
+
+// ===== Ringkasan konfirmasi kehadiran =====
+
+func (s *service) GetRSVPSummary(ctx context.Context) (RSVPSummaryResponse, int, error) {
+	rows, err := s.repo.ListRSVPSubmissions(ctx)
+	if err != nil {
+		return RSVPSummaryResponse{}, http.StatusInternalServerError, err
+	}
+
+	totalGuests, err := s.repo.CountGuests(ctx)
+	if err != nil {
+		return RSVPSummaryResponse{}, http.StatusInternalServerError, err
+	}
+
+	res := RSVPSummaryResponse{
+		Items:         make([]RSVPSummaryItem, 0, len(rows)),
+		TotalGuests:   totalGuests,
+		BelumKonfirmasi: totalGuests,
+	}
+
+	for i := range rows {
+		row := &rows[i]
+		switch row.AttendanceStatus {
+		case "hadir":
+			res.Hadir++
+			res.TotalOrangHadir += row.NumberOfGuests
+		default:
+			// tidak_hadir & ragu (data lama) dihitung berhalangan.
+			res.Berhalangan++
+		}
+		res.BelumKonfirmasi = totalGuests - int64(res.Hadir+res.Berhalangan)
+		if res.BelumKonfirmasi < 0 {
+			res.BelumKonfirmasi = 0
+		}
+
+		res.Items = append(res.Items, RSVPSummaryItem{
+			ID:               row.SubmissionID,
+			GuestName:        row.GuestName,
+			CategoryName:     row.CategoryName,
+			EventName:        row.EventName,
+			AttendanceStatus: row.AttendanceStatus,
+			NumberOfGuests:   row.NumberOfGuests,
+			SubmittedAt:      row.SubmittedAt,
+		})
+	}
+
+	return res, http.StatusOK, nil
 }

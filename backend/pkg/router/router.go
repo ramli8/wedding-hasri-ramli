@@ -271,9 +271,14 @@ func SetupRoutes(
 		// Invitation public routes (no JWT - accessed by wedding guests)
 		r.Route("/invitation", func(r chi.Router) {
 			r.Get("/", invitationHandler.GetPublicInvitation)
-			r.Post("/rsvp", invitationHandler.SubmitRSVP)
 			r.Get("/guestbook", invitationHandler.ListGuestbook)
-			r.Post("/guestbook", invitationHandler.SubmitGuestbook)
+			r.Get("/wishlist", invitationHandler.ListPublicWishlist)
+			// Tulis publik dibatasi per IP (anti-spam).
+			writeLimit := middleware.RateLimit(1, 3)
+			r.With(writeLimit).Post("/rsvp", invitationHandler.SubmitRSVP)
+			r.With(writeLimit).Post("/guestbook", invitationHandler.SubmitGuestbook)
+			r.With(writeLimit).Post("/wishlist/{itemID}/claim", invitationHandler.ClaimPublicWishlist)
+			r.With(writeLimit).Delete("/wishlist/{itemID}/claim", invitationHandler.UnclaimPublicWishlist)
 		})
 
 		// Wedding/invitation management routes (protected - Admin only)
@@ -382,6 +387,14 @@ func SetupRoutes(
 					r.With(middleware.RequirePermission(rbacRepo, "weddings.delete")).Delete("/", invitationHandler.DeleteSection)
 				})
 			})
+
+			// Ucapan: daftar, balasan & hapus
+			r.Get("/guestbook", invitationHandler.ListAdminGuestbook)
+			r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Put("/guestbook/{id}/reply", invitationHandler.ReplyGuestbook)
+			r.With(middleware.RequirePermission(rbacRepo, "weddings.update")).Delete("/guestbook/{id}", invitationHandler.DeleteGuestbook)
+
+			// Ringkasan konfirmasi kehadiran
+			r.Get("/rsvp/summary", invitationHandler.GetRSVPSummary)
 		})
 	})
 

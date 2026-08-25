@@ -29,6 +29,7 @@ const ALLOWED_FOLDERS = new Set([
   "gallery",
   "story",
   "wishlist",
+  "wedding",
 ]);
 
 async function verifyToken(request: NextRequest): Promise<boolean> {

@@ -354,6 +354,23 @@ definitions:
         maxLength: 20
         type: string
     type: object
+  internal_invitation.AdminGuestbookEntry:
+    properties:
+      created_at:
+        type: string
+      guest_name:
+        type: string
+      id:
+        type: string
+      is_hidden:
+        type: boolean
+      message_text:
+        type: string
+      replied_at:
+        type: string
+      reply_text:
+        type: string
+    type: object
   internal_invitation.BankAccountResponse:
     properties:
       account_holder_name:
@@ -366,10 +383,19 @@ definitions:
         type: string
       id:
         type: string
+      image_url:
+        type: string
       is_active:
         type: boolean
       updated_at:
         type: string
+    type: object
+  internal_invitation.ClaimWishlistRequest:
+    properties:
+      guest_id:
+        type: string
+    required:
+    - guest_id
     type: object
   internal_invitation.CoupleResponse:
     properties:
@@ -383,6 +409,8 @@ definitions:
         type: string
       instagram_handle:
         type: string
+      nickname:
+        type: string
       photo_url:
         type: string
       side:
@@ -394,10 +422,16 @@ definitions:
     properties:
       button_text:
         type: string
-      photos:
-        items:
-          type: string
-        type: array
+      guest_greeting_label:
+        type: string
+      image_desktop:
+        type: string
+      image_mobile:
+        type: string
+      image_tablet:
+        type: string
+      save_the_date_label:
+        type: string
     type: object
   internal_invitation.CreateBankAccountRequest:
     properties:
@@ -412,6 +446,8 @@ definitions:
       bank_name:
         maxLength: 100
         minLength: 1
+        type: string
+      image_url:
         type: string
       is_active:
         type: boolean
@@ -432,6 +468,9 @@ definitions:
       instagram_handle:
         maxLength: 50
         type: string
+      nickname:
+        maxLength: 100
+        type: string
       photo_url:
         type: string
       side:
@@ -446,6 +485,8 @@ definitions:
   internal_invitation.CreateEventRequest:
     properties:
       address_full:
+        type: string
+      end_time:
         type: string
       event_date:
         type: string
@@ -514,6 +555,41 @@ definitions:
     required:
     - image_url
     type: object
+  internal_invitation.CreateGuestbookRequest:
+    properties:
+      guest_id:
+        description: 'Wajib: ucapan hanya untuk tamu resmi (anti-spam, nama diambil
+          dari data tamu).'
+        type: string
+      message_text:
+        maxLength: 2000
+        minLength: 1
+        type: string
+    required:
+    - guest_id
+    - message_text
+    type: object
+  internal_invitation.CreateRSVPRequest:
+    properties:
+      attendance_status:
+        enum:
+        - hadir
+        - tidak_hadir
+        - ragu
+        type: string
+      guest_id:
+        type: string
+      number_of_guests:
+        maximum: 20
+        minimum: 1
+        type: integer
+      wedding_event_id:
+        type: string
+    required:
+    - attendance_status
+    - guest_id
+    - number_of_guests
+    type: object
   internal_invitation.CreateSectionRequest:
     properties:
       is_enabled:
@@ -530,6 +606,8 @@ definitions:
   internal_invitation.CreateStoryRequest:
     properties:
       description:
+        type: string
+      detail:
         type: string
       event_date:
         maxLength: 50
@@ -555,6 +633,10 @@ definitions:
         maxLength: 255
         minLength: 1
         type: string
+      stock_total:
+        maximum: 99
+        minimum: 1
+        type: integer
     required:
     - item_name
     type: object
@@ -574,6 +656,8 @@ definitions:
       address_full:
         type: string
       created_at:
+        type: string
+      end_time:
         type: string
       event_date:
         type: string
@@ -656,6 +740,22 @@ definitions:
       updated_at:
         type: string
     type: object
+  internal_invitation.GuestRsvpInfo:
+    properties:
+      attendance_status:
+        type: string
+      number_of_guests:
+        type: integer
+    type: object
+  internal_invitation.GuestbookReplyRequest:
+    properties:
+      reply_text:
+        maxLength: 1000
+        minLength: 1
+        type: string
+    required:
+    - reply_text
+    type: object
   internal_invitation.InvitationResponse:
     properties:
       bank_accounts:
@@ -686,6 +786,8 @@ definitions:
         type: array
       guest:
         $ref: '#/definitions/internal_invitation.PublicGuestInfo'
+      guest_rsvp:
+        $ref: '#/definitions/internal_invitation.GuestRsvpInfo'
       sections:
         items:
           $ref: '#/definitions/internal_invitation.PublicSection'
@@ -725,6 +827,8 @@ definitions:
         type: string
       greeting:
         type: string
+      salam:
+        type: string
       source:
         type: string
       translation:
@@ -738,6 +842,19 @@ definitions:
         type: string
       bank_name:
         type: string
+      image_url:
+        type: string
+    type: object
+  internal_invitation.PublicClaimResponse:
+    properties:
+      claimed_count:
+        type: integer
+      item_id:
+        type: string
+      item_name:
+        type: string
+      stock_total:
+        type: integer
     type: object
   internal_invitation.PublicCouple:
     properties:
@@ -747,6 +864,8 @@ definitions:
         type: string
       instagram_handle:
         type: string
+      nickname:
+        type: string
       photo_url:
         type: string
       side:
@@ -755,6 +874,8 @@ definitions:
   internal_invitation.PublicEvent:
     properties:
       address_full:
+        type: string
+      end_time:
         type: string
       event_date:
         type: string
@@ -768,6 +889,8 @@ definitions:
         type: string
       notes:
         type: string
+      order_index:
+        type: integer
       start_time:
         type: string
       venue_name:
@@ -800,9 +923,48 @@ definitions:
     properties:
       category:
         type: string
+      id:
+        type: string
       name:
         type: string
       qr_code:
+        type: string
+    type: object
+  internal_invitation.PublicGuestbookEntry:
+    properties:
+      created_at:
+        type: string
+      guest_name:
+        type: string
+      id:
+        type: string
+      message_text:
+        type: string
+      reply_text:
+        type: string
+    type: object
+  internal_invitation.PublicGuestbookResponse:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/internal_invitation.PublicGuestbookEntry'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_invitation.PublicRSVPResponse:
+    properties:
+      attendance_status:
+        type: string
+      guest_id:
+        type: string
+      id:
+        type: string
+      number_of_guests:
+        type: integer
+      submitted_at:
+        type: string
+      wedding_event_id:
         type: string
     type: object
   internal_invitation.PublicSection:
@@ -815,6 +977,8 @@ definitions:
   internal_invitation.PublicStory:
     properties:
       description:
+        type: string
+      detail:
         type: string
       event_date:
         type: string
@@ -838,14 +1002,52 @@ definitions:
     type: object
   internal_invitation.PublicWishlistItem:
     properties:
-      is_claimed:
-        type: boolean
+      claimed_count:
+        type: integer
+      id:
+        type: string
       item_image_url:
         type: string
       item_link:
         type: string
       item_name:
         type: string
+      stock_total:
+        type: integer
+    type: object
+  internal_invitation.RSVPSummaryItem:
+    properties:
+      attendance_status:
+        type: string
+      category_name:
+        type: string
+      event_name:
+        type: string
+      guest_name:
+        type: string
+      id:
+        type: string
+      number_of_guests:
+        type: integer
+      submitted_at:
+        type: string
+    type: object
+  internal_invitation.RSVPSummaryResponse:
+    properties:
+      belum_konfirmasi:
+        type: integer
+      berhalangan:
+        type: integer
+      hadir:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/internal_invitation.RSVPSummaryItem'
+        type: array
+      total_guests:
+        type: integer
+      total_orang_hadir:
+        type: integer
     type: object
   internal_invitation.SectionResponse:
     properties:
@@ -867,6 +1069,8 @@ definitions:
       created_at:
         type: string
       description:
+        type: string
+      detail:
         type: string
       event_date:
         type: string
@@ -895,6 +1099,8 @@ definitions:
         maxLength: 100
         minLength: 1
         type: string
+      image_url:
+        type: string
       is_active:
         type: boolean
     type: object
@@ -910,6 +1116,9 @@ definitions:
       instagram_handle:
         maxLength: 50
         type: string
+      nickname:
+        maxLength: 100
+        type: string
       photo_url:
         type: string
       side:
@@ -921,6 +1130,8 @@ definitions:
   internal_invitation.UpdateEventRequest:
     properties:
       address_full:
+        type: string
+      end_time:
         type: string
       event_date:
         type: string
@@ -990,6 +1201,8 @@ definitions:
     properties:
       description:
         type: string
+      detail:
+        type: string
       event_date:
         maxLength: 50
         type: string
@@ -1032,6 +1245,10 @@ definitions:
         maxLength: 255
         minLength: 1
         type: string
+      stock_total:
+        maximum: 99
+        minimum: 1
+        type: integer
     type: object
   internal_invitation.WeddingContent:
     properties:
@@ -1067,20 +1284,20 @@ definitions:
     type: object
   internal_invitation.WishlistItemResponse:
     properties:
-      claimed_at:
-        type: string
+      claimed_count:
+        type: integer
       created_at:
         type: string
       id:
         type: string
-      is_claimed:
-        type: boolean
       item_image_url:
         type: string
       item_link:
         type: string
       item_name:
         type: string
+      stock_total:
+        type: integer
       updated_at:
         type: string
     type: object
@@ -2237,6 +2454,139 @@ paths:
               type: string
             type: object
       summary: Get the composed invitation payload (public)
+      tags:
+      - Invitation
+  /invitation/guestbook:
+    get:
+      description: Public guestbook entries (not hidden), newest first.
+      parameters:
+      - description: Max entries (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_invitation.PublicGuestbookResponse'
+      summary: List public ucapan (public)
+      tags:
+      - Invitation
+    post:
+      consumes:
+      - application/json
+      description: Registered guest leaves a message/prayer. Requires a valid guest
+        UUID; the display name is taken from the guest record.
+      parameters:
+      - description: Guestbook payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_invitation.CreateGuestbookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_invitation.PublicGuestbookEntry'
+        "400":
+          description: Invalid payload
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Submit ucapan (public)
+      tags:
+      - Invitation
+  /invitation/rsvp:
+    post:
+      consumes:
+      - application/json
+      description: Guest confirms attendance for the wedding. Upsert per guest+event;
+        updates guest attendance status.
+      parameters:
+      - description: RSVP payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_invitation.CreateRSVPRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_invitation.PublicRSVPResponse'
+        "400":
+          description: Invalid payload
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guest or event not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Submit RSVP (public)
+      tags:
+      - Invitation
+  /invitation/wishlist:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_invitation.PublicWishlistItem'
+            type: array
+      summary: Daftar wishlist publik (stok + sisa per barang)
+      tags:
+      - Invitation
+  /invitation/wishlist/{itemID}/claim:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Wishlist item ID
+        in: path
+        name: itemID
+        required: true
+        type: string
+      - description: Guest UUID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_invitation.ClaimWishlistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_invitation.PublicClaimResponse'
+      summary: Tamu mengklaim barang wishlist (1 tamu = 1 barang)
       tags:
       - Invitation
   /rbac/check-module-access:
@@ -4058,6 +4408,58 @@ paths:
       summary: Update a gallery photo
       tags:
       - Wedding Gallery
+  /wedding/guestbook:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_invitation.AdminGuestbookEntry'
+            type: array
+      summary: List semua ucapan (admin)
+      tags:
+      - Wedding
+  /wedding/guestbook/{id}/reply:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Guestbook entry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Balasan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_invitation.GuestbookReplyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_invitation.AdminGuestbookEntry'
+      summary: Admin membalas ucapan tamu
+      tags:
+      - Wedding
+  /wedding/rsvp/summary:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_invitation.RSVPSummaryResponse'
+      summary: Ringkasan konfirmasi kehadiran (admin)
+      tags:
+      - Wedding
   /wedding/sections:
     get:
       produces:

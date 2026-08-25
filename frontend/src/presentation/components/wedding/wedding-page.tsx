@@ -1,6 +1,6 @@
 "use client";
 
-import { useInvitation } from "@/src/application/hooks/use-invitation-query";
+import { useInvitation, setActiveGuestId } from "@/src/application/hooks/use-invitation-query";
 import { SmoothScrollProvider } from "@/src/lib/invitation/smooth-scroll";
 import { WeddingProvider } from "@/src/lib/invitation/wedding-context";
 import { weddingSectionComponents } from "./section-map";
@@ -12,6 +12,9 @@ interface WeddingPageProps {
 }
 
 export function WeddingPage({ guest }: WeddingPageProps) {
+  // Daftarkan tamu aktif sebelum section mana pun memanggil useInvitation()
+  // agar semua section membaca cache entry yang sama (terpersonalisasi).
+  setActiveGuestId(guest);
   const { data } = useInvitation(guest);
 
   // Sengaja tanpa isLoading: flicker pending saat refetch tidak boleh
@@ -40,6 +43,10 @@ export function WeddingPage({ guest }: WeddingPageProps) {
               // Cover dirender eksplisit sebagai overlay di luar main —
               // instansi dari daftar sections akan membuat dua layer bertumpuk.
               .filter((section) => section.section_key !== "cover")
+              // Konfirmasi kehadiran hanya untuk tamu dengan link personal.
+              .filter(
+                (section) => section.section_key !== "rsvp" || Boolean(data.guest),
+              )
               .map((section) => {
                 const Section = weddingSectionComponents[section.section_key];
                 return Section ? <Section key={section.section_key} /> : null;

@@ -1,10 +1,15 @@
 package middleware
 
 import (
-	"golang.org/x/time/rate"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
+
+	"github.com/base-go/backend/pkg/response"
 )
 
 type client struct {
@@ -45,8 +50,14 @@ func RateLimit(requestsPerSecond int, burst int) func(handler http.Handler) http
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// get client ip address
+			// get client ip address (tanpa port — kalau tidak, tiap koneksi
+			// dihitung klien berbeda dan limit tak pernah jalan)
 			ip := r.RemoteAddr
+			if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+				ip = strings.TrimSpace(strings.Split(forwarded, ",")[0])
+			} else if host, _, err := net.SplitHostPort(ip); err == nil {
+				ip = host
+			}
 
 			mu.Lock()
 			if _, found := clients[ip]; !found {
@@ -62,7 +73,7 @@ func RateLimit(requestsPerSecond int, burst int) func(handler http.Handler) http
 			if !clients[ip].limiter.Allow() {
 				// need to unlock if request not allowed
 				mu.Unlock()
-				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+				response.ResponseError(w, http.StatusTooManyRequests, "Terlalu banyak permintaan. Coba lagi sebentar lagi.")
 				return
 			}
 

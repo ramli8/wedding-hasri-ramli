@@ -109,6 +109,7 @@ type CreateStoryRequest struct {
 	EventDate   *string `json:"event_date" validate:"omitempty,max=50"`
 	Title       string  `json:"title" validate:"required,min=1,max=255"`
 	Description *string `json:"description"`
+	Detail      *string `json:"detail"`
 	ImageURL    *string `json:"image_url"`
 	OrderIndex  int     `json:"order_index"`
 }
@@ -117,6 +118,7 @@ type UpdateStoryRequest struct {
 	EventDate   *string `json:"event_date" validate:"omitempty,max=50"`
 	Title       *string `json:"title" validate:"omitempty,min=1,max=255"`
 	Description *string `json:"description"`
+	Detail      *string `json:"detail"`
 	ImageURL    *string `json:"image_url"`
 	OrderIndex  *int    `json:"order_index"`
 }
@@ -126,6 +128,7 @@ type StoryResponse struct {
 	EventDate   *string   `json:"event_date"`
 	Title       string    `json:"title"`
 	Description *string   `json:"description"`
+	Detail      *string   `json:"detail"`
 	ImageURL    *string   `json:"image_url"`
 	OrderIndex  int       `json:"order_index"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -181,16 +184,18 @@ type FaqResponse struct {
 // --- Bank Account DTOs ---
 
 type CreateBankAccountRequest struct {
-	BankName          string `json:"bank_name" validate:"required,min=1,max=100"`
-	AccountNumber     string `json:"account_number" validate:"required,min=1,max=100"`
-	AccountHolderName string `json:"account_holder_name" validate:"required,min=1,max=255"`
-	IsActive          *bool  `json:"is_active"`
+	BankName          string  `json:"bank_name" validate:"required,min=1,max=100"`
+	AccountNumber     string  `json:"account_number" validate:"required,min=1,max=100"`
+	AccountHolderName string  `json:"account_holder_name" validate:"required,min=1,max=255"`
+	ImageURL          *string `json:"image_url"`
+	IsActive          *bool   `json:"is_active"`
 }
 
 type UpdateBankAccountRequest struct {
 	BankName          *string `json:"bank_name" validate:"omitempty,min=1,max=100"`
 	AccountNumber     *string `json:"account_number" validate:"omitempty,min=1,max=100"`
 	AccountHolderName *string `json:"account_holder_name" validate:"omitempty,min=1,max=255"`
+	ImageURL          *string `json:"image_url"`
 	IsActive          *bool   `json:"is_active"`
 }
 
@@ -199,6 +204,7 @@ type BankAccountResponse struct {
 	BankName          string    `json:"bank_name"`
 	AccountNumber     string    `json:"account_number"`
 	AccountHolderName string    `json:"account_holder_name"`
+	ImageURL          *string   `json:"image_url"`
 	IsActive          bool      `json:"is_active"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
@@ -210,6 +216,7 @@ type CreateEwalletRequest struct {
 	ProviderName   string  `json:"provider_name" validate:"required,min=1,max=100"`
 	AccountID      string  `json:"account_id" validate:"required,min=1,max=255"`
 	QrCodeImageURL *string `json:"qr_code_image_url"`
+	IsQris         *bool   `json:"is_qris"`
 	IsActive       *bool   `json:"is_active"`
 }
 
@@ -217,6 +224,7 @@ type UpdateEwalletRequest struct {
 	ProviderName   *string `json:"provider_name" validate:"omitempty,min=1,max=100"`
 	AccountID      *string `json:"account_id" validate:"omitempty,min=1,max=255"`
 	QrCodeImageURL *string `json:"qr_code_image_url"`
+	IsQris         *bool   `json:"is_qris"`
 	IsActive       *bool   `json:"is_active"`
 }
 
@@ -225,6 +233,7 @@ type EwalletResponse struct {
 	ProviderName   string    `json:"provider_name"`
 	AccountID      string    `json:"account_id"`
 	QrCodeImageURL *string   `json:"qr_code_image_url"`
+	IsQris         bool      `json:"is_qris"`
 	IsActive       bool      `json:"is_active"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
@@ -236,23 +245,26 @@ type CreateWishlistItemRequest struct {
 	ItemName     string  `json:"item_name" validate:"required,min=1,max=255"`
 	ItemImageURL *string `json:"item_image_url"`
 	ItemLink     *string `json:"item_link"`
+	StockTotal   *int    `json:"stock_total" validate:"omitempty,min=1,max=99"`
 }
 
 type UpdateWishlistItemRequest struct {
 	ItemName     *string `json:"item_name" validate:"omitempty,min=1,max=255"`
 	ItemImageURL *string `json:"item_image_url"`
 	ItemLink     *string `json:"item_link"`
+	StockTotal   *int    `json:"stock_total" validate:"omitempty,min=1,max=99"`
 }
 
 type WishlistItemResponse struct {
-	ID           string     `json:"id"`
-	ItemName     string     `json:"item_name"`
-	ItemImageURL *string    `json:"item_image_url"`
-	ItemLink     *string    `json:"item_link"`
-	IsClaimed    bool       `json:"is_claimed"`
-	ClaimedAt    *time.Time `json:"claimed_at,omitempty"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	ID            string    `json:"id"`
+	ItemName      string    `json:"item_name"`
+	ItemImageURL  *string   `json:"item_image_url"`
+	ItemLink      *string   `json:"item_link"`
+	StockTotal    int       `json:"stock_total"`
+	ClaimedCount  int       `json:"claimed_count"`
+	ClaimedByName []string  `json:"claimed_by_names,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // --- Section DTOs ---
@@ -393,6 +405,7 @@ type PublicStory struct {
 	EventDate   *string `json:"event_date"`
 	Title       string  `json:"title"`
 	Description *string `json:"description"`
+	Detail      *string `json:"detail"`
 	ImageURL    *string `json:"image_url"`
 }
 
@@ -407,22 +420,27 @@ type PublicFaq struct {
 }
 
 type PublicBankAccount struct {
-	BankName          string `json:"bank_name"`
-	AccountNumber     string `json:"account_number"`
-	AccountHolderName string `json:"account_holder_name"`
+	BankName          string  `json:"bank_name"`
+	AccountNumber     string  `json:"account_number"`
+	AccountHolderName string  `json:"account_holder_name"`
+	ImageURL          *string `json:"image_url"`
 }
 
 type PublicEwallet struct {
 	ProviderName   string  `json:"provider_name"`
 	AccountID      string  `json:"account_id"`
 	QrCodeImageURL *string `json:"qr_code_image_url"`
+	IsQris         bool    `json:"is_qris"`
 }
 
 type PublicWishlistItem struct {
-	ItemName     string  `json:"item_name"`
-	ItemImageURL *string `json:"item_image_url"`
-	ItemLink     *string `json:"item_link"`
-	IsClaimed    bool    `json:"is_claimed"`
+	ID             string   `json:"id"`
+	ItemName       string   `json:"item_name"`
+	ItemImageURL   *string  `json:"item_image_url"`
+	ItemLink       *string  `json:"item_link"`
+	StockTotal     int      `json:"stock_total"`
+	ClaimedCount   int      `json:"claimed_count"`
+	ClaimedByName  []string `json:"claimed_by_names,omitempty"`
 }
 
 type PublicSection struct {
@@ -435,6 +453,63 @@ type PublicGuestInfo struct {
 	Name     string `json:"name"`
 	QRCode   string `json:"qr_code"`
 	Category string `json:"category"`
+}
+
+// GuestRsvpInfo — jawaban konfirmasi yang sudah tersimpan untuk tamu ini,
+// supaya halaman RSVP menampilkan pilihan terakhir dan tetap bisa diubah.
+type GuestRsvpInfo struct {
+	AttendanceStatus string `json:"attendance_status"`
+	NumberOfGuests   int    `json:"number_of_guests"`
+}
+
+// --- Klaim wishlist (publik) ---
+
+type ClaimWishlistRequest struct {
+	GuestID string `json:"guest_id" validate:"required,uuid"`
+}
+
+type PublicClaimResponse struct {
+	ItemID       string `json:"item_id"`
+	ItemName     string `json:"item_name"`
+	StockTotal   int    `json:"stock_total"`
+	ClaimedCount int    `json:"claimed_count"`
+}
+
+// --- Ucapan: balasan admin ---
+
+type GuestbookReplyRequest struct {
+	ReplyText string `json:"reply_text" validate:"required,min=1,max=1000"`
+}
+
+type AdminGuestbookEntry struct {
+	ID          string     `json:"id"`
+	GuestName   string     `json:"guest_name"`
+	MessageText string     `json:"message_text"`
+	ReplyText   *string    `json:"reply_text"`
+	RepliedAt   *time.Time `json:"replied_at"`
+	IsHidden    bool       `json:"is_hidden"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+// --- Ringkasan konfirmasi kehadiran ---
+
+type RSVPSummaryItem struct {
+	ID               string    `json:"id"`
+	GuestName        string    `json:"guest_name"`
+	CategoryName     *string   `json:"category_name"`
+	EventName        *string   `json:"event_name"`
+	AttendanceStatus string    `json:"attendance_status"`
+	NumberOfGuests   int       `json:"number_of_guests"`
+	SubmittedAt      time.Time `json:"submitted_at"`
+}
+
+type RSVPSummaryResponse struct {
+	Hadir             int              `json:"hadir"`
+	Berhalangan       int              `json:"berhalangan"`
+	TotalGuests       int64            `json:"total_guests"`
+	BelumKonfirmasi   int64            `json:"belum_konfirmasi"`
+	TotalOrangHadir   int              `json:"total_orang_hadir"`
+	Items             []RSVPSummaryItem `json:"items"`
 }
 
 type InvitationResponse struct {
@@ -450,6 +525,7 @@ type InvitationResponse struct {
 	Sections            []PublicSection      `json:"sections"`
 	CountdownTarget     *time.Time           `json:"countdown_target"`
 	Guest               *PublicGuestInfo     `json:"guest"`
+	GuestRsvp           *GuestRsvpInfo       `json:"guest_rsvp"`
 }
 
 // --- Public RSVP DTOs ---
@@ -473,9 +549,9 @@ type PublicRSVPResponse struct {
 // --- Public Guestbook (ucapan) DTOs ---
 
 type CreateGuestbookRequest struct {
-	GuestID     *string `json:"guest_id" validate:"omitempty,uuid"`
-	GuestName   string  `json:"guest_name" validate:"required,min=1,max=255"`
-	MessageText string  `json:"message_text" validate:"required,min=1,max=2000"`
+	// Wajib: ucapan hanya untuk tamu resmi (anti-spam, nama diambil dari data tamu).
+	GuestID     string `json:"guest_id" validate:"required,uuid"`
+	MessageText string `json:"message_text" validate:"required,min=1,max=2000"`
 }
 
 type PublicGuestbookEntry struct {

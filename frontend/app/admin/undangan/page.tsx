@@ -5,6 +5,7 @@ import {
   BookHeart,
   BookOpenText,
   CalendarDays,
+  CalendarCheck,
   Camera,
   ChevronLeft,
   Gift,
@@ -12,7 +13,7 @@ import {
   HelpCircle,
   Images,
   Layers,
-  ListChecks,
+  MessagesSquare,
   MonitorPlay,
   Music,
   Palette,
@@ -41,8 +42,9 @@ const SECTION_GROUPS = [
   {
     label: "Interaksi Tamu",
     items: [
-      { href: "hadiah", icon: Gift, title: "Hadiah", subtitle: "Bank & e-wallet" },
-      { href: "wishlist", icon: ListChecks, title: "Wishlist", subtitle: "Kado & klaim tamu" },
+      { href: "hadiah", icon: Gift, title: "Hadiah", subtitle: "Bank · E-Wallet · Wishlist" },
+      { href: "confirm", icon: CalendarCheck, title: "Konfirmasi", subtitle: "RSVP & kehadiran tamu" },
+      { href: "ucapan", icon: MessagesSquare, title: "Ucapan", subtitle: "Baca & balas doa tamu" },
       { href: "faq", icon: HelpCircle, title: "FAQ", subtitle: "Pertanyaan umum" },
     ],
   },

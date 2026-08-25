@@ -346,7 +346,7 @@ export default function GuestsPage() {
       await deleteGuest.mutateAsync(selectedGuest.id);
       setIsDeleteDialogOpen(false);
       setSelectedGuest(null);
-      toast.error("Tamu berhasil dihapus", { icon: "🗑️" });
+      toast.error("Tamu berhasil dihapus");
     } catch (err: any) {
       setError(err.response?.data?.message || "Gagal menghapus tamu");
     }
@@ -1994,7 +1994,7 @@ export default function GuestsPage() {
                 if (deleteCategoryItem) {
                   try {
                     await deleteCategory.mutateAsync(deleteCategoryItem.id);
-                    toast.error("Kategori dihapus", { icon: "🗑️" });
+                    toast.error("Kategori dihapus");
                   } catch (err) {
                     toast.error("Gagal menghapus kategori");
                   }

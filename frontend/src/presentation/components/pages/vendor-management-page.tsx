@@ -411,7 +411,7 @@ export function VendorManagementPage() {
     const confirmDeleteCategory = () => {
         if (!deleteCategoryId) return;
         deleteCategory.mutate({ id: deleteCategoryId, eventId: DEFAULT_EVENT_ID }, {
-            onSuccess: () => toast.error('Kategori berhasil dihapus!', { icon: '🗑️' })
+            onSuccess: () => toast.error('Kategori berhasil dihapus!')
         });
         if (activeCategoryId === deleteCategoryId) {
             const remaining = categories.filter(c => c.id !== deleteCategoryId)
@@ -502,7 +502,7 @@ export function VendorManagementPage() {
 
     const handleDeleteVendor = (vendorId: string) => {
         deleteVendor.mutate({ id: vendorId, eventId: DEFAULT_EVENT_ID }, {
-            onSuccess: () => toast.error('Vendor berhasil dihapus!', { icon: '🗑️' })
+            onSuccess: () => toast.error('Vendor berhasil dihapus!')
         })
     }
 
@@ -534,7 +534,7 @@ export function VendorManagementPage() {
         if (!activeCategory) return
         if (activeCategory.selectedVendorId === vendorId) {
             deselectVendor.mutate({ categoryId: activeCategory.id, eventId: DEFAULT_EVENT_ID }, {
-                onSuccess: () => toast.error('Pilihan vendor dibatalkan!', { icon: '🗑️' }),
+                onSuccess: () => toast.error('Pilihan vendor dibatalkan!'),
                 onError: (err: any) => toast.error(err.message || 'Gagal membatalkan pilihan')
             })
         } else {
@@ -569,7 +569,9 @@ export function VendorManagementPage() {
                         date: paymentDate,
                         amount: paymentAmount,
                         note: paymentNote,
-                    }
+                    },
+                    vendorId: selectedPaymentVendor.id,
+                    eventId: '',
                 }, {
                     onSuccess: () => toast.success('Pembayaran berhasil diperbarui!')
                 })
@@ -609,8 +611,12 @@ export function VendorManagementPage() {
         if (!deletePaymentId) return;
         const paymentIdNum = parseInt(deletePaymentId);
         if (!isNaN(paymentIdNum)) {
-            deletePayment.mutate(paymentIdNum, {
-                onSuccess: () => toast.error('Pembayaran berhasil dihapus!', { icon: '🗑️' })
+            deletePayment.mutate({
+                id: paymentIdNum,
+                vendorId: selectedPaymentVendor?.id ?? '',
+                eventId: '',
+            }, {
+                onSuccess: () => toast.error('Pembayaran berhasil dihapus!')
             })
         }
         setDeletePaymentId(null);

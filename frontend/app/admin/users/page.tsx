@@ -170,7 +170,7 @@ export default function UsersPage() {
             setIsDeleteDialogOpen(false);
             setSelectedUser(null);
             refetchDeletedUsersData();
-            toast.error('Pengguna berhasil dihapus', { icon: '🗑️' });
+            toast.error('Pengguna berhasil dihapus');
         } catch (err: any) {
             const errorMsg = err.response?.data?.message || 'Gagal menghapus pengguna';
             setError(errorMsg);

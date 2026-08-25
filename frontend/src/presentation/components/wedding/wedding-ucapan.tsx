@@ -116,7 +116,7 @@ export function WeddingUcapan() {
               setSheetOpen(true);
             }}
             aria-haspopup="dialog"
-            className="inline-flex h-[52px] items-center gap-2 rounded-full bg-[var(--wd-accent)] px-8 text-[12px] font-bold tracking-wide text-[var(--sheet-on-accent)] transition-all duration-200 active:scale-[0.98]"
+            className="inline-flex h-[52px] items-center gap-2 rounded-full bg-[var(--wd-accent)] px-8 text-[12px] font-bold tracking-wide text-[var(--wd-on-accent)] transition-all duration-200 active:scale-[0.98]"
           >
             <PenLine className="h-4 w-4" aria-hidden />
             Tulis Ucapan

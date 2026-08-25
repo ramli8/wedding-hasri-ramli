@@ -13,10 +13,6 @@ function initialsOf(name: string): string {
     .join("");
 }
 
-function roleOf(side: string): string {
-  return side === "wanita" ? "Putri" : "Putra";
-}
-
 export function WeddingMempelai() {
   const { data } = useInvitation();
   if (!data) return null;
@@ -89,23 +85,19 @@ export function WeddingMempelai() {
                   </div>
                 </figure>
 
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <span className="wd-label">{roleOf(couple.side)}</span>
-                  {couple.instagram_handle ? (
-                    <>
-                      <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--wd-muted)]" />
-                      <a
-                        href={`https://instagram.com/${couple.instagram_handle.replace(/^@/, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors hover:text-[var(--wd-ink)]"
-                      >
-                        <Instagram className="h-3.5 w-3.5" />
-                        {couple.instagram_handle}
-                      </a>
-                    </>
-                  ) : null}
-                </div>
+                {couple.instagram_handle ? (
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <Instagram className="h-3.5 w-3.5 text-[var(--wd-muted)]" aria-hidden />
+                    <a
+                      href={`https://instagram.com/${couple.instagram_handle.replace(/^@/, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors hover:text-[var(--wd-ink)]"
+                    >
+                      {couple.instagram_handle}
+                    </a>
+                  </div>
+                ) : null}
               </WeddingReveal>
             ) : null,
           )}

@@ -16,14 +16,12 @@ import {
   MonitorPlay,
   Music,
   Palette,
-  UserRound,
 } from "lucide-react";
 
 const SECTION_GROUPS = [
   {
     label: "Konten & Tema",
     items: [
-      { href: "identitas", icon: UserRound, title: "Identitas", subtitle: "Tanggal & alamat kado" },
       { href: "cover", icon: Images, title: "Cover", subtitle: "Foto pembuka & tombol" },
       { href: "musik", icon: Music, title: "Musik", subtitle: "Musik latar" },
       { href: "pembuka", icon: BookOpenText, title: "Pembuka", subtitle: "Ayat suci & salam" },

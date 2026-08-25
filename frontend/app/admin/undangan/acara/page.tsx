@@ -6,7 +6,7 @@ import { EventsTab } from "@/src/presentation/components/admin/undangan/events-t
 export default function AcaraUndanganPage() {
   return (
     <UndanganSubPage title="Acara">
-      {() => <EventsTab />}
+      {(data) => <EventsTab data={data} />}
     </UndanganSubPage>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Building2, Inbox, Loader2, Plus, Smartphone, Trash2, X } from "lucide-react";
 import { toast } from "react-toastify";
+import { Card, CardContent } from "@/src/presentation/components/ui/card";
 import { Input } from "@/src/presentation/components/ui/input";
 import { Label } from "@/src/presentation/components/ui/label";
 import { Switch } from "@/src/presentation/components/ui/switch";
@@ -16,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/presentation/components/ui/alert-dialog";
+import { Textarea } from "@/src/presentation/components/ui/textarea";
 import {
   useBankAccounts,
   useCreateBankAccount,
@@ -25,11 +27,14 @@ import {
   useCreateEwallet,
   useUpdateEwallet,
   useDeleteEwallet,
+  useUpdateWedding,
 } from "@/src/application/hooks/use-wedding-query";
 import type {
   BankAccountResponse,
   EwalletResponse,
+  WeddingResponse,
 } from "@/src/domain/services/wedding.service";
+import { buildSaveRequest } from "./wedding-save";
 import { TabLoading } from "./tab-loading";
 import { MediaInput } from "./media-input";
 
@@ -59,8 +64,25 @@ const EMPTY_EWALLET_FORM: EwalletFormState = {
   qrCodeImageUrl: null,
 };
 
-export function GiftsTab() {
+export function GiftsTab({ data }: { data?: WeddingResponse }) {
   const [segment, setSegment] = useState<GiftSegment>("bank");
+  const updateWedding = useUpdateWedding();
+  const [address, setAddress] = useState(
+    data?.gift_shipping_address ?? ""
+  );
+  useEffect(() => {
+    setAddress(data?.gift_shipping_address ?? "");
+  }, [data?.gift_shipping_address]);
+
+  const handleAddressSave = () => {
+    updateWedding.mutate(
+      buildSaveRequest(data, { gift_shipping_address: address.trim() || null }),
+      {
+        onSuccess: () => toast.success("Alamat pengiriman kado tersimpan"),
+        onError: () => toast.error("Gagal menyimpan alamat pengiriman"),
+      }
+    );
+  };
 
   const { data: banks, isLoading: banksLoading } = useBankAccounts();
   const { data: ewallets, isLoading: ewalletsLoading } = useEwallets();
@@ -220,6 +242,34 @@ export function GiftsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Alamat pengiriman kado */}
+      <Card className="rounded-2xl border-border/60 shadow-sm">
+        <CardContent className="space-y-1.5 p-4">
+          <Label htmlFor="shipping-address" className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Alamat Pengiriman Kado (opsional)
+          </Label>
+          <Textarea
+            id="shipping-address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            rows={3}
+            placeholder="Alamat tujuan pengiriman kado fisik"
+            className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
+          />
+          <button
+            onClick={handleAddressSave}
+            disabled={updateWedding.isPending}
+            className="mt-1 inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-xl bg-primary text-[13px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+          >
+            {updateWedding.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Simpan Alamat"
+            )}
+          </button>
+        </CardContent>
+      </Card>
+
       {/* Segmented pill */}
       <div className="flex bg-muted/40 p-1 rounded-xl h-11">
         <button

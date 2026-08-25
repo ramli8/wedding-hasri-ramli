@@ -73,6 +73,7 @@ type WeddingEvent struct {
 	Name        string     `gorm:"type:varchar(255);not null"`
 	EventDate   *time.Time `gorm:"type:timestamptz;default:null"`
 	StartTime   *time.Time `gorm:"type:timestamptz;default:null"`
+	EndTime     *time.Time `gorm:"type:timestamptz;default:null"`
 	VenueName   *string    `gorm:"type:varchar(255);default:null"`
 	AddressFull *string    `gorm:"type:text;default:null"`
 	GmapsURL    *string    `gorm:"type:text;default:null"`

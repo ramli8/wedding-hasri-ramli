@@ -126,16 +126,21 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   if (!data) return null;
 
-  const events = [...data.events].sort((a, b) => {
-    const at = a.start_time ? new Date(a.start_time).getTime() : 0;
-    const bt = b.start_time ? new Date(b.start_time).getTime() : 0;
-    return at - bt;
-  });
+  // Urutan mengikuti admin (Naik/Turun); acara utama boleh berada di posisi mana pun.
+  const events = [...data.events].sort(
+    (a, b) =>
+      a.order_index - b.order_index ||
+      new Date(a.start_time ?? a.event_date ?? 0).getTime() -
+        new Date(b.start_time ?? b.event_date ?? 0).getTime()
+  );
   if (events.length === 0) return null;
 
   const main = events.find((e) => e.is_main_event) ?? events[0];
   const selected = main;
-  const mainTime = safeFormat(main.start_time, "HH.mm");
+  const mainTime = main.start_time
+    ? safeFormat(main.start_time, "HH.mm")
+    : "";
+  const mainEndTime = main.end_time ? safeFormat(main.end_time, "HH.mm") : "";
   const parsedCalendarDate = main.event_date ? new Date(main.event_date) : null;
   const hasValidCalendarDate =
     parsedCalendarDate !== null && !Number.isNaN(parsedCalendarDate.getTime());
@@ -190,7 +195,12 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
                 {safeFormat(main.event_date, "EEEE, d MMMM yyyy")}
               </p>
             ) : null}
-            {mainTime ? <p className="wd-label mt-1">Pukul {mainTime} WITA</p> : null}
+            {mainTime ? (
+              <p className="wd-label mt-1">
+                Pukul {mainTime}
+                {mainEndTime ? ` – ${mainEndTime}` : ""} WITA
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
@@ -199,7 +209,7 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
                 href={main.gmaps_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--wd-accent)] px-6 text-[12px] font-bold tracking-wide text-[var(--sheet-on-accent)] transition-all duration-200 active:scale-[0.97]"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--wd-accent)] px-6 text-[12px] font-bold tracking-wide text-[var(--wd-on-accent)] transition-all duration-200 active:scale-[0.97]"
               >
                 <MapPin className="h-4 w-4" />
                 Petunjuk Arah

@@ -28,44 +28,6 @@ const EMPTY_FOOTER: FooterContent = {
   social_links: [],
 };
 
-function toDisplayDateTime(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function formatDateTimeInput(raw: string): string {
-  const digits = raw.replace(/\D/g, "").slice(0, 12);
-  let out = digits.slice(0, 2);
-  if (digits.length > 2) out += `/${digits.slice(2, 4)}`;
-  if (digits.length > 4) out += `/${digits.slice(4, 8)}`;
-  if (digits.length > 8) out += ` ${digits.slice(8, 10)}`;
-  if (digits.length > 10) out += `:${digits.slice(10, 12)}`;
-  return out;
-}
-
-function parseDisplayDateTime(value: string): string | null | "invalid" {
-  if (!value.trim()) return null;
-  const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/);
-  if (!m) return "invalid";
-  const day = parseInt(m[1], 10);
-  const month = parseInt(m[2], 10);
-  const year = parseInt(m[3], 10);
-  const hour = parseInt(m[4], 10);
-  const minute = parseInt(m[5], 10);
-  if (hour > 23 || minute > 59) return "invalid";
-  const d = new Date(year, month - 1, day, hour, minute);
-  if (
-    d.getFullYear() !== year ||
-    d.getMonth() !== month - 1 ||
-    d.getDate() !== day
-  ) {
-    return "invalid";
-  }
-  return d.toISOString();
-}
-
 export function LivestreamFooterForm({ data }: { data?: WeddingResponse }) {
   const updateWedding = useUpdateWedding();
   const [live, setLive] = useState<LivestreamContent>(EMPTY_LIVE);
@@ -77,15 +39,31 @@ export function LivestreamFooterForm({ data }: { data?: WeddingResponse }) {
     if (data && !initialized) {
       setLive({ ...EMPTY_LIVE, ...(data.content?.livestream ?? {}) });
       setFooter({ ...EMPTY_FOOTER, ...(data.content?.footer ?? {}) });
-      setLiveDatetime(toDisplayDateTime(data.content?.livestream?.datetime ?? null));
+      const iso = data.content?.livestream?.datetime ?? null;
+    if (iso) {
+      const d = new Date(iso);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setLiveDatetime(
+        Number.isNaN(d.getTime())
+          ? ""
+          : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      );
+    } else {
+      setLiveDatetime("");
+    }
       setInitialized(true);
     }
   }, [data, initialized]);
 
   const handleSave = () => {
-    const parsed = parseDisplayDateTime(liveDatetime);
+    const parsed = liveDatetime
+      ? (() => {
+          const d = new Date(liveDatetime);
+          return Number.isNaN(d.getTime()) ? "invalid" : d.toISOString();
+        })()
+      : null;
     if (parsed === "invalid") {
-      toast.error("Waktu tidak valid (format: dd/mm/yyyy 00:00)");
+      toast.error("Waktu streaming tidak valid");
       return;
     }
     updateWedding.mutate(
@@ -133,10 +111,9 @@ export function LivestreamFooterForm({ data }: { data?: WeddingResponse }) {
               </Label>
               <Input
                 id="ls-datetime"
-                inputMode="numeric"
+                type="datetime-local"
                 value={liveDatetime}
-                onChange={(e) => setLiveDatetime(formatDateTimeInput(e.target.value))}
-                placeholder="dd/mm/yyyy 00:00"
+                onChange={(e) => setLiveDatetime(e.target.value)}
                 className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
               />
             </div>

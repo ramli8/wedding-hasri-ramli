@@ -6,7 +6,7 @@ import { GiftsTab } from "@/src/presentation/components/admin/undangan/gifts-tab
 export default function HadiahUndanganPage() {
   return (
     <UndanganSubPage title="Hadiah">
-      {() => <GiftsTab />}
+      {(data) => <GiftsTab data={data} />}
     </UndanganSubPage>
   );
 }

@@ -13,11 +13,15 @@ import { cn } from "@/src/lib/utils";
 
 function splitDateParts(iso: string | null): { day: string; month: string; year: string } {
   if (!iso) return { day: "--", month: "--", year: "--" };
-  const [datePart] = iso.split("T");
-  const segments = datePart?.split("-") ?? [];
-  if (segments.length < 3) return { day: "--", month: "--", year: "--" };
-  const [, month, day] = segments;
-  return { day, month, year: segments[0].slice(-2) };
+  // Baca lewat getter lokal (bukan potong ISO UTC) agar tanggal sesuai zona pengguna.
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { day: "--", month: "--", year: "--" };
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    day: pad(d.getDate()),
+    month: pad(d.getMonth() + 1),
+    year: String(d.getFullYear()).slice(-2),
+  };
 }
 
 function formatDateLabel(iso: string | null): string {

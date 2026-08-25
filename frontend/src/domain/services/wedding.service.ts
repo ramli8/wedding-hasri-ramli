@@ -127,6 +127,7 @@ export interface EventResponse {
   name: string;
   event_date: string | null;
   start_time: string | null;
+  end_time: string | null;
   venue_name: string | null;
   address_full: string | null;
   gmaps_url: string | null;
@@ -141,6 +142,7 @@ export interface CreateEventRequest {
   name: string;
   event_date?: string | null;
   start_time?: string | null;
+  end_time?: string | null;
   venue_name?: string | null;
   address_full?: string | null;
   gmaps_url?: string | null;
@@ -153,6 +155,7 @@ export interface UpdateEventRequest {
   name?: string;
   event_date?: string | null;
   start_time?: string | null;
+  end_time?: string | null;
   venue_name?: string | null;
   address_full?: string | null;
   gmaps_url?: string | null;

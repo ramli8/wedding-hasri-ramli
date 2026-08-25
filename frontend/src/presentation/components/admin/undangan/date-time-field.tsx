@@ -5,10 +5,10 @@ import { Label } from "@/src/presentation/components/ui/label";
 
 interface DateTimeFieldProps {
   id?: string;
-  label: string;
+  label?: string;
   value: string;
   onChange: (value: string) => void;
-  type?: "date" | "datetime-local";
+  type?: "date" | "datetime-local" | "time";
   placeholder?: string;
 }
 
@@ -22,9 +22,11 @@ export function DateTimeField({
 }: DateTimeFieldProps) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
-        {label}
-      </Label>
+      {label ? (
+        <Label htmlFor={id} className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">
+          {label}
+        </Label>
+      ) : null}
       <Input
         id={id}
         type={type}

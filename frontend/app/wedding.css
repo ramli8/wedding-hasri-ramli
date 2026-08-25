@@ -12,6 +12,7 @@
   --wd-line-strong: rgba(244, 244, 244, 0.32);
   --wd-line-inverse: rgba(15, 15, 16, 0.4);
   --wd-accent: #ece9e2;
+  --wd-on-accent: #141413;
   --wd-accent-soft: rgba(236, 233, 226, 0.1);
   --wd-accent-line: rgba(236, 233, 226, 0.35);
   --wd-font-serif: var(--font-cormorant), serif;

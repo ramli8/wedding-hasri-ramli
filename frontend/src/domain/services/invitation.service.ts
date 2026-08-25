@@ -74,6 +74,8 @@ export interface InvitationEvent {
   name: string;
   event_date: string | null;
   start_time: string | null;
+  end_time: string | null;
+  order_index: number;
   venue_name: string | null;
   address_full: string | null;
   gmaps_url: string | null;

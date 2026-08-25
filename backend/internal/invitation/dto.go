@@ -65,6 +65,7 @@ type CreateEventRequest struct {
 	Name        string     `json:"name" validate:"required,min=1,max=255"`
 	EventDate   *time.Time `json:"event_date"`
 	StartTime   *time.Time `json:"start_time"`
+	EndTime     *time.Time `json:"end_time"`
 	VenueName   *string    `json:"venue_name" validate:"omitempty,max=255"`
 	AddressFull *string    `json:"address_full"`
 	GmapsURL    *string    `json:"gmaps_url"`
@@ -77,6 +78,7 @@ type UpdateEventRequest struct {
 	Name        *string    `json:"name" validate:"omitempty,min=1,max=255"`
 	EventDate   *time.Time `json:"event_date"`
 	StartTime   *time.Time `json:"start_time"`
+	EndTime     *time.Time `json:"end_time"`
 	VenueName   *string    `json:"venue_name" validate:"omitempty,max=255"`
 	AddressFull *string    `json:"address_full"`
 	GmapsURL    *string    `json:"gmaps_url"`
@@ -90,6 +92,7 @@ type EventResponse struct {
 	Name        string     `json:"name"`
 	EventDate   *time.Time `json:"event_date"`
 	StartTime   *time.Time `json:"start_time"`
+	EndTime     *time.Time `json:"end_time"`
 	VenueName   *string    `json:"venue_name"`
 	AddressFull *string    `json:"address_full"`
 	GmapsURL    *string    `json:"gmaps_url"`
@@ -377,11 +380,13 @@ type PublicEvent struct {
 	Name        string     `json:"name"`
 	EventDate   *time.Time `json:"event_date"`
 	StartTime   *time.Time `json:"start_time"`
+	EndTime     *time.Time `json:"end_time"`
 	VenueName   *string    `json:"venue_name"`
 	AddressFull *string    `json:"address_full"`
 	GmapsURL    *string    `json:"gmaps_url"`
 	Notes       *string    `json:"notes"`
 	IsMainEvent bool       `json:"is_main_event"`
+	OrderIndex  int        `json:"order_index"`
 }
 
 type PublicStory struct {

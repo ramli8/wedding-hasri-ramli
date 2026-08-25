@@ -269,6 +269,7 @@ func (s *service) CreateEvent(ctx context.Context, req CreateEventRequest) (Even
 		Name:        req.Name,
 		EventDate:   req.EventDate,
 		StartTime:   req.StartTime,
+		EndTime:     req.EndTime,
 		VenueName:   req.VenueName,
 		AddressFull: req.AddressFull,
 		GmapsURL:    req.GmapsURL,
@@ -322,12 +323,10 @@ func (s *service) UpdateEvent(ctx context.Context, id string, req UpdateEventReq
 	if req.Name != nil {
 		event.Name = *req.Name
 	}
-	if req.EventDate != nil {
-		event.EventDate = req.EventDate
-	}
-	if req.StartTime != nil {
-		event.StartTime = req.StartTime
-	}
+	// Field waktu dioverwrite langsung agar admin bisa mengosongkannya.
+	event.EventDate = req.EventDate
+	event.StartTime = req.StartTime
+	event.EndTime = req.EndTime
 	if req.VenueName != nil {
 		event.VenueName = req.VenueName
 	}
@@ -1127,11 +1126,13 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 			Name:        e.Name,
 			EventDate:   e.EventDate,
 			StartTime:   e.StartTime,
+			EndTime:     e.EndTime,
 			VenueName:   e.VenueName,
 			AddressFull: e.AddressFull,
 			GmapsURL:    e.GmapsURL,
 			Notes:       e.Notes,
 			IsMainEvent: e.IsMainEvent,
+			OrderIndex:  e.OrderIndex,
 		})
 		if e.IsMainEvent && e.EventDate != nil {
 			target := *e.EventDate
@@ -1275,6 +1276,7 @@ func (s *service) mapEventToResponse(e *models.WeddingEvent) EventResponse {
 		Name:        e.Name,
 		EventDate:   e.EventDate,
 		StartTime:   e.StartTime,
+		EndTime:     e.EndTime,
 		VenueName:   e.VenueName,
 		AddressFull: e.AddressFull,
 		GmapsURL:    e.GmapsURL,

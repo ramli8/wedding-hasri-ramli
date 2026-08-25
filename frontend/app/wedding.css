@@ -221,34 +221,6 @@
   }
 }
 
-/* ===== Cover ===== */
-
-.wd-scroll-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  animation: wd-scroll-bob 2.2s var(--wd-ease) infinite;
-}
-
-@keyframes wd-scroll-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translateY(6px);
-    opacity: 0.5;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wd-scroll-hint {
-    animation: none;
-  }
-}
-
 /* ===== Motion ===== */
 
 .wd-reveal {

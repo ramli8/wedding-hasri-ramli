@@ -10,7 +10,10 @@ export function WeddingPenutup() {
 
   const { wedding, couples } = data;
   const footer = wedding.content.footer;
-  const photo = wedding.content.cover.photos.at(-1);
+  const photo =
+    wedding.content.cover.image_desktop ||
+    wedding.content.cover.image_tablet ||
+    wedding.content.cover.image_mobile;
   const bride = couples.find((c) => c.side === "wanita")?.full_name;
   const groom = couples.find((c) => c.side === "pria")?.full_name;
   const brideName = bride ?? wedding.bride_name;

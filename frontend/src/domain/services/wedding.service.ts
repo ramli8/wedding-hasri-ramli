@@ -3,8 +3,12 @@ import apiClient from './api-client';
 // --- Shared content types (mirrors backend WeddingContent) ---
 
 export interface CoverContent {
-  photos: string[];
+  image_desktop: string;
+  image_tablet: string;
+  image_mobile: string;
   button_text: string;
+  save_the_date_label?: string | null;
+  guest_greeting_label?: string | null;
 }
 
 export interface MusicContent {
@@ -48,7 +52,12 @@ export interface WeddingContent {
 }
 
 export const DEFAULT_WEDDING_CONTENT: WeddingContent = {
-  cover: { photos: [], button_text: 'Buka Undangan' },
+  cover: {
+    image_desktop: '',
+    image_tablet: '',
+    image_mobile: '',
+    button_text: 'Buka Undangan',
+  },
   music: { file_url: null },
   opening: { eyebrow: null, arabic: null, translation: null, source: null, greeting: null },
   dress_code: { description: null, color_palette: [], image_url: null },
@@ -84,6 +93,7 @@ export interface CoupleResponse {
   id: string;
   side: CoupleSide;
   full_name: string;
+  nickname: string | null;
   gelar: string | null;
   photo_url: string | null;
   instagram_handle: string | null;
@@ -94,6 +104,7 @@ export interface CoupleResponse {
 export interface CreateCoupleRequest {
   side: CoupleSide;
   full_name: string;
+  nickname?: string | null;
   gelar?: string | null;
   photo_url?: string | null;
   instagram_handle?: string | null;
@@ -102,6 +113,7 @@ export interface CreateCoupleRequest {
 export interface UpdateCoupleRequest {
   side?: CoupleSide;
   full_name?: string;
+  nickname?: string | null;
   gelar?: string | null;
   photo_url?: string | null;
   instagram_handle?: string | null;

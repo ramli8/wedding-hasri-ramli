@@ -32,6 +32,7 @@ type WeddingResponse struct {
 type CreateCoupleRequest struct {
 	Side            string  `json:"side" validate:"required,oneof=pria wanita"`
 	FullName        string  `json:"full_name" validate:"required,min=1,max=255"`
+	Nickname        *string `json:"nickname" validate:"omitempty,max=100"`
 	Gelar           *string `json:"gelar" validate:"omitempty,max=100"`
 	PhotoURL        *string `json:"photo_url"`
 	InstagramHandle *string `json:"instagram_handle" validate:"omitempty,max=50"`
@@ -40,6 +41,7 @@ type CreateCoupleRequest struct {
 type UpdateCoupleRequest struct {
 	Side            string  `json:"side" validate:"omitempty,oneof=pria wanita"`
 	FullName        *string `json:"full_name" validate:"omitempty,min=1,max=255"`
+	Nickname        *string `json:"nickname" validate:"omitempty,max=100"`
 	Gelar           *string `json:"gelar" validate:"omitempty,max=100"`
 	PhotoURL        *string `json:"photo_url"`
 	InstagramHandle *string `json:"instagram_handle" validate:"omitempty,max=50"`
@@ -49,6 +51,7 @@ type CoupleResponse struct {
 	ID              string    `json:"id"`
 	Side            string    `json:"side"`
 	FullName        string    `json:"full_name"`
+	Nickname        *string   `json:"nickname"`
 	Gelar           *string   `json:"gelar"`
 	PhotoURL        *string   `json:"photo_url"`
 	InstagramHandle *string   `json:"instagram_handle"`
@@ -274,8 +277,12 @@ type SectionResponse struct {
 // --- Public invitation payload DTOs ---
 
 type CoverContent struct {
-	Photos     []string `json:"photos"`
-	ButtonText string   `json:"button_text"`
+	ImageDesktop       string  `json:"image_desktop"`
+	ImageTablet        string  `json:"image_tablet"`
+	ImageMobile        string  `json:"image_mobile"`
+	ButtonText         string  `json:"button_text"`
+	SaveTheDateLabel   *string `json:"save_the_date_label"`
+	GuestGreetingLabel *string `json:"guest_greeting_label"`
 }
 
 type MusicContent struct {
@@ -335,9 +342,6 @@ func ParseWeddingContent(raw models.JSONMap) WeddingContent {
 		return content
 	}
 	_ = json.Unmarshal(b, &content)
-	if content.Cover.Photos == nil {
-		content.Cover.Photos = []string{}
-	}
 	if content.Cover.ButtonText == "" {
 		content.Cover.ButtonText = "Buka Undangan"
 	}
@@ -361,6 +365,7 @@ type PublicWedding struct {
 type PublicCouple struct {
 	Side            string  `json:"side"`
 	FullName        string  `json:"full_name"`
+	Nickname        *string `json:"nickname"`
 	Gelar           *string `json:"gelar"`
 	PhotoURL        *string `json:"photo_url"`
 	InstagramHandle *string `json:"instagram_handle"`

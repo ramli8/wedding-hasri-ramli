@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 export interface InvitationCoverContent {
-  photos: string[];
+  image_desktop: string | null;
+  image_tablet: string | null;
+  image_mobile: string | null;
   button_text: string;
+  save_the_date_label: string | null;
+  guest_greeting_label: string | null;
 }
 
 export interface InvitationMusicContent {
@@ -56,6 +60,7 @@ export interface InvitationWedding {
 export interface InvitationCouple {
   side: string;
   full_name: string;
+  nickname: string | null;
   gelar: string | null;
   photo_url: string | null;
   instagram_handle: string | null;

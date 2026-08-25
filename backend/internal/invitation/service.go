@@ -166,6 +166,7 @@ func (s *service) CreateCouple(ctx context.Context, req CreateCoupleRequest) (Co
 	couple := &models.WeddingCouple{
 		Side:            req.Side,
 		FullName:        req.FullName,
+		Nickname:        req.Nickname,
 		Gelar:           req.Gelar,
 		PhotoURL:        req.PhotoURL,
 		InstagramHandle: req.InstagramHandle,
@@ -219,6 +220,7 @@ func (s *service) UpdateCouple(ctx context.Context, id string, req UpdateCoupleR
 	if req.FullName != nil {
 		couple.FullName = *req.FullName
 	}
+	couple.Nickname = req.Nickname
 	couple.Gelar = req.Gelar
 	couple.PhotoURL = req.PhotoURL
 	couple.InstagramHandle = req.InstagramHandle
@@ -1111,6 +1113,7 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 		res.Couples = append(res.Couples, PublicCouple{
 			Side:            c.Side,
 			FullName:        c.FullName,
+			Nickname:        c.Nickname,
 			Gelar:           c.Gelar,
 			PhotoURL:        c.PhotoURL,
 			InstagramHandle: c.InstagramHandle,
@@ -1257,6 +1260,7 @@ func (s *service) mapCoupleToResponse(c *models.WeddingCouple) CoupleResponse {
 		ID:              c.ID,
 		Side:            c.Side,
 		FullName:        c.FullName,
+		Nickname:        c.Nickname,
 		Gelar:           c.Gelar,
 		PhotoURL:        c.PhotoURL,
 		InstagramHandle: c.InstagramHandle,

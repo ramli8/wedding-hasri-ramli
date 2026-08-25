@@ -42,11 +42,22 @@ export function WeddingCover() {
   if (!data || hidden || (opened && !exiting)) return null;
 
   const { wedding, guest } = data;
-  const photos = wedding.content.cover.photos;
+  const cover = wedding.content.cover;
+  const { image_desktop, image_tablet, image_mobile } = cover;
+  // Fallback berantai: slot kosong memakai gambar perangkat lain yang tersedia.
+  const mobileSrc = image_mobile || image_tablet || image_desktop || "";
+  const tabletSrc = image_tablet || mobileSrc;
+  const desktopSrc = image_desktop || mobileSrc;
   const { day, month, year } = splitDateParts(wedding.wedding_date);
   const dateLabel = formatDateLabel(wedding.wedding_date);
-  const mainEvent = data.events.find((event) => event.is_main_event) ?? data.events[0];
-  const venueName = mainEvent?.venue_name ?? null;
+  // Baris kecil di bawah tanggal & sapaan: dikosongkan admin → tidak dirender.
+  const saveTheDateLabel = cover.save_the_date_label || "";
+  const guestGreetingLabel = cover.guest_greeting_label || "";
+  // Nama panggilan untuk tampilan besar; fallback ke nama lengkap.
+  const groomDisplay =
+    data.couples.find((c) => c.side === "pria")?.nickname || wedding.groom_name;
+  const brideDisplay =
+    data.couples.find((c) => c.side === "wanita")?.nickname || wedding.bride_name;
 
   const handleOpen = () => {
     if (exiting) return;
@@ -77,12 +88,12 @@ export function WeddingCover() {
     >
       <div className="relative flex min-h-dvh flex-col">
         <div className="absolute inset-0 overflow-hidden" aria-hidden>
-          {photos[0] ? (
+          {mobileSrc ? (
             <picture>
-              <source media="(min-width:1024px)" srcSet={photos[2] ?? photos[0]} />
-              <source media="(min-width:640px)" srcSet={photos[1] ?? photos[0]} />
+              <source media="(min-width:1024px)" srcSet={desktopSrc} />
+              <source media="(min-width:640px)" srcSet={tabletSrc} />
               <img
-                src={photos[0]}
+                src={mobileSrc}
                 alt="Foto prewedding Hasri & Ramli"
                 fetchPriority="high"
                 decoding="async"
@@ -96,7 +107,7 @@ export function WeddingCover() {
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         </div>
 
-        <div className="relative z-10 flex min-h-dvh flex-col px-6 pb-16 pt-12 text-center md:px-12 lg:pb-8">
+        <div className="relative z-10 flex min-h-dvh flex-col px-6 pb-12 pt-12 text-center md:px-12">
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <div
               className="wd-display text-[clamp(2.75rem,13dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,14dvh,9.5rem)]"
@@ -121,7 +132,7 @@ export function WeddingCover() {
           <div className="mx-auto w-full max-w-[64rem]">
             <div className="flex flex-col items-center gap-1.5">
               <p className="wd-display text-[2.25rem] leading-none text-white md:text-[3rem] lg:text-[3.5rem]">
-                {wedding.bride_name}
+                {brideDisplay}
               </p>
               <span
                 className="wd-script text-[1.75rem] leading-none text-white/85 md:text-[2rem] lg:text-[2.25rem]"
@@ -130,7 +141,7 @@ export function WeddingCover() {
                 &amp;
               </span>
               <p className="wd-display text-[2.25rem] leading-none text-white md:text-[3rem] lg:text-[3.5rem]">
-                {wedding.groom_name}
+                {groomDisplay}
               </p>
               <div className="mt-4 flex flex-col items-center gap-0.5 text-center">
                 {dateLabel ? (
@@ -138,15 +149,17 @@ export function WeddingCover() {
                     {dateLabel}
                   </p>
                 ) : null}
-                <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">
-                  {venueName ?? "Save The Date"}
-                </p>
+                {saveTheDateLabel ? (
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">
+                    {saveTheDateLabel}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col items-center gap-4">
+            <div className="mt-6 flex flex-col items-center gap-4">
               <p className="text-[12px] tracking-wide text-white/70">
-                Kepada Yth.{" "}
+                {guestGreetingLabel ? `${guestGreetingLabel} ` : ""}
                 <span className="font-semibold text-white">
                   {guest?.name ?? "Bapak/Ibu/Saudara/i"}
                 </span>
@@ -161,16 +174,6 @@ export function WeddingCover() {
               </button>
             </div>
           </div>
-        </div>
-
-        <div
-          className="wd-scroll-hint absolute inset-x-0 bottom-3 z-10 flex flex-col items-center gap-1 text-white/60 [@media(max-height:620px)]:hidden"
-          aria-hidden
-        >
-          <span className="text-[9px] font-semibold uppercase tracking-[0.32em]">
-            Scroll
-          </span>
-          <ChevronDown className="h-3.5 w-3.5" />
         </div>
       </div>
     </section>

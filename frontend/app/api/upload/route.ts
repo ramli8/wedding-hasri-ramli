@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
@@ -106,4 +106,34 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ path: `/${relativeDir}/${fileName}` }, { status: 201 });
+}
+
+// Hapus file hasil upload (dipakai saat admin mengganti/mengosongkan slot media
+// agar folder public/uploads tidak membengkak).
+export async function DELETE(request: NextRequest) {
+  if (!(await verifyToken(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(request.url).searchParams.get("url") ?? "";
+  if (!url.startsWith("/uploads/") || url.includes("..")) {
+    return NextResponse.json(
+      { error: "URL file tidak valid — harus diawali /uploads/" },
+      { status: 400 }
+    );
+  }
+
+  const absolute = path.join(process.cwd(), "public", url.slice(1));
+  const uploadsRoot = path.join(process.cwd(), "public", "uploads");
+  if (!absolute.startsWith(uploadsRoot + path.sep)) {
+    return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
+  }
+
+  try {
+    await unlink(absolute);
+  } catch {
+    // File memang sudah tidak ada — anggap berhasil.
+  }
+
+  return NextResponse.json({ ok: true });
 }

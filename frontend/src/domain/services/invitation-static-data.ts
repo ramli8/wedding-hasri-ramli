@@ -7,14 +7,12 @@ export const invitationStaticData: InvitationDetail = {
     wedding_date: "2026-12-12T20:00:00+07:00",
     content: {
       cover: {
-        photos: [
-          "/images/cover-1.png",
-          "/images/cover-2.png",
-          "/images/cover-3.png",
-          "/images/cover-4.png",
-          "/images/cover-5.png",
-        ],
+        image_desktop: "/images/cover-1.png",
+        image_tablet: "/images/cover-3.png",
+        image_mobile: "/images/cover-5.png",
         button_text: "Buka Undangan",
+        save_the_date_label: null,
+        guest_greeting_label: null,
       },
       music: { file_url: "/audio/musik-undangan.mp3" },
       opening: {
@@ -53,6 +51,7 @@ export const invitationStaticData: InvitationDetail = {
     {
       side: "wanita",
       full_name: "Hasri",
+      nickname: null,
       gelar: null,
       photo_url: "/images/cover-2.png",
       instagram_handle: null,
@@ -61,6 +60,7 @@ export const invitationStaticData: InvitationDetail = {
     {
       side: "pria",
       full_name: "Ramli",
+      nickname: null,
       gelar: null,
       photo_url: "/images/cover-3.png",
       instagram_handle: null,

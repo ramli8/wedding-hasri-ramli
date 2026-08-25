@@ -56,6 +56,7 @@ type WeddingCouple struct {
 	ID              string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Side            string    `gorm:"type:wedding_side;not null;uniqueIndex"`
 	FullName        string    `gorm:"type:varchar(255);not null"`
+	Nickname        *string   `gorm:"type:varchar(100);default:null"`
 	Gelar           *string   `gorm:"type:varchar(100);default:null"`
 	PhotoURL        *string   `gorm:"type:text;default:null"`
 	InstagramHandle *string   `gorm:"type:varchar(50);default:null"`

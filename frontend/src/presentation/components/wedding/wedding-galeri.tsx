@@ -89,9 +89,7 @@ export function WeddingGaleri() {
     <section id="galeri" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-8 text-center">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70">            Momen Bahagia</p>
           <h2 className="wd-display text-[2.25rem]">Galeri</h2>
-          <div className="h-px w-10 bg-[var(--wd-line-strong)]" aria-hidden />
         </WeddingReveal>
 
         <WeddingReveal delay={100} className="w-full">

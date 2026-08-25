@@ -14,9 +14,9 @@ export function Providers({ children }: { children: ReactNode }) {
     const { locale, hasHydrated } = useLocaleStore();
     const [messages, setMessages] = useState<any>(null);
     const pathname = usePathname();
-    // Undangan /wedding tidak memakai terjemahan dinamis —
+    // Undangan ("/") tidak memakai terjemahan dinamis —
     // jangan tahan render di balik splash loading locale.
-    const isInvitationRoute = pathname?.startsWith('/wedding') ?? false;
+    const isInvitationRoute = pathname === "/";
 
     useEffect(() => {
         if (!hasHydrated) {

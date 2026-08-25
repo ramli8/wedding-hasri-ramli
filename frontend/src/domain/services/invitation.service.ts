@@ -79,6 +79,7 @@ export interface InvitationStory {
   event_date: string | null;
   title: string;
   description: string | null;
+  detail: string | null;
   image_url: string | null;
 }
 
@@ -109,6 +110,10 @@ export interface InvitationWishlistItem {
   item_image_url: string | null;
   item_link: string | null;
   is_claimed: boolean;
+  /** Total unit yang tersedia. Fallback: 1 */
+  stock_total?: number;
+  /** Jumlah unit yang sudah diklaim tamu lain. Fallback: is_claimed ? 1 : 0 */
+  claimed_count?: number;
 }
 
 export interface InvitationSectionMeta {
@@ -167,6 +172,25 @@ export interface GuestbookResponse {
   total: number;
 }
 
+export interface GuestbookThreadMessage {
+  id: string;
+  role: "guest" | "couple";
+  text: string;
+  created_at: string;
+}
+
+export interface GuestbookThread {
+  id: string;
+  guest_name: string;
+  messages: GuestbookThreadMessage[];
+}
+
+export interface GuestbookThreadsResponse {
+  threads: GuestbookThread[];
+  total_messages: number;
+  total_threads: number;
+}
+
 export interface SubmitGuestbookPayload {
   guest_id?: string | null;
   guest_name: string;
@@ -177,102 +201,206 @@ function hoursAgo(hours: number): string {
   return new Date(Date.now() - hours * 3_600_000).toISOString();
 }
 
-const DUMMY_GUESTBOOK: GuestbookEntry[] = [
+const DUMMY_THREADS: GuestbookThread[] = [
   {
-    id: "dummy-gb-01",
+    id: "dummy-th-01",
     guest_name: "Andi Pratama",
-    message_text:
-      "Barakallahu laka wa baraka 'alaika. Selamat menempuh hidup baru, semoga menjadi keluarga sakinah, mawaddah, warahmah.",
-    reply_text: null,
-    created_at: hoursAgo(1),
+    messages: [
+      {
+        id: "dummy-th-01-m1",
+        role: "guest",
+        text: "Barakallahu laka wa baraka 'alaika. Selamat menempuh hidup baru, semoga menjadi keluarga sakinah, mawaddah, warahmah.",
+        created_at: hoursAgo(1),
+      },
+    ],
   },
   {
-    id: "dummy-gb-02",
+    id: "dummy-th-02",
     guest_name: "Sari Wulandari",
-    message_text:
-      "MasyaAllah, akhirnya! Barakallah Hasri & Ramli. Semoga langgeng sampai jannah-Nya Allah.",
-    reply_text: null,
-    created_at: hoursAgo(5),
+    messages: [
+      {
+        id: "dummy-th-02-m1",
+        role: "guest",
+        text: "MasyaAllah, akhirnya! Barakallah Hasri & Ramli. Semoga langgeng sampai jannah-Nya Allah.",
+        created_at: hoursAgo(5),
+      },
+    ],
   },
   {
-    id: "dummy-gb-03",
+    id: "dummy-th-03",
     guest_name: "Budi Santoso",
-    message_text:
-      "Selamat atas pernikahannya! Turut berbahagia untuk kalian berdua.",
-    reply_text: "Terima kasih banyak, Bang Budi. Doanya kami bawa pulang.",
-    created_at: hoursAgo(9),
+    messages: [
+      {
+        id: "dummy-th-03-m1",
+        role: "guest",
+        text: "Selamat atas pernikahannya! Turut berbahagia untuk kalian berdua.",
+        created_at: hoursAgo(9),
+      },
+      {
+        id: "dummy-th-03-m2",
+        role: "couple",
+        text: "Terima kasih banyak, Bang Budi. Doanya kami bawa pulang.",
+        created_at: hoursAgo(8),
+      },
+      {
+        id: "dummy-th-03-m3",
+        role: "guest",
+        text: "Sama-sama! Doanya kami terima dengan senang hati. Sampai ketemu di hari H ya!",
+        created_at: hoursAgo(7),
+      },
+    ],
   },
   {
-    id: "dummy-gb-04",
+    id: "dummy-th-04",
     guest_name: "Dewi Lestari",
-    message_text:
-      "Congrats! Dari jaman kuliah sampai akhirnya ke pelaminan juga. Bahagia selalu berdua!",
-    reply_text: null,
-    created_at: hoursAgo(14),
+    messages: [
+      {
+        id: "dummy-th-04-m1",
+        role: "guest",
+        text: "Congrats! Dari jaman kuliah sampai akhirnya ke pelaminan juga. Bahagia selalu berdua!",
+        created_at: hoursAgo(14),
+      },
+    ],
   },
   {
-    id: "dummy-gb-05",
+    id: "dummy-th-05",
     guest_name: "Keluarga Besar Hj. Maryam",
-    message_text:
-      "Turut berbahagia. Semoga Allah memberkahi hubungan kalian dan dikaruniai keturunan yang sholeh & sholehah.",
-    reply_text: null,
-    created_at: hoursAgo(22),
+    messages: [
+      {
+        id: "dummy-th-05-m1",
+        role: "guest",
+        text: "Turut berbahagia. Semoga Allah memberkahi hubungan kalian dan dikaruniai keturunan yang sholeh & sholehah.",
+        created_at: hoursAgo(22),
+      },
+    ],
   },
   {
-    id: "dummy-gb-06",
+    id: "dummy-th-06",
     guest_name: "Rizky Ramadhan",
-    message_text: "Selamat menempuh hidup baru, bro! Jangan lupa traktiran.",
-    reply_text: "Siap, makasih ya! Traktirannya kita ganti katering resepsi.",
-    created_at: hoursAgo(30),
+    messages: [
+      {
+        id: "dummy-th-06-m1",
+        role: "guest",
+        text: "Selamat menempuh hidup baru, bro! Jangan lupa traktiran.",
+        created_at: hoursAgo(30),
+      },
+      {
+        id: "dummy-th-06-m2",
+        role: "couple",
+        text: "Siap, makasih ya! Traktirannya kita ganti katering resepsi.",
+        created_at: hoursAgo(29),
+      },
+    ],
   },
   {
-    id: "dummy-gb-07",
+    id: "dummy-th-07",
     guest_name: "Fitri Handayani",
-    message_text:
-      "MasyaAllah cantik banget undangannya. Barakallah, semoga samawa!",
-    reply_text: null,
-    created_at: hoursAgo(46),
+    messages: [
+      {
+        id: "dummy-th-07-m1",
+        role: "guest",
+        text: "MasyaAllah cantik banget undangannya. Barakallah, semoga samawa!",
+        created_at: hoursAgo(46),
+      },
+    ],
   },
   {
-    id: "dummy-gb-08",
+    id: "dummy-th-08",
     guest_name: "Agus Wijaya",
-    message_text:
-      "Barakallah! Semoga rezeki melimpah dan rumah tangga penuh keberkahan.",
-    reply_text: null,
-    created_at: hoursAgo(60),
+    messages: [
+      {
+        id: "dummy-th-08-m1",
+        role: "guest",
+        text: "Barakallah! Semoga rezeki melimpah dan rumah tangga penuh keberkahan.",
+        created_at: hoursAgo(60),
+      },
+    ],
   },
   {
-    id: "dummy-gb-09",
+    id: "dummy-th-09",
     guest_name: "Nadia Putri",
-    message_text:
-      "Akhirnya sahur bareng bareng diganti acara resepsian. Selamat ya Hasri & Ramli, doa terbaik dari saya sekeluarga.",
-    reply_text: null,
-    created_at: hoursAgo(80),
+    messages: [
+      {
+        id: "dummy-th-09-m1",
+        role: "guest",
+        text: "Akhirnya sahur bareng bareng diganti acara resepsian. Selamat ya Hasri & Ramli, doa terbaik dari saya sekeluarga.",
+        created_at: hoursAgo(80),
+      },
+    ],
   },
   {
-    id: "dummy-gb-10",
+    id: "dummy-th-10",
     guest_name: "Hendra Gunawan",
-    message_text: "Selamat menempuh hidup baru! Semoga langgeng dan bahagia selalu.",
-    reply_text: null,
-    created_at: hoursAgo(110),
+    messages: [
+      {
+        id: "dummy-th-10-m1",
+        role: "guest",
+        text: "Selamat menempuh hidup baru! Semoga langgeng dan bahagia selalu.",
+        created_at: hoursAgo(110),
+      },
+    ],
   },
   {
-    id: "dummy-gb-11",
+    id: "dummy-th-11",
     guest_name: "Ibu Rina & Keluarga",
-    message_text:
-      "Barakallah, anak-anak baik kami. Semoga menjadi pasangan yang saling menguatkan dalam kebaikan.",
-    reply_text: null,
-    created_at: hoursAgo(150),
+    messages: [
+      {
+        id: "dummy-th-11-m1",
+        role: "guest",
+        text: "Barakallah, anak-anak baik kami. Semoga menjadi pasangan yang saling menguatkan dalam kebaikan.",
+        created_at: hoursAgo(150),
+      },
+    ],
   },
   {
-    id: "dummy-gb-12",
+    id: "dummy-th-12",
     guest_name: "Tim Basket SMA 5",
-    message_text:
-      "Wih, kapten kita nikah duluan! Selamat ya bro, semoga samawa. Satu tim hadir semua nanti!",
-    reply_text: "Jangan lupa bawa jersey lengkap ya, ada dresscode!",
-    created_at: hoursAgo(200),
+    messages: [
+      {
+        id: "dummy-th-12-m1",
+        role: "guest",
+        text: "Wih, kapten kita nikah duluan! Selamat ya bro, semoga samawa. Satu tim hadir semua nanti!",
+        created_at: hoursAgo(200),
+      },
+      {
+        id: "dummy-th-12-m2",
+        role: "couple",
+        text: "Jangan lupa bawa jersey lengkap ya, ada dresscode!",
+        created_at: hoursAgo(199),
+      },
+    ],
   },
 ];
+
+function flattenToThreads(entries: GuestbookEntry[]): GuestbookThreadsResponse {
+  const threads: GuestbookThread[] = entries.map((entry) => ({
+    id: entry.id,
+    guest_name: entry.guest_name,
+    messages: [
+      {
+        id: `${entry.id}-m1`,
+        role: "guest",
+        text: entry.message_text,
+        created_at: entry.created_at,
+      },
+      ...(entry.reply_text
+        ? [
+            {
+              id: `${entry.id}-m2`,
+              role: "couple" as const,
+              text: entry.reply_text,
+              created_at: entry.created_at,
+            },
+          ]
+        : []),
+    ],
+  }));
+  return {
+    threads,
+    total_messages: threads.reduce((sum, thread) => sum + thread.messages.length, 0),
+    total_threads: threads.length,
+  };
+}
 
 const http = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
@@ -281,35 +409,48 @@ const http = axios.create({
 });
 
 export const invitationService = {
-  async getPublicInvitation(_guestId?: string | null): Promise<InvitationDetail> {
-    // TODO(api): swap ke GET /invitation?guest=<uuid> lewat axios polos
-    // (tanpa interceptor auth) saat endpoint backend dirapikan.
+  async getPublicInvitation(guestId?: string | null): Promise<InvitationDetail> {
+    // Data dinamis dari backend; jatuh ke data contoh bila backend offline.
+    try {
+      const { data } = await http.get<InvitationDetail>('/v1/invitation', {
+        params: guestId ? { guest: guestId } : undefined,
+        timeout: 8000,
+      });
+      if (data?.wedding) return data;
+    } catch {
+      // backend belum siap / offline
+    }
     const { invitationStaticData } = await import('./invitation-static-data');
     return invitationStaticData;
   },
 
   async submitRsvp(payload: SubmitRsvpPayload): Promise<RsvpResponse> {
-    const { data } = await http.post<RsvpResponse>('/invitation/rsvp', payload);
+    const { data } = await http.post<RsvpResponse>('/v1/invitation/rsvp', payload);
     return data;
   },
 
-  async listGuestbook(limit = 20): Promise<GuestbookResponse> {
+  async listGuestbook(limit = 20): Promise<GuestbookThreadsResponse> {
     try {
-      const { data } = await http.get<GuestbookResponse>('/invitation/guestbook', {
+      const { data } = await http.get<GuestbookResponse>('/v1/invitation/guestbook', {
         params: { limit },
       });
-      if (data.entries?.length) return data;
+      if (data.entries?.length) return flattenToThreads(data.entries);
     } catch {
       // backend belum siap / offline — jatuh ke data contoh
     }
+    const threads = DUMMY_THREADS.slice(0, limit);
     return {
-      entries: DUMMY_GUESTBOOK.slice(0, limit),
-      total: DUMMY_GUESTBOOK.length,
+      threads,
+      total_messages: DUMMY_THREADS.reduce(
+        (sum, thread) => sum + thread.messages.length,
+        0,
+      ),
+      total_threads: DUMMY_THREADS.length,
     };
   },
 
   async submitGuestbook(payload: SubmitGuestbookPayload): Promise<GuestbookEntry> {
-    const { data } = await http.post<GuestbookEntry>('/invitation/guestbook', payload);
+    const { data } = await http.post<GuestbookEntry>('/v1/invitation/guestbook', payload);
     return data;
   },
 };

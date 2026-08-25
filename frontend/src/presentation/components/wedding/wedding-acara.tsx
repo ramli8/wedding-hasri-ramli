@@ -124,7 +124,6 @@ const CALENDAR_TARGETS: CalendarTarget[] = [
 export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
   const { data } = useInvitation();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   if (!data) return null;
 
   const events = [...data.events].sort((a, b) => {
@@ -135,27 +134,20 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
   if (events.length === 0) return null;
 
   const main = events.find((e) => e.is_main_event) ?? events[0];
+  const selected = main;
   const mainTime = safeFormat(main.start_time, "HH.mm");
   const parsedCalendarDate = main.event_date ? new Date(main.event_date) : null;
   const hasValidCalendarDate =
     parsedCalendarDate !== null && !Number.isNaN(parsedCalendarDate.getTime());
 
-  const schedulableEvents = events.filter((event) => {
-    const base = event.start_time ?? event.event_date;
-    if (!base) return false;
-    return !Number.isNaN(new Date(base).getTime());
-  });
-  const selected =
-    schedulableEvents.find((event) => event.id === selectedEventId) ?? main;
+  const icsAvailable = Boolean(buildIcs(selected));
   const googleUrl = googleCalendarUrl(selected);
   const outlookUrl = outlookCalendarUrl(selected);
 
-  const handleTarget = (key: string) => {
+  const handleAppleDownload = () => {
     haptic(8);
-    if (key === "apple") {
-      downloadIcs(selected);
-      setCalendarOpen(false);
-    }
+    downloadIcs(selected);
+    setCalendarOpen(false);
   };
 
   return (
@@ -163,10 +155,10 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
       <div className="wd-container flex flex-col items-center gap-12 text-center">
         {!hideHeader ? (
           <WeddingReveal className="wd-section-head">
-            <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-              Hari yang Dinanti
-            </p>
             <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Acara</h2>
+            <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
+              Waktu dan tempat rangkaian pernikahan kami.
+            </p>
           </WeddingReveal>
         ) : null}
 
@@ -184,7 +176,7 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
             {hasValidCalendarDate ? (
               <>
                 <span
-                  className="wd-display block text-[clamp(4.5rem,16dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,17dvh,10rem)]"
+                  className="wd-display block text-[clamp(4.5rem,20vw,9rem)] leading-[0.85] text-[var(--wd-ink)]"
                   aria-hidden
                 >
                   {format(parsedCalendarDate, "d")}
@@ -207,7 +199,7 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
                 href={main.gmaps_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--wd-accent)] px-6 text-[12px] font-bold tracking-wide text-[#141413] transition-all duration-200 active:scale-[0.97]"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--wd-accent)] px-6 text-[12px] font-bold tracking-wide text-[var(--sheet-on-accent)] transition-all duration-200 active:scale-[0.97]"
               >
                 <MapPin className="h-4 w-4" />
                 Petunjuk Arah
@@ -295,94 +287,55 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
         </WeddingReveal>
       </div>
 
-      {/* Bottom sheet pilihan kalender — warna literal karena portal di luar scope .wedding.
-          Selector child menata ulang handle bawaan DrawerContent (default-nya bg-muted terang). */}
-      <style jsx global>{`
-        .wd-calendar-sheet {
-          background-color: #17171a;
-          color: #f4f4f4;
-          border: 1px solid rgba(244, 244, 244, 0.12);
-          border-bottom: none;
-        }
-        .wd-calendar-sheet > div:first-child {
-          background: rgba(244, 244, 244, 0.25);
-          margin-top: 0.875rem;
-        }
-      `}</style>
       <Drawer
         shouldScaleBackground={false}
         open={calendarOpen}
         onOpenChange={setCalendarOpen}
       >
-        <DrawerContent className="wd-calendar-sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88dvh] w-full max-w-md flex-col rounded-t-[1.75rem]">
+        <DrawerContent className="wd-sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88dvh] w-full max-w-md flex-col rounded-t-[1.75rem]">
           <div className="flex flex-col overflow-y-auto px-6 pb-[calc(2.25rem+env(safe-area-inset-bottom))] pt-2">
             <div className="flex flex-col items-center gap-1 pb-5">
               <DrawerTitle className="text-xl font-light [font-family:var(--font-cormorant),serif]">
                 Simpan ke Kalender
               </DrawerTitle>
-              <DrawerDescription className="max-w-full truncate text-[11px] uppercase tracking-[0.28em] text-[#8e8e93]">
+              <DrawerDescription className="max-w-full truncate text-[11px] uppercase tracking-[0.28em] text-[var(--sheet-muted)]">
                 Acara: {selected.name}
               </DrawerDescription>
             </div>
 
-            {schedulableEvents.length > 1 ? (
-              <div className="flex flex-wrap justify-center gap-2 pb-4">
-                {schedulableEvents.map((event) => {
-                  const active = event.id === selected.id;
-                  return (
-                    <button
-                      key={event.id}
-                      type="button"
-                      onClick={() => {
-                        haptic(8);
-                        setSelectedEventId(event.id);
-                      }}
-                      className={cn(
-                        "inline-flex h-9 items-center rounded-full px-4 text-[11px] font-semibold tracking-wide transition-all duration-200 active:scale-[0.97]",
-                        active
-                          ? "bg-white/[0.14] text-[#f4f4f4]"
-                          : "border border-[rgba(244,244,244,0.14)] text-[#8e8e93]",
-                      )}
-                    >
-                      {event.name}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-
             <div className="flex flex-col gap-2 border-t border-[rgba(244,244,244,0.08)] pt-4">
               {CALENDAR_TARGETS.map((target) => {
-                const href =
+                const url =
                   target.key === "google"
                     ? googleUrl
                     : target.key === "outlook"
                       ? outlookUrl
-                      : undefined;
-                const disabled = !href;
+                      : null;
+                const available =
+                  target.key === "apple" ? icsAvailable : Boolean(url);
 
                 const rowClass = cn(
                   "flex min-h-[60px] w-full items-center gap-4 rounded-2xl border border-[rgba(244,244,244,0.1)] px-4 py-3 text-left transition-all duration-200 active:scale-[0.98] active:bg-white/[0.06]",
-                  disabled ? "opacity-40" : "",
+                  !available ? "opacity-40" : "",
                 );
 
                 const inner = (
                   <>
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(244,244,244,0.18)] font-serif text-lg [font-family:var(--font-cormorant),serif] text-[#ece9e2]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(244,244,244,0.18)] font-serif text-lg [font-family:var(--font-cormorant),serif] text-[var(--sheet-accent)]">
                       {target.mark}
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="text-[14px] font-semibold leading-tight">{target.label}</span>
-                      <span className="text-[11px] text-[#8e8e93]">{target.hint}</span>
+                      <span className="text-[11px] text-[var(--sheet-muted)]">{target.hint}</span>
                     </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-[#8e8e93]" aria-hidden />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[var(--sheet-muted)]" aria-hidden />
                   </>
                 );
 
-                return href ? (
+                return url ? (
                   <a
                     key={target.key}
-                    href={href}
+                    href={url}
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => {
@@ -397,8 +350,10 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
                   <button
                     key={target.key}
                     type="button"
-                    disabled={disabled}
-                    onClick={() => handleTarget(target.key)}
+                    disabled={!available}
+                    onClick={() => {
+                      if (target.key === "apple") handleAppleDownload();
+                    }}
                     className={rowClass}
                   >
                     {inner}

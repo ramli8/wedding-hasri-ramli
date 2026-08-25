@@ -1,4 +1,8 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+/* Kunci pemindaian kandidat class — tanpa ini Tailwind memindai seluruh repo
+   (binary Go, graphify-out, cache) hingga menghasilkan CSS korup & build lambat. */
+@source "../app/**/*.{ts,tsx}";
+@source "../src/**/*.{ts,tsx}";
 @import "react-toastify/dist/ReactToastify.css";
 
 @custom-variant dark (&:is(.dark *));

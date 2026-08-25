@@ -33,8 +33,7 @@ export function WeddingPenutup() {
                 className="wd-photo object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 pb-7">
-                <p className="wd-label text-white/60">Dengan Cinta</p>
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-7">
                 <p className="wd-script text-[2.5rem] leading-tight text-white/90 md:text-[3.5rem]">
                   Terima Kasih
                 </p>

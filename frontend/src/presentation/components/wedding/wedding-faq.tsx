@@ -19,12 +19,9 @@ export function WeddingFaq() {
     <section id="faq" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-10 text-center md:max-w-[36rem]">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            Seputar Acara
-          </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">FAQ</h2>
           <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
-            Beberapa hal yang mungkin ingin Anda ketahuan sebelum hari bahagia.
+            Beberapa hal yang sering ditanyakan menjelang hari-H.
           </p>
         </WeddingReveal>
 

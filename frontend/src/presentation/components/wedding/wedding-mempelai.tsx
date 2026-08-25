@@ -31,9 +31,6 @@ export function WeddingMempelai() {
     <section id="mempelai" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-10 text-center lg:max-w-[64rem]">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            Dengan Cinta
-          </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Mempelai</h2>
         </WeddingReveal>
 

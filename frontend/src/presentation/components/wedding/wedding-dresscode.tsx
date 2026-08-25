@@ -48,9 +48,6 @@ export function WeddingDresscode() {
     <section id="dresscode" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-8 text-center">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            Busana Tamu
-          </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Dress Code</h2>
           {dressCode.description ? (
             <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)] md:max-w-[30rem]">

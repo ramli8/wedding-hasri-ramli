@@ -1,10 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/src/presentation/components/ui/drawer";
 import { useInvitation } from "@/src/application/hooks/use-invitation-query";
 import type { InvitationStory } from "@/src/domain/services/invitation.service";
 import { useParallax } from "@/src/lib/invitation/use-parallax";
 import { WeddingReveal } from "./wedding-reveal";
+import { haptic } from "@/src/lib/invitation/haptics";
 
 function StoryPhoto({ src, alt }: { src: string; alt: string }) {
   const parallaxRef = useParallax<HTMLDivElement>({ factor: 0.06, offset: 120 });
@@ -24,7 +32,13 @@ function StoryPhoto({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function StoryChapter({ item, index }: { item: InvitationStory; index: number }) {
+interface StoryChapterProps {
+  item: InvitationStory;
+  index: number;
+  onOpenDetail: (item: InvitationStory) => void;
+}
+
+function StoryChapter({ item, index, onOpenDetail }: StoryChapterProps) {
   const flip = index % 2 === 1;
 
   return (
@@ -67,6 +81,21 @@ function StoryChapter({ item, index }: { item: InvitationStory; index: number })
               {item.description}
             </p>
           ) : null}
+          {item.detail ? (
+            <button
+              type="button"
+              onClick={() => {
+                haptic(8);
+                onOpenDetail(item);
+              }}
+              aria-haspopup="dialog"
+              className="group -m-2 mt-2 inline-flex p-2 md:mt-3"
+            >
+              <span className="wd-script text-[1.5rem] leading-none text-[var(--wd-accent)] transition-colors duration-200 group-hover:text-[var(--wd-ink)]">
+                baca ceritanya&hellip;
+              </span>
+            </button>
+          ) : null}
         </div>
       </div>
     </WeddingReveal>
@@ -75,6 +104,7 @@ function StoryChapter({ item, index }: { item: InvitationStory; index: number })
 
 export function WeddingKisah() {
   const { data } = useInvitation();
+  const [activeStory, setActiveStory] = useState<InvitationStory | null>(null);
   if (!data) return null;
 
   const story = data.story;
@@ -84,19 +114,49 @@ export function WeddingKisah() {
     <section id="kisah" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-14 md:gap-20">
         <WeddingReveal className="wd-section-head">
-          <p className="wd-script text-[2rem] text-[var(--wd-ink)]/70 md:text-[2.5rem]">
-            Perjalanan Kami
-          </p>
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Kisah Kami</h2>
-          <div className="h-px w-10 bg-[var(--wd-line-strong)]" aria-hidden />
         </WeddingReveal>
 
         <div className="flex w-full flex-col gap-16 md:gap-24">
           {story.map((item, index) => (
-            <StoryChapter key={`${item.title}-${index}`} item={item} index={index} />
+            <StoryChapter
+              key={`${item.title}-${index}`}
+              item={item}
+              index={index}
+              onOpenDetail={setActiveStory}
+            />
           ))}
         </div>
       </div>
+
+      <Drawer
+        shouldScaleBackground={false}
+        open={activeStory !== null}
+        onOpenChange={(open) => !open && setActiveStory(null)}
+      >
+        <DrawerContent className="wd-sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88dvh] w-full max-w-md flex-col rounded-t-[1.75rem]">
+          <div className="overflow-y-auto px-6 pb-[calc(2.25rem+env(safe-area-inset-bottom))] pt-2">
+            {activeStory ? (
+              <>
+                <div className="flex flex-col items-center gap-1 pb-4">
+                  <DrawerTitle className="text-2xl font-light italic [font-family:var(--font-cormorant),serif]">
+                    {activeStory.title}
+                  </DrawerTitle>
+                  <DrawerDescription className="text-[11px] uppercase tracking-[0.28em] text-[var(--sheet-muted)]">
+                    {activeStory.event_date ?? "Kisah Kami"}
+                  </DrawerDescription>
+                </div>
+                <div className="mb-6 flex justify-center">
+                  <span className="h-px w-10 bg-white/20" aria-hidden />
+                </div>
+                <p className="whitespace-pre-line break-words text-[14px] leading-[1.9] text-white/85">
+                  {activeStory.detail}
+                </p>
+              </>
+            ) : null}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </section>
   );
 }

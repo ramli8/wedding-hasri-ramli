@@ -57,6 +57,35 @@
   color: var(--wd-bg);
 }
 
+/* ===== Bottom sheet (portal di luar scope .wedding — warna literal di sini) ===== */
+
+.wd-sheet {
+  --sheet-bg: #17171a;
+  --sheet-ink: #f4f4f4;
+  --sheet-muted: #98989f;
+  --sheet-accent: #ece9e2;
+  --sheet-on-accent: #141413;
+  --sheet-accent-line: rgba(236, 233, 226, 0.35);
+
+  background-color: var(--sheet-bg);
+  color: var(--sheet-ink);
+  border: 1px solid rgba(244, 244, 244, 0.12);
+  border-bottom: none;
+}
+
+.wd-sheet > div:first-child {
+  background: rgba(244, 244, 244, 0.25);
+  margin-top: 0.875rem;
+}
+
+/* Tailwind v4 tidak lagi memberi pointer otomatis ke <button>. */
+.wedding button:not(:disabled),
+.wd-sheet button:not(:disabled),
+.wedding a,
+.wd-sheet a {
+  cursor: pointer;
+}
+
 /* ===== Typography ===== */
 
 .wd-display {
@@ -297,6 +326,21 @@
   }
 }
 
+/* Denyut titik dua jam — denyut lembut, irama detik tanpa mengganggu. */
+.wd-blink {
+  animation: wd-blink 2s var(--wd-ease) infinite;
+}
+
+@keyframes wd-blink {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
 /* Bungkus container dengan .wd-hover-color, foto di dalamnya memakai
    .wd-photo .wd-photo-hover agar grayscale→warna saat hover/focus. */
 .wd-photo-hover {
@@ -323,6 +367,10 @@
   }
 
   .wd-tick {
+    animation: none;
+  }
+
+  .wd-blink {
     animation: none;
   }
 

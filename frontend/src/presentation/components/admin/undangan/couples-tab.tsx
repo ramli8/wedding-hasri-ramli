@@ -1,253 +1,224 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Instagram, Loader2, Pencil, Plus, User, X } from "lucide-react";
+import { Instagram, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { Button } from "@/src/presentation/components/ui/button";
+import apiClient from "@/src/domain/services/api-client";
 import { Input } from "@/src/presentation/components/ui/input";
 import { Label } from "@/src/presentation/components/ui/label";
 import {
-  useCouples,
   useCreateCouple,
+  useCouples,
   useUpdateCouple,
 } from "@/src/application/hooks/use-wedding-query";
-import type { CoupleResponse, CoupleSide } from "@/src/domain/services/wedding.service";
+import type {
+  CoupleResponse,
+  CoupleSide,
+} from "@/src/domain/services/wedding.service";
 import { TabLoading } from "./tab-loading";
 import { MediaInput } from "./media-input";
 
-interface CoupleFormState {
+// Rasio sama dengan tampilan publik (aspect 3/4, portrait).
+const PHOTO_RECOMMENDATION = "1200 × 1600 px (rasio 3:4, portrait)";
+
+interface SideFormState {
   fullName: string;
   gelar: string;
   photoUrl: string;
   instagramHandle: string;
 }
 
-const EMPTY_FORM: CoupleFormState = { fullName: "", gelar: "", photoUrl: "", instagramHandle: "" };
+const EMPTY_SIDE: SideFormState = {
+  fullName: "",
+  gelar: "",
+  photoUrl: "",
+  instagramHandle: "",
+};
 
-function CoupleCard({
+function CoupleEditor({
   side,
   label,
   couple,
-  onEdit,
-  onCreate,
 }: {
   side: CoupleSide;
   label: string;
   couple?: CoupleResponse;
-  onEdit: (couple: CoupleResponse) => void;
-  onCreate: (side: CoupleSide) => void;
 }) {
-  const igHandle = couple?.instagram_handle?.replace(/^@/, "");
+  const createCouple = useCreateCouple();
+  const updateCouple = useUpdateCouple();
+  const [form, setForm] = useState<SideFormState>(EMPTY_SIDE);
+  const [syncedId, setSyncedId] = useState<string | null>(null);
 
-  if (!couple) {
-    return (
-      <button
-        onClick={() => onCreate(side)}
-        className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border bg-muted/20 p-4 text-center transition-all hover:border-primary/40 hover:bg-muted/40 active:scale-95"
-      >
-        <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Plus className="h-5 w-5" />
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-        <span className="text-[12px] font-semibold text-foreground">Belum diisi</span>
-        <span className="text-[11px] text-muted-foreground">Ketuk untuk mengisi</span>
-      </button>
+  // Sinkronkan form saat data dari server berubah (load/refetch/setelah simpan).
+  useEffect(() => {
+    setForm(
+      couple
+        ? {
+            fullName: couple.full_name,
+            gelar: couple.gelar ?? "",
+            photoUrl: couple.photo_url ?? "",
+            instagramHandle: couple.instagram_handle ?? "",
+          }
+        : EMPTY_SIDE
     );
-  }
+    setSyncedId(couple?.id ?? null);
+  }, [couple]);
+
+  const isPending = createCouple.isPending || updateCouple.isPending;
+  const igHandle = form.instagramHandle.replace(/^@/, "");
+
+  const handleSave = async () => {
+    if (!form.fullName.trim()) {
+      toast.error(`Nama lengkap ${label.toLowerCase()} wajib diisi`);
+      return;
+    }
+
+    const finalPhotoUrl = form.photoUrl.trim() || null;
+    const payload = {
+      full_name: form.fullName.trim(),
+      gelar: form.gelar.trim() || null,
+      photo_url: finalPhotoUrl,
+      instagram_handle: form.instagramHandle.trim() || null,
+    };
+
+    try {
+      if (syncedId) {
+        await updateCouple.mutateAsync({ id: syncedId, req: payload });
+      } else {
+        await createCouple.mutateAsync({ side, ...payload });
+      }
+
+      // Foto lama yang diganti/kosongkan ikut dihapus dari public/uploads.
+      const previousUrl = couple?.photo_url;
+      if (
+        previousUrl &&
+        previousUrl.startsWith("/uploads/") &&
+        previousUrl !== finalPhotoUrl
+      ) {
+        apiClient
+          .delete("/upload", { params: { url: previousUrl } })
+          .catch(() => undefined);
+      }
+
+      toast.success(`${label} tersimpan`);
+    } catch {
+      toast.error(`Gagal menyimpan ${label.toLowerCase()}`);
+    }
+  };
 
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-card">
-      {couple.photo_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={couple.photo_url}
-          alt={couple.full_name}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <User className="h-14 w-14 text-muted-foreground" />
+    <section className="rounded-[1.75rem] border border-border bg-card">
+      <header className="flex items-center justify-between px-5 pt-5">
+        <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground/80">
+          {label}
+        </h3>
+        {isPending ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
+      </header>
+
+      <div className="flex flex-col gap-4 p-5">
+        <div className="space-y-1.5">
+          <Label className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Foto
+          </Label>
+          <MediaInput
+            value={form.photoUrl || null}
+            onChange={(v) => setForm((f) => ({ ...f, photoUrl: v ?? "" }))}
+            accept="image/jpeg,image/png,image/webp"
+            folder="couples"
+            preview="image"
+          />
+          <p className="pl-1 text-[10.5px] leading-relaxed text-muted-foreground">
+            Rekomendasi:{" "}
+            <span className="font-medium text-foreground/80">{PHOTO_RECOMMENDATION}</span>
+          </p>
         </div>
-      )}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10">
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
-        <p className="truncate text-[13px] font-bold text-white">{couple.full_name}</p>
-        {couple.gelar && (
-          <p className="line-clamp-2 text-[11px] leading-snug text-white/75">{couple.gelar}</p>
-        )}
-        {igHandle && (
-          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
-            <Instagram className="h-3 w-3" />@{igHandle}
-          </span>
-        )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`${side}-name`} className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Nama Lengkap
+          </Label>
+          <Input
+            id={`${side}-name`}
+            value={form.fullName}
+            onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+            placeholder="Nama lengkap beserta gelar akademik"
+            className="h-11 rounded-xl border-border/60 bg-muted/20 text-[13px] shadow-none focus-visible:ring-primary"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`${side}-gelar`} className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Anak dari / Gelar
+          </Label>
+          <Input
+            id={`${side}-gelar`}
+            value={form.gelar}
+            onChange={(e) => setForm((f) => ({ ...f, gelar: e.target.value }))}
+            placeholder="Putra pertama dari Bpk. … & Ibu …"
+            className="h-11 rounded-xl border-border/60 bg-muted/20 text-[13px] shadow-none focus-visible:ring-primary"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`${side}-ig`} className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Instagram
+          </Label>
+          <div className="relative">
+            <Instagram
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              id={`${side}-ig`}
+              value={form.instagramHandle}
+              onChange={(e) => setForm((f) => ({ ...f, instagramHandle: e.target.value }))}
+              placeholder="@username"
+              className="h-11 rounded-xl border-border/60 bg-muted/20 pl-11 pr-4 text-[13px] shadow-none focus-visible:ring-primary"
+            />
+          </div>
+          {igHandle ? (
+            <p className="pl-1 text-[10.5px] text-muted-foreground">
+              Pratinjau tautan: instagram.com/{igHandle}
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={isPending}
+          className="mt-1 inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+        >
+          {isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : syncedId ? (
+            "Simpan Perubahan"
+          ) : (
+            "Simpan"
+          )}
+        </button>
       </div>
-      <Button
-        variant="soft"
-        size="icon"
-        aria-label={`Edit ${label}`}
-        onClick={() => onEdit(couple)}
-        className="absolute right-2 top-2 h-8 w-8 shrink-0 rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-primary hover:text-primary-foreground active:scale-95"
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </Button>
-    </div>
+    </section>
   );
 }
 
 export function CouplesTab() {
   const { data, isLoading } = useCouples();
-  const createCouple = useCreateCouple();
-  const updateCouple = useUpdateCouple();
 
-  const [editing, setEditing] = useState<CoupleSide | null>(null);
-  const [existingId, setExistingId] = useState<string | null>(null);
-  const [form, setForm] = useState<CoupleFormState>(EMPTY_FORM);
+  if (isLoading) return <TabLoading />;
 
   const pria = data?.find((c) => c.side === "pria");
   const wanita = data?.find((c) => c.side === "wanita");
 
-  useEffect(() => {
-    if (!editing || !data) return;
-    const current = data.find((c) => c.side === editing);
-    setExistingId(current?.id ?? null);
-    setForm(
-      current
-        ? {
-            fullName: current.full_name,
-            gelar: current.gelar ?? "",
-            photoUrl: current.photo_url ?? "",
-            instagramHandle: current.instagram_handle ?? "",
-          }
-        : EMPTY_FORM
-    );
-  }, [editing]);
-
-  const handleSave = () => {
-    if (!form.fullName.trim()) {
-      toast.error("Nama lengkap wajib diisi");
-      return;
-    }
-    const payload = {
-      full_name: form.fullName.trim(),
-      gelar: form.gelar.trim() || null,
-      photo_url: form.photoUrl.trim() || null,
-      instagram_handle: form.instagramHandle.trim() || null,
-    };
-
-    if (existingId) {
-      updateCouple.mutate(
-        { id: existingId, req: payload },
-        {
-          onSuccess: () => {
-            toast.success("Data mempelai tersimpan");
-            setEditing(null);
-          },
-          onError: () => toast.error("Gagal menyimpan data mempelai"),
-        }
-      );
-    } else if (editing) {
-      createCouple.mutate(
-        { side: editing, ...payload },
-        {
-          onSuccess: () => {
-            toast.success("Data mempelai tersimpan");
-            setEditing(null);
-          },
-          onError: () => toast.error("Gagal menyimpan data mempelai"),
-        }
-      );
-    }
-  };
-
-  if (isLoading) return <TabLoading />;
-
-  const isPending = createCouple.isPending || updateCouple.isPending;
-
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-3">
-        <CoupleCard side="pria" label="Mempelai Pria" couple={pria} onEdit={(c) => setEditing(c.side)} onCreate={(s) => setEditing(s)} />
-        <CoupleCard side="wanita" label="Mempelai Wanita" couple={wanita} onEdit={(c) => setEditing(c.side)} onCreate={(s) => setEditing(s)} />
+    <div className="space-y-4">
+      <p className="text-[12px] leading-relaxed text-muted-foreground">
+        Data di sini tampil di section Mempelai pada halaman undangan. Nama panggilan untuk
+        cover diatur di menu Cover.
+      </p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CoupleEditor side="pria" label="Mempelai Pria" couple={pria} />
+        <CoupleEditor side="wanita" label="Mempelai Wanita" couple={wanita} />
       </div>
-
-      {/* Bottom sheet edit */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setEditing(null)} />
-          <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
-            <div className="flex items-center justify-between mb-5 shrink-0 relative">
-              <h2 className="text-[15px] font-bold w-full text-center">
-                {editing === "pria" ? "Mempelai Pria" : "Mempelai Wanita"}
-              </h2>
-              <button
-                onClick={() => setEditing(null)}
-                className="absolute right-0 p-2 bg-muted/50 rounded-full hover:bg-muted text-muted-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
-              <div className="space-y-1.5">
-                <Label htmlFor="couple-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Lengkap</Label>
-                <Input
-                  id="couple-name"
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                  placeholder="Nama lengkap beserta gelar akademik"
-                  className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="couple-gelar" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Gelar / Sebutan</Label>
-                <Input
-                  id="couple-gelar"
-                  value={form.gelar}
-                  onChange={(e) => setForm((f) => ({ ...f, gelar: e.target.value }))}
-                  placeholder="Putra pertama dari Bpk. ... & Ibu ..."
-                  className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Path Foto</Label>
-                <MediaInput
-                  value={form.photoUrl || null}
-                  onChange={(v) => setForm((f) => ({ ...f, photoUrl: v ?? "" }))}
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  folder="couples"
-                  preview="image"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="couple-ig" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Instagram</Label>
-                <Input
-                  id="couple-ig"
-                  value={form.instagramHandle}
-                  onChange={(e) => setForm((f) => ({ ...f, instagramHandle: e.target.value }))}
-                  placeholder="@username"
-                  className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5 border-t border-border/40">
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="w-full flex items-center justify-center h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer active:scale-95"
-              >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  "Simpan"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

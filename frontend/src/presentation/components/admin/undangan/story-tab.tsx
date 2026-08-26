@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpenText, CalendarDays, Inbox, Loader2, Plus, Trash2, X } from "lucide-react";
+import {
+  BookOpenText,
+  CalendarDays,
+  Inbox,
+  Loader2,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { Input } from "@/src/presentation/components/ui/input";
 import { Label } from "@/src/presentation/components/ui/label";
@@ -149,7 +157,10 @@ export function StoryTab() {
         </div>
       ) : (
         <div className="relative space-y-4 pl-6">
-          <span className="absolute bottom-3 left-[7px] top-3 w-px bg-border" aria-hidden />
+          <span
+            className="absolute bottom-3 left-[7px] top-3 w-px bg-border"
+            aria-hidden
+          />
           {stories.map((story) => (
             <div key={story.id} className="relative">
               <span
@@ -235,42 +246,70 @@ export function StoryTab() {
 
             <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
               <div className="space-y-1.5">
-                <Label htmlFor="story-date" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Label Tanggal</Label>
+                <Label
+                  htmlFor="story-date"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Label Tanggal
+                </Label>
                 <Input
                   id="story-date"
                   value={form.eventDate}
-                  onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, eventDate: e.target.value }))
+                  }
                   placeholder="Cth: 2021 / 12 Feb 2021"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="story-title" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Judul</Label>
+                <Label
+                  htmlFor="story-title"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Judul
+                </Label>
                 <Input
                   id="story-title"
                   value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
                   placeholder="Cth: Pertama Bertemu"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="story-description" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Deskripsi</Label>
+                <Label
+                  htmlFor="story-description"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Deskripsi
+                </Label>
                 <Textarea
                   id="story-description"
                   value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
                   rows={3}
                   placeholder="Ringkasan singkat..."
                   className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="story-detail" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Detail (Opsional)</Label>
+                <Label
+                  htmlFor="story-detail"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Detail (Opsional)
+                </Label>
                 <Textarea
                   id="story-detail"
                   value={form.detail}
-                  onChange={(e) => setForm((f) => ({ ...f, detail: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, detail: e.target.value }))
+                  }
                   rows={6}
                   placeholder="Narasi panjang — tamu bisa buka lewat tombol Baca Selengkapnya bila diisi."
                   className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
@@ -286,12 +325,22 @@ export function StoryTab() {
                 preview="image"
               />
               <div className="space-y-1.5">
-                <Label htmlFor="story-order" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Urutan</Label>
+                <Label
+                  htmlFor="story-order"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Urutan
+                </Label>
                 <Input
                   id="story-order"
                   type="number"
                   value={form.orderIndex}
-                  onChange={(e) => setForm((f) => ({ ...f, orderIndex: parseInt(e.target.value, 10) }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      orderIndex: parseInt(e.target.value, 10),
+                    }))
+                  }
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
@@ -315,23 +364,26 @@ export function StoryTab() {
       )}
 
       {/* Delete confirm */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">Hapus kisah?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus kisah?</AlertDialogTitle>
+            <AlertDialogDescription>
               Kisah &quot;{deleteTarget?.title}&quot; akan dihapus permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteStory.isPending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

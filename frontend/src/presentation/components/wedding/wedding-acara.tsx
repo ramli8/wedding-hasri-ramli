@@ -12,6 +12,7 @@ import {
 } from "@/src/presentation/components/ui/drawer";
 import { useInvitation } from "@/src/application/hooks/use-invitation-query";
 import type { InvitationEvent } from "@/src/domain/services/invitation.service";
+import { EVENT_TIMEZONE_LABEL } from "@/src/lib/invitation/timezone";
 import { haptic } from "@/src/lib/invitation/haptics";
 import { cn } from "@/src/lib/utils";
 import { WeddingReveal } from "./wedding-reveal";
@@ -198,7 +199,7 @@ export function WeddingAcara({ hideHeader = false }: WeddingAcaraProps) {
             {mainTime ? (
               <p className="wd-label mt-1">
                 Pukul {mainTime}
-                {mainEndTime ? ` – ${mainEndTime}` : ""} WITA
+                {mainEndTime ? ` – ${mainEndTime}` : ""} {EVENT_TIMEZONE_LABEL}
               </p>
             ) : null}
           </div>

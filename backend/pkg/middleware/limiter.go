@@ -3,6 +3,7 @@ package middleware
 import (
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,11 @@ type client struct {
 	limiter  *rate.Limiter
 	lastSeen time.Time
 }
+
+// trustProxy: X-Forwarded-For hanya dipercaya kalau service berjalan di
+// balik reverse proxy terpercaya (set TRUST_PROXY=true). Tanpa itu, header
+// XFF dikontrol penyerang — dipakai untuk merotasi identitas & mem-bypass limit.
+var trustProxy = os.Getenv("TRUST_PROXY") == "true"
 
 // RateLimit is middleware for handling rate limiter request per ip address
 //
@@ -53,8 +59,12 @@ func RateLimit(requestsPerSecond int, burst int) func(handler http.Handler) http
 			// get client ip address (tanpa port — kalau tidak, tiap koneksi
 			// dihitung klien berbeda dan limit tak pernah jalan)
 			ip := r.RemoteAddr
-			if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-				ip = strings.TrimSpace(strings.Split(forwarded, ",")[0])
+			if trustProxy {
+				if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+					ip = strings.TrimSpace(strings.Split(forwarded, ",")[0])
+				} else if host, _, err := net.SplitHostPort(ip); err == nil {
+					ip = host
+				}
 			} else if host, _, err := net.SplitHostPort(ip); err == nil {
 				ip = host
 			}

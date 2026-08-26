@@ -136,6 +136,16 @@
   border-radius: 1.125rem;
 }
 
+/* Layar kecil / HP low-end: blur radius dipangkas agar komposit tetap enteng,
+   opasitas latar dinaikkan supaya keterbacaan teks di atas kaca terjaga. */
+@media (max-width: 640px) {
+  .wd-glass {
+    background: rgba(244, 244, 244, 0.07);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
 .wd-photo {
   filter: grayscale(1) contrast(1.05);
 }

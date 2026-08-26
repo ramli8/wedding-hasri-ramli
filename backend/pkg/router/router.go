@@ -3,6 +3,7 @@ package router
 import (
 	"compress/zlib"
 	"net/http"
+	"os"
 
 	"github.com/base-go/backend/internal/auth"
 	"github.com/base-go/backend/internal/guest"
@@ -39,7 +40,11 @@ func SetupRoutes(
 	// chi middleware
 	mux.Use(cmiddleware.Logger)
 	mux.Use(cmiddleware.Recoverer)
-	mux.Use(cmiddleware.RealIP)
+	// RealIP menimpa RemoteAddr dari X-Forwarded-For — hanya aman di belakang
+	// proxy terpercaya. Tanpa itu, penyerang bisa memalsukan IP sumber.
+	if os.Getenv("TRUST_PROXY") == "true" {
+		mux.Use(cmiddleware.RealIP)
+	}
 	mux.Use(cmiddleware.NoCache)
 	mux.Use(cmiddleware.GetHead)
 	mux.Use(cmiddleware.Compress(zlib.BestCompression))

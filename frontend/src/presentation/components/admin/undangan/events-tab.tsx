@@ -238,9 +238,7 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
       start_time: hasTime
         ? combineDateTime(form.eventDate, form.startTime)
         : null,
-      end_time: hasTime
-        ? combineDateTime(form.eventDate, form.endTime)
-        : null,
+      end_time: hasTime ? combineDateTime(form.eventDate, form.endTime) : null,
       venue_name: form.venueName.trim() || null,
       address_full: form.addressFull.trim() || null,
       gmaps_url: form.gmapsUrl.trim() || null,
@@ -295,7 +293,10 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
       {/* Tanggal pernikahan — fallback cover/countdown bila tidak ada acara utama */}
       <Card className="mb-6 rounded-2xl border-border/60 shadow-sm">
         <CardContent className="space-y-1.5 p-4">
-          <Label htmlFor="wedding-date" className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="wedding-date"
+            className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Tanggal Pernikahan
           </Label>
           <Input
@@ -307,7 +308,8 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
             className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] shadow-none focus-visible:ring-primary disabled:opacity-60"
           />
           <p className="pl-1 text-[10.5px] leading-relaxed text-muted-foreground">
-            Dipakai di cover &amp; countdown bila tidak ada acara utama. Tersimpan otomatis.
+            Dipakai di cover &amp; countdown bila tidak ada acara utama.
+            Tersimpan otomatis.
           </p>
         </CardContent>
       </Card>
@@ -334,7 +336,10 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
           {events.map((event, idx) => {
             const time = formatTime(event.start_time);
             return (
-              <Card key={event.id} className="rounded-2xl border-border/60 shadow-sm">
+              <Card
+                key={event.id}
+                className="rounded-2xl border-border/60 shadow-sm"
+              >
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 break-words text-[14px] font-bold leading-snug">
@@ -356,7 +361,9 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
                         <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                           <Clock className="h-3 w-3 shrink-0" />
                           Pukul {time}
-                          {event.end_time ? ` – ${formatTime(event.end_time)}` : ""}
+                          {event.end_time
+                            ? ` – ${formatTime(event.end_time)}`
+                            : ""}
                         </p>
                       ) : event.end_time ? null : (
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -370,7 +377,9 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
                           {event.venue_name}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-muted-foreground">Belum diatur</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Belum diatur
+                        </p>
                       )}
                     </InfoBox>
                   </div>
@@ -454,7 +463,10 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
       {/* Bottom sheet create/edit */}
       {sheetOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setSheetOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setSheetOpen(false)}
+          />
           <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
             <div className="flex items-center justify-between mb-5 shrink-0 relative">
               <h2 className="text-[15px] font-bold w-full text-center">
@@ -471,17 +483,29 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
 
             <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
               <div className="space-y-1.5">
-                <Label htmlFor="event-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Acara</Label>
+                <Label
+                  htmlFor="event-name"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Nama Acara
+                </Label>
                 <Input
                   id="event-name"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
                   placeholder="Akad Nikah / Resepsi"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="event-date" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Tanggal Acara</Label>
+                <Label
+                  htmlFor="event-date"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Tanggal Acara
+                </Label>
                 <DateTimeField
                   id="event-date"
                   type="date"
@@ -491,7 +515,9 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
               </div>
               <div className="flex items-center justify-between rounded-xl border border-border p-3">
                 <div>
-                  <p className="text-[13px] font-semibold leading-tight">Atur Jam Acara</p>
+                  <p className="text-[13px] font-semibold leading-tight">
+                    Atur Jam Acara
+                  </p>
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
                     Kosongkan bila jam mengikuti kategori tamu
                   </p>
@@ -521,41 +547,69 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
                 </div>
               ) : null}
               <div className="space-y-1.5">
-                <Label htmlFor="event-venue" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Venue</Label>
+                <Label
+                  htmlFor="event-venue"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Nama Venue
+                </Label>
                 <Input
                   id="event-venue"
                   value={form.venueName}
-                  onChange={(e) => setForm((f) => ({ ...f, venueName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, venueName: e.target.value }))
+                  }
                   placeholder="Balai Kartini"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="event-address" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Alamat Lengkap</Label>
+                <Label
+                  htmlFor="event-address"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Alamat Lengkap
+                </Label>
                 <Textarea
                   id="event-address"
                   value={form.addressFull}
-                  onChange={(e) => setForm((f) => ({ ...f, addressFull: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, addressFull: e.target.value }))
+                  }
                   rows={2}
                   className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="event-gmaps" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Link Google Maps</Label>
+                <Label
+                  htmlFor="event-gmaps"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Link Google Maps
+                </Label>
                 <Input
                   id="event-gmaps"
                   value={form.gmapsUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, gmapsUrl: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, gmapsUrl: e.target.value }))
+                  }
                   placeholder="https://maps.app.goo.gl/..."
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="event-notes" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Catatan</Label>
+                <Label
+                  htmlFor="event-notes"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Catatan
+                </Label>
                 <Input
                   id="event-notes"
                   value={form.notes}
-                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, notes: e.target.value }))
+                  }
                   placeholder="Dress code: earth tone"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
@@ -569,7 +623,9 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
                 </div>
                 <Switch
                   checked={form.isMainEvent}
-                  onCheckedChange={(checked) => setForm((f) => ({ ...f, isMainEvent: checked }))}
+                  onCheckedChange={(checked) =>
+                    setForm((f) => ({ ...f, isMainEvent: checked }))
+                  }
                   aria-label="Jadikan acara utama"
                 />
               </div>
@@ -593,23 +649,26 @@ export function EventsTab({ data }: { data?: WeddingResponse }) {
       )}
 
       {/* Delete confirm */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">Hapus acara?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus acara?</AlertDialogTitle>
+            <AlertDialogDescription>
               Acara &quot;{deleteTarget?.name}&quot; akan dihapus permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteEvent.isPending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

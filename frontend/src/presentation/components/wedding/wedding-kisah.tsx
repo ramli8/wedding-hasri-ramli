@@ -115,6 +115,9 @@ export function WeddingKisah() {
       <div className="wd-container flex flex-col items-center gap-14 md:gap-20">
         <WeddingReveal className="wd-section-head">
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Kisah Kami</h2>
+          <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
+            Beberapa bab kecil yang membawa kami sampai di sini.
+          </p>
         </WeddingReveal>
 
         <div className="flex w-full flex-col gap-16 md:gap-24">

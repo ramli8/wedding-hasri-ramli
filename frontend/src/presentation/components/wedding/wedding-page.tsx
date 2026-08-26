@@ -1,6 +1,7 @@
 "use client";
 
 import { useInvitation, setActiveGuestId } from "@/src/application/hooks/use-invitation-query";
+import type { InvitationDetail } from "@/src/domain/services/invitation.service";
 import { SmoothScrollProvider } from "@/src/lib/invitation/smooth-scroll";
 import { WeddingProvider } from "@/src/lib/invitation/wedding-context";
 import { weddingSectionComponents } from "./section-map";
@@ -9,13 +10,15 @@ import { WeddingMusicPlayer } from "./wedding-music-player";
 
 interface WeddingPageProps {
   guest?: string;
+  /** Hasil fetch RSC — render pertama langsung penuh tanpa loading flash. */
+  initialData?: InvitationDetail;
 }
 
-export function WeddingPage({ guest }: WeddingPageProps) {
+export function WeddingPage({ guest, initialData }: WeddingPageProps) {
   // Daftarkan tamu aktif sebelum section mana pun memanggil useInvitation()
   // agar semua section membaca cache entry yang sama (terpersonalisasi).
   setActiveGuestId(guest);
-  const { data } = useInvitation(guest);
+  const { data } = useInvitation(guest, { initialData });
 
   // Sengaja tanpa isLoading: flicker pending saat refetch tidak boleh
   // membongkar pohon (state cover/music ikut hilang).

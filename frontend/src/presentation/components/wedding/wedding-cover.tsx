@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -49,9 +50,8 @@ export function WeddingCover() {
   const cover = wedding.content.cover;
   const { image_desktop, image_tablet, image_mobile } = cover;
   // Fallback berantai: slot kosong memakai gambar perangkat lain yang tersedia.
-  const mobileSrc = image_mobile || image_tablet || image_desktop || "";
-  const tabletSrc = image_tablet || mobileSrc;
-  const desktopSrc = image_desktop || mobileSrc;
+  // next/image yang memilih resolusi optimal per viewport (srcset otomatis).
+  const coverSrc = image_mobile || image_tablet || image_desktop || "";
   const { day, month, year } = splitDateParts(wedding.wedding_date);
   const dateLabel = formatDateLabel(wedding.wedding_date);
   // Baris kecil di bawah tanggal & sapaan: dikosongkan admin → tidak dirender.
@@ -94,18 +94,15 @@ export function WeddingCover() {
     >
       <div className="relative flex min-h-dvh flex-col">
         <div className="absolute inset-0 overflow-hidden" aria-hidden>
-          {mobileSrc ? (
-            <picture>
-              <source media="(min-width:1024px)" srcSet={desktopSrc} />
-              <source media="(min-width:640px)" srcSet={tabletSrc} />
-              <img
-                src={mobileSrc}
-                alt="Foto prewedding Hasri & Ramli"
-                fetchPriority="high"
-                decoding="async"
-                className="wd-kenburns absolute inset-0 h-full w-full object-cover"
-              />
-            </picture>
+          {coverSrc ? (
+            <Image
+              src={coverSrc}
+              alt="Foto prewedding Hasri & Ramli"
+              fill
+              priority
+              sizes="100vw"
+              className="wd-kenburns object-cover"
+            />
           ) : (
             <div className="h-full w-full bg-[var(--wd-surface)]" />
           )}
@@ -115,10 +112,8 @@ export function WeddingCover() {
 
         <div className="relative z-10 flex min-h-dvh flex-col px-6 pb-12 pt-12 text-center md:px-12">
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <div
-              className="wd-display text-[clamp(2.75rem,13dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,14dvh,9.5rem)]"
-              aria-label={wedding.wedding_date ?? ""}
-            >
+            {dateLabel ? <p className="sr-only">{dateLabel}</p> : null}
+            <div aria-hidden className="wd-display text-[clamp(2.75rem,13dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,14dvh,9.5rem)]">
               {[
                 { value: day, delay: 150 },
                 { value: month, delay: 300 },

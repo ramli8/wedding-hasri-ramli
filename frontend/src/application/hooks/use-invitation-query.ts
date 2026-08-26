@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   invitationService,
+  type InvitationDetail,
   type SubmitRsvpPayload,
   type SubmitGuestbookPayload,
 } from '@/src/domain/services/invitation.service';
@@ -29,13 +30,19 @@ export function getActiveGuestId(): string | null {
   return activeGuestId;
 }
 
-export function useInvitation(guestId?: string | null) {
+export function useInvitation(
+  guestId?: string | null,
+  options?: { initialData?: InvitationDetail },
+) {
   const effective =
     guestId === undefined ? activeGuestId : guestId;
   return useQuery({
     queryKey: invitationKeys.detail(effective),
     queryFn: () => invitationService.getPublicInvitation(effective),
     staleTime: 60_000,
+    // Data yang sudah di-fetch server (RSC) → render pertama langsung penuh,
+    // tanpa layar "Memuat undangan"; React Query tetap refetch sesuai staleTime.
+    initialData: options?.initialData,
   });
 }
 

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 import { BadgeCheck, Check, Loader2, X } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -23,13 +21,6 @@ const attendanceOptions: {
   { value: "hadir", label: "Hadir", icon: Check },
   { value: "tidak_hadir", label: "Berhalangan", icon: X },
 ];
-
-function safeFormat(iso: string | null | undefined, pattern: string): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return format(date, pattern, { locale: localeId });
-}
 
 function toUiStatus(raw: string | null | undefined): AttendanceStatus | null {
   if (raw === "hadir") return "hadir";
@@ -52,8 +43,6 @@ export function WeddingRsvp() {
   const answered = status !== null;
 
   if (!data) return null;
-
-  const deadline = safeFormat(data.wedding.wedding_date, "d MMMM yyyy");
 
   const handleSelect = (value: AttendanceStatus) => {
     if (!guestId) {
@@ -85,7 +74,7 @@ export function WeddingRsvp() {
     <section id="rsvp" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-8 text-center md:max-w-[32rem]">
         <WeddingReveal className="wd-section-head">
-          <h2 className="wd-display text-[2.25rem] md:text-[2.75rem]">
+          <h2 className="wd-display text-[2.25rem] md:text-[3rem]">
             Konfirmasi Kehadiran
           </h2>
           <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
@@ -139,9 +128,7 @@ export function WeddingRsvp() {
             </p>
           ) : null}
 
-          {deadline ? (
-            <p className="wd-label mt-6">Mohon balas sebelum {deadline}</p>
-          ) : null}
+          <p className="wd-label mt-6">Mohon konfirmasi sebelum hari-H, ya</p>
         </WeddingReveal>
       </div>
     </section>

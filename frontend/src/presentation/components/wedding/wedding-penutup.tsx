@@ -117,7 +117,7 @@ const groom = couples.find((c) => c.side === "pria")?.nickname || couples.find((
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--wd-muted)] underline decoration-[var(--wd-line)] underline-offset-4 transition-colors duration-200 hover:text-[var(--wd-accent)] hover:decoration-[var(--wd-accent-line)]"
+                      className="relative text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--wd-muted)] underline decoration-[var(--wd-line)] underline-offset-4 transition-colors duration-200 before:absolute before:-inset-x-2 before:-inset-y-2.5 before:content-[''] hover:text-[var(--wd-accent)] hover:decoration-[var(--wd-accent-line)]"
                     >
                       {key}
                     </a>

@@ -131,7 +131,7 @@ export function WeddingHadiah() {
   };
 
   const copyButtonClass = (copied: boolean) =>
-    `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-200 active:scale-90 ${
+    `relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-200 before:absolute before:-inset-2 before:rounded-full before:content-[''] active:scale-90 ${
       copied
         ? "border-[var(--wd-accent-line)] bg-[var(--wd-accent-soft)] text-[var(--wd-accent)]"
         : "border-[var(--wd-line-strong)] text-[var(--wd-muted)] hover:text-[var(--wd-ink)]"
@@ -215,10 +215,11 @@ export function WeddingHadiah() {
               <ul className="divide-y divide-[var(--wd-line)]">
                 {ewallets.map((wallet) => {
                   const copied = copiedKey === wallet.provider_name;
-                  const hasQr = wallet.is_qris && Boolean(wallet.qr_code_image_url);
+                  const hasImage = Boolean(wallet.qr_code_image_url);
+                  const hasQr = wallet.is_qris && hasImage;
                   return (
                     <li key={wallet.provider_name} className="flex items-center gap-3.5 py-4">
-                      {hasQr && wallet.qr_code_image_url ? (
+                      {hasImage && wallet.qr_code_image_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={wallet.qr_code_image_url}
@@ -244,7 +245,7 @@ export function WeddingHadiah() {
                             haptic(8);
                             setQrWallet(wallet);
                           }}
-                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--wd-accent-line)] bg-[var(--wd-accent-soft)] text-[var(--wd-accent)] transition-all duration-200 active:scale-90"
+                          className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--wd-accent-line)] bg-[var(--wd-accent-soft)] text-[var(--wd-accent)] transition-all duration-200 before:absolute before:-inset-2 before:rounded-full before:content-[''] active:scale-90"
                         >
                           <ScanLine className="h-4 w-4" />
                         </button>
@@ -398,7 +399,7 @@ export function WeddingHadiah() {
                           href={item.item_link}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--sheet-muted)] underline decoration-white/20 underline-offset-2 transition-colors duration-200 hover:text-[var(--sheet-accent)]"
+                          className="relative mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--sheet-muted)] underline decoration-white/20 underline-offset-2 transition-colors duration-200 before:absolute before:-inset-1.5 before:content-[''] hover:text-[var(--sheet-accent)]"
                         >
                           <ExternalLink className="h-3 w-3" aria-hidden />
                           Lihat referensi produk

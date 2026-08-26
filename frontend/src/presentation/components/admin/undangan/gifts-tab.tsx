@@ -99,11 +99,12 @@ const EMPTY_WISHLIST_FORM: WishlistFormState = {
   stockTotal: 1,
 };
 
-const SEGMENTS: { key: GiftSegment; label: string; icon: typeof Building2 }[] = [
-  { key: "bank", label: "Bank", icon: Building2 },
-  { key: "ewallet", label: "E-Wallet", icon: Smartphone },
-  { key: "wishlist", label: "Wishlist", icon: Gift },
-];
+const SEGMENTS: { key: GiftSegment; label: string; icon: typeof Building2 }[] =
+  [
+    { key: "bank", label: "Bank", icon: Building2 },
+    { key: "ewallet", label: "E-Wallet", icon: Smartphone },
+    { key: "wishlist", label: "Wishlist", icon: Gift },
+  ];
 
 export function GiftsTab({ data }: { data?: WeddingResponse }) {
   const [segment, setSegment] = useState<GiftSegment>("bank");
@@ -139,13 +140,21 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [editingEwalletId, setEditingEwalletId] = useState<string | null>(null);
-  const [editingWishlistId, setEditingWishlistId] = useState<string | null>(null);
+  const [editingWishlistId, setEditingWishlistId] = useState<string | null>(
+    null
+  );
   const [bankForm, setBankForm] = useState<BankFormState>(EMPTY_BANK_FORM);
-  const [ewalletForm, setEwalletForm] = useState<EwalletFormState>(EMPTY_EWALLET_FORM);
-  const [wishlistForm, setWishlistForm] = useState<WishlistFormState>(EMPTY_WISHLIST_FORM);
-  const [deleteBank, setDeleteBank] = useState<BankAccountResponse | null>(null);
-  const [deleteEwalletTarget, setDeleteEwalletTarget] = useState<EwalletResponse | null>(null);
-  const [deleteWishlistTarget, setDeleteWishlistTarget] = useState<WishlistItemResponse | null>(null);
+  const [ewalletForm, setEwalletForm] =
+    useState<EwalletFormState>(EMPTY_EWALLET_FORM);
+  const [wishlistForm, setWishlistForm] =
+    useState<WishlistFormState>(EMPTY_WISHLIST_FORM);
+  const [deleteBank, setDeleteBank] = useState<BankAccountResponse | null>(
+    null
+  );
+  const [deleteEwalletTarget, setDeleteEwalletTarget] =
+    useState<EwalletResponse | null>(null);
+  const [deleteWishlistTarget, setDeleteWishlistTarget] =
+    useState<WishlistItemResponse | null>(null);
 
   const isLoading =
     (segment === "bank" && banksLoading) ||
@@ -204,7 +213,11 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
 
   const handleSave = () => {
     if (segment === "bank") {
-      if (!bankForm.bankName.trim() || !bankForm.accountNumber.trim() || !bankForm.accountHolderName.trim()) {
+      if (
+        !bankForm.bankName.trim() ||
+        !bankForm.accountNumber.trim() ||
+        !bankForm.accountHolderName.trim()
+      ) {
         toast.error("Nama bank, no. rekening, dan nama pemilik wajib diisi");
         return;
       }
@@ -215,7 +228,8 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
         image_url: bankForm.imageUrl,
       };
       if (editingBankId) {
-        const previous = banks?.find((b) => b.id === editingBankId)?.image_url ?? null;
+        const previous =
+          banks?.find((b) => b.id === editingBankId)?.image_url ?? null;
         updateBankAccount.mutate(
           { id: editingBankId, req: payload },
           {
@@ -251,7 +265,8 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       };
       if (editingEwalletId) {
         const previous =
-          ewallets?.find((e) => e.id === editingEwalletId)?.qr_code_image_url ?? null;
+          ewallets?.find((e) => e.id === editingEwalletId)?.qr_code_image_url ??
+          null;
         updateEwallet.mutate(
           { id: editingEwalletId, req: payload },
           {
@@ -289,7 +304,8 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       };
       if (editingWishlistId) {
         const previous =
-          wishlist?.find((w) => w.id === editingWishlistId)?.item_image_url ?? null;
+          wishlist?.find((w) => w.id === editingWishlistId)?.item_image_url ??
+          null;
         updateWishlistItem.mutate(
           { id: editingWishlistId, req: payload },
           {
@@ -376,7 +392,12 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
     deleteBankAccount.isPending ||
     deleteEwallet.isPending ||
     deleteWishlistItem.isPending;
-  const editingId = segment === "bank" ? editingBankId : segment === "ewallet" ? editingEwalletId : editingWishlistId;
+  const editingId =
+    segment === "bank"
+      ? editingBankId
+      : segment === "ewallet"
+      ? editingEwalletId
+      : editingWishlistId;
 
   const counts: Record<GiftSegment, number> = {
     bank: (banks ?? []).length,
@@ -394,7 +415,10 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       {/* Alamat pengiriman kado */}
       <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardContent className="space-y-1.5 p-4">
-          <Label htmlFor="shipping-address" className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="shipping-address"
+            className="pl-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Alamat Pengiriman Kado (opsional)
           </Label>
           <Textarea
@@ -439,12 +463,17 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
       {/* Count row */}
       <div className="flex items-center justify-between px-2 min-h-[32px]">
         <span className="text-sm font-semibold tracking-tight">
-          Semua {segment === "bank" ? "Rekening" : segment === "ewallet" ? "E-Wallet" : "Kado"} ({counts[segment]})
+          Semua{" "}
+          {segment === "bank"
+            ? "Rekening"
+            : segment === "ewallet"
+            ? "E-Wallet"
+            : "Kado"}{" "}
+          ({counts[segment]})
         </span>
         {segment === "wishlist" && (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-            <Layers className="w-3.5 h-3.5" />
-            1 tamu = 1 kado
+            <Layers className="w-3.5 h-3.5" />1 tamu = 1 kado
           </span>
         )}
       </div>
@@ -461,24 +490,38 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           ) : (
             <div className="space-y-3">
               {(banks ?? []).map((account) => (
-                <div key={account.id} className="rounded-2xl border border-border bg-card p-4">
+                <div
+                  key={account.id}
+                  className="rounded-2xl border border-border bg-card p-4"
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <button onClick={() => openEditBank(account)} className="min-w-0 text-left">
-                      <p className="truncate text-[14px] font-semibold">{account.bank_name}</p>
+                    <button
+                      onClick={() => openEditBank(account)}
+                      className="min-w-0 text-left"
+                    >
+                      <p className="truncate text-[14px] font-semibold">
+                        {account.bank_name}
+                      </p>
                       <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
                         a.n. {account.account_holder_name}
                       </p>
                     </button>
                     <Switch
                       checked={account.is_active}
-                      onCheckedChange={(checked) => handleToggleBank(account, checked)}
+                      onCheckedChange={(checked) =>
+                        handleToggleBank(account, checked)
+                      }
                       aria-label="Aktifkan rekening"
                     />
                   </div>
                   {/* InfoBox nomor rekening */}
                   <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-4 py-2.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-primary/70">No. Rekening</span>
-                    <span className="text-[15px] font-bold tabular-nums tracking-wide">{account.account_number}</span>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-primary/70">
+                      No. Rekening
+                    </span>
+                    <span className="text-[15px] font-bold tabular-nums tracking-wide">
+                      {account.account_number}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 mt-4 pt-3 border-t border-border/40 divide-x divide-border/40">
                     <button
@@ -513,9 +556,15 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           ) : (
             <div className="space-y-3">
               {(ewallets ?? []).map((ewallet) => (
-                <div key={ewallet.id} className="rounded-2xl border border-border bg-card p-4">
+                <div
+                  key={ewallet.id}
+                  className="rounded-2xl border border-border bg-card p-4"
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <button onClick={() => openEditEwallet(ewallet)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <button
+                      onClick={() => openEditEwallet(ewallet)}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
                       {ewallet.qr_code_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -529,7 +578,9 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className="block truncate text-[14px] font-semibold">{ewallet.provider_name}</span>
+                        <span className="block truncate text-[14px] font-semibold">
+                          {ewallet.provider_name}
+                        </span>
                         <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
                           {ewallet.account_id}
                         </span>
@@ -537,7 +588,9 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                     </button>
                     <Switch
                       checked={ewallet.is_active}
-                      onCheckedChange={(checked) => handleToggleEwallet(ewallet, checked)}
+                      onCheckedChange={(checked) =>
+                        handleToggleEwallet(ewallet, checked)
+                      }
                       aria-label="Aktifkan e-wallet"
                     />
                   </div>
@@ -574,7 +627,10 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           ) : (
             <div className="space-y-3">
               {(wishlist ?? []).map((item) => (
-                <div key={item.id} className="rounded-2xl border border-border bg-card p-4">
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-border bg-card p-4"
+                >
                   <div className="flex items-start gap-3">
                     {item.item_image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -589,7 +645,9 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-semibold">{item.item_name}</p>
+                      <p className="truncate text-[14px] font-semibold">
+                        {item.item_name}
+                      </p>
                       {item.item_link && (
                         <a
                           href={item.item_link}
@@ -668,13 +726,13 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                   ? segment === "bank"
                     ? "Edit Rekening"
                     : segment === "ewallet"
-                      ? "Edit E-Wallet"
-                      : "Edit Kado"
+                    ? "Edit E-Wallet"
+                    : "Edit Kado"
                   : segment === "bank"
-                    ? "Tambah Rekening"
-                    : segment === "ewallet"
-                      ? "Tambah E-Wallet"
-                      : "Tambah Kado"}
+                  ? "Tambah Rekening"
+                  : segment === "ewallet"
+                  ? "Tambah E-Wallet"
+                  : "Tambah Kado"}
               </h2>
               <button
                 onClick={() => setSheetOpen(false)}
@@ -687,32 +745,59 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
             {segment === "bank" && (
               <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
                 <div className="space-y-1.5">
-                  <Label htmlFor="bank-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Bank</Label>
+                  <Label
+                    htmlFor="bank-name"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Nama Bank
+                  </Label>
                   <Input
                     id="bank-name"
                     value={bankForm.bankName}
-                    onChange={(e) => setBankForm((f) => ({ ...f, bankName: e.target.value }))}
+                    onChange={(e) =>
+                      setBankForm((f) => ({ ...f, bankName: e.target.value }))
+                    }
                     placeholder="Cth: BCA"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="bank-number" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nomor Rekening</Label>
+                  <Label
+                    htmlFor="bank-number"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Nomor Rekening
+                  </Label>
                   <Input
                     id="bank-number"
                     inputMode="numeric"
                     value={bankForm.accountNumber}
-                    onChange={(e) => setBankForm((f) => ({ ...f, accountNumber: e.target.value.replace(/\D/g, "") }))}
+                    onChange={(e) =>
+                      setBankForm((f) => ({
+                        ...f,
+                        accountNumber: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
                     placeholder="Cth: 1234567890"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="bank-holder" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Pemilik</Label>
+                  <Label
+                    htmlFor="bank-holder"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Nama Pemilik
+                  </Label>
                   <Input
                     id="bank-holder"
                     value={bankForm.accountHolderName}
-                    onChange={(e) => setBankForm((f) => ({ ...f, accountHolderName: e.target.value }))}
+                    onChange={(e) =>
+                      setBankForm((f) => ({
+                        ...f,
+                        accountHolderName: e.target.value,
+                      }))
+                    }
                     placeholder="Cth: Ramli Pratama"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
@@ -732,21 +817,41 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
             {segment === "ewallet" && (
               <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
                 <div className="space-y-1.5">
-                  <Label htmlFor="ewallet-provider" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Provider</Label>
+                  <Label
+                    htmlFor="ewallet-provider"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Provider
+                  </Label>
                   <Input
                     id="ewallet-provider"
                     value={ewalletForm.providerName}
-                    onChange={(e) => setEwalletForm((f) => ({ ...f, providerName: e.target.value }))}
+                    onChange={(e) =>
+                      setEwalletForm((f) => ({
+                        ...f,
+                        providerName: e.target.value,
+                      }))
+                    }
                     placeholder="Cth: GoPay / OVO / DANA"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="ewallet-account" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nomor / Account ID</Label>
+                  <Label
+                    htmlFor="ewallet-account"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Nomor / Account ID
+                  </Label>
                   <Input
                     id="ewallet-account"
                     value={ewalletForm.accountId}
-                    onChange={(e) => setEwalletForm((f) => ({ ...f, accountId: e.target.value }))}
+                    onChange={(e) =>
+                      setEwalletForm((f) => ({
+                        ...f,
+                        accountId: e.target.value,
+                      }))
+                    }
                     placeholder="Cth: 081234567890"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
@@ -755,19 +860,27 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                   label="QR Code (Opsional)"
                   hint="Rekomendasi 800 × 800 px"
                   value={ewalletForm.qrCodeImageUrl}
-                  onChange={(v) => setEwalletForm((f) => ({ ...f, qrCodeImageUrl: v }))}
+                  onChange={(v) =>
+                    setEwalletForm((f) => ({ ...f, qrCodeImageUrl: v }))
+                  }
                   accept="image/*"
                   folder="wedding"
                   preview="image"
                 />
                 <label className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 cursor-pointer">
                   <div className="space-y-0.5">
-                    <span className="text-[13px] font-medium">Tampilkan sebagai QRIS</span>
-                    <p className="text-[11px] text-muted-foreground">QR scanner hanya muncul untuk QRIS</p>
+                    <span className="text-[13px] font-medium">
+                      Tampilkan sebagai QRIS
+                    </span>
+                    <p className="text-[11px] text-muted-foreground">
+                      QR scanner hanya muncul untuk QRIS
+                    </p>
                   </div>
                   <Switch
                     checked={ewalletForm.isQris}
-                    onCheckedChange={(v) => setEwalletForm((f) => ({ ...f, isQris: v }))}
+                    onCheckedChange={(v) =>
+                      setEwalletForm((f) => ({ ...f, isQris: v }))
+                    }
                   />
                 </label>
               </div>
@@ -776,11 +889,21 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
             {segment === "wishlist" && (
               <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
                 <div className="space-y-1.5">
-                  <Label htmlFor="wishlist-name" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Nama Kado</Label>
+                  <Label
+                    htmlFor="wishlist-name"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Nama Kado
+                  </Label>
                   <Input
                     id="wishlist-name"
                     value={wishlistForm.itemName}
-                    onChange={(e) => setWishlistForm((f) => ({ ...f, itemName: e.target.value }))}
+                    onChange={(e) =>
+                      setWishlistForm((f) => ({
+                        ...f,
+                        itemName: e.target.value,
+                      }))
+                    }
                     placeholder="Cth: Air Fryer"
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
@@ -789,29 +912,51 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
                   label="Foto Kado (Opsional)"
                   hint="Rekomendasi 800 × 800 px"
                   value={wishlistForm.itemImageUrl}
-                  onChange={(v) => setWishlistForm((f) => ({ ...f, itemImageUrl: v }))}
+                  onChange={(v) =>
+                    setWishlistForm((f) => ({ ...f, itemImageUrl: v }))
+                  }
                   accept="image/*"
                   folder="wedding"
                   preview="image"
                 />
                 <div className="space-y-1.5">
-                  <Label htmlFor="wishlist-link" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Link Toko (Opsional)</Label>
+                  <Label
+                    htmlFor="wishlist-link"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Link Toko (Opsional)
+                  </Label>
                   <Input
                     id="wishlist-link"
                     value={wishlistForm.itemLink}
-                    onChange={(e) => setWishlistForm((f) => ({ ...f, itemLink: e.target.value }))}
+                    onChange={(e) =>
+                      setWishlistForm((f) => ({
+                        ...f,
+                        itemLink: e.target.value,
+                      }))
+                    }
                     placeholder="https://tokopedia.com/..."
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="wishlist-stock" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Jumlah Unit</Label>
+                  <Label
+                    htmlFor="wishlist-stock"
+                    className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                  >
+                    Jumlah Unit
+                  </Label>
                   <Input
                     id="wishlist-stock"
                     type="number"
                     min={1}
                     value={wishlistForm.stockTotal}
-                    onChange={(e) => setWishlistForm((f) => ({ ...f, stockTotal: parseInt(e.target.value, 10) }))}
+                    onChange={(e) =>
+                      setWishlistForm((f) => ({
+                        ...f,
+                        stockTotal: parseInt(e.target.value, 10),
+                      }))
+                    }
                     className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                   />
                   <p className="pl-1 text-[10px] font-medium tracking-wide text-muted-foreground/70">
@@ -840,7 +985,11 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
 
       {/* Delete confirm */}
       <AlertDialog
-        open={deleteBank !== null || deleteEwalletTarget !== null || deleteWishlistTarget !== null}
+        open={
+          deleteBank !== null ||
+          deleteEwalletTarget !== null ||
+          deleteWishlistTarget !== null
+        }
         onOpenChange={(open) => {
           if (!open) {
             setDeleteBank(null);
@@ -849,28 +998,32 @@ export function GiftsTab({ data }: { data?: WeddingResponse }) {
           }
         }}
       >
-        <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">
-              {deleteBank ? "Hapus rekening?" : deleteEwalletTarget ? "Hapus e-wallet?" : "Hapus kado?"}
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteBank
+                ? "Hapus rekening?"
+                : deleteEwalletTarget
+                ? "Hapus e-wallet?"
+                : "Hapus kado?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
+            <AlertDialogDescription>
               {deleteBank
                 ? `Rekening ${deleteBank.bank_name} akan dihapus permanen.`
                 : deleteEwalletTarget
-                  ? `E-Wallet ${deleteEwalletTarget.provider_name} akan dihapus permanen.`
-                  : `Kado "${deleteWishlistTarget?.item_name}" akan dihapus permanen.`}
+                ? `E-Wallet ${deleteEwalletTarget.provider_name} akan dihapus permanen.`
+                : `Kado "${deleteWishlistTarget?.item_name}" akan dihapus permanen.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deletePending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

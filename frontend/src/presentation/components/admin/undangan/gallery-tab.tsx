@@ -47,7 +47,9 @@ export function GalleryTab() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<GalleryFormState>(EMPTY_FORM);
-  const [deleteTarget, setDeleteTarget] = useState<GalleryItemResponse | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GalleryItemResponse | null>(
+    null
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -207,22 +209,39 @@ export function GalleryTab() {
                 preview="image"
               />
               <div className="space-y-1.5">
-                <Label htmlFor="gallery-caption" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Caption</Label>
+                <Label
+                  htmlFor="gallery-caption"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Caption
+                </Label>
                 <Input
                   id="gallery-caption"
                   value={form.caption}
-                  onChange={(e) => setForm((f) => ({ ...f, caption: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, caption: e.target.value }))
+                  }
                   placeholder="Cth: Prewedding di pantai"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="gallery-order" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Urutan</Label>
+                <Label
+                  htmlFor="gallery-order"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Urutan
+                </Label>
                 <Input
                   id="gallery-order"
                   type="number"
                   value={form.orderIndex}
-                  onChange={(e) => setForm((f) => ({ ...f, orderIndex: parseInt(e.target.value, 10) }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      orderIndex: parseInt(e.target.value, 10),
+                    }))
+                  }
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
@@ -246,23 +265,30 @@ export function GalleryTab() {
       )}
 
       {/* Delete confirm */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">Hapus foto?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
-              Foto{deleteTarget?.caption ? ` &quot;${deleteTarget.caption}&quot;` : ""} akan dihapus permanen.
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus foto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Foto
+              {deleteTarget?.caption
+                ? ` &quot;${deleteTarget.caption}&quot;`
+                : ""}{" "}
+              akan dihapus permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteGalleryItem.isPending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -146,7 +146,9 @@ export function WeddingUcapan() {
                   Belum ada ucapan.
                 </p>
                 <p className="text-[13px] text-[var(--wd-muted)]">
-                  Jadilah yang pertama menitipkan doa.
+                  {guest
+                    ? "Jadilah yang pertama menitipkan doa."
+                    : "Ucapan tamu akan tampil di sini."}
                 </p>
               </div>
             ) : (
@@ -181,7 +183,7 @@ export function WeddingUcapan() {
                                   type="button"
                                   onClick={() => toggleThread(thread.id)}
                                   aria-expanded={!isCollapsed}
-                                  className="mt-2.5 inline-flex h-7 items-center rounded-full border border-[var(--wd-line-strong)] px-3 text-[11px] font-semibold text-[var(--wd-muted)] transition-colors duration-200 hover:border-[var(--wd-accent-line)] hover:text-[var(--wd-ink)]"
+                                  className="relative mt-2.5 inline-flex h-7 items-center rounded-full border border-[var(--wd-line-strong)] px-3 text-[11px] font-semibold text-[var(--wd-muted)] transition-colors duration-200 before:absolute before:-inset-2.5 before:rounded-full before:content-[''] hover:border-[var(--wd-accent-line)] hover:text-[var(--wd-ink)]"
                                 >
                                   {isCollapsed
                                     ? `Tampilkan Balasan (${replies.length})`

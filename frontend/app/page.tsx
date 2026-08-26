@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Amiri, Great_Vibes } from "next/font/google";
 import { WeddingPage } from "@/src/presentation/components/wedding/wedding-page";
+import type { InvitationDetail } from "@/src/domain/services/invitation.service";
 import "./wedding.css";
 
 const greatVibes = Great_Vibes({
@@ -17,40 +18,29 @@ const amiri = Amiri({
   display: "swap",
 });
 
-interface InvitationMeta {
-  wedding?: {
-    groom_name?: string;
-    bride_name?: string;
-    wedding_date?: string | null;
-    content?: {
-      cover?: { image_desktop?: string | null } | null;
-    } | null;
-  } | null;
-  couples?: {
-    side: string;
-    nickname?: string | null;
-    full_name?: string;
-  }[];
-}
-
 /**
- * Ambil data undangan langsung dari backend untuk preview share (WA/IG/dll).
- * Gagal / timeout → jatuh ke nilai default agar link tetap cantik.
+ * Ambil undangan lengkap langsung dari backend di server (RSC).
+ * Hasilnya jadi initialData React Query → render pertama sudah penuh,
+ * tidak ada waterfall JS→API→render dan gambar ikut dimuat dari HTML awal.
+ * Gagal / timeout → kembalikan null; client fetch sendiri seperti sebelumnya.
  */
-async function fetchInvitationMeta(): Promise<InvitationMeta | null> {
+async function fetchInvitation(
+  guest?: string,
+): Promise<InvitationDetail | null> {
   const rawBase =
     process.env.BACKEND_INTERNAL_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     "http://localhost:8080";
   const apiBase = `${rawBase.replace(/\/v1\/?$/, "").replace(/\/$/, "")}/v1`;
+  const url = `${apiBase}/invitation${guest ? `?guest=${encodeURIComponent(guest)}` : ""}`;
   try {
-    const res = await fetch(`${apiBase}/invitation`, {
+    const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate: 300 },
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
-    return (await res.json()) as InvitationMeta;
+    return (await res.json()) as InvitationDetail;
   } catch {
     return null;
   }
@@ -75,11 +65,11 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<{ guest?: string }>;
 }): Promise<Metadata> {
-  // searchParams dibaca supaya URL dengan ?guest= punya preview sama rapi;
-  // isi metadata selalu generik — nama tamu tidak ikut ke preview share.
-  await searchParams;
+  const { guest } = await searchParams;
 
-  const data = await fetchInvitationMeta();
+  // URL identik dengan fetch di WeddingRoutePage → Next mem-memoize
+  // jadi satu panggilan upstream per render pass.
+  const data = await fetchInvitation(guest);
   // Tampilkan panggilan (nickname) seperti di cover — fallback ke nama lengkap.
   const pick = (side: string, fallback: string) =>
     data?.couples?.find((c) => c.side === side)?.nickname ||
@@ -130,10 +120,11 @@ export default async function WeddingRoutePage({
   searchParams: Promise<{ guest?: string }>;
 }) {
   const { guest } = await searchParams;
+  const initialData = await fetchInvitation(guest ?? undefined);
 
   return (
     <div className={`${greatVibes.variable} ${amiri.variable}`}>
-      <WeddingPage guest={guest} />
+      <WeddingPage guest={guest} initialData={initialData ?? undefined} />
     </div>
   );
 }

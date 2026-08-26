@@ -89,7 +89,7 @@ export function WeddingDresscode() {
                           />
                         ) : null}
                       </span>
-                      <span className="text-[9px] uppercase tracking-widest text-[var(--wd-muted)] md:text-[10px]">
+                      <span className="text-[10px] uppercase tracking-widest text-[var(--wd-muted)] md:text-[11px]">
                         {valid ? color.replace("#", "") : "—"}
                       </span>
                     </button>

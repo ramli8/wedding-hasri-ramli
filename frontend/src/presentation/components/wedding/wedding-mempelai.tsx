@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
 import { useInvitation } from "@/src/application/hooks/use-invitation-query";
@@ -28,6 +29,9 @@ export function WeddingMempelai() {
       <div className="wd-container flex flex-col items-center gap-10 text-center lg:max-w-[64rem]">
         <WeddingReveal className="wd-section-head">
           <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Mempelai</h2>
+          <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
+            Dua hati yang dipertemukan dalam kasih.
+          </p>
         </WeddingReveal>
 
         <div className="relative flex w-full flex-col gap-6 md:flex-row md:items-stretch md:justify-center md:gap-3">
@@ -40,11 +44,19 @@ export function WeddingMempelai() {
 
           {[bride, groom].map((couple, index) =>
             couple ? (
-              <WeddingReveal
-                key={couple.side}
-                delay={index * 120}
-                className="w-full md:flex-1"
-              >
+              <Fragment key={couple.side}>
+                {index > 0 ? (
+                  <span
+                    aria-hidden
+                    className="wd-script self-center text-[4rem] leading-none text-[var(--wd-accent)] md:hidden"
+                  >
+                    &amp;
+                  </span>
+                ) : null}
+                <WeddingReveal
+                  delay={index * 120}
+                  className="w-full md:flex-1"
+                >
                 <figure className="wd-hover-color group relative overflow-hidden rounded-[1.5rem] bg-[var(--wd-surface)]">
                   <div className="relative aspect-[3/4] w-full">
                     {couple.photo_url ? (
@@ -92,13 +104,14 @@ export function WeddingMempelai() {
                       href={`https://instagram.com/${couple.instagram_handle.replace(/^@/, "")}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors hover:text-[var(--wd-ink)]"
+                      className="relative inline-flex items-center text-[12px] font-semibold text-[var(--wd-ink)]/70 transition-colors before:absolute before:-inset-1.5 before:rounded-full before:content-[''] hover:text-[var(--wd-ink)]"
                     >
                       {couple.instagram_handle}
                     </a>
                   </div>
                 ) : null}
               </WeddingReveal>
+              </Fragment>
             ) : null,
           )}
         </div>

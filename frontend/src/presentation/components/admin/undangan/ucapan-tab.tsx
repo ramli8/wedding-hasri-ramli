@@ -3,9 +3,19 @@
 import { useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { BadgeCheck, Inbox, Loader2, MessagesSquare, Trash2, X } from "lucide-react";
+import {
+  BadgeCheck,
+  Inbox,
+  Loader2,
+  MessagesSquare,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
-import { Avatar, AvatarFallback } from "@/src/presentation/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/src/presentation/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,9 +59,13 @@ export function UcapanTab() {
 
   const [filter, setFilter] = useState<UcapanFilter>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [replyTarget, setReplyTarget] = useState<AdminGuestbookEntry | null>(null);
+  const [replyTarget, setReplyTarget] = useState<AdminGuestbookEntry | null>(
+    null
+  );
   const [draft, setDraft] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<AdminGuestbookEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminGuestbookEntry | null>(
+    null
+  );
 
   const entries = data ?? [];
   const unrepliedCount = entries.filter((e) => !e.reply_text).length;
@@ -78,7 +92,7 @@ export function UcapanTab() {
           setSheetOpen(false);
         },
         onError: () => toast.error("Gagal mengirim balasan"),
-      },
+      }
     );
   };
 
@@ -114,7 +128,9 @@ export function UcapanTab() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {key === "unreplied" && unrepliedCount > 0 ? `${label} (${unrepliedCount})` : label}
+            {key === "unreplied" && unrepliedCount > 0
+              ? `${label} (${unrepliedCount})`
+              : label}
           </button>
         ))}
       </div>
@@ -122,7 +138,8 @@ export function UcapanTab() {
       {/* Count row */}
       <div className="flex items-center justify-between px-2 min-h-[32px]">
         <span className="text-sm font-semibold tracking-tight">
-          {filter === "all" ? "Semua Ucapan" : "Belum Dibalas"} ({filtered.length})
+          {filter === "all" ? "Semua Ucapan" : "Belum Dibalas"} (
+          {filtered.length})
         </span>
         <span className="text-[11px] font-medium text-muted-foreground">
           Balasan tampil sebagai Mempelai
@@ -141,7 +158,10 @@ export function UcapanTab() {
       ) : (
         <div className="space-y-3">
           {filtered.map((entry) => (
-            <div key={entry.id} className="rounded-2xl border border-border bg-card p-4">
+            <div
+              key={entry.id}
+              className="rounded-2xl border border-border bg-card p-4"
+            >
               <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="border border-border/60 bg-primary/5 text-[15px] [font-family:var(--font-cormorant),serif] text-primary">
@@ -150,7 +170,9 @@ export function UcapanTab() {
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="truncate text-[14px] font-semibold">{entry.guest_name}</span>
+                    <span className="truncate text-[14px] font-semibold">
+                      {entry.guest_name}
+                    </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground">
                       {timeAgo(entry.created_at)}
                     </span>
@@ -162,7 +184,8 @@ export function UcapanTab() {
                   {entry.reply_text ? (
                     <div className="mt-3 rounded-xl border border-primary/10 bg-primary/5 px-3.5 py-2.5">
                       <p className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-primary">
-                        <BadgeCheck className="h-3 w-3" /> Dibalas {timeAgo(entry.replied_at ?? entry.created_at)}
+                        <BadgeCheck className="h-3 w-3" /> Dibalas{" "}
+                        {timeAgo(entry.replied_at ?? entry.created_at)}
                       </p>
                       <p className="mt-1 whitespace-pre-line break-words text-[12px] leading-relaxed text-foreground/80">
                         {entry.reply_text}
@@ -207,7 +230,9 @@ export function UcapanTab() {
           ></div>
           <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
             <div className="flex items-center justify-between mb-5 shrink-0 relative">
-              <h2 className="text-[15px] font-bold w-full text-center">{sheetTitle}</h2>
+              <h2 className="text-[15px] font-bold w-full text-center">
+                {sheetTitle}
+              </h2>
               <button
                 onClick={() => setSheetOpen(false)}
                 className="absolute right-0 p-2 bg-muted/50 rounded-full hover:bg-muted text-muted-foreground transition-colors"
@@ -218,7 +243,9 @@ export function UcapanTab() {
 
             <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
               <div className="rounded-xl bg-muted/20 border border-border/60 px-4 py-3">
-                <p className="text-[12px] font-semibold">{replyTarget.guest_name}</p>
+                <p className="text-[12px] font-semibold">
+                  {replyTarget.guest_name}
+                </p>
                 <p className="mt-0.5 whitespace-pre-line break-words text-[12px] leading-relaxed text-muted-foreground">
                   {replyTarget.message_text}
                 </p>
@@ -259,27 +286,34 @@ export function UcapanTab() {
       )}
 
       {/* Konfirmasi hapus */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">Hapus ucapan?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
-              Ucapan dari &quot;{deleteTarget?.guest_name}&quot; akan dihapus permanen.
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus ucapan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ucapan dari &quot;{deleteTarget?.guest_name}&quot; akan dihapus
+              permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteGuestbook.isPending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteGuestbook.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Hapus"}
+              {deleteGuestbook.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Hapus"
+              )}
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      </div>
+    </div>
   );
 }

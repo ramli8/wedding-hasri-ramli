@@ -64,13 +64,39 @@ export function WeddingGaleri() {
     [gallery.length],
   );
 
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const prevButtonRef = useRef<HTMLButtonElement | null>(null);
+  const nextButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (activeIndex === null) return;
+
+    lastActiveElementRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
       if (event.key === "ArrowRight") goNext();
       if (event.key === "ArrowLeft") goPrev();
+      if (event.key === "Tab") {
+        const focusable = [closeButtonRef.current, prevButtonRef.current, nextButtonRef.current]
+          .filter((el): el is HTMLButtonElement => el !== null);
+        if (focusable.length === 0) return;
+        const currentIndex = focusable.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
+        event.preventDefault();
+        const nextIndex = event.shiftKey
+          ? currentIndex <= 0
+            ? focusable.length - 1
+            : currentIndex - 1
+          : currentIndex === focusable.length - 1 || currentIndex < 0
+            ? 0
+            : currentIndex + 1;
+        focusable[nextIndex].focus();
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -78,6 +104,7 @@ export function WeddingGaleri() {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.documentElement.style.overflow = "";
+      lastActiveElementRef.current?.focus();
     };
   }, [activeIndex, close, goNext, goPrev]);
 
@@ -89,7 +116,10 @@ export function WeddingGaleri() {
     <section id="galeri" className="wd-section">
       <div className="wd-container flex flex-col items-center gap-8 text-center">
         <WeddingReveal className="wd-section-head">
-          <h2 className="wd-display text-[2.25rem]">Galeri</h2>
+          <h2 className="wd-display text-[2.25rem] md:text-[3rem]">Galeri</h2>
+          <p className="max-w-[24rem] text-[13px] leading-relaxed text-[var(--wd-muted)]">
+            Potongan momen yang kami abadikan.
+          </p>
         </WeddingReveal>
 
         <WeddingReveal delay={100} className="w-full">
@@ -152,6 +182,7 @@ export function WeddingGaleri() {
         >
           <button
             type="button"
+            ref={closeButtonRef}
             onClick={close}
             aria-label="Tutup"
             className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-all duration-200 active:scale-95"
@@ -163,6 +194,7 @@ export function WeddingGaleri() {
             <>
               <button
                 type="button"
+                ref={prevButtonRef}
                 onClick={(event) => {
                   event.stopPropagation();
                   haptic(8);
@@ -175,6 +207,7 @@ export function WeddingGaleri() {
               </button>
               <button
                 type="button"
+                ref={nextButtonRef}
                 onClick={(event) => {
                   event.stopPropagation();
                   haptic(8);

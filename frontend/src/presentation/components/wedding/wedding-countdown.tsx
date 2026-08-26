@@ -71,7 +71,8 @@ export function WeddingCountdown() {
             <span
               key={parts.days}
               aria-hidden
-              className="wd-year-hollow block text-[clamp(7rem,26vw,12rem)] leading-[0.85]"
+              style={{ minWidth: `${String(parts.days).length}ch` }}
+              className="wd-year-hollow inline-grid place-items-center text-[clamp(7rem,26vw,12rem)] leading-[0.85]"
             >
               {parts.days}
             </span>

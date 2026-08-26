@@ -126,7 +126,10 @@ export function FaqTab() {
         </div>
       ) : (
         faqs.map((faq) => (
-          <div key={faq.id} className="rounded-2xl border border-border bg-card p-4">
+          <div
+            key={faq.id}
+            className="rounded-2xl border border-border bg-card p-4"
+          >
             <div className="flex items-start gap-2.5">
               <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <HelpCircle className="h-4 w-4" />
@@ -189,33 +192,57 @@ export function FaqTab() {
 
             <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 space-y-4 no-scrollbar">
               <div className="space-y-1.5">
-                <Label htmlFor="faq-question" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Pertanyaan</Label>
+                <Label
+                  htmlFor="faq-question"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Pertanyaan
+                </Label>
                 <Input
                   id="faq-question"
                   value={form.question}
-                  onChange={(e) => setForm((f) => ({ ...f, question: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, question: e.target.value }))
+                  }
                   placeholder="Cth: Boleh datang tanpa hadir?"
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="faq-answer" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Jawaban</Label>
+                <Label
+                  htmlFor="faq-answer"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Jawaban
+                </Label>
                 <Textarea
                   id="faq-answer"
                   value={form.answer}
-                  onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, answer: e.target.value }))
+                  }
                   rows={4}
                   placeholder="Tulis jawabannya di sini..."
                   className="rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="faq-order" className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1">Urutan</Label>
+                <Label
+                  htmlFor="faq-order"
+                  className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider pl-1"
+                >
+                  Urutan
+                </Label>
                 <Input
                   id="faq-order"
                   type="number"
                   value={form.orderIndex}
-                  onChange={(e) => setForm((f) => ({ ...f, orderIndex: parseInt(e.target.value, 10) }))}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      orderIndex: parseInt(e.target.value, 10),
+                    }))
+                  }
                   className="h-11 rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none"
                 />
               </div>
@@ -239,23 +266,27 @@ export function FaqTab() {
       )}
 
       {/* Delete confirm */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="max-w-[340px] rounded-[2rem] p-6">
-          <AlertDialogHeader className="items-center space-y-2 text-center sm:text-center">
-            <AlertDialogTitle className="text-base">Hapus FAQ?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
-              Pertanyaan &quot;{deleteTarget?.question}&quot; akan dihapus permanen.
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus FAQ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pertanyaan &quot;{deleteTarget?.question}&quot; akan dihapus
+              permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteFaq.isPending}
-              className="w-full bg-destructive text-white hover:bg-destructive/90 active:scale-95 transition-all"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full active:scale-95 transition-all">Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

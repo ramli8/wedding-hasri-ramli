@@ -30,6 +30,8 @@ type Repository interface {
 	IsQRCodeExists(ctx context.Context, qrCode string) (bool, error)
 	UpdateStatusSent(ctx context.Context, id string, status string) error
 	CheckIn(ctx context.Context, id string) error
+	CheckInByQRCodeAtomic(ctx context.Context, qrCode string) (*models.Guest, error)
+	CheckInByIDAtomic(ctx context.Context, id string) (*models.Guest, error)
 	ListAll(ctx context.Context) ([]models.Guest, error)
 
 	// Guest Category operations
@@ -192,6 +194,88 @@ func (r *repository) CheckIn(ctx context.Context, id string) error {
 		Model(&models.Guest{}).
 		Where("id = ?", id).
 		Update("check_in_at", now).Error
+}
+
+// guestCheckInScan adalah baris hasil UPDATE..RETURNING check-in atomik.
+type guestCheckInScan struct {
+	ID                string
+	GuestCategoryID   int
+	CategoryName      string
+	QRCode            string
+	Name              string
+	PhoneNumber       *string
+	InstagramUsername *string
+	Address           *string
+	Note              *string
+	StatusAttending   string
+	StatusSent        string
+	CheckInAt         *time.Time
+	CheckOutAt        *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+// checkInAtomic melakukan check-in dalam SATU round-trip database:
+// UPDATE dengan guard `check_in_at IS NULL` di dalam statement (atomik,
+// anti double-scan tanpa race) + JOIN kategori + RETURNING semua kolom
+// yang dibutuhkan response. Jauh lebih cepat dari pola
+// SELECT -> validasi -> UPDATE (3 round-trip).
+func (r *repository) checkInAtomic(ctx context.Context, column string, arg any) (*models.Guest, error) {
+	var row guestCheckInScan
+	res := r.db.GetDB().WithContext(ctx).Raw(`
+UPDATE guests g
+SET check_in_at = now()
+FROM guest_categories c
+WHERE c.id = g.guest_category_id
+  AND g.`+column+` = ?
+  AND g.deleted_at IS NULL
+  AND g.check_in_at IS NULL
+RETURNING g.id, g.guest_category_id, c.name AS category_name, g.qr_code, g.name,
+          g.phone_number, g.instagram_username, g.address, g.note,
+          g.status_attending, g.status_sent, g.check_in_at, g.check_out_at,
+          g.created_at, g.updated_at`, arg).Scan(&row)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		// Bedakan: tamu tidak ada vs sudah check-in (hanya di jalur error).
+		var count int64
+		r.db.GetDB().WithContext(ctx).Model(&models.Guest{}).
+			Where(column+" = ? AND deleted_at IS NULL", arg).
+			Count(&count)
+		if count == 0 {
+			return nil, ErrGuestNotFound
+		}
+		return nil, ErrAlreadyCheckedIn
+	}
+
+	return &models.Guest{
+		ID:                row.ID,
+		GuestCategoryID:   row.GuestCategoryID,
+		GuestCategory:     models.GuestCategory{Name: row.CategoryName},
+		QRCode:            row.QRCode,
+		Name:              row.Name,
+		PhoneNumber:       row.PhoneNumber,
+		InstagramUsername: row.InstagramUsername,
+		Address:           row.Address,
+		Note:              row.Note,
+		StatusAttending:   row.StatusAttending,
+		StatusSent:        row.StatusSent,
+		CheckInAt:         row.CheckInAt,
+		CheckOutAt:        row.CheckOutAt,
+		CreatedAt:         row.CreatedAt,
+		UpdatedAt:         row.UpdatedAt,
+	}, nil
+}
+
+// CheckInByQRCodeAtomic check-in via kode QR (satu round-trip, atomik).
+func (r *repository) CheckInByQRCodeAtomic(ctx context.Context, qrCode string) (*models.Guest, error) {
+	return r.checkInAtomic(ctx, "qr_code", qrCode)
+}
+
+// CheckInByIDAtomic check-in via ID tamu (satu round-trip, atomik).
+func (r *repository) CheckInByIDAtomic(ctx context.Context, id string) (*models.Guest, error) {
+	return r.checkInAtomic(ctx, "id", id)
 }
 
 func (r *repository) ListAll(ctx context.Context) ([]models.Guest, error) {

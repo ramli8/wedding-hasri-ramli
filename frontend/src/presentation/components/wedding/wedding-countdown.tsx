@@ -40,6 +40,11 @@ export function WeddingCountdown() {
     targetDate ? diffToParts(targetDate) : null,
   );
 
+  // Nilai hitung mundur bergantung waktu-jalan → tidak boleh ikut SSR,
+  // kalau tidak detik server vs klien beda dan hydration gagal.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+
   useEffect(() => {
     if (!targetDate) return;
     setParts(diffToParts(targetDate));
@@ -47,7 +52,7 @@ export function WeddingCountdown() {
     return () => window.clearInterval(interval);
   }, [targetDate]);
 
-  if (!parts) return null;
+  if (!parts || !isMounted) return null;
 
   const timeUnits = [
     { value: pad(parts.hours), label: "Jam", ticking: false },

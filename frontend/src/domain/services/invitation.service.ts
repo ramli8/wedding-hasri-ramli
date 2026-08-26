@@ -139,6 +139,10 @@ export interface InvitationGuestInfo {
   name: string;
   qr_code: string;
   category: string;
+  /** Jam khusus kategori tamu — sumber jam di wedding-cover. */
+  category_start_time: string | null;
+  category_end_time: string | null;
+  is_vip: boolean;
 }
 
 /** Jawaban konfirmasi yang sudah tersimpan untuk tamu ini (jika ada). */

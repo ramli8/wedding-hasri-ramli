@@ -5,6 +5,7 @@ export interface GuestCategory {
   name: string;
   start_time: string | null;
   end_time: string | null;
+  is_vip: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -27,12 +28,14 @@ export interface CreateGuestCategoryRequest {
   name: string;
   start_time: string | null;
   end_time: string | null;
+  is_vip: boolean;
 }
 
 export interface UpdateGuestCategoryRequest {
   name?: string;
   start_time: string | null;
   end_time: string | null;
+  is_vip?: boolean;
 }
 
 export interface Guest {

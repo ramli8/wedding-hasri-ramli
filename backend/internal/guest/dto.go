@@ -9,12 +9,14 @@ type CreateGuestCategoryRequest struct {
 	Name      string     `json:"name" validate:"required,min=2,max=100"`
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
+	IsVip     bool       `json:"is_vip"`
 }
 
 type UpdateGuestCategoryRequest struct {
 	Name      string     `json:"name" validate:"omitempty,min=2,max=100"`
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
+	IsVip     *bool      `json:"is_vip"`
 }
 
 type GuestCategoryResponse struct {
@@ -22,6 +24,7 @@ type GuestCategoryResponse struct {
 	Name      string     `json:"name"`
 	StartTime *time.Time `json:"start_time"`
 	EndTime   *time.Time `json:"end_time"`
+	IsVip     bool       `json:"is_vip"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }

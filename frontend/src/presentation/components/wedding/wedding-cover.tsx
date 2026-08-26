@@ -3,16 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { useInvitation } from "@/src/application/hooks/use-invitation-query";
 import { useWeddingInvitation } from "@/src/lib/invitation/wedding-context";
+import { EVENT_TIMEZONE_LABEL } from "@/src/lib/invitation/timezone";
 import { prefersReducedMotion } from "@/src/lib/invitation/reduced-motion";
 import { haptic } from "@/src/lib/invitation/haptics";
 import { cn } from "@/src/lib/utils";
 
-function splitDateParts(iso: string | null): { day: string; month: string; year: string } {
+function splitDateParts(iso: string | null): {
+  day: string;
+  month: string;
+  year: string;
+} {
   if (!iso) return { day: "--", month: "--", year: "--" };
   // Baca lewat getter lokal (bukan potong ISO UTC) agar tanggal sesuai zona pengguna.
   const d = new Date(iso);
@@ -57,11 +62,30 @@ export function WeddingCover() {
   // Baris kecil di bawah tanggal & sapaan: dikosongkan admin → tidak dirender.
   const saveTheDateLabel = cover.save_the_date_label || "";
   const guestGreetingLabel = cover.guest_greeting_label || "";
+  // Jam khusus kategori tamu (tiap tamu bisa berbeda) — format "08.00 – 10.00".
+  const guestTimeLabel = (() => {
+    const parts = [
+      data.guest?.category_start_time,
+      data.guest?.category_end_time,
+    ]
+      .filter((t): t is string => Boolean(t))
+      .map((t) => {
+        const d = new Date(t);
+        return Number.isNaN(d.getTime())
+          ? null
+          : `${String(d.getUTCHours()).padStart(2, "0")}.${String(
+              d.getUTCMinutes(),
+            ).padStart(2, "0")}`;
+      })
+      .filter(Boolean);
+    return parts.length ? parts.join(" – ") : "";
+  })();
   // Nama panggilan untuk tampilan besar; fallback ke nama lengkap.
   const groomDisplay =
     data.couples.find((c) => c.side === "pria")?.nickname || wedding.groom_name;
   const brideDisplay =
-    data.couples.find((c) => c.side === "wanita")?.nickname || wedding.bride_name;
+    data.couples.find((c) => c.side === "wanita")?.nickname ||
+    wedding.bride_name;
 
   const handleOpen = () => {
     if (exiting) return;
@@ -77,12 +101,8 @@ export function WeddingCover() {
     // Koreografi: konten (reveal) menyala saat cover masih meluncur —
     // elemen ayat ikut bangun tepat ketika tepi bawah cover melewatinya.
     timeoutsRef.current.push(window.setTimeout(() => open(), 380));
-    timeoutsRef.current.push(
-      window.setTimeout(() => setHidden(true), 930),
-    );
+    timeoutsRef.current.push(window.setTimeout(() => setHidden(true), 930));
   };
-
-
 
   return (
     <section
@@ -113,7 +133,10 @@ export function WeddingCover() {
         <div className="relative z-10 flex min-h-dvh flex-col px-6 pb-12 pt-12 text-center md:px-12">
           <div className="flex min-h-0 flex-1 items-center justify-center">
             {dateLabel ? <p className="sr-only">{dateLabel}</p> : null}
-            <div aria-hidden className="wd-display text-[clamp(2.75rem,13dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,14dvh,9.5rem)]">
+            <div
+              aria-hidden
+              className="wd-display text-[clamp(2.75rem,13dvh,9rem)] leading-[0.85] text-white lg:text-[clamp(5rem,14dvh,9.5rem)]"
+            >
               {[
                 { value: day, delay: 150 },
                 { value: month, delay: 300 },
@@ -150,6 +173,11 @@ export function WeddingCover() {
                     {dateLabel}
                   </p>
                 ) : null}
+                {guestTimeLabel ? (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80 md:text-[12px]">
+                    {guestTimeLabel}
+                  </p>
+                ) : null}
                 {saveTheDateLabel ? (
                   <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">
                     {saveTheDateLabel}
@@ -160,10 +188,20 @@ export function WeddingCover() {
 
             <div className="mt-6 flex flex-col items-center gap-4">
               {guest?.name ? (
-                <p className="text-[12px] tracking-wide text-white/70">
-                  {guestGreetingLabel ? `${guestGreetingLabel} ` : ""}
-                  <span className="font-semibold text-white">{guest.name}</span>
-                </p>
+                <div className="flex flex-col items-center gap-2.5">
+                  {guest.is_vip ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/45 bg-white/10 px-3.5 py-1 text-[9px] font-bold uppercase tracking-[0.28em] text-white backdrop-blur-sm">
+                      <Sparkles className="h-3 w-3" aria-hidden />
+                      Tamu VIP
+                    </span>
+                  ) : null}
+                  <p className="text-[12px] tracking-wide text-white/70">
+                    {guestGreetingLabel ? `${guestGreetingLabel} ` : ""}
+                    <span className="font-semibold text-white">
+                      {guest.name}
+                    </span>
+                  </p>
+                </div>
               ) : null}
               <button
                 type="button"

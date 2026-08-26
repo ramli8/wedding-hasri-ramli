@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/src/presentation/components/ui/table";
 import { Badge } from "@/src/presentation/components/ui/badge";
+import { Switch } from "@/src/presentation/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -101,6 +102,9 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   UserRound,
+  Link2,
+  Copy,
+  Printer,
 } from "lucide-react";
 import {
   useGuests,
@@ -174,7 +178,7 @@ export default function GuestsPage() {
       search: "",
       sort_by: "created_at",
       sort_dir: "desc",
-    },
+    }
   );
 
   const [searchInput, setSearchInput] = useState("");
@@ -214,8 +218,11 @@ export default function GuestsPage() {
 
   // API hooks
   const { data: guestsData, isLoading, isFetching } = useGuests(queryParams);
-  const { data: deletedGuestsData, isLoading: isLoadingDeleted, isFetching: isFetchingDeleted } =
-    useDeletedGuests(deletedQueryParams);
+  const {
+    data: deletedGuestsData,
+    isLoading: isLoadingDeleted,
+    isFetching: isFetchingDeleted,
+  } = useDeletedGuests(deletedQueryParams);
   const { data: categoriesData } = useGuestCategories({ page_size: 100 });
 
   const createCategory = useCreateGuestCategory();
@@ -224,32 +231,80 @@ export default function GuestsPage() {
 
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [categoryName, setCategoryName] = useState("");
+  const [categoryStart, setCategoryStart] = useState("");
+  const [categoryEnd, setCategoryEnd] = useState("");
+  const [categoryVip, setCategoryVip] = useState(false);
   const [deleteCategoryItem, setDeleteCategoryItem] = useState<any>(null);
+
+  // Kolom TIME di DB disimpan sebagai timestamp berbasis hari-nol yang sama,
+  // jadi konversi bolak-balik cukup lewat potongan "HH:mm".
+  const timeToIso = (t: string) => (t ? `2000-01-01T${t}:00Z` : null);
+  const isoToInput = (iso: string | null | undefined) =>
+    typeof iso === "string" && iso.length >= 16 ? iso.slice(11, 16) : "";
+  const resetCategoryForm = () => {
+    setEditingCategory(null);
+    setCategoryName("");
+    setCategoryStart("");
+    setCategoryEnd("");
+    setCategoryVip(false);
+  };
+
+  // Tautan undangan personal tamu — dipakai admin untuk dibagikan manual.
+  const invitationUrlFor = (guestId: string) =>
+    `${window.location.origin}/?guest=${guestId}`;
+
+  const handleCopyInvitationLink = async (guestId: string) => {
+    try {
+      await navigator.clipboard.writeText(invitationUrlFor(guestId));
+      toast.success("Tautan undangan disalin");
+    } catch {
+      toast.error("Gagal menyalin tautan");
+    }
+  };
+
+  const handleCopyQrCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success(`Kode ${code} disalin`);
+    } catch {
+      toast.error("Gagal menyalin kode");
+    }
+  };
+
+  // Warna pill status: hijau = positif, merah = negatif, abu = menunggu.
+  const statusPillClass = (value: string | undefined) => {
+    const v = (value ?? "").toLowerCase();
+    if (v === "hadir" || v === "sent")
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+    if (v === "tidak_hadir" || v === "failed")
+      return "bg-destructive/10 text-destructive";
+    return "bg-muted text-muted-foreground";
+  };
 
   // Prevent body scroll when custom modals are open
   useEffect(() => {
     if (
-      modalType || 
-      isCategoryModalOpen || 
-      isCreateDialogOpen || 
-      isEditDialogOpen || 
-      isImportModalOpen || 
+      modalType ||
+      isCategoryModalOpen ||
+      isCreateDialogOpen ||
+      isEditDialogOpen ||
+      isImportModalOpen ||
       isQRDialogOpen
     ) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     }
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     };
   }, [
-    modalType, 
-    isCategoryModalOpen, 
-    isCreateDialogOpen, 
-    isEditDialogOpen, 
-    isImportModalOpen, 
-    isQRDialogOpen
+    modalType,
+    isCategoryModalOpen,
+    isCreateDialogOpen,
+    isEditDialogOpen,
+    isImportModalOpen,
+    isQRDialogOpen,
   ]);
 
   const createGuest = useCreateGuest();
@@ -453,7 +508,7 @@ export default function GuestsPage() {
       setImportPreviewData(preview);
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || "Gagal melihat pratinjau file",
+        err.response?.data?.message || "Gagal melihat pratinjau file"
       );
     }
   };
@@ -462,7 +517,7 @@ export default function GuestsPage() {
     if (!importPreviewData) return;
 
     const validItems = importPreviewData.items.filter(
-      (item: any) => item.is_valid,
+      (item: any) => item.is_valid
     );
     if (validItems.length === 0) {
       toast.error("Tidak ada item valid untuk diimpor");
@@ -487,7 +542,7 @@ export default function GuestsPage() {
             instagram_username: item.instagram_username,
             address: item.address,
             note: item.note,
-          })),
+          }))
         );
 
         processedCount += chunk.length;
@@ -562,7 +617,9 @@ export default function GuestsPage() {
     const isActive = queryParams.sort_by === field;
     return (
       <button
-        className={`flex items-center gap-1 hover:text-foreground ${isActive ? "text-foreground font-bold" : ""}`}
+        className={`flex items-center gap-1 hover:text-foreground ${
+          isActive ? "text-foreground font-bold" : ""
+        }`}
         onClick={() => handleSort(field)}
       >
         {children}
@@ -590,7 +647,7 @@ export default function GuestsPage() {
 
   const toggleSelectGuest = (id: string) => {
     setSelectedGuestIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -616,7 +673,10 @@ export default function GuestsPage() {
 
   const fetchNextPage = () => {
     if (activeTab === "active") {
-      setQueryParams((prev) => ({ ...prev, page_size: (prev.page_size || 10) + 10 }));
+      setQueryParams((prev) => ({
+        ...prev,
+        page_size: (prev.page_size || 10) + 10,
+      }));
     } else {
       setDeletedQueryParams((prev) => ({
         ...prev,
@@ -628,14 +688,14 @@ export default function GuestsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-32 relative font-sans transition-colors duration-300">
       <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
-        <Link 
-            href="/admin"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+        <Link
+          href="/admin"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
         >
-            <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 text-foreground">
-            Buku Tamu
+          Buku Tamu
         </h1>
         <div className="w-10 shrink-0" />
       </div>
@@ -643,57 +703,54 @@ export default function GuestsPage() {
       <div className="px-5">
         {/* Search and Filters */}
         <div className="flex items-center gap-3 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Cari nama tamu..."
-                value={
-                  activeTab === "active" ? searchInput : deletedSearchInput
-                }
-                onChange={(e) =>
-                  activeTab === "active"
-                    ? setSearchInput(e.target.value)
-                    : setDeletedSearchInput(e.target.value)
-                }
-                className="pl-11 rounded-full bg-card border-border/60 shadow-sm h-11 text-[13.5px] focus-visible:ring-primary"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setModalType("sort")}
-                className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
-                  queryParams.sort_by
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <ArrowUpDown className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setModalType("filter")}
-                className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
-                  queryParams.category_id ||
-                  queryParams.status_attending ||
-                  queryParams.status_sent ||
-                  activeTab === "deleted"
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Settings2 className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Cari nama tamu..."
+              value={activeTab === "active" ? searchInput : deletedSearchInput}
+              onChange={(e) =>
+                activeTab === "active"
+                  ? setSearchInput(e.target.value)
+                  : setDeletedSearchInput(e.target.value)
+              }
+              className="pl-11 rounded-full bg-card border-border/60 shadow-sm h-11 text-[13.5px] focus-visible:ring-primary"
+            />
           </div>
-        
+          <div className="flex gap-2">
+            <button
+              onClick={() => setModalType("sort")}
+              className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
+                queryParams.sort_by
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setModalType("filter")}
+              className={`flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors border ${
+                queryParams.category_id ||
+                queryParams.status_attending ||
+                queryParams.status_sent ||
+                activeTab === "deleted"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Settings2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         <div className="flex items-center justify-between mt-2 mb-4 px-2 min-h-[32px]">
           <span className="text-sm font-semibold text-foreground tracking-tight">
             Semua Tamu (
-            {isLoading || isLoadingDeleted 
-              ? "..." 
+            {isLoading || isLoadingDeleted
+              ? "..."
               : activeTab === "active"
-                ? guestsData?.total || 0
-                : deletedGuestsData?.total || 0}
+              ? guestsData?.total || 0
+              : deletedGuestsData?.total || 0}
             )
           </span>
           <div className="flex items-center gap-1">
@@ -705,7 +762,10 @@ export default function GuestsPage() {
               Impor
             </button>
             <button
-              onClick={() => setIsCategoryModalOpen(true)}
+              onClick={() => {
+                resetCategoryForm();
+                setIsCategoryModalOpen(true);
+              }}
               className="text-[12px] font-bold text-primary flex items-center gap-1.5 hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer active:scale-95"
             >
               <Settings className="w-3.5 h-3.5" />
@@ -727,7 +787,9 @@ export default function GuestsPage() {
                 <BookHeart className="w-10 h-10 text-primary" />
               </div>
               <div className="text-center w-full px-4">
-                <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Belum ada tamu</h2>
+                <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">
+                  Belum ada tamu
+                </h2>
                 <p className="text-[13px] text-muted-foreground leading-snug">
                   {searchInput || deletedSearchInput
                     ? "Tidak ada tamu yang cocok dengan pencarian"
@@ -765,15 +827,15 @@ export default function GuestsPage() {
                         guest.status_attending === "going"
                           ? "bg-green-500/10 text-green-600"
                           : guest.status_attending === "not_going"
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-secondary text-secondary-foreground"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-secondary text-secondary-foreground"
                       }`}
                     >
                       {guest.status_attending === "going"
                         ? "Hadir"
                         : guest.status_attending === "not_going"
-                          ? "Absen"
-                          : "Menunggu"}
+                        ? "Absen"
+                        : "Menunggu"}
                     </span>
                   </div>
                 </div>
@@ -792,7 +854,8 @@ export default function GuestsPage() {
                           rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-[13px] text-emerald-600 font-semibold active:scale-95 transition-transform hover:opacity-80 truncate"
                         >
-                          <Whatsapp className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{guest.phone_number}</span>
+                          <Whatsapp className="w-3.5 h-3.5 shrink-0" />{" "}
+                          <span className="truncate">{guest.phone_number}</span>
                         </a>
                       ) : guest.instagram_username ? (
                         <a
@@ -801,7 +864,10 @@ export default function GuestsPage() {
                           rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-[13px] text-pink-600 font-semibold active:scale-95 transition-transform hover:opacity-80 truncate"
                         >
-                          <Instagram className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">@{guest.instagram_username}</span>
+                          <Instagram className="w-3.5 h-3.5 shrink-0" />{" "}
+                          <span className="truncate">
+                            @{guest.instagram_username}
+                          </span>
                         </a>
                       ) : (
                         <span className="text-[13px] text-muted-foreground font-medium">
@@ -841,7 +907,7 @@ export default function GuestsPage() {
                 </div>
 
                 {/* Mobile App Style Actions Footer */}
-                <div className="grid grid-cols-4 mt-4 pt-3 border-t border-border/40 divide-x divide-border/40">
+                <div className="grid grid-cols-5 mt-4 pt-3 border-t border-border/40 divide-x divide-border/40">
                   <button
                     onClick={() => {
                       setSelectedGuest(guest);
@@ -857,7 +923,7 @@ export default function GuestsPage() {
                       onClick={() => {
                         setSelectedGuest(guest);
                         setMessageType(
-                          guest.phone_number ? "whatsapp" : "instagram",
+                          guest.phone_number ? "whatsapp" : "instagram"
                         );
                         setIsSendMessageDialogOpen(true);
                       }}
@@ -883,6 +949,14 @@ export default function GuestsPage() {
                       Kirim
                     </button>
                   )}
+
+                  <button
+                    onClick={() => void handleCopyInvitationLink(guest.id)}
+                    title={invitationUrlFor(guest.id)}
+                    className="flex flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors active:bg-muted/30"
+                  >
+                    <Link2 className="w-4 h-4 mb-0.5" /> Link
+                  </button>
 
                   <button
                     onClick={() => openEditDialog(guest)}
@@ -993,7 +1067,9 @@ export default function GuestsPage() {
                         } flex items-center gap-1.5 cursor-pointer`}
                       >
                         Aktif {guestsData?.total ? `(${guestsData.total})` : ""}
-                        {activeTab === "active" && <Check className="w-3.5 h-3.5" />}
+                        {activeTab === "active" && (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
                       </button>
                       <button
                         onClick={() => setActiveTab("deleted")}
@@ -1003,8 +1079,13 @@ export default function GuestsPage() {
                             : "bg-transparent text-muted-foreground border-border hover:bg-muted/50"
                         } flex items-center gap-1.5 cursor-pointer`}
                       >
-                        Dihapus {deletedGuestsData?.total ? `(${deletedGuestsData.total})` : ""}
-                        {activeTab === "deleted" && <Check className="w-3.5 h-3.5" />}
+                        Dihapus{" "}
+                        {deletedGuestsData?.total
+                          ? `(${deletedGuestsData.total})`
+                          : ""}
+                        {activeTab === "deleted" && (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1319,7 +1400,10 @@ export default function GuestsPage() {
                 <Textarea
                   value={formData.address}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, address: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
                   }
                   className="min-h-[80px] rounded-xl bg-muted/20 border-border/60 text-[13px] focus-visible:ring-primary shadow-none resize-none"
                 />
@@ -1341,12 +1425,22 @@ export default function GuestsPage() {
 
             <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5 border-t border-border/40">
               <button
-                onClick={isEditDialogOpen ? handleUpdateGuest : handleCreateGuest}
-                disabled={isEditDialogOpen ? updateGuest.isPending : createGuest.isPending}
+                onClick={
+                  isEditDialogOpen ? handleUpdateGuest : handleCreateGuest
+                }
+                disabled={
+                  isEditDialogOpen
+                    ? updateGuest.isPending
+                    : createGuest.isPending
+                }
                 className="w-full flex items-center justify-center h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 {/* Unified submit button label */}
-                {(isEditDialogOpen ? updateGuest.isPending : createGuest.isPending) ? (
+                {(
+                  isEditDialogOpen
+                    ? updateGuest.isPending
+                    : createGuest.isPending
+                ) ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   "Simpan"
@@ -1396,7 +1490,9 @@ export default function GuestsPage() {
                   </div>
                   <div>
                     <p className="text-[13px] font-bold">Template Excel</p>
-                    <p className="text-[11px] text-muted-foreground">Unduh format yang sesuai</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Unduh format yang sesuai
+                    </p>
                   </div>
                 </div>
                 <button
@@ -1417,7 +1513,9 @@ export default function GuestsPage() {
                   {previewImport.isPending ? (
                     <div className="flex flex-col items-center">
                       <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
-                      <p className="text-[13px] font-medium text-muted-foreground">Menganalisis file...</p>
+                      <p className="text-[13px] font-medium text-muted-foreground">
+                        Menganalisis file...
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -1433,7 +1531,7 @@ export default function GuestsPage() {
                             {(importFile.size / 1024).toFixed(2)} KB
                           </p>
                           <div className="flex gap-2 justify-center w-full">
-                            <button 
+                            <button
                               className="flex-1 h-10 bg-primary text-primary-foreground rounded-xl text-[12px] font-bold active:scale-95 transition-transform cursor-pointer"
                               onClick={handleAnalyzeFile}
                             >
@@ -1450,7 +1548,8 @@ export default function GuestsPage() {
                       ) : (
                         <>
                           <p className="text-[13px] text-muted-foreground mb-5 text-center max-w-[250px] leading-relaxed">
-                            Seret dan letakkan file Excel di sini, atau klik tombol di bawah
+                            Seret dan letakkan file Excel di sini, atau klik
+                            tombol di bawah
                           </p>
                           <Input
                             type="file"
@@ -1462,9 +1561,11 @@ export default function GuestsPage() {
                               ((e.target as HTMLInputElement).value = "")
                             }
                           />
-                          <button 
+                          <button
                             className="h-10 px-6 bg-primary text-primary-foreground rounded-xl text-[13px] font-bold active:scale-95 transition-transform cursor-pointer"
-                            onClick={() => document.getElementById("excel-upload")?.click()}
+                            onClick={() =>
+                              document.getElementById("excel-upload")?.click()
+                            }
                           >
                             Pilih File
                           </button>
@@ -1477,16 +1578,28 @@ export default function GuestsPage() {
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                      <div className="text-[10px] uppercase font-bold text-blue-600/70 mb-1">Total Baris</div>
-                      <div className="text-xl font-black text-blue-700">{importPreviewData.total}</div>
+                      <div className="text-[10px] uppercase font-bold text-blue-600/70 mb-1">
+                        Total Baris
+                      </div>
+                      <div className="text-xl font-black text-blue-700">
+                        {importPreviewData.total}
+                      </div>
                     </div>
                     <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                      <div className="text-[10px] uppercase font-bold text-emerald-600/70 mb-1">Valid</div>
-                      <div className="text-xl font-black text-emerald-700">{importPreviewData.valid_count}</div>
+                      <div className="text-[10px] uppercase font-bold text-emerald-600/70 mb-1">
+                        Valid
+                      </div>
+                      <div className="text-xl font-black text-emerald-700">
+                        {importPreviewData.valid_count}
+                      </div>
                     </div>
                     <div className="p-4 bg-destructive/10 rounded-2xl border border-destructive/20">
-                      <div className="text-[10px] uppercase font-bold text-destructive/70 mb-1">Tidak Valid</div>
-                      <div className="text-xl font-black text-destructive">{importPreviewData.error_count}</div>
+                      <div className="text-[10px] uppercase font-bold text-destructive/70 mb-1">
+                        Tidak Valid
+                      </div>
+                      <div className="text-xl font-black text-destructive">
+                        {importPreviewData.error_count}
+                      </div>
                     </div>
                   </div>
 
@@ -1494,64 +1607,94 @@ export default function GuestsPage() {
                     <Table>
                       <TableHeader className="sticky top-0 bg-muted z-10 border-b border-border/50">
                         <TableRow className="hover:bg-transparent border-0">
-                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Status</TableHead>
-                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Nama</TableHead>
-                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Kategori</TableHead>
-                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Kontak</TableHead>
-                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">Info</TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">
+                            Status
+                          </TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">
+                            Nama
+                          </TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">
+                            Kategori
+                          </TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">
+                            Kontak
+                          </TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-bold h-10">
+                            Info
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {importPreviewData.items.map((item: any, idx: number) => (
-                          <TableRow
-                            key={idx}
-                            className={`border-b border-border/40 hover:bg-muted/30 ${!item.is_valid ? "bg-destructive/5" : ""}`}
-                          >
-                            <TableCell className="py-2.5">
-                              {item.is_valid ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600">Valid</span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-destructive/10 text-destructive">Error</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="py-2.5 font-semibold text-[13px]">
-                              {item.name || "-"}
-                            </TableCell>
-                            <TableCell className="py-2.5 text-[12px] text-muted-foreground font-medium">
-                              {item.category_name || `ID: ${item.guest_category_id}`}
-                            </TableCell>
-                            <TableCell className="py-2.5">
-                              <div className="flex flex-col gap-1">
-                                {item.phone_number && (
-                                  <div className="flex items-center gap-1.5 text-foreground">
-                                    <Whatsapp className="w-3.5 h-3.5 text-emerald-500" />
-                                    <span className="text-[11px] font-semibold">{item.phone_number}</span>
-                                  </div>
+                        {importPreviewData.items.map(
+                          (item: any, idx: number) => (
+                            <TableRow
+                              key={idx}
+                              className={`border-b border-border/40 hover:bg-muted/30 ${
+                                !item.is_valid ? "bg-destructive/5" : ""
+                              }`}
+                            >
+                              <TableCell className="py-2.5">
+                                {item.is_valid ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600">
+                                    Valid
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-destructive/10 text-destructive">
+                                    Error
+                                  </span>
                                 )}
-                                {item.instagram_username && (
-                                  <div className="flex items-center gap-1.5 text-foreground">
-                                    <Instagram className="w-3.5 h-3.5 text-pink-500" />
-                                    <span className="text-[11px] font-semibold">@{item.instagram_username}</span>
-                                  </div>
-                                )}
-                                {!item.phone_number && !item.instagram_username && (
-                                  <span className="text-[12px] font-medium text-muted-foreground">-</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2.5">
-                              {item.errors?.length > 0 ? (
-                                <div className="text-[11px] text-destructive font-medium leading-tight max-w-[200px]">
-                                  {item.errors.map((err: string, i: number) => (
-                                    <div key={i}>• {err}</div>
-                                  ))}
+                              </TableCell>
+                              <TableCell className="py-2.5 font-semibold text-[13px]">
+                                {item.name || "-"}
+                              </TableCell>
+                              <TableCell className="py-2.5 text-[12px] text-muted-foreground font-medium">
+                                {item.category_name ||
+                                  `ID: ${item.guest_category_id}`}
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex flex-col gap-1">
+                                  {item.phone_number && (
+                                    <div className="flex items-center gap-1.5 text-foreground">
+                                      <Whatsapp className="w-3.5 h-3.5 text-emerald-500" />
+                                      <span className="text-[11px] font-semibold">
+                                        {item.phone_number}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {item.instagram_username && (
+                                    <div className="flex items-center gap-1.5 text-foreground">
+                                      <Instagram className="w-3.5 h-3.5 text-pink-500" />
+                                      <span className="text-[11px] font-semibold">
+                                        @{item.instagram_username}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {!item.phone_number &&
+                                    !item.instagram_username && (
+                                      <span className="text-[12px] font-medium text-muted-foreground">
+                                        -
+                                      </span>
+                                    )}
                                 </div>
-                              ) : (
-                                <span className="text-[12px] text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                {item.errors?.length > 0 ? (
+                                  <div className="text-[11px] text-destructive font-medium leading-tight max-w-[200px]">
+                                    {item.errors.map(
+                                      (err: string, i: number) => (
+                                        <div key={i}>• {err}</div>
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-[12px] text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -1569,8 +1712,13 @@ export default function GuestsPage() {
                     <div className="bg-destructive/10 p-3 rounded-xl border border-destructive/20 flex items-start gap-3">
                       <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-[12px] font-bold text-destructive">Terdapat Data Tidak Valid</p>
-                        <p className="text-[11px] text-destructive/80 mt-0.5">Ada {importPreviewData.error_count} baris yang error. Silakan perbaiki file Excel Anda dan coba lagi.</p>
+                        <p className="text-[12px] font-bold text-destructive">
+                          Terdapat Data Tidak Valid
+                        </p>
+                        <p className="text-[11px] text-destructive/80 mt-0.5">
+                          Ada {importPreviewData.error_count} baris yang error.
+                          Silakan perbaiki file Excel Anda dan coba lagi.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -1623,7 +1771,7 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {/* QR Code & Detail Modal (Mobile App Bottom Sheet Style) */}
+      {/* QR Ticket Modal (Mobile App Bottom Sheet Style) */}
       {isQRDialogOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-4">
           <div
@@ -1631,87 +1779,153 @@ export default function GuestsPage() {
             onClick={() => setIsQRDialogOpen(false)}
           ></div>
           <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col">
-            <div className="flex items-center justify-between mb-5 shrink-0 relative">
-              <h2 className="text-[15px] font-bold w-full text-center">
-                Kode QR Tamu
+            <button
+              onClick={() => setIsQRDialogOpen(false)}
+              aria-label="Tutup"
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer active:scale-95"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Header tiket */}
+            <div className="shrink-0 text-center px-8">
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
+                Tiket Undangan
+              </p>
+              <h2 className="mt-1 text-[20px] font-bold tracking-tight truncate">
+                {selectedGuest?.name}
               </h2>
-              <button
-                onClick={() => setIsQRDialogOpen(false)}
-                className="absolute right-0 p-2 bg-muted/50 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <span className="mt-1.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
+                {selectedGuest?.category_name}
+              </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-4 pt-1 px-1 -mx-1 flex flex-col items-center gap-6 no-scrollbar">
-              <div className="bg-white p-4 border-2 border-primary rounded-2xl shadow-sm">
-                {selectedGuest?.qr_code && (
-                  <QRCodeSVG
-                    value={selectedGuest.qr_code}
-                    size={200}
-                    level="H"
-                    includeMargin={true}
-                  />
-                )}
-              </div>
-              
-              <div className="text-center space-y-1">
-                <p className="text-2xl font-bold tracking-widest text-primary">
-                  {selectedGuest?.qr_code}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden mt-5 -mx-1 px-1 no-scrollbar">
+              {/* Kartu QR — putih hanya di belakang kotak QR, bukan seluruh kartu */}
+              <div className="rounded-[1.25rem] border border-border/60 bg-muted/30 p-4">
+                <div className="mx-auto w-fit rounded-2xl bg-white p-3 shadow-sm">
+                  {selectedGuest?.qr_code && (
+                    <QRCodeSVG
+                      value={selectedGuest.qr_code}
+                      size={176}
+                      level="H"
+                    />
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-center border-t border-dashed border-border/50 pt-3">
+                  <span className="text-[18px] font-bold tracking-[0.35em] tabular-nums text-foreground">
+                    {selectedGuest?.qr_code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedGuest)
+                        void handleCopyQrCode(selectedGuest.qr_code);
+                    }}
+                    aria-label="Salin kode check-in"
+                    className="relative -mr-2 ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer active:scale-90 before:absolute before:-inset-1.5 before:rounded-full before:content-['']"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="mt-1 text-center text-[11px] text-muted-foreground">
+                  Tunjukkan kode ini saat check-in di lokasi acara
                 </p>
-                <p className="text-[15px] font-bold">{selectedGuest?.name}</p>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
-                  {selectedGuest?.category_name}
-                </span>
               </div>
 
-              <div className="w-full grid grid-cols-2 gap-3 text-sm bg-muted/30 p-4 rounded-2xl border border-border/50">
-                <div className="space-y-1">
+              {/* Perforasi tiket */}
+              <div className="relative -mx-6 my-5" aria-hidden>
+                <div className="border-t-2 border-dashed border-border/50" />
+              </div>
+
+              {/* Status */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="rounded-2xl border border-border/50 bg-muted/30 px-3.5 py-3">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     Status RSVP
                   </p>
-                  <p className="text-[13px] font-semibold">
+                  <span
+                    className={`mt-1.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${statusPillClass(
+                      selectedGuest?.status_attending
+                    )}`}
+                  >
                     {selectedGuest?.status_attending.toUpperCase()}
-                  </p>
+                  </span>
                 </div>
-                <div className="space-y-1">
+                <div className="rounded-2xl border border-border/50 bg-muted/30 px-3.5 py-3">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     Undangan
                   </p>
-                  <p className="text-[13px] font-semibold">
-                    {selectedGuest?.status_sent.toUpperCase()}
-                  </p>
-                </div>
-                <div className="space-y-1.5 col-span-2 pt-1 border-t border-border/40 mt-1">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    Kontak
-                  </p>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    {selectedGuest?.phone_number && (
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <Whatsapp className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-[13px] font-semibold">{selectedGuest.phone_number}</span>
-                      </div>
-                    )}
-                    {selectedGuest?.instagram_username && (
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <Instagram className="w-3.5 h-3.5 text-pink-500" />
-                        <span className="text-[13px] font-semibold">@{selectedGuest.instagram_username}</span>
-                      </div>
-                    )}
-                    {!selectedGuest?.phone_number && !selectedGuest?.instagram_username && (
-                      <span className="text-[13px] font-semibold text-muted-foreground">-</span>
-                    )}
-                  </div>
+                  <span
+                    className={`mt-1.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${statusPillClass(
+                      selectedGuest?.status_sent
+                    )}`}
+                  >
+                    {selectedGuest?.status_sent === "sent"
+                      ? "TERKIRIM"
+                      : selectedGuest?.status_sent.toUpperCase()}
+                  </span>
                 </div>
               </div>
+
+              {/* Kontak */}
+              <div className="mt-2.5 rounded-2xl border border-border/50 bg-muted/30 px-3.5 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  Kontak
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 min-h-[20px]">
+                  {selectedGuest?.phone_number && (
+                    <div className="flex items-center gap-1.5 text-foreground">
+                      <Whatsapp className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-[13px] font-semibold">
+                        {selectedGuest.phone_number}
+                      </span>
+                    </div>
+                  )}
+                  {selectedGuest?.instagram_username && (
+                    <div className="flex items-center gap-1.5 text-foreground">
+                      <Instagram className="w-3.5 h-3.5 text-pink-500" />
+                      <span className="text-[13px] font-semibold">
+                        @{selectedGuest.instagram_username}
+                      </span>
+                    </div>
+                  )}
+                  {!selectedGuest?.phone_number &&
+                    !selectedGuest?.instagram_username && (
+                      <span className="text-[13px] font-semibold text-muted-foreground">
+                        —
+                      </span>
+                    )}
+                </div>
+              </div>
+
+              {/* Tautan undangan personal */}
+              <button
+                type="button"
+                onClick={() =>
+                  selectedGuest &&
+                  void handleCopyInvitationLink(selectedGuest.id)
+                }
+                className="mt-2.5 w-full flex items-center gap-2.5 rounded-2xl border border-border/50 bg-muted/30 px-3.5 py-3 text-left transition-colors hover:bg-muted/50 active:scale-[0.98] cursor-pointer"
+              >
+                <Link2 className="w-4 h-4 shrink-0 text-primary" />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Tautan Undangan
+                  </span>
+                  <span className="block truncate text-[12px] tabular-nums text-foreground">
+                    {selectedGuest ? invitationUrlFor(selectedGuest.id) : ""}
+                  </span>
+                </span>
+              </button>
             </div>
 
-            <div className="pt-3 shrink-0 mt-3 flex flex-col gap-2.5 border-t border-border/40">
+            <div className="pt-3 shrink-0 mt-3 border-t border-border/40">
               <button
                 onClick={() => window.print()}
-                className="w-full flex items-center justify-center h-12 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors cursor-pointer active:scale-95"
+                className="w-full flex items-center justify-center gap-2 h-12 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-all cursor-pointer active:scale-95"
               >
+                <Printer className="w-4 h-4" />
                 Cetak Tiket Tamu
               </button>
             </div>
@@ -1734,22 +1948,23 @@ export default function GuestsPage() {
               <strong>&quot;Terkirim&quot;</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col-reverse gap-3 sm:flex-col sm:gap-3">
             <AlertDialogCancel
               onClick={() => {
                 setSelectedGuest(null);
                 setMessageType(null);
               }}
+              className="w-full sm:w-full"
             >
               Batal
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmSendMessage}
               disabled={updateStatusSent.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full sm:w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {updateStatusSent.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : null}
               Ya, Kirim & Tandai Terkirim
             </AlertDialogAction>
@@ -1796,7 +2011,7 @@ export default function GuestsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleRestoreGuest}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -1813,8 +2028,7 @@ export default function GuestsPage() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => {
               setIsCategoryModalOpen(false);
-              setEditingCategory(null);
-              setCategoryName("");
+              resetCategoryForm();
             }}
           ></div>
           <div className="relative bg-background rounded-[2rem] w-full max-w-[400px] p-6 pb-8 animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)]">
@@ -1856,16 +2070,18 @@ export default function GuestsPage() {
                             id: editingCategory.id,
                             data: {
                               name: categoryName,
-                              start_time: editingCategory.start_time || null,
-                              end_time: editingCategory.end_time || null,
+                              start_time: timeToIso(categoryStart),
+                              end_time: timeToIso(categoryEnd),
+                              is_vip: categoryVip,
                             },
                           });
-                          setEditingCategory(null);
+                          resetCategoryForm();
                         } else {
                           await createCategory.mutateAsync({
                             name: categoryName,
-                            start_time: null,
-                            end_time: null,
+                            start_time: timeToIso(categoryStart),
+                            end_time: timeToIso(categoryEnd),
+                            is_vip: categoryVip,
                           });
                         }
                         setCategoryName("");
@@ -1885,16 +2101,18 @@ export default function GuestsPage() {
                         id: editingCategory.id,
                         data: {
                           name: categoryName,
-                          start_time: editingCategory.start_time || null,
-                          end_time: editingCategory.end_time || null,
+                          start_time: timeToIso(categoryStart),
+                          end_time: timeToIso(categoryEnd),
+                          is_vip: categoryVip,
                         },
                       });
-                      setEditingCategory(null);
+                      resetCategoryForm();
                     } else {
                       await createCategory.mutateAsync({
                         name: categoryName,
-                        start_time: null,
-                        end_time: null,
+                        start_time: timeToIso(categoryStart),
+                        end_time: timeToIso(categoryEnd),
+                        is_vip: categoryVip,
                       });
                     }
                     setCategoryName("");
@@ -1921,6 +2139,46 @@ export default function GuestsPage() {
               </button>
             </div>
 
+            {/* Jam khusus kategori — dipakai sebagai jam di cover undangan tamu */}
+            <div className="grid grid-cols-2 gap-2.5 mb-2">
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-semibold text-muted-foreground ml-1">
+                  Jam Mulai
+                </label>
+                <Input
+                  type="time"
+                  value={categoryStart}
+                  onChange={(e) => setCategoryStart(e.target.value)}
+                  className="h-11 rounded-xl bg-muted/30 border-border/50 focus-visible:ring-primary shadow-none text-[13.5px] tabular-nums"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-semibold text-muted-foreground ml-1">
+                  Jam Selesai
+                </label>
+                <Input
+                  type="time"
+                  value={categoryEnd}
+                  onChange={(e) => setCategoryEnd(e.target.value)}
+                  className="h-11 rounded-xl bg-muted/30 border-border/50 focus-visible:ring-primary shadow-none text-[13.5px] tabular-nums"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-4 ml-1 leading-snug">
+              Opsional — jika diisi, jam ini yang tampil di cover undangan tamu
+              pada kategori ini.
+            </p>
+
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-3 cursor-pointer mb-5">
+              <span>
+                <span className="block text-[13px] font-medium">Tamu VIP</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Tandai kategori ini sebagai tamu istimewa
+                </span>
+              </span>
+              <Switch checked={categoryVip} onCheckedChange={setCategoryVip} />
+            </label>
+
             {/* Daftar Kategori */}
             <div className="overflow-y-auto max-h-[45vh] pr-2 -mr-2">
               <div className="flex flex-col rounded-2xl bg-muted/30 overflow-hidden border border-border/50">
@@ -1931,14 +2189,32 @@ export default function GuestsPage() {
                       i !== 0 ? "border-t border-border/50" : ""
                     }`}
                   >
-                    <span className="font-semibold text-[13.5px]">
-                      {cat.name}
-                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-[13.5px] truncate">
+                          {cat.name}
+                        </span>
+                        {cat.is_vip ? (
+                          <Badge className="bg-primary/10 text-primary border border-primary/20 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0 shrink-0">
+                            VIP
+                          </Badge>
+                        ) : null}
+                      </div>
+                      {cat.start_time || cat.end_time ? (
+                        <p className="text-[11px] text-muted-foreground tabular-nums">
+                          {isoToInput(cat.start_time) || "--:--"} –{" "}
+                          {isoToInput(cat.end_time) || "--:--"}
+                        </p>
+                      ) : null}
+                    </div>
                     <div className="flex gap-1">
                       <button
                         onClick={() => {
                           setEditingCategory(cat);
                           setCategoryName(cat.name);
+                          setCategoryStart(isoToInput(cat.start_time));
+                          setCategoryEnd(isoToInput(cat.end_time));
+                          setCategoryVip(Boolean(cat.is_vip));
                         }}
                         className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors cursor-pointer"
                       >
@@ -1961,7 +2237,9 @@ export default function GuestsPage() {
                       <BookHeart className="w-8 h-8 text-primary" />
                     </div>
                     <div className="text-center w-full px-4">
-                      <h3 className="text-[15px] font-bold tracking-tight mb-1 text-foreground">Belum ada kategori</h3>
+                      <h3 className="text-[15px] font-bold tracking-tight mb-1 text-foreground">
+                        Belum ada kategori
+                      </h3>
                       <p className="text-[13px] text-muted-foreground leading-snug">
                         Mulai ketik nama kategori baru di bawah ini.
                       </p>
@@ -1983,8 +2261,9 @@ export default function GuestsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Kategori?</AlertDialogTitle>
             <AlertDialogDescription>
-              Yakin ingin menghapus kategori <strong>{deleteCategoryItem?.name}</strong>?
-              Tindakan ini tidak dapat dibatalkan.
+              Yakin ingin menghapus kategori{" "}
+              <strong>{deleteCategoryItem?.name}</strong>? Tindakan ini tidak
+              dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

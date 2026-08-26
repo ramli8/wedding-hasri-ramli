@@ -1,390 +1,533 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { MainLayout } from '@/src/presentation/components/layout/main-layout';
-import { ProtectedRoute } from '@/src/presentation/components/layout/protected-route';
-import { ProtectedModule } from '@/src/presentation/components/layout/protected-feature';
-import { Button } from '@/src/presentation/components/ui/button';
+import { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
+import { ProtectedRoute } from "@/src/presentation/components/layout/protected-route";
+import { ProtectedModule } from "@/src/presentation/components/layout/protected-feature";
+import {
+  Loader2,
+  ScanQrCode,
+  CameraOff,
+  User,
+  SwitchCamera,
+  Smartphone,
+  QrCode,
+} from "lucide-react";
+import {
+  useCheckInGuest,
+  useGuestCategories,
+} from "@/src/application/hooks/use-guest-query";
+import { Guest, guestService } from "@/src/domain/services/guest.service";
+import type { Html5Qrcode } from "html5-qrcode";
+import { isAxiosError } from "axios";
+import { ChevronLeft } from "lucide-react";
+import { toast } from "react-toastify";
+import { OfflineBanner } from "@/src/presentation/components/admin/guest-checkin/offline-banner";
+import {
+  CheckInResultSheet,
+  type ResultStatus,
+} from "@/src/presentation/components/admin/guest-checkin/check-in-result-sheet";
+import { useOnlineStatus } from "@/src/application/hooks/use-online-status";
+import {
+  enqueueCheckIn,
+  flushCheckInQueue,
+  isNetworkError,
+  readCheckInQueue,
+} from "@/src/lib/checkin/offline-queue";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/presentation/components/ui/card';
-import { Badge } from '@/src/presentation/components/ui/badge';
-import { Input } from '@/src/presentation/components/ui/input';
-import { Loader2, ScanQrCode, CameraOff, CheckCircle2, XCircle, User, Clock, AlertTriangle, Power, RefreshCcw } from 'lucide-react';
-import { useCheckInGuest } from '@/src/application/hooks/use-guest-query';
-import { Guest, guestService } from '@/src/domain/services/guest.service';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
-
-type ViewMode = 'idle' | 'scanner' | 'result';
-type ResultStatus = 'success' | 'error' | 'warning';
+type ViewMode = "idle" | "scanner" | "result";
 
 async function stopSafely(scanner: Html5Qrcode | null) {
-    if (!scanner) return;
-    try {
-        if (scanner.isScanning) {
-            await scanner.stop();
-        }
-    } catch { /* already stopped - ok */ }
+  if (!scanner) return;
+  try {
+    if (scanner.isScanning) {
+      await scanner.stop();
+    }
+  } catch {
+    /* already stopped - ok */
+  }
 }
 
 export default function GuestCheckInPage() {
-    const [viewMode, setViewMode] = useState<ViewMode>('idle');
+  const [viewMode, setViewMode] = useState<ViewMode>("idle");
 
-    const [cameraReady, setCameraReady] = useState(false);
-    const [cameraError, setCameraError] = useState('');
-    
-    // Result State
-    const [resultStatus, setResultStatus] = useState<ResultStatus>('success');
-    const [resultMessage, setResultMessage] = useState('');
-    const [checkedInGuest, setCheckedInGuest] = useState<Guest | null>(null);
-    
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-    const scannerRef = useRef<Html5Qrcode | null>(null);
-    const mountedRef = useRef(true);
-    const onScanRef = useRef<((code: string) => void) | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState("");
 
-    const checkInMutation = useCheckInGuest();
+  // Result State
+  const [resultStatus, setResultStatus] = useState<ResultStatus>("success");
+  const [resultMessage, setResultMessage] = useState("");
+  const [resultAt, setResultAt] = useState("");
+  const [checkedInGuest, setCheckedInGuest] = useState<Guest | null>(null);
+  const [guestIsVip, setGuestIsVip] = useState(false);
 
-    const startScanner = async (mode: "environment" | "user" = facingMode) => {
-        if (!scannerRef.current) return;
+  const [facingMode, setFacingMode] = useState<"environment" | "user">(
+    "environment"
+  );
+  const [queue, setQueue] = useState(() => readCheckInQueue());
+  const online = useOnlineStatus();
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const mountedRef = useRef(true);
+  const onScanRef = useRef<((code: string) => void) | null>(null);
 
-        setCameraError('');
-        setCameraReady(false);
+  const checkInMutation = useCheckInGuest();
 
-        try {
-            await stopSafely(scannerRef.current);
+  // Kategori VIP dipakai untuk membedakan tampilan notifikasi check-in.
+  const { data: categoriesData } = useGuestCategories({
+    page: 1,
+    page_size: 100,
+  });
+  const vipCategoryIds = useMemo(
+    () =>
+      new Set(
+        (categoriesData?.items ?? [])
+          .filter((c) => c.is_vip)
+          .map((c) => c.id)
+      ),
+    [categoriesData]
+  );
+  const resolveVip = (guest: Guest | null | undefined) =>
+    !!guest && vipCategoryIds.has(guest.guest_category_id);
 
-            const onScanSuccess = (decodedText: string) => onScanRef.current?.(decodedText.trim());
+  const startScanner = async (mode: "environment" | "user" = facingMode) => {
+    setCameraError("");
+    setCameraReady(false);
 
-            try {
-                await scannerRef.current.start(
-                    { facingMode: mode },
-                    { fps: 30 },
-                    onScanSuccess,
-                    () => {}
-                );
-                if (mountedRef.current) setFacingMode(mode);
-            } catch (fallbackError) {
-                // Fallback to the other camera
-                const fallbackMode = mode === "environment" ? "user" : "environment";
-                await scannerRef.current.start(
-                    { facingMode: fallbackMode },
-                    { fps: 30 },
-                    onScanSuccess,
-                    () => {}
-                );
-                if (mountedRef.current) setFacingMode(fallbackMode);
-            }
-
-            if (mountedRef.current) {
-                setCameraReady(true);
-            }
-        } catch (err: any) {
-            if (!mountedRef.current) return;
-            setCameraError(err?.message || 'Failed to start camera');
-            setCameraReady(false);
-        }
-    };
-
-    // Toggling dynamically removed to avoid html5-qrcode internal bugs. Camera is now chosen beforehand.
-
-    const handleCheckInRequest = (code: string) => {
-        checkInMutation.mutate(code, {
-            onSuccess: async (data) => {
-                if (!mountedRef.current) return;
-                setCheckedInGuest(data.guest);
-                setResultStatus('success');
-                setResultMessage('Terima kasih, kehadiran Anda telah dicatat.');
-                setViewMode('result');
-            },
-            onError: async (err: any, variables: string) => {
-                if (!mountedRef.current) return;
-                let message = err.response?.data?.error || err.message || 'Gagal melakukan check-in';
-                
-                const isAlreadyCheckedIn = message.toLowerCase().includes('already') || message.toLowerCase().includes('sudah');
-                
-                if (isAlreadyCheckedIn) {
-                    message = 'Tamu ini sudah melakukan check-in sebelumnya.';
-                    try {
-                        const searchRes = await guestService.listGuests({ search: variables });
-                        if (searchRes.items && searchRes.items.length > 0) {
-                            setCheckedInGuest(searchRes.items[0]);
-                        } else {
-                            setCheckedInGuest(null);
-                        }
-                    } catch (e) {
-                        setCheckedInGuest(null);
-                    }
-                } else if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('invalid')) {
-                    message = 'Kode QR tidak valid atau tamu tidak ditemukan.';
-                    setCheckedInGuest(null);
-                } else {
-                    setCheckedInGuest(null);
-                }
-                
-                setResultStatus(isAlreadyCheckedIn ? 'warning' : 'error');
-                setResultMessage(message);
-                setViewMode('result');
-            },
+    try {
+      // Dynamic import: lib QR (~100KB gz) hanya diunduh saat kamera dipakai.
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import(
+        "html5-qrcode"
+      );
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode("qr-reader", {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false,
         });
-    };
+      }
 
-    useEffect(() => {
-        onScanRef.current = (code: string) => {
-            if (!code || checkInMutation.isPending) return;
-            // Prevent multiple triggers by checking if we are already transitioning
-            if (resultMessage !== '') return;
-            handleCheckInRequest(code);
-        };
-    });
+      await stopSafely(scannerRef.current);
 
-    useEffect(() => {
-        mountedRef.current = true;
+      const onScanSuccess = (decodedText: string) =>
+        onScanRef.current?.(decodedText.trim());
 
-        if (!scannerRef.current) {
-            scannerRef.current = new Html5Qrcode("qr-reader", { 
-                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-                verbose: false
+      try {
+        await scannerRef.current.start(
+          { facingMode: mode },
+          { fps: 30 },
+          onScanSuccess,
+          () => {}
+        );
+        if (mountedRef.current) setFacingMode(mode);
+      } catch {
+        // Fallback to the other camera
+        const fallbackMode = mode === "environment" ? "user" : "environment";
+        await scannerRef.current.start(
+          { facingMode: fallbackMode },
+          { fps: 30 },
+          onScanSuccess,
+          () => {}
+        );
+        if (mountedRef.current) setFacingMode(fallbackMode);
+      }
+
+      if (mountedRef.current) {
+        setCameraReady(true);
+      }
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setCameraError(
+        err instanceof Error ? err.message : "Failed to start camera"
+      );
+      setCameraReady(false);
+    }
+  };
+
+  // Kirim antrian offline begitu koneksi kembali (atau saat halaman dibuka).
+  const flushingRef = useRef(false);
+  useEffect(() => {
+    if (!online || flushingRef.current || queue.length === 0) return;
+    flushingRef.current = true;
+    flushCheckInQueue()
+      .then((res) => {
+        setQueue(readCheckInQueue());
+        if (res.flushedNames.length > 0) {
+          toast.success(
+            `${res.flushedNames.length} check-in offline berhasil terkirim`
+          );
+        }
+      })
+      .finally(() => {
+        flushingRef.current = false;
+      });
+  }, [online, queue.length]);
+
+  const markResultTime = () =>
+    setResultAt(
+      new Date().toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+
+  const handleCheckInRequest = (code: string) => {
+    checkInMutation.mutate(code, {
+      onSuccess: async (data) => {
+        if (!mountedRef.current) return;
+        setCheckedInGuest(data.guest);
+        setGuestIsVip(resolveVip(data.guest));
+        setResultStatus("success");
+        setResultMessage("Terima kasih, kehadiran Anda telah dicatat.");
+        markResultTime();
+        setViewMode("result");
+      },
+      onError: async (err, variables: string) => {
+        if (!mountedRef.current) return;
+
+        if (isNetworkError(err)) {
+          const q = enqueueCheckIn({
+            key: `qr:${code}`,
+            qrCode: code,
+            label: `QR ${code}`,
+          });
+          setQueue(q);
+          setCheckedInGuest(null);
+          setGuestIsVip(false);
+          setResultStatus("warning");
+          setResultMessage(
+            `Anda offline — check-in kode ${code} masuk antrian dan terkirim otomatis saat koneksi kembali.`
+          );
+          markResultTime();
+          setViewMode("result");
+          return;
+        }
+
+        let message = "Gagal melakukan check-in";
+        if (isAxiosError(err)) {
+          message =
+            (typeof err.response?.data?.error === "string"
+              ? err.response.data.error
+              : null) ??
+            err.message ??
+            message;
+        } else if (err instanceof Error) {
+          message = err.message;
+        }
+
+        const isAlreadyCheckedIn =
+          message.toLowerCase().includes("already") ||
+          message.toLowerCase().includes("sudah");
+
+        if (isAlreadyCheckedIn) {
+          message = "Tamu ini sudah melakukan check-in sebelumnya.";
+          try {
+            const searchRes = await guestService.listGuests({
+              search: variables,
             });
-        }
-
-        return () => {
-            mountedRef.current = false;
-            if (scannerRef.current) {
-                stopSafely(scannerRef.current);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        
-        if (viewMode === 'scanner') {
-            if (!cameraReady) {
-                // Defer camera start to let React StrictMode settle and DOM remove 'hidden' classes
-                timer = setTimeout(() => {
-                    if (mountedRef.current) {
-                        startScanner();
-                    }
-                }, 100);
-            }
+            const found = searchRes.items?.[0] ?? null;
+            setCheckedInGuest(found);
+            setGuestIsVip(resolveVip(found));
+          } catch {
+            setCheckedInGuest(null);
+            setGuestIsVip(false);
+          }
+        } else if (
+          message.toLowerCase().includes("not found") ||
+          message.toLowerCase().includes("invalid")
+        ) {
+          message = "Kode QR tidak valid atau tamu tidak ditemukan.";
+          setCheckedInGuest(null);
+          setGuestIsVip(false);
         } else {
-            // Stop camera to save battery and allow clean restart when returning to scanner
-            if (scannerRef.current) {
-                stopSafely(scannerRef.current);
-            }
-            setCameraReady(false);
+          setCheckedInGuest(null);
+          setGuestIsVip(false);
         }
 
-        return () => {
-            if (timer) clearTimeout(timer);
-        };
-    }, [viewMode, cameraReady]);
+        setResultStatus(isAlreadyCheckedIn ? "warning" : "error");
+        setResultMessage(message);
+        markResultTime();
+        setViewMode("result");
+      },
+    });
+  };
 
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
-        };
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, []);
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (viewMode === 'result') {
-            const delay = resultStatus === 'error' ? 5000 : 5000;
-            timer = setTimeout(() => {
-                if (mountedRef.current) {
-                    setCheckedInGuest(null);
-                    setResultMessage('');
-                    setViewMode('scanner');
-                }
-            }, delay);
-        }
-        return () => clearTimeout(timer);
-    }, [viewMode, resultStatus]);
-
-    const handleScanAgain = () => {
-        setCheckedInGuest(null);
-        setResultMessage('');
-        setViewMode('scanner');
+  useEffect(() => {
+    onScanRef.current = (code: string) => {
+      if (!code || checkInMutation.isPending) return;
+      // Prevent multiple triggers by checking if we are already transitioning
+      if (resultMessage !== "") return;
+      handleCheckInRequest(code);
     };
+  });
 
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      stopSafely(scannerRef.current);
+    };
+  }, []);
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    return (
-        <ProtectedRoute>
-            <ProtectedModule requiredRole={['Super Admin', 'Admin']}>
-                <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans transition-colors duration-300">
-                    {/* Sticky Mobile Header */}
-                    <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-primary/10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between mb-8 transition-all">
-                        <Link
-                            href="/admin"
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </Link>
-                        <h1 className="text-[18px] font-extrabold tracking-tight absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-foreground">
-                            Pindai QR Tamu
-                        </h1>
-                        <div className="w-10 shrink-0" />
+    if (viewMode === "scanner") {
+      if (!cameraReady) {
+        // Defer camera start to let React StrictMode settle and DOM remove 'hidden' classes
+        timer = setTimeout(() => {
+          if (mountedRef.current) {
+            startScanner();
+          }
+        }, 100);
+      }
+    } else {
+      // Stop camera to save battery and allow clean restart when returning to scanner
+      stopSafely(scannerRef.current);
+      setCameraReady(false);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [viewMode, cameraReady]);
+
+  const backToScanner = () => {
+    setCheckedInGuest(null);
+    setResultMessage("");
+    setResultAt("");
+    setGuestIsVip(false);
+    setViewMode("scanner");
+  };
+
+  return (
+    <ProtectedRoute>
+      <ProtectedModule requiredRole={["Super Admin", "Admin"]}>
+        <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-300">
+          {/* Header */}
+          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-primary/10 bg-card/80 px-4 py-3.5 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all md:px-5">
+            <Link
+              href="/admin"
+              aria-label="Kembali ke admin"
+              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary/5 text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[17px] font-extrabold tracking-tight text-foreground">
+              Pindai QR Tamu
+            </h1>
+            <div className="w-10 shrink-0" />
+          </header>
+
+          <div className="mx-auto w-full max-w-[480px] px-4 pb-24 md:max-w-2xl md:px-5 lg:max-w-6xl">
+            {!online ? (
+              <div className="mt-4 lg:hidden">
+                <OfflineBanner queueCount={queue.length} />
+              </div>
+            ) : null}
+
+            <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+              {/* Kolom utama: scanner */}
+              <div className="mx-auto flex min-h-[440px] w-full min-w-0 flex-col md:min-h-[520px] lg:max-w-none">
+                {/* IDLE VIEW */}
+                {viewMode === "idle" && (
+                  <div className="flex w-full flex-1 animate-in flex-col items-center justify-center rounded-[32px] border border-border/50 bg-card/40 px-6 py-14 fade-in duration-300 md:py-20">
+                    {/* Ilustrasi QR */}
+                    <div className="relative mb-9 flex h-44 w-44 items-center justify-center">
+                      <span className="absolute inset-0 rounded-full bg-primary/10" />
+                      <span className="absolute right-3 top-4 flex h-10 w-10 rotate-6 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                        <QrCode className="h-5 w-5" />
+                      </span>
+                      <span className="absolute bottom-4 left-3 flex h-10 w-10 -rotate-6 items-center justify-center rounded-2xl bg-primary/85 text-primary-foreground shadow-lg shadow-primary/25">
+                        <Smartphone className="h-5 w-5" />
+                      </span>
+                      <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl border border-border/40 bg-card shadow-[0_10px_36px_rgba(0,0,0,0.10)]">
+                        <ScanQrCode
+                          className="h-11 w-11 text-primary"
+                          strokeWidth={1.7}
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col px-6 pb-24" ref={containerRef}>
-                        {/* IDLE VIEW */}
-                        {viewMode === 'idle' && (
-                            <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6">
-                                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <ScanQrCode className="w-10 h-10 text-primary" />
-                                </div>
-                                <div className="text-center">
-                                    <h2 className="text-[19px] font-bold tracking-tight mb-2 text-foreground">Scan QR Tamu</h2>
-                                    <p className="text-[13px] text-muted-foreground leading-snug px-4">
-                                        Arahkan kamera ke kode QR undangan tamu untuk mencatat kehadiran secara otomatis.
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 w-full max-w-[280px]">
-                                    <button 
-                                        onClick={() => { setFacingMode('environment'); setViewMode('scanner'); }} 
-                                        className="h-12 w-full bg-primary text-primary-foreground rounded-xl text-[14px] font-bold active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
-                                    >
-                                        <ScanQrCode className="w-5 h-5" />
-                                        Gunakan Kamera Belakang
-                                    </button>
-                                    <button 
-                                        onClick={() => { setFacingMode('user'); setViewMode('scanner'); }} 
-                                        className="h-12 w-full bg-primary/10 text-primary border border-primary/20 rounded-xl text-[14px] font-bold active:scale-95 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <User className="w-5 h-5" />
-                                        Gunakan Kamera Depan
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                    <h2 className="text-center text-[20px] font-extrabold tracking-tight text-foreground">
+                      Scan QR Tamu
+                    </h2>
+                    <p className="mb-8 mt-2 max-w-[280px] text-center text-[13px] leading-snug text-muted-foreground">
+                      Arahkan kamera ke kode QR undangan tamu untuk mencatat
+                      kehadiran secara otomatis.
+                    </p>
+                    <div className="flex w-full max-w-[300px] flex-col items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setFacingMode("environment");
+                          setViewMode("scanner");
+                        }}
+                        className="h-[52px] w-full cursor-pointer rounded-2xl bg-primary text-[15px] font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-95"
+                      >
+                        Mulai Pindai
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFacingMode("user");
+                          setViewMode("scanner");
+                        }}
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-bold text-primary transition-all hover:bg-primary/10 active:scale-95"
+                      >
+                        <User className="h-4 w-4" />
+                        Gunakan Kamera Depan
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                        {/* SCANNER VIEW */}
-                        <div className={viewMode === 'scanner' ? 'w-full flex-1 flex flex-col animate-in fade-in zoom-in-95 duration-300' : 'hidden'}>
-                            <div className={`relative w-full max-w-2xl mx-auto rounded-[32px] overflow-hidden bg-black border border-border/50 shadow-sm flex flex-col items-center justify-center transition-all duration-300 ${!cameraReady ? 'min-h-[300px]' : ''}`}>
-                                <style>{`
-                                    #qr-reader { width: 100% !important; border: none !important; background: transparent !important; }
-                                    #qr-reader video { width: 100% !important; height: auto !important; display: block !important; object-fit: contain !important; }
-                                    #qr-shaded-region { display: none !important; }
-                                `}</style>
-                                {!cameraReady && !cameraError && (
-                                    <div className="absolute inset-0 flex flex-col justify-center items-center z-10 text-white">
-                                        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                                        <span className="text-[13px] font-medium">Membuka kamera...</span>
-                                    </div>
-                                )}
-                                {cameraError && (
-                                    <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6 bg-destructive/10 z-10">
-                                        <CameraOff className="h-10 w-10 text-destructive mb-3" />
-                                        <p className="text-[13px] text-destructive font-medium">{cameraError}</p>
-                                    </div>
-                                )}
-                                <div id="qr-reader" />
-                                
-                                {cameraReady && (
-                                    <div className="absolute inset-0 pointer-events-none z-20">
-                                        <div className="absolute inset-3 md:inset-5">
-                                            <div className="absolute top-0 left-0 w-12 h-12 border-t-[5px] border-l-[5px] border-white/80 rounded-tl-[1.5rem]" />
-                                            <div className="absolute top-0 right-0 w-12 h-12 border-t-[5px] border-r-[5px] border-white/80 rounded-tr-[1.5rem]" />
-                                            <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[5px] border-l-[5px] border-white/80 rounded-bl-[1.5rem]" />
-                                            <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[5px] border-r-[5px] border-white/80 rounded-br-[1.5rem]" />
-                                        </div>
-                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-[12px] font-medium border border-white/20 whitespace-nowrap">
-                                            Arahkan QR ke dalam bingkai
-                                        </div>
-                                    </div>
-                                )}
+                {/* SCANNER VIEW */}
+                <div
+                  className={
+                    viewMode === "scanner"
+                      ? "flex w-full flex-1 animate-in flex-col fade-in zoom-in-95 duration-300"
+                      : "hidden"
+                  }
+                >
+                  <div className="relative mx-auto flex aspect-[3/4] w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-[28px] border border-border/50 bg-black shadow-lg transition-all duration-300 md:aspect-[4/3] lg:max-w-lg">
+                    <style>{`
+                      #qr-reader { width: 100% !important; height: 100% !important; border: none !important; background: transparent !important; display: flex !important; align-items: center; justify-content: center; }
+                      #qr-reader video { width: 100% !important; height: 100% !important; display: block !important; object-fit: cover !important; }
+                      #qr-shaded-region { display: none !important; }
+                      @keyframes laserSweep {
+                        0%, 100% { top: 16%; opacity: 0.9; }
+                        50% { top: 84%; opacity: 1; }
+                      }
+                    `}</style>
 
-                                {/* LOADING OVERLAY WHEN SCANNED */}
-                                {checkInMutation.isPending && (
-                                    <div className="absolute inset-0 z-30 flex flex-col justify-center items-center bg-black/60 backdrop-blur-md text-white animate-in fade-in duration-200">
-                                        <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                        </div>
-                                        <span className="text-[15px] font-bold tracking-wide">Memverifikasi Data...</span>
-                                    </div>
-                                )}
-                            </div>
-                            
+                    {!cameraReady && !cameraError && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white">
+                        <Loader2 className="mb-4 h-8 w-8 animate-spin" />
+                        <span className="text-[13px] font-medium">
+                          Membuka kamera...
+                        </span>
+                      </div>
+                    )}
+                    {cameraError && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background p-6 text-center">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                          <CameraOff className="h-7 w-7 text-destructive" />
+                        </div>
+                        <p className="max-w-[240px] text-[13px] font-medium leading-snug text-destructive">
+                          {cameraError}
+                        </p>
+                        <button
+                          onClick={() => startScanner()}
+                          className="mt-5 h-11 cursor-pointer rounded-2xl bg-primary px-6 text-[13px] font-bold text-primary-foreground transition-all active:scale-95"
+                        >
+                          Coba Lagi
+                        </button>
+                      </div>
+                    )}
+                    <div id="qr-reader" />
+
+                    {cameraReady && (
+                      <div className="pointer-events-none absolute inset-0 z-20">
+                        {/* Caption di dalam viewfinder */}
+                        <p className="absolute inset-x-6 top-5 text-center text-[12.5px] font-medium leading-snug text-white/95 drop-shadow-md">
+                          Arahkan kode QR pada undangan tamu
+                          <br />
+                          ke dalam bingkai
+                        </p>
+
+                        {/* Bingkai sudut tipis */}
+                        <div className="absolute inset-x-8 inset-y-[72px] md:inset-x-12 md:inset-y-16">
+                          <div className="absolute left-0 top-0 h-10 w-10 rounded-tl-xl border-l-2 border-t-2 border-white/95" />
+                          <div className="absolute right-0 top-0 h-10 w-10 rounded-tr-xl border-r-2 border-t-2 border-white/95" />
+                          <div className="absolute bottom-0 left-0 h-10 w-10 rounded-bl-xl border-b-2 border-l-2 border-white/95" />
+                          <div className="absolute bottom-0 right-0 h-10 w-10 rounded-br-xl border-b-2 border-r-2 border-white/95" />
                         </div>
 
-                        {/* RESULT VIEW */}
-                        {viewMode === 'result' && (
-                            <div className="w-full flex-1 flex flex-col justify-center animate-in zoom-in-95 fade-in duration-300">
-                                <div className="w-[90vw] max-w-[380px] min-w-[300px] mx-auto bg-card rounded-[32px] border border-border/40 shadow-xl overflow-hidden text-center flex flex-col items-center relative p-10">
-                                    {/* Icon */}
-                                    <div className="mb-6">
-                                        {resultStatus === 'success' && <CheckCircle2 className="h-16 w-16 text-emerald-500" strokeWidth={1.5} />}
-                                        {resultStatus === 'error' && <XCircle className="h-16 w-16 text-destructive" strokeWidth={1.5} />}
-                                        {resultStatus === 'warning' && <AlertTriangle className="h-16 w-16 text-orange-500" strokeWidth={1.5} />}
-                                    </div>
-                                    
-                                    {/* Title & Message */}
-                                    <h3 className="text-[20px] font-semibold tracking-tight mb-2 text-foreground">
-                                        {resultStatus === 'success' ? 'Check-In Berhasil' :
-                                         resultStatus === 'error' ? 'Check-In Gagal' :
-                                         'Sudah Check-In'}
-                                    </h3>
-                                    <p className="text-[14px] text-muted-foreground mb-8">
-                                        {resultMessage}
-                                    </p>
+                        {/* Laser scan line */}
+                        <div
+                          className="absolute left-8 right-8 h-[3px] rounded-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_18px_4px_rgba(52,211,153,0.55)] md:left-12 md:right-12"
+                          style={{ animation: "laserSweep 2.6s ease-in-out infinite" }}
+                        />
+                      </div>
+                    )}
 
-                                    {/* Content Block */}
-                                    {checkedInGuest && (
-                                        <div className="w-full flex flex-col items-center gap-4 border-t border-border/40 pt-6 mt-2">
-                                            <div className="text-center w-full">
-                                                <p className="text-[12px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Nama Tamu</p>
-                                                <h4 className="text-[26px] sm:text-[30px] font-black tracking-tight text-foreground leading-tight">
-                                                    {checkedInGuest.name}
-                                                </h4>
-                                            </div>
-                                            
-                                            <div className="w-full bg-muted/40 rounded-2xl p-4 mt-2 border border-border/50">
-                                                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 text-center">Kategori Undangan</p>
-                                                <div className="flex justify-center">
-                                                    <span className={`px-5 py-2 font-bold rounded-full text-[15px] border ${
-                                                        resultStatus === 'success' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                                                        resultStatus === 'error' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                                                        'bg-orange-500/10 text-orange-600 border-orange-500/20'
-                                                    }`}>
-                                                        {checkedInGuest.category_name}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                    {/* LOADING OVERLAY WHEN SCANNED */}
+                    {checkInMutation.isPending && (
+                      <div className="absolute inset-0 z-30 flex animate-in flex-col items-center justify-center bg-black/60 text-white backdrop-blur-md fade-in duration-200">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                        <span className="text-[15px] font-bold tracking-wide">
+                          Memverifikasi Data...
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                                    <style>{`
-                                        @keyframes growWidth {
-                                            from { width: 0%; }
-                                            to { width: 100%; }
-                                        }
-                                        .animate-grow {
-                                            animation: growWidth linear forwards;
-                                        }
-                                    `}</style>
-                                    <div 
-                                        className={`absolute bottom-0 left-0 h-[4px] animate-grow ${
-                                            resultStatus === 'success' ? 'bg-emerald-500' : 
-                                            resultStatus === 'error' ? 'bg-destructive' : 'bg-orange-500'
-                                        }`} 
-                                        style={{ animationDuration: '5s' }} 
-                                    />
-                                </div>
-                            </div>
-                        )}
+                  {/* Kontrol di bawah viewfinder */}
+                  {cameraReady && (
+                    <div className="mx-auto mt-5 flex w-full max-w-md flex-col items-center gap-1.5">
+                      <button
+                        onClick={() =>
+                          startScanner(
+                            facingMode === "environment" ? "user" : "environment"
+                          )
+                        }
+                        className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-primary/25 bg-primary/5 text-[13px] font-bold text-primary transition-all hover:bg-primary/10 active:scale-95"
+                      >
+                        <SwitchCamera className="h-4 w-4" />
+                        Ganti ke Kamera{" "}
+                        {facingMode === "environment" ? "Depan" : "Belakang"}
+                      </button>
+                      <button
+                        onClick={() => setViewMode("idle")}
+                        className="cursor-pointer rounded-full px-4 py-2 text-[12px] font-semibold text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-95"
+                      >
+                        Tutup Kamera
+                      </button>
                     </div>
+                  )}
                 </div>
-            </ProtectedModule>
-        </ProtectedRoute>
-    );
+
+                {/* Placeholder saat result menutup layar */}
+                {viewMode === "result" && <div className="flex-1" />}
+              </div>
+
+              {/* Sidebar (laptop) */}
+              <aside className="hidden flex-col gap-4 lg:sticky lg:top-24 lg:flex lg:h-fit">
+                {!online ? <OfflineBanner queueCount={queue.length} /> : null}
+
+                <div className="rounded-2xl border border-border/50 bg-card p-4">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Mode Lain
+                  </p>
+                  <p className="text-[12px] leading-snug text-muted-foreground">
+                    Tamu kehilangan QR? Lakukan check-in manual dengan
+                    pencarian nama.
+                  </p>
+                  <Link
+                    href="/admin/guest-checkin-bypass"
+                    className="mt-3 inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary/10 px-4 text-[12px] font-bold text-primary transition-all hover:bg-primary/20 active:scale-95"
+                  >
+                    Buka Check-in Manual
+                  </Link>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          {/* RESULT OVERLAY — tiket kehadiran gaya bottom sheet */}
+          <CheckInResultSheet
+            open={viewMode === "result"}
+            status={resultStatus}
+            message={resultMessage}
+            at={resultAt}
+            guest={checkedInGuest}
+            vip={guestIsVip}
+            ctaLabel="Pindai Tamu Berikutnya"
+            autoDismissMs={5000}
+            onClose={backToScanner}
+          />
+        </div>
+      </ProtectedModule>
+    </ProtectedRoute>
+  );
 }

@@ -10,6 +10,7 @@ type GuestCategory struct {
 	Name      string     `gorm:"type:varchar(100);not null;uniqueIndex"`
 	StartTime *time.Time `gorm:"type:timestamp;default:null"`
 	EndTime   *time.Time `gorm:"type:timestamp;default:null"`
+	IsVip     bool       `gorm:"not null;default:false"`
 	CreatedAt time.Time  `gorm:"not null;default:now()"`
 	UpdatedAt time.Time  `gorm:"not null;default:now()"`
 }

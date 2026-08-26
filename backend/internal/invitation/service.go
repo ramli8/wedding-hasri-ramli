@@ -1296,10 +1296,13 @@ func (s *service) GetPublicInvitation(ctx context.Context, guestID string) (Invi
 		}
 		if guest != nil {
 			res.Guest = &PublicGuestInfo{
-				ID:       guest.ID,
-				Name:     guest.Name,
-				QRCode:   guest.QRCode,
-				Category: guest.GuestCategory.Name,
+				ID:                guest.ID,
+				Name:              guest.Name,
+				QRCode:            guest.QRCode,
+				Category:          guest.GuestCategory.Name,
+				CategoryStartTime: guest.GuestCategory.StartTime,
+				CategoryEndTime:   guest.GuestCategory.EndTime,
+				IsVip:             guest.GuestCategory.IsVip,
 			}
 			if existing, err := s.repo.GetRSVPByGuestAndEvent(ctx, guest.ID, nil); err == nil && existing != nil {
 				res.GuestRsvp = &GuestRsvpInfo{

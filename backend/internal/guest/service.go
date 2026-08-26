@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/base-go/backend/internal/shared/models"
 	"github.com/base-go/backend/pkg/validator"
@@ -118,22 +117,14 @@ func (s *service) CheckInByQRCode(ctx context.Context, req CheckInByQRCodeReques
 		return CheckInResponse{}, http.StatusBadRequest, err
 	}
 
-	guest, err := s.repo.GetByQRCode(ctx, req.QRCode)
+	// Atomik: 1 round-trip (UPDATE..RETURNING + JOIN kategori), anti race.
+	guest, err := s.repo.CheckInByQRCodeAtomic(ctx, req.QRCode)
 	if err != nil {
+		if errors.Is(err, ErrAlreadyCheckedIn) {
+			return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
+		}
 		return CheckInResponse{}, http.StatusNotFound, ErrGuestNotFound
 	}
-
-	if guest.CheckInAt != nil {
-		return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
-	}
-
-	if err := s.repo.CheckIn(ctx, guest.ID); err != nil {
-		return CheckInResponse{}, http.StatusInternalServerError, err
-	}
-
-	// Set check-in time in memory to avoid an extra DB round-trip
-	now := time.Now()
-	guest.CheckInAt = &now
 
 	return CheckInResponse{
 		Guest:   s.mapToResponse(*guest),
@@ -142,21 +133,13 @@ func (s *service) CheckInByQRCode(ctx context.Context, req CheckInByQRCodeReques
 }
 
 func (s *service) CheckInByID(ctx context.Context, id string) (CheckInResponse, int, error) {
-	guest, err := s.repo.GetByID(ctx, id)
+	guest, err := s.repo.CheckInByIDAtomic(ctx, id)
 	if err != nil {
+		if errors.Is(err, ErrAlreadyCheckedIn) {
+			return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
+		}
 		return CheckInResponse{}, http.StatusNotFound, ErrGuestNotFound
 	}
-
-	if guest.CheckInAt != nil {
-		return CheckInResponse{}, http.StatusConflict, ErrAlreadyCheckedIn
-	}
-
-	if err := s.repo.CheckIn(ctx, guest.ID); err != nil {
-		return CheckInResponse{}, http.StatusInternalServerError, err
-	}
-
-	now := time.Now()
-	guest.CheckInAt = &now
 
 	return CheckInResponse{
 		Guest:   s.mapToResponse(*guest),
@@ -302,6 +285,7 @@ func (s *service) CreateCategory(ctx context.Context, req CreateGuestCategoryReq
 		Name:      req.Name,
 		StartTime: req.StartTime,
 		EndTime:   req.EndTime,
+		IsVip:     req.IsVip,
 	}
 
 	if err := s.repo.CreateCategory(ctx, category); err != nil {
@@ -377,6 +361,9 @@ func (s *service) UpdateCategory(ctx context.Context, id int, req UpdateGuestCat
 
 	category.StartTime = req.StartTime
 	category.EndTime = req.EndTime
+	if req.IsVip != nil {
+		category.IsVip = *req.IsVip
+	}
 
 	if err := s.repo.UpdateCategory(ctx, category); err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -460,6 +447,7 @@ func (s *service) mapCategoryToResponse(category *models.GuestCategory) *GuestCa
 		Name:      category.Name,
 		StartTime: category.StartTime,
 		EndTime:   category.EndTime,
+		IsVip:     category.IsVip,
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}

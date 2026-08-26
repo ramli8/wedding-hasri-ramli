@@ -453,6 +453,10 @@ type PublicGuestInfo struct {
 	Name     string `json:"name"`
 	QRCode   string `json:"qr_code"`
 	Category string `json:"category"`
+	// Jam khusus kategori tamu — dipakai wedding-cover (tiap tamu berbeda).
+	CategoryStartTime *time.Time `json:"category_start_time"`
+	CategoryEndTime   *time.Time `json:"category_end_time"`
+	IsVip             bool       `json:"is_vip"`
 }
 
 // GuestRsvpInfo — jawaban konfirmasi yang sudah tersimpan untuk tamu ini,

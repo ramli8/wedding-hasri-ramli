@@ -24,7 +24,7 @@ cp .env.example .env
 pnpm dev:db                                   # Postgres di localhost:5433
 pnpm --filter @wedding/api admin:create --email kamu@contoh.com --name "Nama"
 pnpm dev:api                                  # http://localhost:3000 (migrasi jalan otomatis)
-pnpm dev:web                                  # http://localhost:5173/admin
+pnpm dev:web                                  # http://localhost:5173/admin (scanner: /scan)
 ```
 
 | Perintah | Fungsi |
@@ -34,5 +34,6 @@ pnpm dev:web                                  # http://localhost:5173/admin
 | `pnpm test` | Vitest (API memakai database `wedding_test` di Postgres dev, dibuat otomatis) |
 | `pnpm build` | Build api (esbuild) dan web (Vite) |
 | `pnpm --filter @wedding/api db:generate` | Buat migrasi Drizzle dari perubahan `src/db/schema.ts` |
+| `pnpm e2e` / `pnpm e2e:qr` | Uji menyeluruh di Firefox headless: check-in offline, dua perangkat, service worker, pembaca QR ([e2e/README.md](e2e/README.md)) |
 
 Deploy ke VPS: [docs/deploy.md](docs/deploy.md).

@@ -477,6 +477,30 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **UI:** tanpa shadcn/ui. Komponen dasar ditulis sendiri sesuai `design.md` dan modal memakai elemen `<dialog>` bawaan browser. Alasannya: lebih ringan dan tidak ada komponen yang tidak dipakai.
 - **Zona waktu admin:** input jam di formulir dianggap WIB (UTC+7) dan disimpan sebagai UTC.
 
+### Fase 3 (scanner, check-in offline, dashboard)
+
+**Tabel baru:** `devices`, `checkin_events` (log yang hanya bertambah, id dibuat perangkat), `checkin_reviews`. Migrasi 0002.
+
+**Alur penjaga** (keputusan baru, belum ada di rancangan awal):
+- Scan **langsung mencatat** check-in dengan jumlah orang = kuota. Penjaga mengubah jumlah atau membatalkan dalam 2 menit, dari layar hasil atau panel "Terakhir masuk". Setelah itu hanya admin.
+- Hasil layar penuh: hijau (masuk), amber (sudah masuk, dengan jam dan perangkat), merah (tidak valid), acid dengan bingkai tebal untuk VIP. Menutup sendiri setelah 2,5 sampai 3,5 detik. Getar dan nada berbeda per hasil, bisa dimatikan.
+- Laptop adalah perangkat terdaftar biasa (UI yang sama). Kolom cari difokuskan otomatis di perangkat dengan keyboard sehingga scanner USB (yang mengetik seperti keyboard) langsung bekerja.
+- Pairing: admin membuat perangkat dan mendapat kode 8 karakter (berlaku 24 jam, sekali pakai, hanya tampil sekali). Token perangkat disimpan di IndexedDB, bukan cookie. Perangkat yang dicabut baru tahu setelah online.
+
+**Protokol** (`SYNC_PROTOCOL_VERSION = 1`, `MIN_SUPPORTED = 1`): header `x-sync-version` wajib; versi terlalu lama dijawab `426 APP_OUTDATED`; perangkat dicabut dijawab `401 DEVICE_REVOKED`. Rute: `POST /device/pair`, `GET /sync/snapshot?sinceRev&sinceSeq`, `POST /sync/push`; admin: `/admin/devices`, `/admin/checkins/{dashboard,review,resolve,log,:id/undo,:id/pax}`. Snapshot tidak memuat HP atau Instagram.
+
+**Hal yang ditemukan lewat pengujian dan dikoreksi dari rancangan awal** (semuanya punya tes):
+1. **`seq` bisa tidak berurutan dengan urutan commit** bila beberapa HP menulis bersamaan, sehingga perangkat yang menarik `seq > terakhir` bisa melewatkan event selamanya. Semua penulisan log check-in sekarang diserialkan dengan advisory lock. Tes konkurensi terbukti gagal bila kunci dimatikan.
+2. **Perangkat "lupa" check-in miliknya sendiri** bila `push` berhasil tetapi `pull` gagal: scan ulang tamu yang sama jadi duplikat. Event terkirim sekarang tetap di outbox (`sentAt`) sampai terlihat di data server.
+3. **Dua event di milidetik yang sama** (mis. check-in lalu undo) bisa tertukar urutannya di outbox karena id acak, dan server menolak undo yang tiba sebelum targetnya. `createdAt` sekarang naik ketat.
+4. **Pembaca QR gagal diam-diam** di peramban tanpa `BarcodeDetector` bawaan. Ponyfill `barcode-detector` gagal ("Failed to allocate ... bytes in WASM memory") di build produksi kita, padahal `zxing-wasm` dipakai langsung berfungsi. Ponyfill dibuang; `readBarcodes` dipanggil langsung. Mesin bawaan sekarang diuji dengan satu panggilan nyata dulu (ada tidak berarti berfungsi). Halaman **Uji Kesiapan** punya butir "Pembaca QR" yang membaca QR contoh tertanam, jadi masalah semacam ini ketahuan di H-1 pada tiap perangkat.
+
+**Tambahan:** halaman Perangkat, dashboard Check-in (disegarkan tiap 5 detik, antrean duplikat dengan "abaikan" atau "gabungkan jumlah", koreksi admin tanpa batas waktu, riwayat lengkap), daftar tamu cetak (`/admin/tamu/cetak`) sebagai cadangan kertas, PWA (service worker, manifest, ikon, pembaruan hanya dengan konfirmasi penjaga).
+
+**Pengujian:** 142 tes API (termasuk properti konvergensi pemecah status: 200 log acak × 25 urutan, idempotensi, konkurensi), 37 tes logika perangkat (IndexedDB tiruan), dan `pnpm e2e` (lihat `e2e/README.md`) yang menjalankan dua "HP" di Firefox headless, mematikan server, dan membuka aplikasi tanpa server sama sekali.
+
+**Belum teruji** (butuh perangkat fisik): kamera sungguhan dan pembacaan QR dari layar HP tamu, Chrome Android (mesin QR bawaan, getar, suara, senter, kunci layar), iPhone, dua HP fisik di venue, beban 1000 tamu dengan 4 perangkat (k6), uji restore backup. Gerbang pada kelompok hanya tampil di dashboard; scanner tidak memperingatkan.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–3)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

@@ -22,3 +22,6 @@ coverage/
 # Local data
 *.log
 .DS_Store
+
+# Hasil uji menyeluruh (tangkapan layar)
+e2e/out/

@@ -16,9 +16,13 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Pengaturan" description="Data dasar pernikahan dan akun Anda." />
+      <PageHeader
+        tag="Akun"
+        title="Pengaturan"
+        description="Data dasar pernikahan dan akun Anda."
+      />
       {settings.isPending ? (
-        <p className="text-mid-gray">Memuat…</p>
+        <p className="text-ink-soft">Memuat…</p>
       ) : settings.isError ? (
         <Alert tone="error">{settings.error.message}</Alert>
       ) : (
@@ -53,7 +57,7 @@ function WeddingForm({ initial }: { initial: Settings | null }) {
   return (
     <Card>
       <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-        <h2 className="text-subheading font-semibold">Pernikahan</h2>
+        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Pernikahan</h2>
         {!initial && (
           <Alert>
             Isi dulu data ini. Alamat situs dipakai untuk membuat link undangan tiap tamu.
@@ -129,8 +133,8 @@ function PasswordForm() {
   return (
     <Card>
       <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-        <h2 className="text-subheading font-semibold">Ganti kata sandi</h2>
-        <p className="text-mid-gray">Perangkat lain yang sedang masuk akan dikeluarkan.</p>
+        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Ganti kata sandi</h2>
+        <p className="text-ink-soft">Perangkat lain yang sedang masuk akan dikeluarkan.</p>
         <Field label="Kata sandi saat ini">
           {(id) => (
             <Input

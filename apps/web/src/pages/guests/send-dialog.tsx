@@ -128,15 +128,15 @@ function EventMessage({
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-hairline p-3">
+    <section className="flex flex-col gap-3 border-2 border-ink p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-body font-semibold">{event.name}</h3>
+        <h3 className="text-sm font-semibold">{event.name}</h3>
         {sentAt ? (
           <Badge variant="solid">
             Terkirim via {viaLabel[sentVia ?? "other"]} · {formatDateTime(sentAt)}
           </Badge>
         ) : (
-          <Badge variant="outline">Belum dikirim</Badge>
+          <Badge variant="pill">Belum dikirim</Badge>
         )}
       </div>
       <Textarea
@@ -146,12 +146,12 @@ function EventMessage({
         onChange={(e) => setText(e.target.value)}
         className="min-h-32"
       />
-      {notice && <p className="text-caption text-mid-gray">{notice}</p>}
+      {notice && <p className="text-xs text-ink-soft">{notice}</p>}
       {mark.error && <Alert tone="error">{mark.error.message}</Alert>}
       <div className="flex flex-wrap gap-2">
         {guest.phone && <Button onClick={sendWhatsApp}>Buka WhatsApp</Button>}
         {guest.instagram && (
-          <Button variant={guest.phone ? "outline" : "primary"} onClick={sendInstagram}>
+          <Button variant={guest.phone ? "secondary" : "primary"} onClick={sendInstagram}>
             Salin &amp; buka DM Instagram
           </Button>
         )}
@@ -160,7 +160,7 @@ function EventMessage({
         </Button>
         {sentAt ? (
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => mark.mutate({ sent: false })}
             disabled={mark.isPending}
           >
@@ -168,7 +168,7 @@ function EventMessage({
           </Button>
         ) : (
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => mark.mutate({ sent: true, via: "other" })}
             disabled={mark.isPending}
           >

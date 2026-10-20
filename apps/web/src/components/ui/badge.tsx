@@ -1,17 +1,24 @@
 import type { HTMLAttributes } from "react";
 
 const variants = {
-  solid: "bg-ink-soft text-surface-alt",
-  soft: "bg-canvas text-ink-soft",
-  outline: "border border-hairline text-ink",
+  /** Label halaman: acid, border 2px, mono kapital. */
+  tag: "tag border-2 border-ink bg-acid px-2 py-1",
+  /** Penanda kuat: ink dengan teks acid (VIP, check-in aktif). */
+  solid: "tag bg-ink px-2 py-1 text-acid",
+  /** Pil meta kecil: putih, border 1px, mono. */
+  pill: "border border-ink bg-paper px-2 py-0.5 font-mono text-xs",
+  /** Pil meta yang menyala: untuk status selesai (terkirim). */
+  pillAcid: "border border-ink bg-acid px-2 py-0.5 font-mono text-xs",
 } as const;
 
-type BadgeProps = HTMLAttributes<HTMLSpanElement> & { variant?: keyof typeof variants };
+export type BadgeVariant = keyof typeof variants;
 
-export function Badge({ variant = "soft", className = "", ...props }: BadgeProps) {
+type BadgeProps = HTMLAttributes<HTMLSpanElement> & { variant?: BadgeVariant };
+
+export function Badge({ variant = "pill", className = "", ...props }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-2xl px-2 py-0.5 text-caption font-medium whitespace-nowrap ${variants[variant]} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap ${variants[variant]} ${className}`}
       {...props}
     />
   );

@@ -1,0 +1,120 @@
+{
+  "$description": "Token desain admin dan scanner. Format DTCG. Sumber: tangkapan layar dan CSS programmerzamannow.com. Asal tiap token ada di $extensions.asal: css = diambil dari CSS situs, ukur = diukur dari tangkapan layar, usul = usulan proyek ini.",
+  "color": {
+    "bone": { "$value": "#f1ede2", "$type": "color", "$description": "Latar halaman, tab nonaktif", "$extensions": { "asal": "css" } },
+    "bone-2": { "$value": "#e6e1d3", "$type": "color", "$description": "Kotak ikon, avatar, titik pola, hover lembut", "$extensions": { "asal": "css" } },
+    "paper": { "$value": "#ffffff", "$type": "color", "$description": "Kartu, input", "$extensions": { "asal": "css" } },
+    "ink": { "$value": "#0c0c0c", "$type": "color", "$description": "Teks utama, border, bayangan, bagian gelap", "$extensions": { "asal": "css" } },
+    "ink-soft": { "$value": "#4a4842", "$type": "color", "$description": "Teks pendukung", "$extensions": { "asal": "css" } },
+    "acid": { "$value": "#d8ff3e", "$type": "color", "$description": "Aksen: tag, kartu sorot, tab aktif. Hanya sebagai latar dengan teks ink", "$extensions": { "asal": "css" } },
+    "electric": { "$value": "#2b2be8", "$type": "color", "$description": "Aksi utama", "$extensions": { "asal": "css" } },
+    "alert": { "$value": "#c4271e", "$type": "color", "$description": "Error, hapus, terkunci", "$extensions": { "asal": "css" } },
+    "ok": { "$value": "#077045", "$type": "color", "$description": "Sukses", "$extensions": { "asal": "css" } },
+    "tone-1": { "$value": "#ffb84d", "$type": "color", "$description": "Pastel oranye", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
+    "tone-2": { "$value": "#7de0a6", "$type": "color", "$description": "Pastel hijau", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
+    "tone-3": { "$value": "#8fd8f0", "$type": "color", "$description": "Pastel biru muda", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
+    "tone-4": { "$value": "#c4b5fd", "$type": "color", "$description": "Pastel ungu", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
+    "placeholder": { "$value": "#72716c", "$type": "color", "$description": "Placeholder input. Kontras 4,9:1 di atas paper, 4,2:1 di atas bone, jadi hanya di dalam input putih", "$extensions": { "asal": "ukur" } }
+  },
+  "semantic": {
+    "page-background": { "$value": "{color.bone}", "$type": "color" },
+    "surface": { "$value": "{color.paper}", "$type": "color" },
+    "text": { "$value": "{color.ink}", "$type": "color" },
+    "text-muted": { "$value": "{color.ink-soft}", "$type": "color" },
+    "border": { "$value": "{color.ink}", "$type": "color" },
+    "action-primary": { "$value": "{color.electric}", "$type": "color" },
+    "action-primary-text": { "$value": "{color.paper}", "$type": "color" },
+    "highlight": { "$value": "{color.acid}", "$type": "color" },
+    "danger": { "$value": "{color.alert}", "$type": "color" },
+    "success": { "$value": "{color.ok}", "$type": "color" },
+    "scan-success": { "$value": "{color.ok}", "$type": "color", "$extensions": { "asal": "usul" } },
+    "scan-already": { "$value": "{color.tone-1}", "$type": "color", "$extensions": { "asal": "usul" } },
+    "scan-invalid": { "$value": "{color.alert}", "$type": "color", "$extensions": { "asal": "usul" } },
+    "scan-vip": { "$value": "{color.acid}", "$type": "color", "$extensions": { "asal": "usul" } }
+  },
+  "font": {
+    "display": { "$value": ["Space Grotesk Variable", "Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"], "$type": "fontFamily", "$description": "Judul dan tombol", "$extensions": { "asal": "css" } },
+    "mono": { "$value": ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "monospace"], "$type": "fontFamily", "$description": "Label, angka, kode", "$extensions": { "asal": "css" } },
+    "sans": { "$value": ["ui-sans-serif", "system-ui", "sans-serif"], "$type": "fontFamily", "$description": "Isi teks (font sistem)", "$extensions": { "asal": "css" } }
+  },
+  "fontSize": {
+    "sm": { "$value": "0.875rem", "$type": "dimension", "$extensions": { "lineHeight": "1.4286", "asal": "css" } },
+    "base": { "$value": "1rem", "$type": "dimension", "$extensions": { "lineHeight": "1.5", "asal": "css" } },
+    "lg": { "$value": "1.125rem", "$type": "dimension", "$extensions": { "lineHeight": "1.5556", "asal": "css" } },
+    "xl": { "$value": "1.25rem", "$type": "dimension", "$extensions": { "lineHeight": "1.4", "asal": "css" } },
+    "2xl": { "$value": "1.5rem", "$type": "dimension", "$extensions": { "lineHeight": "1.3333", "asal": "css" } },
+    "3xl": { "$value": "1.875rem", "$type": "dimension", "$extensions": { "lineHeight": "1.2", "asal": "css" } },
+    "4xl": { "$value": "2.25rem", "$type": "dimension", "$extensions": { "lineHeight": "1.1111", "asal": "css" } },
+    "5xl": { "$value": "3rem", "$type": "dimension", "$extensions": { "lineHeight": "1", "asal": "css" } },
+    "6xl": { "$value": "3.75rem", "$type": "dimension", "$extensions": { "lineHeight": "1", "asal": "css" } },
+    "8xl": { "$value": "6rem", "$type": "dimension", "$extensions": { "lineHeight": "1", "asal": "css" } }
+  },
+  "letterSpacing": {
+    "display-tight": { "$value": "-0.06em", "$type": "dimension", "$description": "Judul 60px ke atas", "$extensions": { "asal": "css" } },
+    "h1": { "$value": "-0.04em", "$type": "dimension", "$extensions": { "asal": "css" } },
+    "h2": { "$value": "-0.03em", "$type": "dimension", "$extensions": { "asal": "css" } },
+    "h3": { "$value": "-0.02em", "$type": "dimension", "$extensions": { "asal": "css" } },
+    "button": { "$value": "0.06em", "$type": "dimension", "$extensions": { "asal": "ukur" } },
+    "label": { "$value": "0.14em", "$type": "dimension", "$description": "Kelas .tag", "$extensions": { "asal": "css" } },
+    "label-wide": { "$value": "0.18em", "$type": "dimension", "$extensions": { "asal": "css" } }
+  },
+  "typography": {
+    "h1": { "$value": { "fontFamily": "{font.display}", "fontSize": "2.25rem", "fontWeight": 700, "lineHeight": 1.11, "letterSpacing": "-0.04em", "textTransform": "uppercase" }, "$type": "typography", "$extensions": { "asal": "ukur" } },
+    "h2": { "$value": { "fontFamily": "{font.display}", "fontSize": "1.5rem", "fontWeight": 700, "lineHeight": 1.2, "letterSpacing": "-0.03em", "textTransform": "uppercase" }, "$type": "typography", "$extensions": { "asal": "ukur" } },
+    "h3": { "$value": { "fontFamily": "{font.display}", "fontSize": "1.0625rem", "fontWeight": 700, "lineHeight": 1.3, "letterSpacing": "-0.02em", "textTransform": "uppercase" }, "$type": "typography", "$extensions": { "asal": "ukur" } },
+    "button": { "$value": { "fontFamily": "{font.display}", "fontSize": "0.875rem", "fontWeight": 700, "lineHeight": 1, "letterSpacing": "0.06em", "textTransform": "uppercase" }, "$type": "typography", "$extensions": { "asal": "ukur" } },
+    "tag": { "$value": { "fontFamily": "{font.mono}", "fontSize": "12px", "fontWeight": 600, "lineHeight": 1.33, "letterSpacing": "0.14em", "textTransform": "uppercase" }, "$type": "typography", "$extensions": { "asal": "css" } },
+    "stat": { "$value": { "fontFamily": "{font.mono}", "fontSize": "2rem", "fontWeight": 700, "lineHeight": 1.1, "letterSpacing": "0" }, "$type": "typography", "$extensions": { "asal": "ukur" } },
+    "body": { "$value": { "fontFamily": "{font.sans}", "fontSize": "0.9375rem", "fontWeight": 400, "lineHeight": 1.55, "letterSpacing": "0" }, "$type": "typography", "$extensions": { "asal": "ukur" } }
+  },
+  "borderWidth": {
+    "default": { "$value": "2px", "$type": "dimension", "$description": "Semua kotak", "$extensions": { "asal": "css" } },
+    "hairline": { "$value": "1px", "$type": "dimension", "$description": "Pil meta kecil dan pemisah baris tabel", "$extensions": { "asal": "css" } },
+    "rule": { "$value": "3px", "$type": "dimension", "$description": "Garis di bawah header dan pemisah seksi", "$extensions": { "asal": "ukur" } }
+  },
+  "radius": {
+    "none": { "$value": "0", "$type": "dimension", "$description": "Semua kotak siku. Hanya logo yang bulat", "$extensions": { "asal": "ukur" } }
+  },
+  "shadow": {
+    "hard-sm": { "$value": { "offsetX": "3px", "offsetY": "3px", "blur": "0", "spread": "0", "color": "{color.ink}" }, "$type": "shadow", "$extensions": { "asal": "css" } },
+    "hard": { "$value": { "offsetX": "4px", "offsetY": "4px", "blur": "0", "spread": "0", "color": "{color.ink}" }, "$type": "shadow", "$extensions": { "asal": "css" } },
+    "hard-lg": { "$value": { "offsetX": "6px", "offsetY": "6px", "blur": "0", "spread": "0", "color": "{color.ink}" }, "$type": "shadow", "$extensions": { "asal": "css" } },
+    "hard-xl": { "$value": { "offsetX": "9px", "offsetY": "9px", "blur": "0", "spread": "0", "color": "{color.ink}" }, "$type": "shadow", "$extensions": { "asal": "css" } },
+    "hard-on-dark": { "$value": { "offsetX": "6px", "offsetY": "6px", "blur": "0", "spread": "0", "color": "{color.acid}" }, "$type": "shadow", "$description": "Bayangan tombol di atas latar ink", "$extensions": { "asal": "ukur" } },
+    "none": { "$value": { "offsetX": "0", "offsetY": "0", "blur": "0", "spread": "0", "color": "{color.ink}" }, "$type": "shadow", "$description": "Keadaan tertekan (active)", "$extensions": { "asal": "css" } }
+  },
+  "pattern": {
+    "raster": {
+      "$value": "radial-gradient(#e6e1d3 1px, transparent 1px)",
+      "$type": "other",
+      "$description": "Pola titik latar halaman. background-size 22px 22px. Jangan dipakai di balik tabel",
+      "$extensions": { "backgroundSize": "22px 22px", "asal": "css" }
+    }
+  },
+  "spacing": {
+    "unit": { "$value": "4px", "$type": "dimension", "$description": "Skala Tailwind bawaan (p-4 = 16px). Jangan menimpa --spacing-*", "$extensions": { "asal": "css" } },
+    "page-gutter-mobile": { "$value": "18px", "$type": "dimension", "$extensions": { "asal": "ukur" } },
+    "container": { "$value": ["40rem", "48rem", "64rem", "80rem", "96rem"], "$type": "other", "$extensions": { "asal": "css" } }
+  },
+  "motion": {
+    "duration-fast": { "$value": "120ms", "$type": "duration", "$extensions": { "asal": "css" } },
+    "duration": { "$value": "150ms", "$type": "duration", "$extensions": { "asal": "css" } },
+    "duration-slow": { "$value": "180ms", "$type": "duration", "$extensions": { "asal": "css" } },
+    "easing": { "$value": [0.4, 0, 0.2, 1], "$type": "cubicBezier", "$extensions": { "asal": "css" } },
+    "hover-lift": { "$value": "-2px", "$type": "dimension", "$description": "Geser ke kiri-atas saat hover (kartu besar -3px); bayangan naik satu tingkat", "$extensions": { "asal": "css" } },
+    "press": { "$value": "2px", "$type": "dimension", "$description": "Geser ke kanan-bawah saat ditekan; bayangan menjadi none", "$extensions": { "asal": "css" } }
+  },
+  "size": {
+    "control-height": { "$value": "52px", "$type": "dimension", "$description": "Tinggi input dan tombol besar (login)", "$extensions": { "asal": "ukur" } },
+    "control-height-compact": { "$value": "40px", "$type": "dimension", "$description": "Tombol di baris tabel", "$extensions": { "asal": "usul" } },
+    "scanner-control-min": { "$value": "56px", "$type": "dimension", "$description": "Tombol scanner minimal", "$extensions": { "asal": "usul" } },
+    "icon-box": { "$value": "44px", "$type": "dimension", "$description": "Kotak ikon (44 sampai 56px)", "$extensions": { "asal": "ukur" } },
+    "avatar": { "$value": "40px", "$type": "dimension", "$extensions": { "asal": "ukur" } },
+    "icon": { "$value": "20px", "$type": "dimension", "$extensions": { "asal": "ukur" } }
+  },
+  "$extensions": {
+    "sumber": "9 tangkapan layar mobile (593px) dan desktop (1440px) halaman publik programmerzamannow.com, serta CSS situsnya",
+    "diambil": "2026-10-20",
+    "catatan": "Halaman yang memerlukan login hanya tersedia dalam tampilan mobile. Lebar tabel data di desktop adalah usulan."
+  }
+}

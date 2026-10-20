@@ -1,6 +1,7 @@
+import { CircleAlert, Info } from "lucide-react";
 import type { ReactNode } from "react";
 
-/** `error` memakai merah (ember); `info` tetap monokrom. */
+/** `error` memakai merah (alert); `info` tetap hitam putih. */
 export function Alert({
   tone = "info",
   children,
@@ -8,12 +9,14 @@ export function Alert({
   tone?: "info" | "error";
   children: ReactNode;
 }) {
+  const Icon = tone === "error" ? CircleAlert : Info;
   return (
-    <p
+    <div
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-2xl px-3 py-2 text-body ${tone === "error" ? "bg-canvas text-ember" : "bg-canvas text-ink-soft"}`}
+      className={`flex items-start gap-3 border-2 bg-paper px-3 py-2 text-sm ${tone === "error" ? "border-alert text-alert" : "border-ink text-ink"}`}
     >
-      {children}
-    </p>
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <p>{children}</p>
+    </div>
   );
 }

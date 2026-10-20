@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 
 type DialogProps = {
@@ -20,7 +21,11 @@ export function Dialog({ open, onClose, title, description, wide, children }: Di
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    if (open && !element.open) element.showModal();
+    if (open && !element.open) {
+      element.showModal();
+      // showModal() memfokuskan kontrol pertama (tombol tutup); pindahkan ke isi dialog.
+      element.querySelector<HTMLElement>("[data-dialog-body]")?.focus();
+    }
     if (!open && element.open) element.close();
   }, [open]);
 
@@ -32,13 +37,23 @@ export function Dialog({ open, onClose, title, description, wide, children }: Di
         // menekan latar (backdrop) menutup; target di dalam konten tidak
         if (event.target === ref.current) onClose();
       }}
-      className={`m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border border-hairline bg-paper p-0 text-ink shadow-subtle backdrop:bg-ink/40 ${wide ? "max-w-2xl" : "max-w-md"}`}
+      className={`m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-2 border-ink bg-paper p-0 text-ink shadow-hard-lg backdrop:bg-ink/60 ${wide ? "max-w-2xl" : "max-w-md"}`}
     >
       {open && (
-        <div className="flex flex-col gap-4 p-5">
-          <header className="flex flex-col gap-1">
-            <h2 className="text-subheading font-semibold">{title}</h2>
-            {description && <p className="text-mid-gray">{description}</p>}
+        <div data-dialog-body tabIndex={-1} className="flex flex-col gap-4 p-5 outline-none">
+          <header className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h2 className="font-display text-xl font-bold tracking-h2 uppercase">{title}</h2>
+              {description && <p className="text-ink-soft">{description}</p>}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup"
+              className="grid size-9 shrink-0 place-items-center border-2 border-ink bg-paper hover:bg-acid"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
           </header>
           {children}
         </div>

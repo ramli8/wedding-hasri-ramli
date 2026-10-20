@@ -154,9 +154,9 @@ function GuestForm({
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-body font-medium">Diundang ke acara</legend>
+        <legend className="mb-1 text-sm font-medium">Diundang ke acara</legend>
         {events.length === 0 ? (
-          <p className="text-mid-gray">Belum ada acara. Tambahkan di menu Acara.</p>
+          <p className="text-ink-soft">Belum ada acara. Tambahkan di menu Acara.</p>
         ) : (
           events.map((event) => (
             <Checkbox
@@ -177,7 +177,7 @@ function GuestForm({
         {(id) => <Input id={id} value={note} onChange={(e) => setNote(e.target.value)} />}
       </Field>
 
-      {guest?.code && <p className="text-caption text-mid-gray">Kode tamu: {guest.code}</p>}
+      {guest?.code && <p className="text-xs text-ink-soft">Kode tamu: {guest.code}</p>}
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onDone}>

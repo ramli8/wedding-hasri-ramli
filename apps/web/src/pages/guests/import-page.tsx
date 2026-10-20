@@ -5,7 +5,7 @@ import { type ChangeEvent, useState } from "react";
 import { PageHeader } from "../../components/page-header.js";
 import { Alert } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
+import { Button, buttonStyles } from "../../components/ui/button.js";
 import { Card } from "../../components/ui/card.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
 import { adminApi, downloads } from "../../lib/admin-api.js";
@@ -46,31 +46,26 @@ export function ImportPage() {
   return (
     <>
       <PageHeader
+        tag="Impor"
         title="Impor tamu dari CSV"
         description="Unggah berkas, periksa pratinjau, lalu impor."
         actions={
-          <Link
-            to="/admin/tamu"
-            className="inline-flex h-9 items-center rounded-2xl border border-hairline px-3 text-body font-medium hover:bg-canvas"
-          >
+          <Link to="/admin/tamu" className={buttonStyles({ variant: "secondary" })}>
             Kembali ke tamu
           </Link>
         }
       />
 
       <Card className="flex flex-col gap-3">
-        <h2 className="text-subheading font-semibold">1. Pilih berkas</h2>
-        <p className="text-mid-gray">
+        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">1. Pilih berkas</h2>
+        <p className="text-ink-soft">
           Kolom: {IMPORT_COLUMNS.join(", ")}. Hanya <b>nama_undangan</b> yang wajib, dan salah satu
           dari hp atau instagram harus terisi. Kolom acara berisi slug dipisah titik koma
           (resepsi;akad); kosong berarti diundang ke semua acara. Kelompok yang belum ada dibuat
           otomatis.
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <a
-            href={downloads.templateCsv}
-            className="inline-flex h-9 items-center rounded-2xl border border-hairline px-3 text-body font-medium hover:bg-canvas"
-          >
+          <a href={downloads.templateCsv} className={buttonStyles({ variant: "secondary" })}>
             Unduh template
           </a>
           <input
@@ -78,50 +73,50 @@ export function ImportPage() {
             accept=".csv,text/csv"
             aria-label="Berkas CSV"
             onChange={onFile}
-            className="text-body file:mr-3 file:h-9 file:cursor-pointer file:rounded-2xl file:border-0 file:bg-canvas file:px-3 file:font-medium"
+            className="text-sm file:mr-3 file:h-11 file:cursor-pointer file:border-2 file:border-ink file:bg-paper file:px-4 file:font-display file:text-sm file:font-bold file:tracking-button file:uppercase hover:file:bg-acid"
           />
         </div>
-        {preview.isPending && <p className="text-mid-gray">Memeriksa berkas…</p>}
+        {preview.isPending && <p className="text-ink-soft">Memeriksa berkas…</p>}
         {preview.error && <Alert tone="error">{preview.error.message}</Alert>}
       </Card>
 
       {data && !result && (
         <Card className="flex flex-col gap-4">
-          <h2 className="text-subheading font-semibold">2. Pratinjau</h2>
+          <h2 className="font-display text-lg font-bold tracking-h3 uppercase">2. Pratinjau</h2>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="solid">{data.counts.ok} siap</Badge>
-            <Badge variant="outline">{data.counts.duplicate} duplikat</Badge>
-            <Badge variant="outline">{data.counts.error} error</Badge>
+            <Badge variant="pillAcid">{data.counts.ok} siap</Badge>
+            <Badge variant="pill">{data.counts.duplicate} duplikat</Badge>
+            <Badge variant="pill">{data.counts.error} error</Badge>
           </div>
           {data.newGroups.length > 0 && (
             <Alert>Kelompok baru akan dibuat: {data.newGroups.join(", ")}.</Alert>
           )}
 
-          <div className="max-h-96 overflow-auto rounded-2xl border border-hairline">
-            <table className="w-full text-left text-body">
-              <thead className="sticky top-0 border-b border-hairline bg-paper text-caption text-mid-gray uppercase">
+          <div className="max-h-96 overflow-auto border-2 border-ink">
+            <table className="w-full text-left text-sm">
+              <thead className="tag sticky top-0 border-b-2 border-ink bg-paper text-ink-soft">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Baris</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Nama</th>
-                  <th className="px-3 py-2 font-medium">Kontak</th>
-                  <th className="px-3 py-2 font-medium">Kelompok</th>
-                  <th className="px-3 py-2 font-medium">Keterangan</th>
+                  <th className="px-3 py-2">Baris</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Nama</th>
+                  <th className="px-3 py-2">Kontak</th>
+                  <th className="px-3 py-2">Kelompok</th>
+                  <th className="px-3 py-2">Keterangan</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-hairline">
+              <tbody className="divide-y divide-bone-2">
                 {data.rows.map((row) => (
                   <tr key={row.line}>
-                    <td className="px-3 py-2 text-mid-gray">{row.line}</td>
+                    <td className="px-3 py-2 text-ink-soft">{row.line}</td>
                     <td className="px-3 py-2">
-                      <Badge variant={row.status === "ok" ? "solid" : "outline"}>
+                      <Badge variant={row.status === "ok" ? "pillAcid" : "pill"}>
                         {statusLabel[row.status]}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">{row.displayName || "—"}</td>
                     <td className="px-3 py-2">
                       {row.phone && <p>+{row.phone}</p>}
-                      {row.instagram && <p className="text-mid-gray">@{row.instagram}</p>}
+                      {row.instagram && <p className="text-ink-soft">@{row.instagram}</p>}
                     </td>
                     <td className="px-3 py-2">{row.groupName ?? "—"}</td>
                     <td className={`px-3 py-2 ${row.status === "error" ? "text-ember" : ""}`}>
@@ -152,17 +147,14 @@ export function ImportPage() {
 
       {result && (
         <Card className="flex flex-col gap-3">
-          <h2 className="text-subheading font-semibold">Selesai</h2>
+          <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Selesai</h2>
           <p>
             {result.imported} tamu diimpor, {result.skipped} baris dilewati.
             {result.createdGroups.length > 0 &&
               ` Kelompok baru: ${result.createdGroups.join(", ")}.`}
           </p>
           <div>
-            <Link
-              to="/admin/tamu"
-              className="inline-flex h-9 items-center rounded-2xl bg-ink px-3 text-body font-medium text-surface-alt hover:bg-ink-soft"
-            >
+            <Link to="/admin/tamu" className={buttonStyles()}>
               Lihat daftar tamu
             </Link>
           </div>

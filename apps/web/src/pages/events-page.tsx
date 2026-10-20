@@ -6,6 +6,7 @@ import {
   MESSAGE_TEMPLATE_VARIABLES,
   renderTemplate,
 } from "@wedding/shared";
+import { Plus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
@@ -31,18 +32,24 @@ export function EventsPage() {
   return (
     <>
       <PageHeader
-        title="Acara"
+        tag="Acara"
+        title="Acara pernikahan"
         description="Akad, resepsi, dan acara lain. Check-in QR hanya aktif untuk acara yang ditandai."
-        actions={<Button onClick={() => setEditing({ kind: "new" })}>Tambah acara</Button>}
+        actions={
+          <Button onClick={() => setEditing({ kind: "new" })}>
+            <Plus className="size-4" aria-hidden />
+            Tambah acara
+          </Button>
+        }
       />
 
       {events.isPending ? (
-        <p className="text-mid-gray">Memuat…</p>
+        <p className="text-ink-soft">Memuat…</p>
       ) : events.isError ? (
         <Alert tone="error">{events.error.message}</Alert>
       ) : events.data.length === 0 ? (
         <Card>
-          <p className="text-mid-gray">
+          <p className="text-ink-soft">
             Belum ada acara. Tambahkan acara pertama, misalnya Resepsi.
           </p>
         </Card>
@@ -52,29 +59,35 @@ export function EventsPage() {
             <Card key={event.id} className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-subheading font-semibold">{event.name}</h2>
-                  <p className="text-caption text-mid-gray">/{event.slug}</p>
+                  <h2 className="font-display text-lg font-bold tracking-h3 uppercase">
+                    {event.name}
+                  </h2>
+                  <p className="text-xs text-ink-soft">/{event.slug}</p>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                   {event.checkinEnabled && <Badge variant="solid">Check-in QR</Badge>}
-                  {event.hasRsvp && <Badge>RSVP</Badge>}
+                  {event.hasRsvp && <Badge variant="tag">RSVP</Badge>}
                 </div>
               </div>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-body">
-                <dt className="text-mid-gray">Mulai</dt>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                <dt className="text-ink-soft">Mulai</dt>
                 <dd>{formatDateTime(event.startsAt)}</dd>
-                <dt className="text-mid-gray">Selesai</dt>
+                <dt className="text-ink-soft">Selesai</dt>
                 <dd>{formatDateTime(event.endsAt)}</dd>
-                <dt className="text-mid-gray">Tempat</dt>
+                <dt className="text-ink-soft">Tempat</dt>
                 <dd>{event.venueName ?? "—"}</dd>
-                <dt className="text-mid-gray">Diundang</dt>
+                <dt className="text-ink-soft">Diundang</dt>
                 <dd>{event.invitedCount} tamu</dd>
               </dl>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditing({ kind: "edit", event })}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setEditing({ kind: "edit", event })}
+                >
                   Ubah
                 </Button>
-                <Button variant="destructive" onClick={() => setDeleting(event)}>
+                <Button size="sm" variant="destructive" onClick={() => setDeleting(event)}>
                   Hapus
                 </Button>
               </div>
@@ -279,15 +292,15 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
               type="button"
               title={variable.description}
               onClick={() => setMessageTemplate((text) => `${text}${variable.name}`)}
-              className="rounded-2xl border border-hairline px-2 py-0.5 text-caption hover:bg-canvas"
+              className="border-2 border-ink px-2 py-0.5 text-xs hover:bg-bone"
             >
               {variable.name}
             </button>
           ))}
         </div>
-        <div className="rounded-2xl bg-canvas p-3">
-          <p className="mb-1 text-caption text-mid-gray">Pratinjau</p>
-          <p className="whitespace-pre-wrap text-body">{preview}</p>
+        <div className="bg-bone p-3">
+          <p className="mb-1 text-xs text-ink-soft">Pratinjau</p>
+          <p className="whitespace-pre-wrap text-sm">{preview}</p>
         </div>
       </div>
 

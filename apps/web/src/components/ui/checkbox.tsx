@@ -6,8 +6,8 @@ type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "child
 
 export function Checkbox({ children, className = "", ...props }: CheckboxProps) {
   return (
-    <label className={`flex cursor-pointer items-center gap-2 text-body ${className}`}>
-      <input type="checkbox" className="size-4 shrink-0 accent-ink" {...props} />
+    <label className={`flex cursor-pointer items-center gap-3 text-sm ${className}`}>
+      <input type="checkbox" className="check-box" {...props} />
       <span>{children}</span>
     </label>
   );

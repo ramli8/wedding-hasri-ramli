@@ -1,20 +1,27 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { CalendarDays, LogOut, Menu, Settings, Tags, Users, X } from "lucide-react";
+import { useState } from "react";
 import { api } from "../lib/api.js";
 import { meQuery } from "../lib/queries.js";
 import { Button } from "./ui/button.js";
 
 const navItems = [
-  { to: "/admin/tamu", label: "Tamu" },
-  { to: "/admin/kelompok", label: "Kelompok" },
-  { to: "/admin/acara", label: "Acara" },
-  { to: "/admin/pengaturan", label: "Pengaturan" },
+  { to: "/admin/tamu", label: "Tamu", icon: Users },
+  { to: "/admin/kelompok", label: "Kelompok", icon: Tags },
+  { to: "/admin/acara", label: "Acara", icon: CalendarDays },
+  { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
 ] as const;
+
+// TanStack Router memberi data-status="active" pada tautan yang sedang aktif.
+const navLink =
+  "flex items-center gap-2 border-2 border-transparent px-3 py-2 font-display text-sm font-bold tracking-button uppercase hover:bg-bone-2 data-[status=active]:border-ink data-[status=active]:bg-acid";
 
 export function AppLayout() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data } = useSuspenseQuery(meQuery);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const logout = useMutation({
     mutationFn: api.logout,
@@ -25,33 +32,83 @@ export function AppLayout() {
     },
   });
 
+  const links = navItems.map((item) => (
+    <Link key={item.to} to={item.to} className={navLink} onClick={() => setMenuOpen(false)}>
+      <item.icon className="size-4" aria-hidden />
+      {item.label}
+    </Link>
+  ));
+
   return (
-    <div className="min-h-dvh md:flex">
-      <aside className="flex flex-col gap-3 bg-surface-alt px-4 py-3 md:sticky md:top-0 md:h-dvh md:w-56 md:shrink-0 md:gap-6 md:py-6">
-        <p className="text-body-lg font-semibold">Hasri &amp; Ramli</p>
-        <nav className="flex gap-1 overflow-x-auto md:flex-col">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="rounded-2xl px-3 py-2 text-body whitespace-nowrap text-ink-soft hover:bg-canvas"
-              activeProps={{ className: "bg-canvas font-semibold text-ink" }}
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-bone">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
+          <Link
+            to="/admin/tamu"
+            className="flex items-center gap-3 font-display text-sm font-bold tracking-h3 uppercase"
+          >
+            <span className="tag grid size-9 place-items-center border-2 border-ink bg-acid">
+              H&amp;R
+            </span>
+            <span className="hidden sm:inline">Hasri &amp; Ramli</span>
+          </Link>
+
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Menu utama">
+            {links}
+          </nav>
+
+          <div className="hidden items-center gap-3 md:flex">
+            <span className="tag max-w-40 truncate text-ink-soft">{data?.admin.name}</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => logout.mutate()}
+              disabled={logout.isPending}
             >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center justify-between gap-2 md:mt-auto md:flex-col md:items-stretch">
-          <p className="truncate text-caption text-mid-gray">{data?.admin.name}</p>
-          <Button variant="outline" onClick={() => logout.mutate()} disabled={logout.isPending}>
-            Keluar
-          </Button>
+              <LogOut className="size-4" aria-hidden />
+              Keluar
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            className="grid size-10 place-items-center border-2 border-ink bg-paper shadow-hard-sm md:hidden"
+            aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+            aria-expanded={menuOpen}
+            aria-controls="menu-mobile"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? (
+              <X className="size-5" aria-hidden />
+            ) : (
+              <Menu className="size-5" aria-hidden />
+            )}
+          </button>
         </div>
-      </aside>
-      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6">
-          <Outlet />
-        </div>
+
+        {menuOpen && (
+          <div id="menu-mobile" className="border-t-2 border-ink bg-paper px-4 py-3 md:hidden">
+            <nav className="flex flex-col gap-1" aria-label="Menu utama">
+              {links}
+            </nav>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t-2 border-ink pt-3">
+              <span className="tag truncate text-ink-soft">{data?.admin.name}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => logout.mutate()}
+                disabled={logout.isPending}
+              >
+                <LogOut className="size-4" aria-hidden />
+                Keluar
+              </Button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:px-6 md:py-12">
+        <Outlet />
       </main>
     </div>
   );

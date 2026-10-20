@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type Event, formatTimeRange, type Group } from "@wedding/shared";
+import { Plus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
@@ -27,40 +28,46 @@ export function GroupsPage() {
   return (
     <>
       <PageHeader
+        tag="Kelompok"
         title="Kelompok tamu"
         description="Kelompok menentukan warna, penanda VIP, gerbang, dan jam sesi tamu di tiap acara."
-        actions={<Button onClick={() => setEditing({ kind: "new" })}>Tambah kelompok</Button>}
+        actions={
+          <Button onClick={() => setEditing({ kind: "new" })}>
+            <Plus className="size-4" aria-hidden />
+            Tambah kelompok
+          </Button>
+        }
       />
 
       {groups.isPending ? (
-        <p className="text-mid-gray">Memuat…</p>
+        <p className="text-ink-soft">Memuat…</p>
       ) : groups.isError ? (
         <Alert tone="error">{groups.error.message}</Alert>
       ) : groups.data.length === 0 ? (
         <Card>
-          <p className="text-mid-gray">
+          <p className="text-ink-soft">
             Belum ada kelompok, misalnya Keluarga, Teman Kuliah, atau Tim Klub.
           </p>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-3xl border border-hairline bg-paper shadow-subtle">
-          <table className="w-full text-left text-body">
-            <thead className="border-b border-hairline text-caption text-mid-gray uppercase">
+        <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
+          <table className="w-full text-left text-sm">
+            <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
-                <th className="px-4 py-3 font-medium">Kelompok</th>
-                <th className="px-4 py-3 font-medium">Gerbang</th>
-                <th className="px-4 py-3 font-medium">Tamu</th>
-                <th className="px-4 py-3 font-medium">Jam sesi</th>
+                <th className="px-4 py-3">Kelompok</th>
+                <th className="px-4 py-3">Gerbang</th>
+                <th className="px-4 py-3">Tamu</th>
+                <th className="px-4 py-3">Jam sesi</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-hairline">
+            <tbody className="divide-y divide-bone-2">
               {groups.data.map((group) => (
                 <tr key={group.id}>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-2 font-medium">
                       <span
-                        className="size-3 shrink-0 rounded-full border border-hairline"
+                        className="size-3 shrink-0 border-2 border-ink"
                         style={{ backgroundColor: group.color }}
                       />
                       {group.name}
@@ -80,10 +87,14 @@ export function GroupsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Button variant="outline" onClick={() => setEditing({ kind: "edit", group })}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setEditing({ kind: "edit", group })}
+                      >
                         Ubah
                       </Button>
-                      <Button variant="destructive" onClick={() => setDeleting(group)}>
+                      <Button size="sm" variant="destructive" onClick={() => setDeleting(group)}>
                         Hapus
                       </Button>
                     </div>
@@ -190,7 +201,7 @@ function GroupForm({
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="h-9 w-16 cursor-pointer rounded-2xl border border-hairline bg-canvas p-1"
+              className="h-9 w-16 cursor-pointer border-2 border-ink bg-bone p-1"
             />
           )}
         </Field>
@@ -210,17 +221,17 @@ function GroupForm({
       </Checkbox>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-body font-medium">Jam sesi per acara</legend>
-        <p className="text-caption text-mid-gray">
+        <legend className="mb-1 text-sm font-medium">Jam sesi per acara</legend>
+        <p className="text-xs text-ink-soft">
           Kosongkan bila kelompok ini tidak punya jam khusus. Sesi dipakai untuk info di undangan
           dan dicatat di log; penjaga tidak diberi peringatan.
         </p>
         {events.length === 0 ? (
-          <p className="text-mid-gray">Belum ada acara.</p>
+          <p className="text-ink-soft">Belum ada acara.</p>
         ) : (
           events.map((event) => (
             <div key={event.id} className="grid items-center gap-2 sm:grid-cols-[8rem_1fr_1fr]">
-              <span className="text-body">{event.name}</span>
+              <span className="text-sm">{event.name}</span>
               <Input
                 type="datetime-local"
                 aria-label={`Mulai sesi di ${event.name}`}

@@ -1,51 +1,95 @@
 @import "tailwindcss";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-600.css";
 
-/* Token desain: lihat docs/design.md. Skala spacing Tailwind (basis 4px) sengaja tidak ditimpa. */
+/* Token desain: docs/design.md dan docs/design-tokens.json. Skala spacing Tailwind tidak ditimpa. */
 @theme {
-  --color-canvas: #f5f5f5;
+  --color-bone: #f1ede2;
+  --color-bone-2: #e6e1d3;
   --color-paper: #ffffff;
-  --color-surface-alt: #fafafa;
-  --color-ink: #0a0a0a;
-  --color-ink-soft: #171717;
-  --color-mid-gray: #737373;
-  --color-hairline: #e5e5e5;
-  --color-ember: #e7000b;
+  --color-ink: #0c0c0c;
+  --color-ink-soft: #4a4842;
+  --color-acid: #d8ff3e;
+  --color-electric: #2b2be8;
+  --color-alert: #c4271e;
+  --color-ok: #077045;
+  --color-tone-1: #ffb84d;
+  --color-tone-2: #7de0a6;
+  --color-tone-3: #8fd8f0;
+  --color-tone-4: #c4b5fd;
+  /* Hanya di dalam input putih: di atas bone kontrasnya 4,2:1. */
+  --color-placeholder: #72716c;
 
-  --font-sans:
-    "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
 
-  --text-caption: 12px;
-  --text-caption--line-height: 1.33;
-  --text-caption--letter-spacing: 0.6px;
-  --text-body: 14px;
-  --text-body--line-height: 1.43;
-  --text-body-lg: 16px;
-  --text-body-lg--line-height: 1.5;
-  --text-subheading: 18px;
-  --text-subheading--line-height: 1.56;
-  --text-heading-sm: 24px;
-  --text-heading-sm--line-height: 1.33;
-  --text-heading-sm--letter-spacing: -0.6px;
-  --text-heading: 30px;
-  --text-heading--line-height: 1.2;
-  --text-heading--letter-spacing: -0.75px;
-  --text-heading-lg: 36px;
-  --text-heading-lg--line-height: 1.11;
-  --text-heading-lg--letter-spacing: -0.9px;
-  --text-display: 48px;
-  --text-display--line-height: 1.1;
-  --text-display--letter-spacing: -2.4px;
+  --tracking-h1: -0.04em;
+  --tracking-h2: -0.03em;
+  --tracking-h3: -0.02em;
+  --tracking-button: 0.06em;
+  --tracking-label: 0.14em;
 
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 24px;
+  --shadow-hard-sm: 3px 3px 0 var(--color-ink);
+  --shadow-hard: 4px 4px 0 var(--color-ink);
+  --shadow-hard-lg: 6px 6px 0 var(--color-ink);
+  --shadow-hard-xl: 9px 9px 0 var(--color-ink);
+  --shadow-hard-on-dark: 6px 6px 0 var(--color-acid);
+}
 
-  --shadow-subtle:
-    0 0 0 1px rgb(23 23 23 / 0.05), 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+/* Label kecil: IBM Plex Mono kapital dengan tracking lebar. */
+@utility tag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Pola titik latar halaman. Jangan dipakai di balik data padat. */
+@utility bg-raster {
+  background-image: radial-gradient(var(--color-bone-2) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Hover mengangkat, tekan menenggelamkan (bayangan hilang). */
+@utility lift {
+  transition-property: translate, box-shadow, background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover:not(:disabled) {
+    translate: -2px -2px;
+    box-shadow: var(--shadow-hard-lg);
+  }
+  &:active:not(:disabled) {
+    translate: 2px 2px;
+    box-shadow: 0 0 0 var(--color-ink);
+  }
+}
+
+/* Kotak centang persegi: kosong = putih, tercentang = acid dengan tanda centang hitam. */
+@utility check-box {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--color-ink);
+  background-color: var(--color-paper);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100%;
+  &:checked {
+    background-color: var(--color-acid);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c0c0c' stroke-width='3.5' stroke-linecap='square'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E");
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 @layer base {
@@ -54,9 +98,22 @@
   }
 
   body {
-    @apply bg-canvas font-sans text-body text-ink antialiased;
-    font-feature-settings:
-      "ss01" 1,
-      "cv11" 1;
+    @apply bg-bone bg-raster font-sans text-sm text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      /* biome-ignore lint/complexity/noImportantStyles: harus menang atas utilitas transisi di komponen */
+      transition-duration: 0.001ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: harus menang atas animasi di komponen */
+      animation-duration: 0.001ms !important;
+    }
   }
 }

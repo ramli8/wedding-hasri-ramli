@@ -1,0 +1,7 @@
+{$PROD_DOMAIN} {
+	reverse_proxy prod-web:80
+}
+
+{$STAGING_DOMAIN} {
+	reverse_proxy staging-web:80
+}

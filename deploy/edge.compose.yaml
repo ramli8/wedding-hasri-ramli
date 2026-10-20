@@ -1,0 +1,32 @@
+# Pintu masuk tunggal VPS: TLS dan routing berdasarkan domain ke stack prod/staging.
+#   docker network create edge
+#   docker compose -p wedding-edge --env-file deploy/.env.edge -f deploy/edge.compose.yaml up -d
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PROD_DOMAIN: ${PROD_DOMAIN:?isi PROD_DOMAIN}
+      STAGING_DOMAIN: ${STAGING_DOMAIN:?isi STAGING_DOMAIN}
+    volumes:
+      - ./edge.Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    external: true

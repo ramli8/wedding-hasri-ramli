@@ -1,0 +1,70 @@
+# Satu stack lengkap (postgres + api + web). Dipakai untuk produksi dan staging:
+#   docker compose -p wedding-prod    --env-file deploy/.env.prod    -f deploy/stack.compose.yaml up -d --build
+#   docker compose -p wedding-staging --env-file deploy/.env.staging -f deploy/stack.compose.yaml up -d --build
+# Variabel ada di deploy/.env.stack.example. Jaringan `edge` dibuat sekali: docker network create edge
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wedding
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD}
+      POSTGRES_DB: wedding
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wedding -d wedding"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgres://wedding:${POSTGRES_PASSWORD}@postgres:5432/wedding
+      ALLOWED_ORIGINS: ${PUBLIC_ORIGIN:?isi PUBLIC_ORIGIN, mis. https://contoh.com}
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "true"
+      APP_VERSION: ${APP_VERSION:-dev}
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      default:
+      edge:
+        # nama yang dipakai edge Caddy: prod-web / staging-web
+        aliases:
+          - ${STACK_NAME:?isi STACK_NAME, mis. prod atau staging}-web
+
+volumes:
+  pgdata:
+
+networks:
+  edge:
+    external: true

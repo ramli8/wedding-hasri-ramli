@@ -27,7 +27,9 @@ export function createTestContext(overrides: Record<string, string> = {}) {
 }
 
 export async function resetDb(db: ReturnType<typeof createDb>["db"]) {
-  await db.execute(sql`truncate table admins cascade`);
+  await db.execute(
+    sql`truncate table admins, settings, events, guest_groups, guests restart identity cascade`,
+  );
 }
 
 export async function insertAdmin(
@@ -66,4 +68,35 @@ export function cookieFrom(res: Response) {
 export async function login(app: App, email = "ramli@example.com", password = PASSWORD) {
   const res = await post(app, "/api/v1/auth/login", { email, password });
   return { res, cookie: res.ok ? cookieFrom(res) : "" };
+}
+
+/** Klien untuk /api/v1/admin dengan sesi yang sudah login. `cookie` kosong = tanpa login. */
+export function adminClient(app: App, cookie: string) {
+  const call = (method: string, path: string, body?: unknown) =>
+    app.request(`/api/v1/admin${path}`, {
+      method,
+      headers: {
+        ...(cookie ? { cookie } : {}),
+        origin: ORIGIN,
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  return {
+    get: (path: string) => call("GET", path),
+    post: (path: string, body: unknown = {}) => call("POST", path, body),
+    put: (path: string, body: unknown) => call("PUT", path, body),
+    delete: (path: string) => call("DELETE", path),
+  };
+}
+
+/** Admin + login + klien dalam satu langkah, untuk beforeEach. */
+export async function loggedInClient(
+  ctx: ReturnType<typeof createTestContext>,
+): Promise<ReturnType<typeof adminClient>> {
+  await resetDb(ctx.db);
+  await insertAdmin(ctx.db);
+  const app = ctx.makeApp();
+  const { cookie } = await login(app);
+  return adminClient(app, cookie);
 }

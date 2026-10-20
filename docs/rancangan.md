@@ -277,7 +277,7 @@ Semua di bawah `/api/v1`. JSON. Validasi Zod dari `packages/shared`. Error serag
 - `GET /public/ticket/:code` → nama panggilan, kelompok, kuota, acara + jam sesi. Tidak mengembalikan HP/IG. (E-ticket tetap bisa menggambar QR tanpa endpoint ini.)
 - *(fase 4)* `POST /public/rsvp`, `GET/POST /public/guestbook`.
 
-**Admin** (cookie session; semua `POST/PATCH/DELETE` cek header `Origin`):
+**Admin** (cookie session; semua `POST/PUT/DELETE` cek header `Origin`). Dalam implementasi semua rute ini berada di bawah awalan `/admin`, mis. `/api/v1/admin/guests`, dan pembaruan memakai `PUT` (bukan `PATCH`). Daftar di bawah menulis jalur tanpa awalan itu:
 - `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/change-password`
 - `GET/POST /guests`, `GET/PATCH/DELETE /guests/:id`, `POST /guests/:id/restore`
 - `POST /guests/import/preview`, `POST /guests/import/commit`, `GET /guests/export.csv`, `GET /guests/template.csv`
@@ -465,6 +465,17 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **Auth admin:** cookie `session` (di production `__Host-session`, `Secure`), pembatas login di memori (5 gagal per email dan 20 per IP dalam 15 menit), pemeriksaan header `Origin` untuk request yang mengubah data.
 - **Path admin di web:** `/admin` (beranda) dan `/admin/masuk` (login). `/` mengarah ke `/admin`.
 - **Alat:** Biome (lint + format), CI GitHub Actions (belum pernah dijalankan di GitHub).
+
+### Fase 2 (tamu, kelompok, acara, impor)
+
+- **Tabel baru:** `events`, `message_templates`, `guest_groups`, `group_sessions`, `guests`, `guest_events`, urutan `guest_rev_seq`. Yang belum dibuat sampai fasenya: `devices`, `checkin_events`, `rsvps`, `guestbook`, vendor, dan amplop.
+- **`guests.code`** bertipe `text` dengan constraint `length = 6` (bukan `char(6)`), agar tidak ada padding spasi. Boleh `NULL` untuk tamu walk-in sampai disinkronkan.
+- **`guests.rev`** dinaikkan lewat `nextval` setiap tamu diubah, dihapus, atau dipulihkan (dilakukan di kode, bukan trigger).
+- **Impor CSV:** kolom `nama_undangan` wajib; `hp` atau `instagram` salah satu harus ada; `acara` berisi slug dipisah `;` dan kosong berarti semua acara; kelompok yang belum ada dibuat otomatis. Duplikat dideteksi dari HP atau Instagram yang sama (terhadap tamu aktif dan antarbaris di berkas). Pemisah koma atau titik koma dikenali otomatis. Ekspor menambahkan kolom `kode` dan `link`, dan sel yang diawali `= + - @` diberi awalan `'` agar tidak dibaca sebagai rumus.
+- **Template pesan:** variabel `{panggilan} {link} {acara} {tanggal} {jam_sesi}`. Baris yang hanya berisi variabel kosong dibuang (mis. "Waktu: " bila acara belum punya jam). Template kosong berarti memakai template bawaan.
+- **Tautan pesan:** `https://wa.me/<hp>?text=…` untuk WhatsApp. Untuk Instagram dipakai `https://ig.me/m/<username>` (membuka DM) dan teks disalin ke clipboard. Format `ig.me` belum pernah saya uji pada akun sungguhan.
+- **UI:** tanpa shadcn/ui. Komponen dasar ditulis sendiri sesuai `design.md` dan modal memakai elemen `<dialog>` bawaan browser. Alasannya: lebih ringan dan tidak ada komponen yang tidak dipakai.
+- **Zona waktu admin:** input jam di formulir dianggap WIB (UTC+7) dan disimpan sebagai UTC.
 
 ## 15. Belum diputuskan (tidak memblokir fase 1–3)
 

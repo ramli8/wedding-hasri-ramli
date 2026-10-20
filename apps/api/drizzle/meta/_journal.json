@@ -8,6 +8,13 @@
       "when": 1792473746406,
       "tag": "0000_icy_dark_phoenix",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792475208667,
+      "tag": "0001_zippy_vision",
+      "breakpoints": true
     }
   ]
 }

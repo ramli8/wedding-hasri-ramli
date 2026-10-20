@@ -18,9 +18,9 @@ export class ApiError extends Error {
   }
 }
 
-const okSchema = z.object({ ok: z.literal(true) });
+export const okSchema = z.object({ ok: z.literal(true) });
 
-async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}) {
+export async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}) {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
@@ -44,13 +44,18 @@ async function request<T>(path: string, schema: z.ZodType<T>, init: RequestInit 
   return schema.parse(json);
 }
 
-const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+/** Opsi fetch untuk request ber-body JSON. */
+export const withBody = (method: string, body?: unknown): RequestInit => ({
+  method,
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
 
 export const api = {
-  login: (body: LoginRequest) => request("/v1/auth/login", meResponseSchema, post(body)),
-  logout: () => request("/v1/auth/logout", okSchema, post({})),
+  login: (body: LoginRequest) =>
+    request("/v1/auth/login", meResponseSchema, withBody("POST", body)),
+  logout: () => request("/v1/auth/logout", okSchema, withBody("POST", {})),
   changePassword: (body: ChangePasswordRequest) =>
-    request("/v1/auth/change-password", okSchema, post(body)),
+    request("/v1/auth/change-password", okSchema, withBody("POST", body)),
   /** Mengembalikan null bila belum masuk (401), bukan melempar error. */
   async me(): Promise<MeResponse | null> {
     try {

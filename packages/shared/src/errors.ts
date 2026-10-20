@@ -9,6 +9,7 @@ export const errorCodeSchema = z.enum([
   "RATE_LIMITED",
   "INVALID_CREDENTIALS",
   "APP_OUTDATED",
+  "DEVICE_REVOKED",
   "INTERNAL",
 ]);
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

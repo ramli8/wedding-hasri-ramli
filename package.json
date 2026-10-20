@@ -15,9 +15,13 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "e2e": "node e2e/scan-offline.mjs",
+    "e2e:qr": "node e2e/qr-decode.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15"
+    "@biomejs/biome": "^2.5.15",
+    "puppeteer-core": "^25.14.0",
+    "qrcode": "^1.5.4"
   }
 }

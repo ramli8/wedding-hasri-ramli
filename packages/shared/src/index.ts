@@ -1,4 +1,6 @@
 export * from "./auth.js";
+export * from "./checkin.js";
+export * from "./checkin-admin.js";
 export * from "./contact.js";
 export * from "./errors.js";
 export * from "./events.js";
@@ -6,4 +8,6 @@ export * from "./groups.js";
 export * from "./guests.js";
 export * from "./message.js";
 export * from "./settings.js";
+export * from "./sync.js";
+export * from "./uuid.js";
 export * from "./version.js";

@@ -1,6 +1,16 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { CalendarDays, LogOut, Menu, Settings, Tags, Users, X } from "lucide-react";
+import {
+  CalendarDays,
+  LogOut,
+  Menu,
+  ScanLine,
+  Settings,
+  Smartphone,
+  Tags,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { api } from "../lib/api.js";
 import { meQuery } from "../lib/queries.js";
@@ -10,6 +20,8 @@ const navItems = [
   { to: "/admin/tamu", label: "Tamu", icon: Users },
   { to: "/admin/kelompok", label: "Kelompok", icon: Tags },
   { to: "/admin/acara", label: "Acara", icon: CalendarDays },
+  { to: "/admin/checkin", label: "Check-in", icon: ScanLine },
+  { to: "/admin/perangkat", label: "Perangkat", icon: Smartphone },
   { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
 ] as const;
 
@@ -41,7 +53,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-bone">
+      <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-bone print:hidden">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
           <Link
             to="/admin/tamu"

@@ -1,4 +1,8 @@
 import {
+  createDeviceResponseSchema,
+  dashboardResponseSchema,
+  deviceListResponseSchema,
+  deviceResponseSchema,
   type EventInput,
   eventListResponseSchema,
   eventResponseSchema,
@@ -10,7 +14,10 @@ import {
   guestResponseSchema,
   importCommitResponseSchema,
   importPreviewResponseSchema,
+  logResponseSchema,
   type MarkSentRequest,
+  type ResolveRequest,
+  reviewListResponseSchema,
   type SettingsInput,
   settingsResponseSchema,
 } from "@wedding/shared";
@@ -89,6 +96,26 @@ export const adminApi = {
         importCommitResponseSchema,
         withBody("POST", { csv, skipDuplicates }),
       ),
+  },
+
+  devices: {
+    list: () => request(`${base}/devices`, deviceListResponseSchema),
+    create: (name: string) =>
+      request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name })),
+    revoke: (id: string) =>
+      request(`${base}/devices/${id}/revoke`, deviceResponseSchema, withBody("POST", {})),
+  },
+
+  checkins: {
+    dashboard: () => request(`${base}/checkins/dashboard`, dashboardResponseSchema),
+    review: () => request(`${base}/checkins/review`, reviewListResponseSchema),
+    resolve: (input: ResolveRequest) =>
+      request(`${base}/checkins/resolve`, okSchema, withBody("POST", input)),
+    log: (page: number) =>
+      request(`${base}/checkins/log?page=${page}&pageSize=30`, logResponseSchema),
+    undo: (id: string) => request(`${base}/checkins/${id}/undo`, okSchema, withBody("POST", {})),
+    setPax: (id: string, pax: number) =>
+      request(`${base}/checkins/${id}/pax`, okSchema, withBody("POST", { pax })),
   },
 };
 

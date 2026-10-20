@@ -15,6 +15,13 @@
       "when": 1792475208667,
       "tag": "0001_zippy_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792482118899,
+      "tag": "0002_whole_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

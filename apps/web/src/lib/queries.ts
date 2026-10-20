@@ -24,6 +24,34 @@ export const groupsQuery = queryOptions({
   queryFn: async () => (await adminApi.groups.list()).items,
 });
 
+export const devicesQuery = queryOptions({
+  queryKey: ["devices"],
+  queryFn: async () => (await adminApi.devices.list()).items,
+  refetchInterval: 10_000,
+});
+
+/** Dashboard hari-H: disegarkan tiap 5 detik. */
+export const dashboardQuery = queryOptions({
+  queryKey: ["checkin", "dashboard"],
+  queryFn: adminApi.checkins.dashboard,
+  refetchInterval: 5_000,
+  retry: false,
+});
+
+export const reviewQuery = queryOptions({
+  queryKey: ["checkin", "review"],
+  queryFn: async () => (await adminApi.checkins.review()).items,
+  refetchInterval: 5_000,
+  retry: false,
+});
+
+export const logQuery = (page: number) =>
+  queryOptions({
+    queryKey: ["checkin", "log", page],
+    queryFn: () => adminApi.checkins.log(page),
+    placeholderData: (previous) => previous,
+  });
+
 export const guestsQuery = (query: GuestQuery) =>
   queryOptions({
     queryKey: ["guests", query],
@@ -34,6 +62,6 @@ export const guestsQuery = (query: GuestQuery) =>
 /** Menandai data sebagai usang setelah perubahan. Tamu ikut karena menampilkan kelompok/acara. */
 export function useRefresh() {
   const queryClient = useQueryClient();
-  return (...keys: ("settings" | "events" | "groups" | "guests")[]) =>
+  return (...keys: ("settings" | "events" | "groups" | "guests" | "devices" | "checkin")[]) =>
     Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }

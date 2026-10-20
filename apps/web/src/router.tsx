@@ -8,11 +8,18 @@ import {
 } from "@tanstack/react-router";
 import { AppLayout } from "./components/app-layout.js";
 import { meQuery } from "./lib/queries.js";
+import { getMeta } from "./lib/scan/db.js";
+import { CheckinPage } from "./pages/checkin-page.js";
+import { DevicesPage } from "./pages/devices-page.js";
 import { EventsPage } from "./pages/events-page.js";
 import { GroupsPage } from "./pages/groups-page.js";
 import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
+import { PrintPage } from "./pages/guests/print-page.js";
 import { LoginPage } from "./pages/login.js";
+import { PairPage } from "./pages/scan/pair-page.js";
+import { ReadinessPage } from "./pages/scan/readiness-page.js";
+import { ScannerPage } from "./pages/scan/scanner-page.js";
 import { SettingsPage } from "./pages/settings-page.js";
 
 type RouterContext = { queryClient: QueryClient };
@@ -68,6 +75,12 @@ const importRoute = createRoute({
   component: ImportPage,
 });
 
+const printRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/tamu/cetak",
+  component: PrintPage,
+});
+
 const groupsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/kelompok",
@@ -80,21 +93,64 @@ const eventsRoute = createRoute({
   component: EventsPage,
 });
 
+const checkinRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/checkin",
+  component: CheckinPage,
+});
+
+const devicesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/perangkat",
+  component: DevicesPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/pengaturan",
   component: SettingsPage,
 });
 
+// Aplikasi penjaga pintu: tidak memakai login admin, melainkan token perangkat (lihat /scan/pasang).
+const requirePairedDevice = async () => {
+  if (!(await getMeta("auth"))) throw redirect({ to: "/scan/pasang" });
+};
+
+const scanRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/scan",
+  beforeLoad: requirePairedDevice,
+  component: ScannerPage,
+});
+
+const pairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/scan/pasang",
+  component: PairPage,
+});
+
+const readinessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/scan/siap",
+  beforeLoad: requirePairedDevice,
+  component: ReadinessPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  scanRoute,
+  pairRoute,
+  readinessRoute,
   appRoute.addChildren([
     adminIndexRoute,
     guestsRoute,
     importRoute,
+    printRoute,
     groupsRoute,
     eventsRoute,
+    checkinRoute,
+    devicesRoute,
     settingsRoute,
   ]),
 ]);

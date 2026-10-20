@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { Group, Guest } from "@wedding/shared";
-import { Download, Plus, Upload } from "lucide-react";
+import { Download, Plus, Printer, Upload } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { PageHeader } from "../../components/page-header.js";
 import { Alert } from "../../components/ui/alert.js";
@@ -97,6 +97,10 @@ export function GuestsPage() {
               <Download className="size-4" aria-hidden />
               Ekspor CSV
             </a>
+            <Link to="/admin/tamu/cetak" className={buttonStyles({ variant: "secondary" })}>
+              <Printer className="size-4" aria-hidden />
+              Cetak daftar
+            </Link>
             <Link to="/admin/tamu/impor" className={buttonStyles({ variant: "secondary" })}>
               <Upload className="size-4" aria-hidden />
               Impor CSV

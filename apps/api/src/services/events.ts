@@ -1,7 +1,7 @@
 import type { Event, EventData } from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { isUniqueViolation } from "../db/errors.js";
+import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
 import { events, messageTemplates } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 
@@ -127,6 +127,18 @@ export async function updateEvent(db: Db, id: string, input: EventData): Promise
 }
 
 export async function deleteEvent(db: Db, id: string): Promise<void> {
-  const deleted = await db.delete(events).where(eq(events.id, id)).returning({ id: events.id });
-  if (deleted.length === 0) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
+  try {
+    const deleted = await db.delete(events).where(eq(events.id, id)).returning({ id: events.id });
+    if (deleted.length === 0) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
+  } catch (err) {
+    // checkin_events.event_id tidak cascade: data check-in tidak boleh hilang diam-diam.
+    if (isForeignKeyViolation(err)) {
+      throw new AppError(
+        409,
+        "CONFLICT",
+        "Acara ini sudah punya data check-in dan tidak bisa dihapus",
+      );
+    }
+    throw err;
+  }
 }

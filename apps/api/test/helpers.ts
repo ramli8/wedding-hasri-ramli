@@ -28,7 +28,7 @@ export function createTestContext(overrides: Record<string, string> = {}) {
 
 export async function resetDb(db: ReturnType<typeof createDb>["db"]) {
   await db.execute(
-    sql`truncate table admins, settings, events, guest_groups, guests restart identity cascade`,
+    sql`truncate table admins, settings, events, guest_groups, guests, devices restart identity cascade`,
   );
 }
 

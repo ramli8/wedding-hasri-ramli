@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { getConnInfo } from "@hono/node-server/conninfo";
+import { MIN_SUPPORTED_SYNC_VERSION, SYNC_VERSION_HEADER } from "@wedding/shared";
 import type { Context, MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { resolveSession } from "../auth/session.js";
 import type { Config } from "../config.js";
 import type { Logger } from "../logger.js";
+import { authenticateDevice } from "../services/devices.js";
 import type { AppDeps, AppEnv } from "./env.js";
 import { AppError } from "./errors.js";
 
@@ -93,5 +95,30 @@ export const requireAdmin =
     if (session.renewed) setSessionCookie(c, config, token, session.expiresAt);
     c.set("admin", session.admin);
     c.set("sessionId", session.sessionId);
+    await next();
+  };
+
+/** Perangkat harus mengirim versi protokolnya; versi terlalu lama diminta memperbarui aplikasi. */
+export const requireSyncVersion: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const version = Number(c.req.header(SYNC_VERSION_HEADER));
+  if (!Number.isInteger(version) || version < MIN_SUPPORTED_SYNC_VERSION) {
+    throw new AppError(
+      426,
+      "APP_OUTDATED",
+      `Aplikasi perlu diperbarui (versi protokol minimal ${MIN_SUPPORTED_SYNC_VERSION}).`,
+    );
+  }
+  c.set("syncVersion", version);
+  await next();
+};
+
+/** Token perangkat di header `Authorization: Bearer ...`. */
+export const requireDevice =
+  ({ db }: Pick<AppDeps, "db">): MiddlewareHandler<AppEnv> =>
+  async (c, next) => {
+    const header = c.req.header("authorization") ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+    if (!token) throw new AppError(401, "UNAUTHENTICATED", "Perangkat belum dipasangkan");
+    c.set("device", await authenticateDevice(db, token));
     await next();
   };

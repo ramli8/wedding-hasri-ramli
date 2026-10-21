@@ -127,3 +127,79 @@
     width: 0;
   }
 }
+
+/* Dialog di HP: lembar yang naik dari bawah. */
+@media (max-width: 767px) {
+  dialog.sheet[open] {
+    animation: sheet-up 180ms ease-out;
+  }
+  dialog.sheet[open]::backdrop {
+    animation: sheet-fade 180ms ease-out;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.sheet[open],
+  dialog.sheet[open]::backdrop {
+    animation: none;
+  }
+}
+
+/* Tabel di HP: tiap baris menjadi kartu; label kolom diambil dari data-label. */
+@media (max-width: 767px) {
+  .table-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table-cards,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards td {
+    display: block;
+  }
+  .table-cards tr {
+    padding: 0.5rem 0;
+    border-bottom: 2px solid var(--color-ink);
+  }
+  .table-cards tr:last-child {
+    border-bottom: 0;
+  }
+  .table-cards td {
+    padding: 0.25rem 1rem;
+  }
+  .table-cards td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+}
+
+/* Baris tombol terakhir di formulir dalam lembar HP menempel di bawah, tanpa perlu menggulir. */
+@media (max-width: 767px) {
+  dialog.sheet form > .justify-end:last-child {
+    position: sticky;
+    bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom)));
+    margin-inline: -1.25rem;
+    margin-bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom)));
+    padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+    background: var(--color-paper);
+    border-top: 2px solid var(--color-ink);
+  }
+}

@@ -55,7 +55,7 @@ export function DevicesPage() {
         </Card>
       ) : (
         <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="w-full text-left text-sm">
+          <table className="table-cards w-full text-left text-sm">
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Perangkat</th>
@@ -70,7 +70,7 @@ export function DevicesPage() {
               {devices.data.map((device) => (
                 <tr key={device.id}>
                   <td className="px-4 py-3 font-semibold">{device.name}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Status" className="px-4 py-3">
                     <Badge variant={STATUS[device.status].variant}>
                       {STATUS[device.status].label}
                     </Badge>
@@ -81,15 +81,17 @@ export function DevicesPage() {
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Terakhir sinkron" className="px-4 py-3">
                     {device.lastSyncAt ? formatAgo(Date.parse(device.lastSyncAt)) : "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Antrean" className="px-4 py-3">
                     {device.status === "active" ? device.pendingOutbox : "—"}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs">{device.appVersion ?? "—"}</td>
+                  <td data-label="Versi" className="px-4 py-3 font-mono text-xs">
+                    {device.appVersion ?? "—"}
+                  </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end max-md:justify-start">
                       {device.status !== "revoked" ? (
                         <Button size="sm" variant="destructive" onClick={() => setRevoking(device)}>
                           Cabut
@@ -208,7 +210,7 @@ function CodeDialog({
             Kode ini hanya tampil sekarang, berlaku 24 jam, dan hangus setelah dipakai. Kalau
             hilang, cabut perangkat ini lalu buat yang baru.
           </Alert>
-          <div className="flex justify-end">
+          <div className="flex justify-end max-md:justify-start">
             <Button onClick={onClose}>Selesai</Button>
           </div>
         </div>

@@ -51,7 +51,7 @@ export function GroupsPage() {
         </Card>
       ) : (
         <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="w-full text-left text-sm">
+          <table className="table-cards w-full text-left text-sm">
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Kelompok</th>
@@ -73,8 +73,10 @@ export function GroupsPage() {
                       {group.isVip && <Badge variant="solid">VIP</Badge>}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{group.guestCount}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Tamu" className="px-4 py-3">
+                    {group.guestCount}
+                  </td>
+                  <td data-label="Jam sesi" className="px-4 py-3">
                     {group.sessions.length === 0
                       ? "—"
                       : group.sessions.map((s) => (
@@ -84,7 +86,7 @@ export function GroupsPage() {
                         ))}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1 max-md:flex-wrap max-md:justify-start">
                       <Button
                         size="sm"
                         variant="secondary"

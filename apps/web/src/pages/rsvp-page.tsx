@@ -107,7 +107,7 @@ export function RsvpPage() {
           </div>
 
           <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-            <table className="w-full text-left text-sm">
+            <table className="table-cards w-full text-left text-sm">
               <thead className="tag border-b-2 border-ink text-ink-soft">
                 <tr>
                   <th className="px-4 py-3">Nama</th>
@@ -133,8 +133,10 @@ export function RsvpPage() {
                           <span className="ml-2 text-xs text-ink-soft">rombongan</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">{row.groupName ?? "—"}</td>
-                      <td className="px-4 py-3">
+                      <td data-label="Kelompok" className="px-4 py-3">
+                        {row.groupName ?? "—"}
+                      </td>
+                      <td data-label="Status" className="px-4 py-3">
                         {row.status ? (
                           <Badge variant={row.status === "hadir" ? "pillAcid" : "pill"}>
                             {RSVP_LABEL[row.status]}
@@ -143,8 +145,12 @@ export function RsvpPage() {
                           <span className="text-ink-soft">Belum menjawab</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono">{row.status ? row.pax : "—"}</td>
-                      <td className="px-4 py-3 text-ink-soft">{formatDateTime(row.submittedAt)}</td>
+                      <td data-label="Orang" className="px-4 py-3 font-mono">
+                        {row.status ? row.pax : "—"}
+                      </td>
+                      <td data-label="Dijawab" className="px-4 py-3 text-ink-soft">
+                        {formatDateTime(row.submittedAt)}
+                      </td>
                     </tr>
                   ))
                 )}

@@ -549,6 +549,14 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - **Vendor** (`/admin/vendor`, API `/api/v1/admin/vendors`): tabel `vendor_categories`, `vendors`, `vendor_payments` sesuai sketsa. Kandidat dikelompokkan per kategori; indeks unik parsial `one_selected_vendor_per_category` menjamin paling banyak satu vendor terpilih per kategori, dan memilih satu melepas yang lain dalam satu transaksi (dua permintaan bersamaan tidak pernah menghasilkan dua terpilih). Pindah kategori melepas status terpilih. Hapus vendor bersifat lunak (`deleted_at`, sekaligus dilepas dari terpilih); kategori hanya bisa dihapus bila tidak ada vendor aktif. Nilai uang bilangan bulat rupiah (maksimal Rp 100 miliar). Status bayar dihitung, tidak disimpan: `belum` / `sebagian` / `lunas` dari jumlah pembayaran terhadap nilai kontrak (kosong bila belum ada kontrak). Ringkasan (total kontrak, dibayar, sisa) hanya menghitung vendor terpilih; sisa tidak pernah negatif. Kategori umum (katering, dekorasi, dst.) bisa ditambahkan sekali klik tanpa menggandakan yang sudah ada. Header admin kini punya baris menu kedua agar sepuluh menu tidak meluap.
 
+### Tampilan HP seperti aplikasi
+
+- Admin di bawah breakpoint `xl`: bilah tab bawah (Tamu, Check-in, Undangan, Hadiah, dan tombol Lainnya yang membuka lembar berisi menu sisanya serta tombol Keluar); header atas hanya logo. Di layar lebar menu tetap dua baris di header.
+- `Dialog` di bawah `md` menjadi lembar yang naik dari bawah (animasi singkat, hormat `prefers-reduced-motion`), selebar layar, dengan baris tombol terakhir formulir menempel di bawah.
+- Tabel Tamu, Kelompok, Perangkat, dan RSVP menjadi kartu di HP lewat kelas `table-cards` dan atribut `data-label`. Tabel Check-in dan impor CSV masih menggulir ke samping (dipakai terutama di laptop); halaman cetak tidak berubah.
+- Halaman tamu: bilah bawah Tiket | Undangan menggantikan tautan "Kenali kami" dan "Kembali ke tiket".
+- Penyesuaian sentuhan: `viewport-fit=cover` dengan `env(safe-area-inset-*)`, tombol kecil 44px di HP, isian 16px agar iOS tidak memperbesar layar, kotak centang 44px.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

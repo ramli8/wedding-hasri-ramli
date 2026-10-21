@@ -189,7 +189,7 @@ export function GuestsPage() {
       {restore.error && <Alert tone="error">{restore.error.message}</Alert>}
 
       <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-        <table className="w-full text-left text-sm">
+        <table className="table-cards w-full text-left text-sm">
           <thead className="tag border-b-2 border-ink text-ink-soft">
             <tr>
               <th className="px-4 py-3">Nama</th>
@@ -231,11 +231,11 @@ export function GuestsPage() {
                   <td className="px-4 py-3">
                     <p className="font-medium">{guest.displayName}</p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Kontak" className="px-4 py-3">
                     {guest.phone && <p>+{guest.phone}</p>}
                     {guest.instagram && <p className="text-ink-soft">@{guest.instagram}</p>}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Kelompok" className="px-4 py-3">
                     {group ? (
                       <Badge variant="pill">
                         <span
@@ -249,11 +249,13 @@ export function GuestsPage() {
                       <span className="text-ink-soft">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{guest.isRombongan ? "Ya" : "—"}</td>
-                  <td className="px-4 py-3 font-mono font-semibold tabular-nums">
+                  <td data-label="Rombongan" className="px-4 py-3">
+                    {guest.isRombongan ? "Ya" : "—"}
+                  </td>
+                  <td data-label="Kode" className="px-4 py-3 font-mono font-semibold tabular-nums">
                     {guest.code ?? "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Undangan" className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {guest.events.map((invitation) => (
                         <Badge
@@ -267,7 +269,7 @@ export function GuestsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1 max-md:flex-wrap max-md:justify-start">
                       {trash ? (
                         <Button
                           size="sm"

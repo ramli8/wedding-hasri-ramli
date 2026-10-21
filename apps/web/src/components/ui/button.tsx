@@ -10,7 +10,7 @@ const variants = {
 // supaya baris yang berisi banyak tombol tidak terasa berat.
 const sizes = {
   md: "h-11 px-4 shadow-hard lift",
-  sm: "h-9 px-3 transition-[translate,box-shadow,background-color,color] duration-150 hover:not-disabled:-translate-x-0.5 hover:not-disabled:-translate-y-0.5 hover:not-disabled:shadow-hard-sm active:not-disabled:translate-x-0.5 active:not-disabled:translate-y-0.5 active:not-disabled:shadow-none",
+  sm: "h-9 px-3 max-md:h-11 transition-[translate,box-shadow,background-color,color] duration-150 hover:not-disabled:-translate-x-0.5 hover:not-disabled:-translate-y-0.5 hover:not-disabled:shadow-hard-sm active:not-disabled:translate-x-0.5 active:not-disabled:translate-y-0.5 active:not-disabled:shadow-none",
 } as const;
 
 export type ButtonVariant = keyof typeof variants;

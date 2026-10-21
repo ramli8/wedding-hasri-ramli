@@ -87,6 +87,13 @@ export const vendorInputSchema = z.object({
   referencePrice: optionalMoney("Harga acuan"),
   /** Nilai yang disepakati; dasar status pembayaran. */
   contractAmount: optionalMoney("Nilai kontrak"),
+  /** Jatuh tempo pembayaran berikutnya (YYYY-MM-DD); diperbarui admin setelah tiap pembayaran. */
+  dueOn: z.iso
+    .date()
+    .nullish()
+    .transform((value) => value ?? null),
+  /** Nominal yang jatuh tempo itu, opsional. */
+  dueAmount: optionalMoney("Nominal jatuh tempo"),
   note: optionalText(1000, "Catatan"),
 });
 export type VendorInput = z.input<typeof vendorInputSchema>;
@@ -99,6 +106,27 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   sebagian: "Sebagian",
   lunas: "Lunas",
 };
+
+/** Berapa hari ke depan sebuah jatuh tempo dianggap "segera". */
+export const DUE_SOON_DAYS = 14;
+
+export const DUE_STATES = ["terlambat", "segera"] as const;
+export type DueState = (typeof DUE_STATES)[number];
+
+/**
+ * Keadaan jatuh tempo: hanya untuk vendor terpilih yang belum lunas dan punya tanggal. `today`
+ * dan `dueOn` berupa YYYY-MM-DD, jadi membandingkan teksnya sudah urut menurut tanggal.
+ */
+export function dueState(
+  input: { dueOn: string | null; isSelected: boolean; status: PaymentStatus | null },
+  today: string,
+): DueState | null {
+  if (!input.dueOn || !input.isSelected || input.status === "lunas") return null;
+  if (input.dueOn < today) return "terlambat";
+  const limit = new Date(`${today}T00:00:00Z`);
+  limit.setUTCDate(limit.getUTCDate() + DUE_SOON_DAYS);
+  return input.dueOn <= limit.toISOString().slice(0, 10) ? "segera" : null;
+}
 
 /** Status dari total pembayaran terhadap nilai kontrak; null bila belum ada nilai kontrak. */
 export function paymentStatus(
@@ -148,6 +176,10 @@ export const vendorSchema = z.object({
   paidTotal: z.number(),
   /** Null bila belum ada nilai kontrak. */
   paymentStatus: z.enum(PAYMENT_STATUSES).nullable(),
+  dueOn: z.string().nullable(),
+  dueAmount: z.number().nullable(),
+  /** Terlambat / segera jatuh tempo; dihitung server, kosong bila tidak relevan. */
+  dueState: z.enum(DUE_STATES).nullable(),
 });
 export type Vendor = z.infer<typeof vendorSchema>;
 
@@ -160,6 +192,9 @@ export const vendorSummarySchema = z.object({
   /** Pembayaran ke vendor terpilih, dan sisanya (tidak negatif). */
   paidTotal: z.number(),
   remaining: z.number(),
+  /** Vendor terpilih yang pembayarannya terlambat atau segera jatuh tempo. */
+  overdueCount: z.number(),
+  dueSoonCount: z.number(),
 });
 export type VendorSummary = z.infer<typeof vendorSummarySchema>;
 

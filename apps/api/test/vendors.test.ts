@@ -1,4 +1,4 @@
-import type { Vendor, VendorCategory, VendorOverview } from "@wedding/shared";
+import { dueState, type Vendor, type VendorCategory, type VendorOverview } from "@wedding/shared";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { adminClient, createTestContext, loggedInClient } from "./helpers.js";
 
@@ -209,7 +209,7 @@ describe("pembayaran vendor", () => {
     await select(a.id);
     await select(x.id);
 
-    expect((await overview()).summary).toEqual({
+    expect((await overview()).summary).toMatchObject({
       selectedCount: 2,
       categoryCount: 2,
       contractTotal: 14_000_000,
@@ -228,5 +228,79 @@ describe("pembayaran vendor", () => {
     await api.delete(`/vendors/${v.id}`);
     expect((await overview()).vendors).toEqual([]);
     expect((await pay(v.id, { amount: 100_000 })).status).toBe(404);
+  });
+});
+
+describe("jatuh tempo pembayaran", () => {
+  const day = (offset: number) =>
+    new Date(Date.now() + 7 * 3600_000 + offset * 86_400_000).toISOString().slice(0, 10);
+
+  it("dueState: hanya vendor terpilih yang belum lunas; terlambat, segera (14 hari), atau kosong", () => {
+    const today = "2027-03-10";
+    const base = { isSelected: true, status: "sebagian" as const };
+    expect(dueState({ ...base, dueOn: "2027-03-09" }, today)).toBe("terlambat");
+    expect(dueState({ ...base, dueOn: "2027-03-10" }, today)).toBe("segera");
+    expect(dueState({ ...base, dueOn: "2027-03-24" }, today)).toBe("segera");
+    expect(dueState({ ...base, dueOn: "2027-03-25" }, today)).toBeNull();
+    expect(dueState({ ...base, dueOn: null }, today)).toBeNull();
+    expect(dueState({ ...base, status: "lunas", dueOn: "2027-03-01" }, today)).toBeNull();
+    expect(dueState({ ...base, isSelected: false, dueOn: "2027-03-01" }, today)).toBeNull();
+    expect(dueState({ ...base, status: null, dueOn: "2027-03-01" }, today)).toBe("terlambat");
+  });
+
+  it("menyimpan jatuh tempo, menghitung keadaannya, dan memasukkannya ke ringkasan", async () => {
+    const cat = await category("Katering");
+    const dekor = await category("Dekorasi");
+    const foto = await category("Fotografi");
+    const late = await vendor(cat.id, {
+      name: "Telat",
+      contractAmount: 5_000_000,
+      dueOn: day(-3),
+      dueAmount: 2_000_000,
+    });
+    const soon = await vendor(dekor.id, {
+      name: "Segera",
+      contractAmount: 5_000_000,
+      dueOn: day(7),
+    });
+    const far = await vendor(foto.id, { name: "Jauh", contractAmount: 5_000_000, dueOn: day(60) });
+    const candidate = await vendor(cat.id, {
+      name: "Kandidat",
+      contractAmount: 1_000_000,
+      dueOn: day(-10),
+    });
+    expect(late).toMatchObject({ dueOn: day(-3), dueAmount: 2_000_000, dueState: null });
+
+    for (const v of [late, soon, far]) await select(v.id);
+    const { vendors, summary } = await overview();
+    const state = Object.fromEntries(vendors.map((v) => [v.name, v.dueState]));
+    expect(state).toEqual({ Telat: "terlambat", Segera: "segera", Jauh: null, Kandidat: null });
+    expect(summary).toMatchObject({ overdueCount: 1, dueSoonCount: 1 });
+    expect(candidate.isSelected).toBe(false);
+
+    // Setelah lunas, tidak lagi dianggap terlambat.
+    await api.post(`/vendors/${late.id}/payments`, { amount: 5_000_000 });
+    const after = await overview();
+    expect(after.vendors.find((v) => v.name === "Telat")?.dueState).toBeNull();
+    expect(after.summary.overdueCount).toBe(0);
+  });
+
+  it("memperbarui tanggal lewat ubah vendor, dan menolak tanggal atau nominal tidak wajar", async () => {
+    const cat = await category("Katering");
+    const v = await vendor(cat.id, { contractAmount: 1_000_000 });
+    const put = (extra: Record<string, unknown>) =>
+      api.put(`/vendors/${v.id}`, { categoryId: cat.id, name: "Vendor", ...extra });
+    const ok = await put({ dueOn: "2027-06-01", dueAmount: 500_000 });
+    expect((await read<{ vendor: Vendor }>(ok)).vendor).toMatchObject({
+      dueOn: "2027-06-01",
+      dueAmount: 500_000,
+    });
+    expect((await put({ dueOn: "besok" })).status).toBe(400);
+    expect((await put({ dueOn: "2027-06-01", dueAmount: 0 })).status).toBe(400);
+    const cleared = await put({});
+    expect((await read<{ vendor: Vendor }>(cleared)).vendor).toMatchObject({
+      dueOn: null,
+      dueAmount: null,
+    });
   });
 });

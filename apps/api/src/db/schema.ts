@@ -477,6 +477,8 @@ export const vendors = pgTable(
     address: text(),
     referencePrice: bigint({ mode: "number" }),
     contractAmount: bigint({ mode: "number" }),
+    dueOn: date({ mode: "string" }),
+    dueAmount: bigint({ mode: "number" }),
     isSelected: boolean().notNull().default(false),
     note: text(),
     deletedAt: timestamp({ withTimezone: true }),
@@ -489,7 +491,8 @@ export const vendors = pgTable(
     check(
       "vendors_amounts_valid",
       sql`(${table.referencePrice} is null or ${table.referencePrice} > 0)
-        and (${table.contractAmount} is null or ${table.contractAmount} > 0)`,
+        and (${table.contractAmount} is null or ${table.contractAmount} > 0)
+        and (${table.dueAmount} is null or ${table.dueAmount} > 0)`,
     ),
   ],
 );

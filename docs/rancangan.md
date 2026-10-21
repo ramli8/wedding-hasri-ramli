@@ -571,6 +571,10 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - Di tab Wishlist admin, tiap pilihan tamu punya tombol **Tandai diterima**: membuat catatan hadiah masuk jenis `barang` atas nama tamu itu (nama barang, dengan "× jumlah" bila lebih dari satu, catatan "Dari wishlist", tanggal hari ini, pencatat dari sesi) dan menautkannya lewat `wishlist_claims.received_gift_id` sehingga tidak tercatat dua kali (baris pilihan dikunci `for update`; kedua kalinya 409). Pilihan tetap dihitung sebagai terpenuhi. Menghapus catatan hadiahnya mengosongkan tautan sehingga bisa dicatat ulang.
 
+### Jatuh tempo pembayaran vendor
+
+- Vendor punya `due_on` (jatuh tempo berikutnya) dan `due_amount` opsional, diperbarui admin setelah tiap pembayaran. Server menghitung `dueState`: `terlambat` (tanggal sudah lewat) atau `segera` (dalam 14 hari), hanya untuk vendor **terpilih** yang belum lunas; kandidat dan vendor lunas tidak pernah ditandai. Ringkasan vendor menambah `overdueCount` dan `dueSoonCount`, dipakai Beranda admin. Sengaja bukan tabel jadwal termin: satu tanggal berikutnya per vendor cukup untuk satu pernikahan dan tidak perlu mencocokkan pembayaran dengan termin.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

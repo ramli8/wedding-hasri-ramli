@@ -169,6 +169,13 @@
       "when": 1792568124305,
       "tag": "0023_same_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792568252701,
+      "tag": "0024_colorful_tana_nile",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import {
   COMMON_VENDOR_CATEGORIES,
+  dueState,
   paymentStatus,
   type Vendor,
   type VendorCategory,
@@ -24,6 +25,7 @@ const nameTaken = () => new AppError(409, "CONFLICT", "Nama kategori sudah dipak
 
 function toVendor(row: typeof vendors.$inferSelect, payments: VendorPayment[]): Vendor {
   const paidTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+  const status = paymentStatus(row.contractAmount, paidTotal);
   return {
     id: row.id,
     categoryId: row.categoryId,
@@ -38,7 +40,10 @@ function toVendor(row: typeof vendors.$inferSelect, payments: VendorPayment[]): 
     note: row.note,
     payments,
     paidTotal,
-    paymentStatus: paymentStatus(row.contractAmount, paidTotal),
+    paymentStatus: status,
+    dueOn: row.dueOn,
+    dueAmount: row.dueAmount,
+    dueState: dueState({ dueOn: row.dueOn, isSelected: row.isSelected, status }, todayWib()),
   };
 }
 
@@ -101,6 +106,8 @@ export async function getOverview(db: Db): Promise<VendorOverview> {
       contractTotal,
       paidTotal,
       remaining: Math.max(0, contractTotal - paidTotal),
+      overdueCount: list.filter((v) => v.dueState === "terlambat").length,
+      dueSoonCount: list.filter((v) => v.dueState === "segera").length,
     },
   };
 }

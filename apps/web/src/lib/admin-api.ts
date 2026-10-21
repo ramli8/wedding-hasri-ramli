@@ -205,6 +205,12 @@ export const adminApi = {
       request(`${base}/invitation/wishes/${id}`, wishResponseSchema, withBody("PUT", input)),
     removeWish: (id: string) =>
       request(`${base}/invitation/wishes/${id}`, okSchema, withBody("DELETE")),
+    removeWishClaim: (wishId: string, guestId: string) =>
+      request(
+        `${base}/invitation/wishes/${wishId}/claims/${guestId}`,
+        wishResponseSchema,
+        withBody("DELETE"),
+      ),
     reorderWishes: (ids: string[]) =>
       request(`${base}/invitation/wishes/order`, wishListResponseSchema, withBody("PUT", { ids })),
   },

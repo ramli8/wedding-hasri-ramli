@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CoupleProfile, Faq, GalleryItem, Gift, StoryItem, Wish } from "@wedding/shared";
-import { AtSign, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, X } from "lucide-react";
+import type { CoupleProfile, Faq, GalleryItem, Gift, StoryItem } from "@wedding/shared";
+import { AtSign, Check, ChevronLeft, ChevronRight, Copy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
 import { publicApi } from "../../lib/public-api.js";
+import { WishlistSection } from "./wishlist-section.js";
 
 function ProfileCard({ profile, label }: { profile: CoupleProfile; label: string }) {
   return (
@@ -230,64 +231,6 @@ function Gifts({ gifts }: { gifts: Gift[] }) {
   );
 }
 
-function Wishlist({ wishes }: { wishes: Wish[] }) {
-  return (
-    <Card className="flex flex-col gap-4">
-      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Wishlist hadiah</h2>
-      <p className="text-sm text-ink-soft">
-        Bila ingin memberi hadiah berupa barang, berikut beberapa yang kami butuhkan:
-      </p>
-      <ul className="flex flex-col gap-3">
-        {wishes.map((wish) => (
-          <li
-            key={wish.id}
-            className={`flex gap-3 border-2 border-ink p-3 ${wish.isFulfilled ? "bg-bone-2" : "bg-bone"}`}
-          >
-            {wish.photo && (
-              <img
-                src={wish.photo.thumb}
-                alt=""
-                width={wish.photo.width}
-                height={wish.photo.height}
-                loading="lazy"
-                decoding="async"
-                className="size-20 shrink-0 border-2 border-ink object-cover"
-              />
-            )}
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <p className={`font-display font-bold ${wish.isFulfilled ? "line-through" : ""}`}>
-                {wish.name}
-              </p>
-              {wish.note && <p className="text-sm break-words text-ink-soft">{wish.note}</p>}
-              {wish.quantity > 1 && !wish.isFulfilled && (
-                <p className="text-sm font-semibold">
-                  Masih dibutuhkan {wish.quantity - wish.received} dari {wish.quantity}
-                </p>
-              )}
-              {wish.isFulfilled ? (
-                <Badge variant="pill" className="w-fit">
-                  Sudah terpenuhi
-                </Badge>
-              ) : (
-                wish.url && (
-                  <a
-                    href={wish.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex w-fit items-center gap-1 text-sm font-semibold underline"
-                  >
-                    Lihat di toko <ExternalLink className="size-3.5" aria-hidden />
-                  </a>
-                )
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
 function Faqs({ faqs }: { faqs: Faq[] }) {
   return (
     <Card className="flex flex-col gap-3">
@@ -307,10 +250,10 @@ function Faqs({ faqs }: { faqs: Faq[] }) {
 }
 
 /** Perkenalan mempelai dan linimasa cerita. Tidak tampil sama sekali bila admin belum mengisinya. */
-export function InvitationSections() {
+export function InvitationSections({ code }: { code: string }) {
   const invitation = useQuery({
     queryKey: ["public", "invitation"],
-    queryFn: publicApi.invitation,
+    queryFn: () => publicApi.invitation(),
     retry: false,
     staleTime: 60_000,
   });
@@ -343,7 +286,7 @@ export function InvitationSections() {
       )}
       {gallery.length > 0 && <Gallery items={gallery} />}
       {gifts.length > 0 && <Gifts gifts={gifts} />}
-      {wishes.length > 0 && <Wishlist wishes={wishes} />}
+      {wishes.length > 0 && <WishlistSection wishes={wishes} code={code} />}
       {faqs.length > 0 && <Faqs faqs={faqs} />}
     </>
   );

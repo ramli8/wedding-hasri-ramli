@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { MediaRef, Wish } from "@wedding/shared";
+import type { AdminWish, MediaRef } from "@wedding/shared";
 import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ImageField } from "../../components/image-field.js";
@@ -13,16 +13,22 @@ import { Input } from "../../components/ui/input.js";
 import { adminApi } from "../../lib/admin-api.js";
 import { useRefresh, wishesQuery } from "../../lib/queries.js";
 
-type Editing = { kind: "new" } | { kind: "edit"; item: Wish };
+type Editing = { kind: "new" } | { kind: "edit"; item: AdminWish };
 
 export function WishlistPage() {
   const refresh = useRefresh();
   const wishes = useQuery(wishesQuery);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [deleting, setDeleting] = useState<Wish | null>(null);
+  const [deleting, setDeleting] = useState<AdminWish | null>(null);
 
   const reorder = useMutation({
     mutationFn: (ids: string[]) => adminApi.invitation.reorderWishes(ids),
+    onSuccess: () => refresh("invitation"),
+  });
+
+  const unclaim = useMutation({
+    mutationFn: (v: { wishId: string; guestId: string }) =>
+      adminApi.invitation.removeWishClaim(v.wishId, v.guestId),
     onSuccess: () => refresh("invitation"),
   });
 
@@ -42,9 +48,9 @@ export function WishlistPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-prose text-ink-soft">
-          Ide hadiah untuk tamu yang ingin memberi barang. Isi jumlah yang dibutuhkan, lalu perbarui
-          "sudah terpenuhi" setiap ada tamu yang memberi. Bila sudah penuh, hadiah tetap tampil
-          tetapi diberi tanda.
+          Ide hadiah untuk tamu yang ingin memberi barang. Isi jumlah yang dibutuhkan; tamu memilih
+          sendiri dari halaman undangan dan namanya tampil di sini. Bila sudah penuh, hadiah tetap
+          tampil tetapi diberi tanda.
         </p>
         <Button onClick={() => setEditing({ kind: "new" })}>
           <Plus className="size-4" aria-hidden /> Tambah hadiah
@@ -53,6 +59,7 @@ export function WishlistPage() {
 
       {wishes.isError && <Alert tone="error">{wishes.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
+      {unclaim.error && <Alert tone="error">{unclaim.error.message}</Alert>}
 
       {wishes.data && items.length === 0 ? (
         <Card className="text-center text-ink-soft">Belum ada hadiah dalam wishlist.</Card>
@@ -94,10 +101,39 @@ export function WishlistPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-display text-lg font-bold">{item.name}</p>
                     <Badge variant="pill">
-                      {item.isFulfilled ? "Terpenuhi" : `${item.received}/${item.quantity}`}
+                      {item.isFulfilled
+                        ? "Terpenuhi"
+                        : `${item.received + item.claimed}/${item.quantity}`}
                     </Badge>
                   </div>
                   {item.note && <p className="text-sm break-words">{item.note}</p>}
+                  {item.claims.length > 0 && (
+                    <ul className="mt-1 flex flex-col gap-1 text-sm">
+                      {item.claims.map((claim) => (
+                        <li key={claim.guestId} className="flex flex-wrap items-center gap-2">
+                          <span>
+                            Dipilih <strong>{claim.guestName}</strong>
+                            {item.quantity > 1 ? ` × ${claim.quantity}` : ""}
+                          </span>
+                          <button
+                            type="button"
+                            className="underline hover:text-alert"
+                            disabled={unclaim.isPending}
+                            onClick={() =>
+                              unclaim.mutate({ wishId: item.id, guestId: claim.guestId })
+                            }
+                          >
+                            Lepas
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {item.received > 0 && (
+                    <p className="text-sm text-ink-soft">
+                      {item.received} diberikan di luar undangan
+                    </p>
+                  )}
                   {item.url && (
                     <a
                       href={item.url}
@@ -145,7 +181,7 @@ export function WishlistPage() {
   );
 }
 
-function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
+function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void }) {
   const refresh = useRefresh();
   const [name, setName] = useState(item?.name ?? "");
   const [note, setNote] = useState(item?.note ?? "");
@@ -229,7 +265,10 @@ function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
             />
           )}
         </Field>
-        <Field label="Sudah terpenuhi" hint="Berapa yang sudah diberikan tamu.">
+        <Field
+          label="Sudah diberikan di luar undangan"
+          hint="Mis. tamu memberi langsung. Pilihan tamu lewat undangan dihitung otomatis."
+        >
           {(id) => (
             <Input
               id={id}
@@ -258,7 +297,7 @@ function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
   );
 }
 
-function DeleteDialog({ item, onClose }: { item: Wish | null; onClose: () => void }) {
+function DeleteDialog({ item, onClose }: { item: AdminWish | null; onClose: () => void }) {
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeWish(id),

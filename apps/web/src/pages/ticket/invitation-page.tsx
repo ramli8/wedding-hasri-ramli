@@ -38,7 +38,7 @@ export function InvitationPage() {
       >
         <ArrowLeft className="size-4" aria-hidden /> Kembali ke tiket
       </Link>
-      <InvitationSections />
+      <InvitationSections code={data.guest.code} />
       <GuestbookCard code={data.guest.code} defaultName={data.guest.displayName} />
     </Shell>
   );

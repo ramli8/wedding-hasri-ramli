@@ -14,10 +14,13 @@ import {
   eventResponseSchema,
   type GalleryCaptionInput,
   type GalleryInput,
+  type GiftInput,
   type GroupInput,
   type GuestInput,
   galleryItemResponseSchema,
   galleryListResponseSchema,
+  giftListResponseSchema,
+  giftResponseSchema,
   groupListResponseSchema,
   groupResponseSchema,
   guestListResponseSchema,
@@ -171,6 +174,15 @@ export const adminApi = {
         galleryListResponseSchema,
         withBody("PUT", { ids }),
       ),
+    gifts: () => request(`${base}/invitation/gifts`, giftListResponseSchema),
+    createGift: (input: GiftInput) =>
+      request(`${base}/invitation/gifts`, giftResponseSchema, withBody("POST", input)),
+    updateGift: (id: string, input: GiftInput) =>
+      request(`${base}/invitation/gifts/${id}`, giftResponseSchema, withBody("PUT", input)),
+    removeGift: (id: string) =>
+      request(`${base}/invitation/gifts/${id}`, okSchema, withBody("DELETE")),
+    reorderGifts: (ids: string[]) =>
+      request(`${base}/invitation/gifts/order`, giftListResponseSchema, withBody("PUT", { ids })),
   },
 
   guestbook: {

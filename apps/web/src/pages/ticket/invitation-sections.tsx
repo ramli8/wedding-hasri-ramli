@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CoupleProfile, GalleryItem, StoryItem } from "@wedding/shared";
-import { AtSign, ChevronLeft, ChevronRight, X } from "lucide-react";
+import type { CoupleProfile, GalleryItem, Gift, StoryItem } from "@wedding/shared";
+import { AtSign, Check, ChevronLeft, ChevronRight, Copy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
@@ -166,6 +166,70 @@ function Gallery({ items }: { items: GalleryItem[] }) {
   );
 }
 
+function GiftCard({ gift }: { gift: Gift }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(gift.accountNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Tanpa izin clipboard, nomor tetap terlihat dan bisa disalin manual.
+    }
+  }
+
+  return (
+    <li className="flex flex-col gap-2 border-2 border-ink bg-bone p-4">
+      <p className="font-display text-lg font-bold">{gift.provider}</p>
+      <p className="font-mono text-xl break-all select-all">{gift.accountNumber}</p>
+      <p className="text-sm text-ink-soft">a.n. {gift.accountName}</p>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        className="inline-flex w-fit items-center gap-2 border-2 border-ink bg-paper px-3 py-1.5 text-sm font-semibold hover:bg-acid"
+      >
+        {copied ? (
+          <Check className="size-4" aria-hidden />
+        ) : (
+          <Copy className="size-4" aria-hidden />
+        )}
+        {copied ? "Tersalin" : "Salin nomor"}
+      </button>
+      {gift.qr && (
+        <a href={gift.qr.large} target="_blank" rel="noreferrer" className="mt-1 block w-fit">
+          <img
+            src={gift.qr.large}
+            alt={`QR ${gift.provider}`}
+            width={gift.qr.width}
+            height={gift.qr.height}
+            loading="lazy"
+            decoding="async"
+            className="h-auto w-48 max-w-full border-2 border-ink bg-paper"
+          />
+        </a>
+      )}
+    </li>
+  );
+}
+
+function Gifts({ gifts }: { gifts: Gift[] }) {
+  return (
+    <Card className="flex flex-col gap-4">
+      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Amplop digital</h2>
+      <p className="text-sm text-ink-soft">
+        Doa restu Anda sudah sangat berarti. Bila ingin berbagi kebahagiaan, Anda dapat mengirimnya
+        melalui:
+      </p>
+      <ul className="flex flex-col gap-3">
+        {gifts.map((gift) => (
+          <GiftCard key={gift.id} gift={gift} />
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 /** Perkenalan mempelai dan linimasa cerita. Tidak tampil sama sekali bila admin belum mengisinya. */
 export function InvitationSections() {
   const invitation = useQuery({
@@ -176,7 +240,7 @@ export function InvitationSections() {
   });
   if (!invitation.data) return null;
 
-  const { couple, story, gallery } = invitation.data;
+  const { couple, story, gallery, gifts } = invitation.data;
   const profiles = [
     couple.bride && { profile: couple.bride, label: "Mempelai wanita" },
     couple.groom && { profile: couple.groom, label: "Mempelai pria" },
@@ -202,6 +266,7 @@ export function InvitationSections() {
         </Card>
       )}
       {gallery.length > 0 && <Gallery items={gallery} />}
+      {gifts.length > 0 && <Gifts gifts={gifts} />}
     </>
   );
 }

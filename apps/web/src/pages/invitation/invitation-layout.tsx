@@ -5,6 +5,7 @@ const tabs = [
   { to: "/admin/undangan/mempelai", label: "Mempelai" },
   { to: "/admin/undangan/cerita", label: "Cerita" },
   { to: "/admin/undangan/galeri", label: "Galeri" },
+  { to: "/admin/undangan/amplop", label: "Amplop" },
   { to: "/admin/undangan/ucapan", label: "Ucapan" },
 ] as const;
 

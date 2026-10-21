@@ -185,7 +185,12 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
           />
         )}
       </Field>
-      <ImageField label="Foto" value={photo} onChange={setPhoto} />
+      <ImageField
+        label="Foto"
+        value={photo}
+        onChange={setPhoto}
+        recommendation="lanskap 3:2, 2400 × 1600 px (minimal 1200 px lebar). Foto tampil utuh selebar kartu tanpa dipotong, jadi potret pun boleh."
+      />
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">

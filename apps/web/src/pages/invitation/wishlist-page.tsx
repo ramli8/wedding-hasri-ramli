@@ -208,7 +208,12 @@ function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
           />
         )}
       </Field>
-      <ImageField label="Foto" value={photo} onChange={setPhoto} />
+      <ImageField
+        label="Foto"
+        value={photo}
+        onChange={setPhoto}
+        recommendation="persegi 1:1, 800 × 800 px. Di undangan foto tampil kecil sebagai kotak, dan sisi yang tidak persegi dipotong dari tengah."
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Jumlah dibutuhkan">
           {(id) => (

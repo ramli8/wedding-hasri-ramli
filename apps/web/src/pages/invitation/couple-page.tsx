@@ -79,7 +79,12 @@ function ProfileCard({ role, initial }: { role: CoupleRole; initial: CoupleProfi
           {COUPLE_ROLE_LABEL[role]}
         </h2>
 
-        <ImageField label="Foto" value={photo} onChange={touch(setPhoto)} />
+        <ImageField
+          label="Foto"
+          value={photo}
+          onChange={touch(setPhoto)}
+          recommendation="potret 4:5, 1600 × 2000 px (minimal 1200 px lebar). Foto tampil utuh selebar kartu tanpa dipotong; wajah di tengah atas paling aman."
+        />
 
         <Field label="Nama lengkap">
           {(id) => (

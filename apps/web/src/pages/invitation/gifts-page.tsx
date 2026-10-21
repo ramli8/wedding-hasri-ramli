@@ -216,7 +216,12 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
           )}
         </Field>
       </div>
-      <ImageField label="Gambar QR (opsional, mis. QRIS)" value={qr} onChange={setQr} />
+      <ImageField
+        label="Gambar QR (opsional, mis. QRIS)"
+        value={qr}
+        onChange={setQr}
+        recommendation="persegi 1:1, minimal 800 × 800 px, jangan dipotong rapat (sisakan tepi putih di sekeliling kode agar tetap terbaca saat dipindai)."
+      />
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">

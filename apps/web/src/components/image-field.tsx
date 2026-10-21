@@ -15,8 +15,11 @@ export function ImageField({
   label,
   value,
   onChange,
+  recommendation,
 }: {
   label: string;
+  /** Saran ukuran dan rasio untuk tempat foto ini ditampilkan, mis. "Potret 4:5, 1600 × 2000 px". */
+  recommendation?: string;
   value: MediaRef | null;
   onChange: (value: MediaRef | null) => void;
 }) {
@@ -81,6 +84,11 @@ export function ImageField({
             JPEG, PNG, atau WebP, maksimal {MAX_UPLOAD_MB} MB. Resolusi dan detail foto
             dipertahankan.
           </p>
+          {recommendation && (
+            <p className="max-w-prose text-xs font-semibold text-ink">
+              Disarankan: {recommendation}
+            </p>
+          )}
         </div>
       </div>
       {upload.error && <Alert tone="error">{upload.error.message}</Alert>}

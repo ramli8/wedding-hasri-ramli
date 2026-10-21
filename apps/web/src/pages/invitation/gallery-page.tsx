@@ -79,6 +79,12 @@ export function GalleryPage() {
           {progress ? `Mengunggah ${progress.done + 1}/${progress.total}…` : "Tambah foto"}
         </Button>
       </div>
+      <p className="max-w-prose text-sm font-semibold">
+        Disarankan: sisi panjang 2400 px atau lebih (mis. 2400 × 1600 lanskap atau 1600 × 2400
+        potret), rasio bebas. Di kisi, foto tampil sebagai kotak persegi dan dipotong dari tengah,
+        jadi letakkan objek utama di tengah; saat dibuka layar penuh foto tampil utuh. Foto persegi
+        1:1 tidak dipotong sama sekali.
+      </p>
 
       {gallery.isError && <Alert tone="error">{gallery.error.message}</Alert>}
       {upload.error && (

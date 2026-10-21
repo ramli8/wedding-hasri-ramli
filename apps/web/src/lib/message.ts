@@ -22,18 +22,31 @@ export function sessionLabel(event: Event, group: Group | null | undefined) {
   return "";
 }
 
-export function buildMessage(input: {
-  guest: Guest;
-  event: Event;
-  group: Group | null | undefined;
-  settings: Settings | null | undefined;
-}) {
+/** Mengisi variabel template untuk satu tamu di satu acara. */
+export function renderGuestText(
+  template: string,
+  input: {
+    guest: Pick<Guest, "displayName" | "code">;
+    event: Event;
+    group: Group | null | undefined;
+    settings: Settings | null | undefined;
+  },
+) {
   const { guest, event, group, settings } = input;
-  return renderTemplate(event.messageTemplate || DEFAULT_MESSAGE_TEMPLATE, {
+  return renderTemplate(template, {
     panggilan: guest.displayName,
     link: guestLink(guest, settings) ?? "(isi alamat situs di Pengaturan)",
     acara: event.name,
     tanggal: formatEventDate(event.startsAt),
     jam_sesi: sessionLabel(event, group),
   });
+}
+
+export function buildMessage(input: {
+  guest: Guest;
+  event: Event;
+  group: Group | null | undefined;
+  settings: Settings | null | undefined;
+}) {
+  return renderGuestText(input.event.messageTemplate || DEFAULT_MESSAGE_TEMPLATE, input);
 }

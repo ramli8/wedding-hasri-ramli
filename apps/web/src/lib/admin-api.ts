@@ -159,6 +159,12 @@ export const adminApi = {
   rsvps: {
     list: (eventId?: string) =>
       request(`${base}/rsvps${queryString({ eventId })}`, rsvpListResponseSchema),
+    markReminded: (guestId: string, eventId: string, reminded = true) =>
+      request(
+        `${base}/rsvps/${guestId}/reminded`,
+        okSchema,
+        withBody("POST", { eventId, reminded }),
+      ),
   },
 
   media: {

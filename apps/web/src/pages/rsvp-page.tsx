@@ -4,11 +4,13 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
 import { Badge } from "../components/ui/badge.js";
+import { Button } from "../components/ui/button.js";
 import { Card } from "../components/ui/card.js";
 import { Input } from "../components/ui/input.js";
 import { Select } from "../components/ui/select.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { eventsQuery, rsvpQuery } from "../lib/queries.js";
+import { ReminderDialog } from "./rsvp-reminder-dialog.js";
 
 type Filter = "" | RsvpStatus | "belum";
 
@@ -28,6 +30,7 @@ export function RsvpPage() {
   const [eventId, setEventId] = useState("");
   const [filter, setFilter] = useState<Filter>("");
   const [search, setSearch] = useState("");
+  const [reminding, setReminding] = useState(false);
 
   const rsvp = useQuery({ ...rsvpQuery(eventId || undefined), enabled: events.isSuccess });
 
@@ -47,6 +50,11 @@ export function RsvpPage() {
         tag="Undangan"
         title="RSVP"
         description="Jawaban tamu dari halaman undangan mereka. Tamu bisa mengubah jawabannya sampai hari acara."
+        actions={
+          rsvp.data && rsvp.data.totals.belum > 0 ? (
+            <Button onClick={() => setReminding(true)}>Kirim pengingat</Button>
+          ) : undefined
+        }
       />
 
       {rsvpEvents.length > 1 && (
@@ -64,6 +72,15 @@ export function RsvpPage() {
             ))}
           </Select>
         </div>
+      )}
+
+      {rsvp.data && (
+        <ReminderDialog
+          open={reminding}
+          onClose={() => setReminding(false)}
+          eventId={rsvp.data.event.id}
+          rows={rsvp.data.items}
+        />
       )}
 
       {rsvp.isError && <Alert tone="error">{rsvp.error.message}</Alert>}

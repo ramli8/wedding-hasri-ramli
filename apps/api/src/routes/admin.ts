@@ -4,6 +4,7 @@ import { originCheck, requireAdmin } from "../http/middleware.js";
 import { checkinAdminRoutes, deviceAdminRoutes } from "./checkin-admin.js";
 import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
+import { exportRoutes } from "./export.js";
 import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
 import { homeRoutes } from "./home.js";
@@ -17,6 +18,7 @@ import { vendorRoutes } from "./vendors.js";
 export function adminRoutes(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use("*", originCheck(deps.config.allowedOrigins), requireAdmin(deps))
+    .route("/export", exportRoutes(deps))
     .route("/home", homeRoutes(deps))
     .route("/settings", settingsRoutes(deps))
     .route("/events", eventRoutes(deps))

@@ -20,6 +20,7 @@
     "csv-parse": "^7.0.3",
     "csv-stringify": "^6.9.0",
     "drizzle-orm": "^0.45.4",
+    "fflate": "^0.8.3",
     "hono": "^4.13.13",
     "pino": "^10.4.0",
     "postgres": "^3.4.9",

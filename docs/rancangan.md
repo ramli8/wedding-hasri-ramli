@@ -553,7 +553,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - Admin di bawah breakpoint `xl`: bilah tab bawah (Tamu, Check-in, Undangan, Hadiah, dan tombol Lainnya yang membuka lembar berisi menu sisanya serta tombol Keluar); header atas hanya logo. Di layar lebar menu tetap dua baris di header.
 - `Dialog` di bawah `md` menjadi lembar yang naik dari bawah (animasi singkat, hormat `prefers-reduced-motion`), selebar layar, dengan baris tombol terakhir formulir menempel di bawah.
-- Tabel Tamu, Kelompok, Perangkat, dan RSVP menjadi kartu di HP lewat kelas `table-cards` dan atribut `data-label`. Tabel Check-in dan impor CSV masih menggulir ke samping (dipakai terutama di laptop); halaman cetak tidak berubah.
+- Semua tabel admin (Tamu, Kelompok, Perangkat, RSVP, keempat tabel Check-in, dan pratinjau impor CSV) menjadi kartu di HP lewat kelas `table-cards` dan atribut `data-label`; hanya halaman cetak daftar tamu yang tetap berupa tabel lebar.
 - Halaman tamu: bilah bawah Tiket | Undangan menggantikan tautan "Kenali kami" dan "Kembali ke tiket".
 - Penyesuaian sentuhan: `viewport-fit=cover` dengan `env(safe-area-inset-*)`, tombol kecil 44px di HP, isian 16px agar iOS tidak memperbesar layar, kotak centang 44px.
 

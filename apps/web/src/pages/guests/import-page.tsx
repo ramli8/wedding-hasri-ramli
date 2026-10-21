@@ -93,7 +93,7 @@ export function ImportPage() {
           )}
 
           <div className="max-h-96 overflow-auto border-2 border-ink">
-            <table className="w-full text-left text-sm">
+            <table className="table-cards w-full text-left text-sm">
               <thead className="tag sticky top-0 border-b-2 border-ink bg-paper text-ink-soft">
                 <tr>
                   <th className="px-3 py-2">Baris</th>
@@ -107,19 +107,26 @@ export function ImportPage() {
               <tbody className="divide-y divide-bone-2">
                 {data.rows.map((row) => (
                   <tr key={row.line}>
-                    <td className="px-3 py-2 text-ink-soft">{row.line}</td>
-                    <td className="px-3 py-2">
+                    <td data-label="Baris" className="px-3 py-2 text-ink-soft">
+                      {row.line}
+                    </td>
+                    <td data-label="Status" className="px-3 py-2">
                       <Badge variant={row.status === "ok" ? "pillAcid" : "pill"}>
                         {statusLabel[row.status]}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">{row.displayName || "—"}</td>
-                    <td className="px-3 py-2">
+                    <td data-label="Kontak" className="px-3 py-2">
                       {row.phone && <p>+{row.phone}</p>}
                       {row.instagram && <p className="text-ink-soft">@{row.instagram}</p>}
                     </td>
-                    <td className="px-3 py-2">{row.groupName ?? "—"}</td>
-                    <td className={`px-3 py-2 ${row.status === "error" ? "text-ember" : ""}`}>
+                    <td data-label="Kelompok" className="px-3 py-2">
+                      {row.groupName ?? "—"}
+                    </td>
+                    <td
+                      data-label="Keterangan"
+                      className={`px-3 py-2 ${row.status === "error" ? "text-ember" : ""}`}
+                    >
                       {row.messages.join("; ")}
                     </td>
                   </tr>

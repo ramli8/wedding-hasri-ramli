@@ -83,7 +83,7 @@ export function CheckinPage() {
       <section className="flex flex-col gap-3">
         <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Per kelompok</h2>
         <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="w-full text-left text-sm">
+          <table className="table-cards w-full text-left text-sm">
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Kelompok</th>
@@ -104,10 +104,12 @@ export function CheckinPage() {
                       {group.isVip && <Badge variant="solid">VIP</Badge>}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono">
+                  <td data-label="Masuk" className="px-4 py-3 font-mono">
                     {group.arrived} / {group.invited}
                   </td>
-                  <td className="px-4 py-3 font-mono">{group.pax}</td>
+                  <td data-label="Orang" className="px-4 py-3 font-mono">
+                    {group.pax}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -123,7 +125,7 @@ export function CheckinPage() {
           </Card>
         ) : (
           <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-            <table className="w-full text-left text-sm">
+            <table className="table-cards w-full text-left text-sm">
               <thead className="tag border-b-2 border-ink text-ink-soft">
                 <tr>
                   <th className="px-4 py-3">Jam</th>
@@ -136,7 +138,9 @@ export function CheckinPage() {
               <tbody className="divide-y divide-bone-2">
                 {d.recent.map((row) => (
                   <tr key={row.checkinId}>
-                    <td className="px-4 py-3 font-mono">{formatClock(row.scannedAt)}</td>
+                    <td data-label="Jam" className="px-4 py-3 font-mono">
+                      {formatClock(row.scannedAt)}
+                    </td>
                     <td className="px-4 py-3">
                       <span className="flex flex-wrap items-center gap-2 font-semibold">
                         {row.displayName}
@@ -148,15 +152,17 @@ export function CheckinPage() {
                         <span className="text-xs text-ink-soft">{row.groupName}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono">{row.pax}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Orang" className="px-4 py-3 font-mono">
+                      {row.pax}
+                    </td>
+                    <td data-label="Lewat" className="px-4 py-3">
                       {row.deviceName ?? "—"}
                       {row.method && (
                         <span className="text-xs text-ink-soft"> · {METHOD[row.method]}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 max-md:flex-wrap max-md:justify-start">
                         <Button size="sm" variant="secondary" onClick={() => setCorrecting(row)}>
                           Ubah
                         </Button>
@@ -176,7 +182,7 @@ export function CheckinPage() {
       <section className="flex flex-col gap-3">
         <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Perangkat</h2>
         <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="w-full text-left text-sm">
+          <table className="table-cards w-full text-left text-sm">
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Perangkat</th>
@@ -193,7 +199,7 @@ export function CheckinPage() {
                   return (
                     <tr key={device.id}>
                       <td className="px-4 py-3 font-semibold">{device.name}</td>
-                      <td className="px-4 py-3">
+                      <td data-label="Terakhir sinkron" className="px-4 py-3">
                         {device.lastSyncAt
                           ? formatAgo(Date.parse(device.lastSyncAt))
                           : "belum pernah"}
@@ -203,7 +209,7 @@ export function CheckinPage() {
                           </Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-label="Antrean" className="px-4 py-3">
                         {device.pendingOutbox}
                         {device.pendingOutbox > 0 && (
                           <Badge variant="pill" className="ml-2">
@@ -338,7 +344,7 @@ function LogSection() {
       {open && log.data && (
         <>
           <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-            <table className="w-full text-left text-sm">
+            <table className="table-cards w-full text-left text-sm">
               <thead className="tag border-b-2 border-ink text-ink-soft">
                 <tr>
                   <th className="px-4 py-3">Jam</th>
@@ -351,16 +357,22 @@ function LogSection() {
               <tbody className="divide-y divide-bone-2">
                 {log.data.items.map((entry) => (
                   <tr key={entry.id}>
-                    <td className="px-4 py-2 font-mono">{formatClock(entry.scannedAt)}</td>
-                    <td className="px-4 py-2">
+                    <td data-label="Jam" className="px-4 py-2 font-mono">
+                      {formatClock(entry.scannedAt)}
+                    </td>
+                    <td data-label="Kejadian" className="px-4 py-2">
                       {KIND[entry.kind]}
                       {entry.outsideSession && (
                         <span className="text-xs text-ink-soft"> · luar sesi</span>
                       )}
                     </td>
-                    <td className="px-4 py-2">{entry.displayName}</td>
-                    <td className="px-4 py-2 font-mono">{entry.pax ?? "—"}</td>
-                    <td className="px-4 py-2">
+                    <td data-label="Tamu" className="px-4 py-2">
+                      {entry.displayName}
+                    </td>
+                    <td data-label="Orang" className="px-4 py-2 font-mono">
+                      {entry.pax ?? "—"}
+                    </td>
+                    <td data-label="Oleh" className="px-4 py-2">
                       {entry.byAdmin ? "Admin" : (entry.deviceName ?? "—")}
                     </td>
                   </tr>

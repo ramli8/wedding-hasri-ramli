@@ -73,6 +73,12 @@ export const rsvpRowSchema = z.object({
   status: rsvpStatusSchema.nullable(),
   pax: z.number().nullable(),
   submittedAt: z.string().nullable(),
+  /** Untuk pengingat: hanya dikirim ke admin (tidak pernah ke halaman tamu). */
+  code: z.string().nullable(),
+  phone: z.string().nullable(),
+  groupId: z.uuid().nullable(),
+  /** Kapan pengingat RSVP terakhir ditandai terkirim. */
+  remindedAt: z.string().nullable(),
 });
 export type RsvpRow = z.infer<typeof rsvpRowSchema>;
 
@@ -90,3 +96,9 @@ export const rsvpListResponseSchema = z.object({
   items: z.array(rsvpRowSchema),
 });
 export type RsvpListResponse = z.infer<typeof rsvpListResponseSchema>;
+
+export const markRemindedRequestSchema = z.object({
+  eventId: z.uuid(),
+  reminded: z.boolean().default(true),
+});
+export type MarkRemindedRequest = z.input<typeof markRemindedRequestSchema>;

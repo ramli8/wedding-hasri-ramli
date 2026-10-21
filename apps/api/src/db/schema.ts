@@ -154,6 +154,8 @@ export const guestEvents = pgTable(
       .references(() => events.id, { onDelete: "cascade" }),
     sentAt: timestamp({ withTimezone: true }),
     sentVia: text(),
+    // Pengingat RSVP terakhir yang ditandai terkirim oleh admin.
+    remindedAt: timestamp({ withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.guestId, table.eventId] }),

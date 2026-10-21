@@ -518,3 +518,56 @@ describe("wishlist: tamu memilih hadiah", () => {
     ).toEqual([]);
   });
 });
+
+describe("pengingat RSVP", () => {
+  type Row = {
+    guestId: string;
+    status: string | null;
+    code: string | null;
+    phone: string | null;
+    remindedAt: string | null;
+  };
+  const rows = async () =>
+    (await read<{ items: Row[] }>(await api.get(`/rsvps?eventId=${world.resepsi.id}`))).items;
+  const rowOf = async (guestId: string) => (await rows()).find((r) => r.guestId === guestId);
+
+  it("daftar RSVP memuat kontak dan penanda pengingat, lalu bisa ditandai dan dibatalkan", async () => {
+    const before = await rowOf(world.sari.id);
+    expect(before).toMatchObject({ status: null, code: world.sari.code, remindedAt: null });
+    expect(before?.phone).toBeTruthy();
+
+    const mark = await api.post(`/rsvps/${world.sari.id}/reminded`, { eventId: world.resepsi.id });
+    expect(mark.status).toBe(200);
+    expect((await rowOf(world.sari.id))?.remindedAt).not.toBeNull();
+    // Tamu lain tidak ikut tertandai.
+    expect((await rowOf(world.budi.id))?.remindedAt).toBeNull();
+
+    await api.post(`/rsvps/${world.sari.id}/reminded`, {
+      eventId: world.resepsi.id,
+      reminded: false,
+    });
+    expect((await rowOf(world.sari.id))?.remindedAt).toBeNull();
+  });
+
+  it("menolak tamu yang tidak diundang ke acara itu, id ngawur, dan akses tanpa login", async () => {
+    const notInvited = await api.post(`/rsvps/${world.outsider.id}/reminded`, {
+      eventId: world.resepsi.id,
+    });
+    expect(notInvited.status).toBe(400);
+    expect(
+      (await api.post("/rsvps/bukan-uuid/reminded", { eventId: world.resepsi.id })).status,
+    ).toBe(400);
+    const anonymous = adminClient(ctx.makeApp(), "");
+    expect(
+      (await anonymous.post(`/rsvps/${world.sari.id}/reminded`, { eventId: world.resepsi.id }))
+        .status,
+    ).toBe(401);
+  });
+
+  it("kontak dan penanda pengingat tidak pernah muncul di halaman tamu", async () => {
+    await api.post(`/rsvps/${world.sari.id}/reminded`, { eventId: world.resepsi.id });
+    const ticket = JSON.stringify(await (await pub.get(`/ticket/${world.sari.code}`)).json());
+    expect(ticket).not.toContain("remindedAt");
+    expect(ticket).not.toContain("0813");
+  });
+});

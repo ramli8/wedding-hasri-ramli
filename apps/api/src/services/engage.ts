@@ -33,6 +33,10 @@ export async function listRsvps(db: Db, eventId?: string): Promise<RsvpListRespo
       displayName: guests.displayName,
       isRombongan: guests.isRombongan,
       groupName: guestGroups.name,
+      groupId: guests.groupId,
+      code: guests.code,
+      phone: guests.phone,
+      remindedAt: guestEvents.remindedAt,
       status: rsvps.status,
       pax: rsvps.pax,
       submittedAt: rsvps.submittedAt,
@@ -65,6 +69,10 @@ export async function listRsvps(db: Db, eventId?: string): Promise<RsvpListRespo
       status: (row.status as RsvpStatus | null) ?? null,
       pax: row.pax,
       submittedAt: row.submittedAt?.toISOString() ?? null,
+      code: row.code,
+      phone: row.phone,
+      groupId: row.groupId,
+      remindedAt: row.remindedAt?.toISOString() ?? null,
     })),
   };
 }
@@ -141,4 +149,16 @@ export async function deleteGuestbook(db: Db, id: string) {
     .where(eq(guestbook.id, id))
     .returning({ id: guestbook.id });
   if (deleted.length === 0) throw missing();
+}
+
+/** Menandai (atau membatalkan) pengingat RSVP terkirim untuk satu tamu di satu acara. */
+export async function markReminded(db: Db, guestId: string, eventId: string, reminded: boolean) {
+  const updated = await db
+    .update(guestEvents)
+    .set({ remindedAt: reminded ? new Date() : null })
+    .where(and(eq(guestEvents.guestId, guestId), eq(guestEvents.eventId, eventId)))
+    .returning({ guestId: guestEvents.guestId });
+  if (updated.length === 0) {
+    throw new AppError(400, "VALIDATION_ERROR", "Tamu tidak diundang ke acara ini");
+  }
 }

@@ -25,6 +25,16 @@ export const DEFAULT_MESSAGE_TEMPLATE = [
   "Undangan lengkap: {link}",
 ].join("\n");
 
+/** Bawaan pesan pengingat RSVP; variabel sama dengan pesan undangan. */
+export const DEFAULT_REMINDER_TEMPLATE = [
+  "Assalamualaikum {panggilan},",
+  "",
+  "Kami menunggu konfirmasi kehadiran Anda di {acara} ({tanggal}).",
+  "Mohon isi konfirmasi lewat undangan Anda: {link}",
+  "",
+  "Terima kasih.",
+].join("\n");
+
 export const eventInputSchema = z
   .object({
     slug: z

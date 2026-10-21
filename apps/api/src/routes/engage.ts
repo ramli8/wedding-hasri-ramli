@@ -2,6 +2,7 @@ import {
   adminGuestbookQuerySchema,
   guestbookHideRequestSchema,
   guestbookReplyRequestSchema,
+  markRemindedRequestSchema,
   rsvpListQuerySchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
@@ -13,15 +14,27 @@ import {
   hideGuestbook,
   listGuestbookAdmin,
   listRsvps,
+  markReminded,
   replyGuestbook,
 } from "../services/engage.js";
 
 const idParam = z.object({ id: z.uuid() });
 
 export function rsvpAdminRoutes({ db }: AppDeps) {
-  return new Hono<AppEnv>().get("/", validate("query", rsvpListQuerySchema), async (c) => {
-    return c.json(await listRsvps(db, c.req.valid("query").eventId));
-  });
+  return new Hono<AppEnv>()
+    .get("/", validate("query", rsvpListQuerySchema), async (c) => {
+      return c.json(await listRsvps(db, c.req.valid("query").eventId));
+    })
+    .post(
+      "/:id/reminded",
+      validate("param", idParam),
+      validate("json", markRemindedRequestSchema),
+      async (c) => {
+        const { eventId, reminded } = c.req.valid("json");
+        await markReminded(db, c.req.valid("param").id, eventId, reminded);
+        return c.json({ ok: true });
+      },
+    );
 }
 
 export function guestbookAdminRoutes({ db }: AppDeps) {

@@ -557,6 +557,11 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - Halaman tamu: bilah bawah Tiket | Undangan menggantikan tautan "Kenali kami" dan "Kembali ke tiket".
 - Penyesuaian sentuhan: `viewport-fit=cover` dengan `env(safe-area-inset-*)`, tombol kecil 44px di HP, isian 16px agar iOS tidak memperbesar layar, kotak centang 44px.
 
+### Pengingat RSVP
+
+- Halaman RSVP punya tombol **Kirim pengingat** bila masih ada tamu yang belum menjawab. Dialognya menampilkan tamu yang belum menjawab dan punya nomor HP, masing-masing dengan tombol **Buka WhatsApp** (pesan terisi dari template pengingat, admin menekan kirim sendiri) yang sekaligus menandai `guest_events.reminded_at`. Tamu yang hanya punya Instagram dihitung terpisah dan dikirim manual dari menu Tamu. Yang sudah diingatkan disembunyikan secara bawaan, bisa dikirim lagi atau ditandai ulang.
+- Template pengingat (`DEFAULT_REMINDER_TEMPLATE`, variabel sama dengan pesan undangan) bisa disunting di dialog dan diingat di peramban admin (localStorage), bukan di server. `GET /rsvps` kini memuat kode, HP, kelompok, dan `remindedAt` per tamu; hanya untuk admin.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

@@ -259,6 +259,11 @@ function Wishlist({ wishes }: { wishes: Wish[] }) {
                 {wish.name}
               </p>
               {wish.note && <p className="text-sm break-words text-ink-soft">{wish.note}</p>}
+              {wish.quantity > 1 && !wish.isFulfilled && (
+                <p className="text-sm font-semibold">
+                  Masih dibutuhkan {wish.quantity - wish.received} dari {wish.quantity}
+                </p>
+              )}
               {wish.isFulfilled ? (
                 <Badge variant="pill" className="w-fit">
                   Sudah terpenuhi

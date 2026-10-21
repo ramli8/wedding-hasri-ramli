@@ -7,7 +7,6 @@ import { Alert } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
 import { Button } from "../../components/ui/button.js";
 import { Card } from "../../components/ui/card.js";
-import { Checkbox } from "../../components/ui/checkbox.js";
 import { Dialog } from "../../components/ui/dialog.js";
 import { Field } from "../../components/ui/field.js";
 import { Input } from "../../components/ui/input.js";
@@ -43,8 +42,9 @@ export function WishlistPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-prose text-ink-soft">
-          Ide hadiah untuk tamu yang ingin memberi barang. Centang "sudah terpenuhi" bila sudah ada
-          yang memberikannya; hadiah itu tetap tampil tetapi diberi tanda.
+          Ide hadiah untuk tamu yang ingin memberi barang. Isi jumlah yang dibutuhkan, lalu perbarui
+          "sudah terpenuhi" setiap ada tamu yang memberi. Bila sudah penuh, hadiah tetap tampil
+          tetapi diberi tanda.
         </p>
         <Button onClick={() => setEditing({ kind: "new" })}>
           <Plus className="size-4" aria-hidden /> Tambah hadiah
@@ -93,7 +93,9 @@ export function WishlistPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-display text-lg font-bold">{item.name}</p>
-                    {item.isFulfilled && <Badge variant="pill">Terpenuhi</Badge>}
+                    <Badge variant="pill">
+                      {item.isFulfilled ? "Terpenuhi" : `${item.received}/${item.quantity}`}
+                    </Badge>
                   </div>
                   {item.note && <p className="text-sm break-words">{item.note}</p>}
                   {item.url && (
@@ -149,11 +151,19 @@ function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
   const [note, setNote] = useState(item?.note ?? "");
   const [url, setUrl] = useState(item?.url ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(item?.photo ?? null);
-  const [isFulfilled, setIsFulfilled] = useState(item?.isFulfilled ?? false);
+  const [quantity, setQuantity] = useState(String(item?.quantity ?? 1));
+  const [received, setReceived] = useState(String(item?.received ?? 0));
 
   const save = useMutation({
     mutationFn: () => {
-      const input = { name, note, url, photoMediaId: photo?.id ?? null, isFulfilled };
+      const input = {
+        name,
+        note,
+        url,
+        photoMediaId: photo?.id ?? null,
+        quantity: Number(quantity),
+        received: Number(received),
+      };
       return item
         ? adminApi.invitation.updateWish(item.id, input)
         : adminApi.invitation.createWish(input);
@@ -199,9 +209,36 @@ function WishForm({ item, onDone }: { item: Wish | null; onDone: () => void }) {
         )}
       </Field>
       <ImageField label="Foto" value={photo} onChange={setPhoto} />
-      <Checkbox checked={isFulfilled} onChange={(e) => setIsFulfilled(e.target.checked)}>
-        Sudah terpenuhi (sudah ada yang memberikan)
-      </Checkbox>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Jumlah dibutuhkan">
+          {(id) => (
+            <Input
+              id={id}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={99}
+              required
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Sudah terpenuhi" hint="Berapa yang sudah diberikan tamu.">
+          {(id) => (
+            <Input
+              id={id}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={Number(quantity) || 99}
+              required
+              value={received}
+              onChange={(e) => setReceived(e.target.value)}
+            />
+          )}
+        </Field>
+      </div>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">

@@ -1,20 +1,20 @@
 {
   "$description": "Token desain admin dan scanner. Format DTCG. Sumber: tangkapan layar dan CSS programmerzamannow.com. Asal tiap token ada di $extensions.asal: css = diambil dari CSS situs, ukur = diukur dari tangkapan layar, usul = usulan proyek ini.",
   "color": {
-    "bone": { "$value": "#f1ede2", "$type": "color", "$description": "Latar halaman, tab nonaktif", "$extensions": { "asal": "css" } },
-    "bone-2": { "$value": "#e6e1d3", "$type": "color", "$description": "Kotak ikon, avatar, titik pola, hover lembut", "$extensions": { "asal": "css" } },
+    "bone": { "$value": "#f6efe7", "$type": "color", "$description": "Latar halaman, tab nonaktif", "$extensions": { "asal": "css" } },
+    "bone-2": { "$value": "#eadfd1", "$type": "color", "$description": "Kotak ikon, avatar, titik pola, hover lembut", "$extensions": { "asal": "css" } },
     "paper": { "$value": "#ffffff", "$type": "color", "$description": "Kartu, input", "$extensions": { "asal": "css" } },
-    "ink": { "$value": "#0c0c0c", "$type": "color", "$description": "Teks utama, border, bayangan, bagian gelap", "$extensions": { "asal": "css" } },
-    "ink-soft": { "$value": "#4a4842", "$type": "color", "$description": "Teks pendukung", "$extensions": { "asal": "css" } },
-    "acid": { "$value": "#d8ff3e", "$type": "color", "$description": "Aksen: tag, kartu sorot, tab aktif. Hanya sebagai latar dengan teks ink", "$extensions": { "asal": "css" } },
-    "electric": { "$value": "#2b2be8", "$type": "color", "$description": "Aksi utama", "$extensions": { "asal": "css" } },
-    "alert": { "$value": "#c4271e", "$type": "color", "$description": "Error, hapus, terkunci", "$extensions": { "asal": "css" } },
-    "ok": { "$value": "#077045", "$type": "color", "$description": "Sukses", "$extensions": { "asal": "css" } },
+    "ink": { "$value": "#1a1014", "$type": "color", "$description": "Teks utama, border, bayangan, bagian gelap", "$extensions": { "asal": "css" } },
+    "ink-soft": { "$value": "#5a4850", "$type": "color", "$description": "Teks pendukung", "$extensions": { "asal": "css" } },
+    "acid": { "$value": "#ffc2d1", "$type": "color", "$description": "Aksen: tag, kartu sorot, tab aktif. Hanya sebagai latar dengan teks ink", "$extensions": { "asal": "css" } },
+    "electric": { "$value": "#7a1230", "$type": "color", "$description": "Aksi utama", "$extensions": { "asal": "css" } },
+    "alert": { "$value": "#b3261e", "$type": "color", "$description": "Error, hapus, terkunci", "$extensions": { "asal": "css" } },
+    "ok": { "$value": "#1f6b45", "$type": "color", "$description": "Sukses", "$extensions": { "asal": "css" } },
     "tone-1": { "$value": "#ffb84d", "$type": "color", "$description": "Pastel oranye", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
     "tone-2": { "$value": "#7de0a6", "$type": "color", "$description": "Pastel hijau", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
     "tone-3": { "$value": "#8fd8f0", "$type": "color", "$description": "Pastel biru muda", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
     "tone-4": { "$value": "#c4b5fd", "$type": "color", "$description": "Pastel ungu", "$extensions": { "asal": "css", "catatan": "tidak terlihat dipakai di tangkapan layar" } },
-    "placeholder": { "$value": "#72716c", "$type": "color", "$description": "Placeholder input. Kontras 4,9:1 di atas paper, 4,2:1 di atas bone, jadi hanya di dalam input putih", "$extensions": { "asal": "ukur" } }
+    "placeholder": { "$value": "#76696f", "$type": "color", "$description": "Placeholder input. Kontras 4,9:1 di atas paper, 4,2:1 di atas bone, jadi hanya di dalam input putih", "$extensions": { "asal": "ukur" } }
   },
   "semantic": {
     "page-background": { "$value": "{color.bone}", "$type": "color" },
@@ -85,7 +85,7 @@
   },
   "pattern": {
     "raster": {
-      "$value": "radial-gradient(#e6e1d3 1px, transparent 1px)",
+      "$value": "radial-gradient(#eadfd1 1px, transparent 1px)",
       "$type": "other",
       "$description": "Pola titik latar halaman. background-size 22px 22px. Jangan dipakai di balik tabel",
       "$extensions": { "backgroundSize": "22px 22px", "asal": "css" }

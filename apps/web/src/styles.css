@@ -6,21 +6,21 @@
 
 /* Token desain: docs/design.md dan docs/design-tokens.json. Skala spacing Tailwind tidak ditimpa. */
 @theme {
-  --color-bone: #f1ede2;
-  --color-bone-2: #e6e1d3;
+  --color-bone: #f6efe7;
+  --color-bone-2: #eadfd1;
   --color-paper: #ffffff;
-  --color-ink: #0c0c0c;
-  --color-ink-soft: #4a4842;
-  --color-acid: #d8ff3e;
-  --color-electric: #2b2be8;
-  --color-alert: #c4271e;
-  --color-ok: #077045;
+  --color-ink: #1a1014;
+  --color-ink-soft: #5a4850;
+  --color-acid: #ffc2d1;
+  --color-electric: #7a1230;
+  --color-alert: #b3261e;
+  --color-ok: #1f6b45;
   --color-tone-1: #ffb84d;
   --color-tone-2: #7de0a6;
   --color-tone-3: #8fd8f0;
   --color-tone-4: #c4b5fd;
   /* Hanya di dalam input putih: di atas bone kontrasnya 4,2:1. */
-  --color-placeholder: #72716c;
+  --color-placeholder: #76696f;
 
   --font-display: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;

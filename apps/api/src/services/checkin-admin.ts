@@ -47,7 +47,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       id: guests.id,
       displayName: guests.displayName,
       groupId: guests.groupId,
-      quota: guests.quota,
       source: guests.source,
     })
     .from(guests)
@@ -72,7 +71,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       invited: number;
       arrived: number;
       pax: number;
-      quota: number;
     }
   >();
   const bucketFor = (groupId: string | null) => {
@@ -87,7 +85,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       invited: 0,
       arrived: 0,
       pax: 0,
-      quota: 0,
     };
     buckets.set(groupId, bucket);
     return bucket;
@@ -95,13 +92,10 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
   for (const group of groupRows) bucketFor(group.id);
 
   let arrivedPax = 0;
-  let expectedPax = 0;
   let walkins = 0;
   for (const guest of invited) {
     const bucket = bucketFor(guest.groupId);
     bucket.invited += 1;
-    bucket.quota += guest.quota;
-    expectedPax += guest.quota;
     if (guest.source === "walkin") walkins += 1;
     const state = stateByGuest.get(guest.id);
     if (state) {
@@ -146,7 +140,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       invited: invited.length,
       arrived: states.filter((s) => guestById.has(s.guestId)).length,
       arrivedPax,
-      expectedPax,
       needsReview: states.filter(needsReview).length,
       outsideSession: states.filter((s) => s.primary.outsideSession).length,
       walkins,
@@ -169,7 +162,6 @@ export async function reviewQueue(db: Db, eventId?: string): Promise<ReviewItem[
     .select({
       id: guests.id,
       displayName: guests.displayName,
-      quota: guests.quota,
       groupId: guests.groupId,
     })
     .from(guests)
@@ -202,7 +194,6 @@ export async function reviewQueue(db: Db, eventId?: string): Promise<ReviewItem[
         eventId: state.eventId,
         displayName: guest.displayName,
         groupName: guest.groupId ? (groupName.get(guest.groupId) ?? null) : null,
-        quota: guest.quota,
         primary: describe(state.primary),
         duplicates: state.duplicates.map(describe),
       },

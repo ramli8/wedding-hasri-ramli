@@ -263,14 +263,14 @@ describe("tamu: membuat dan validasi", () => {
     const group = await makeGroup();
     const guest = await makeGuest({
       groupId: group.id,
-      quota: 4,
+      isRombongan: true,
       usherNote: "Pemain inti",
       eventIds: [event.id],
     });
     expect(guest.code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
     expect(guest).toMatchObject({
       phone: "6281234567890",
-      quota: 4,
+      isRombongan: true,
       usherNote: "Pemain inti",
       groupId: group.id,
       source: "admin",
@@ -305,7 +305,6 @@ describe("tamu: membuat dan validasi", () => {
       { phone: "", instagram: "nama salah!" },
       "Username Instagram tidak valid",
     ],
-    ["kuota nol", { quota: 0 }, "Kuota minimal 1"],
     ["nama kosong", { displayName: "  " }, "Nama undangan wajib diisi"],
   ])("menolak %s", async (_label, overrides, message) => {
     const res = await api.post("/guests", {
@@ -356,7 +355,7 @@ describe("tamu: daftar dan filter", () => {
     expect(await names("_")).toEqual([]);
   });
 
-  it("memfilter menurut kelompok, acara, status kirim, dan hanya-Instagram", async () => {
+  it("memfilter menurut kelompok, acara, status kirim, dan hanya-Instagram, dan hanya-rombongan", async () => {
     const e1 = await makeEvent({ slug: "akad", name: "Akad" });
     const e2 = await makeEvent({ slug: "resepsi", name: "Resepsi" });
     const group = await makeGroup();
@@ -367,7 +366,7 @@ describe("tamu: daftar dan filter", () => {
       instagram: "bravo",
       eventIds: [e1.id, e2.id],
     });
-    await makeGuest({ displayName: "Charlie", phone: "0813-0000-1111" });
+    await makeGuest({ displayName: "Charlie", phone: "0813-0000-1111", isRombongan: true });
 
     const names = async (query: string) =>
       (await listGuests(query)).items.map((g) => g.displayName);
@@ -376,6 +375,7 @@ describe("tamu: daftar dan filter", () => {
     expect(await names(`?eventId=${e1.id}`)).toEqual(["Alpha", "Bravo"]);
     expect(await names(`?eventId=${e2.id}`)).toEqual(["Bravo"]);
     expect(await names("?onlyInstagram=true")).toEqual(["Bravo"]);
+    expect(await names("?rombongan=true")).toEqual(["Charlie"]);
 
     await api.post(`/guests/${alpha.id}/sent`, { eventId: e1.id, via: "whatsapp" });
     expect(await names(`?eventId=${e1.id}&sent=sent`)).toEqual(["Alpha"]);
@@ -479,13 +479,14 @@ describe("tamu: ubah, hapus, kirim", () => {
 
 describe("impor CSV", () => {
   const CSV = [
-    "nama_undangan,hp,instagram,kelompok,kuota,acara",
-    "Budi,0812-1111-2222,,Keluarga,4,",
-    "Sari,,@sari.rahma,Teman,1,resepsi",
-    "Budi Lagi,+62 812 1111 2222,,Keluarga,2,",
+    "nama_undangan,hp,instagram,kelompok,rombongan,acara",
+    "Budi,0812-1111-2222,,Keluarga,ya,",
+    "Sari,,@sari.rahma,Teman,tidak,resepsi",
+    "Budi Lagi,+62 812 1111 2222,,Keluarga,ya,",
     ",,,,,",
-    "Tanpa Kontak,,,,1,",
-    "Salah Acara,0813-0000-1111,,,1,tidak-ada",
+    "Tanpa Kontak,,,,tidak,",
+    "Salah Acara,0813-0000-1111,,,tidak,tidak-ada",
+    "Salah Rombongan,0813-0000-2222,,,mungkin,",
   ].join("\n");
 
   const preview = async (csv: string) => {
@@ -506,25 +507,33 @@ describe("impor CSV", () => {
 
   it("pratinjau menandai baris ok, duplikat, dan error beserta alasannya", async () => {
     const result = await preview(CSV);
-    expect(result.counts).toEqual({ ok: 2, duplicate: 1, error: 3 });
+    expect(result.counts).toEqual({ ok: 2, duplicate: 1, error: 4 });
     expect(result.newGroups).toEqual(["Keluarga", "Teman"]);
 
     const byLine = new Map(result.rows.map((r) => [r.line, r]));
-    expect(byLine.get(2)).toMatchObject({ status: "ok", phone: "6281211112222", quota: 4 });
+    expect(byLine.get(2)).toMatchObject({
+      status: "ok",
+      phone: "6281211112222",
+      isRombongan: true,
+    });
+    expect(byLine.get(3)).toMatchObject({ status: "ok", isRombongan: false });
     expect(byLine.get(4)?.status).toBe("duplicate");
     expect(byLine.get(4)?.messages.join(" ")).toContain("baris 2");
     expect(byLine.get(5)?.messages.join(" ")).toContain("Nama undangan wajib diisi");
     expect(byLine.get(6)?.messages.join(" ")).toContain("Isi nomor HP atau Instagram");
     expect(byLine.get(7)?.messages.join(" ")).toContain('Acara "tidak-ada" tidak dikenal');
+    expect(byLine.get(8)?.messages.join(" ")).toContain("rombongan");
   });
 
   it("membaca pemisah titik koma, BOM, dan nama kolom alias", async () => {
-    const result = await preview("﻿Nama;No HP;IG;Group;Jumlah\nBudi;0812-1111-2222;;Keluarga;3\n");
+    const result = await preview(
+      "﻿Nama;No HP;IG;Group;Rombongan\nBudi;0812-1111-2222;;Keluarga;ya\n",
+    );
     expect(result.counts.ok).toBe(1);
     expect(result.rows[0]).toMatchObject({
       phone: "6281211112222",
       groupName: "Keluarga",
-      quota: 3,
+      isRombongan: true,
     });
   });
 
@@ -551,7 +560,7 @@ describe("impor CSV", () => {
     expect(res.status).toBe(200);
     expect(await read<ImportCommitResponse>(res)).toEqual({
       imported: 2,
-      skipped: 4,
+      skipped: 5,
       createdGroups: ["Keluarga", "Teman"],
     });
 
@@ -628,7 +637,11 @@ describe("ekspor dan template CSV", () => {
 
   it("hasil ekspor bisa diimpor ulang ke sistem kosong", async () => {
     await makeEvent();
-    await makeGuest({ displayName: "Budi, Ani & Anak", phone: "0812-1111-2222", quota: 3 });
+    await makeGuest({
+      displayName: "Budi, Ani & Anak",
+      phone: "0812-1111-2222",
+      isRombongan: true,
+    });
     const exported = await (await api.get("/guests/export.csv")).text();
 
     const reset = await loggedInClient(ctx);
@@ -636,7 +649,7 @@ describe("ekspor dan template CSV", () => {
     const res = await reset.post("/guests/import/preview", { csv: exported });
     const result = await read<ImportPreview>(res);
     expect(result.counts).toEqual({ ok: 1, duplicate: 0, error: 0 });
-    expect(result.rows[0]).toMatchObject({ displayName: "Budi, Ani & Anak", quota: 3 });
+    expect(result.rows[0]).toMatchObject({ displayName: "Budi, Ani & Anak", isRombongan: true });
   });
 
   it("menyediakan template CSV yang valid untuk diimpor", async () => {

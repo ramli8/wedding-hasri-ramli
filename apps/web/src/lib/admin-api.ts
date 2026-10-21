@@ -32,6 +32,7 @@ export type GuestQuery = {
   eventId?: string;
   sent?: "sent" | "unsent";
   onlyInstagram?: boolean;
+  rombongan?: boolean;
   deleted?: boolean;
   page?: number;
   pageSize?: number;

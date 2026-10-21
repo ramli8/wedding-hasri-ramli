@@ -53,12 +53,10 @@ function GuestForm({
 }) {
   const refresh = useRefresh();
   const [displayName, setDisplayName] = useState(guest?.displayName ?? "");
-  const [fullName, setFullName] = useState(guest?.fullName ?? "");
   const [phone, setPhone] = useState(guest?.phone ? `+${guest.phone}` : "");
   const [instagram, setInstagram] = useState(guest?.instagram ?? "");
   const [groupId, setGroupId] = useState(guest?.groupId ?? "");
-  const [quota, setQuota] = useState(String(guest?.quota ?? 1));
-  const [note, setNote] = useState(guest?.note ?? "");
+  const [isRombongan, setIsRombongan] = useState(guest?.isRombongan ?? false);
   const [usherNote, setUsherNote] = useState(guest?.usherNote ?? "");
   // Tamu baru diundang ke semua acara secara bawaan.
   const [eventIds, setEventIds] = useState<string[]>(
@@ -69,12 +67,10 @@ function GuestForm({
     mutationFn: () => {
       const input = {
         displayName,
-        fullName,
         phone,
         instagram,
         groupId: groupId || null,
-        quota: Number(quota),
-        note,
+        isRombongan,
         usherNote,
         eventIds,
       };
@@ -107,9 +103,6 @@ function GuestForm({
             />
           )}
         </Field>
-        <Field label="Nama lengkap">
-          {(id) => <Input id={id} value={fullName} onChange={(e) => setFullName(e.target.value)} />}
-        </Field>
         <Field label="Nomor HP / WhatsApp" hint="Boleh diketik 0812-… atau +62 812-…">
           {(id) => (
             <Input
@@ -138,20 +131,10 @@ function GuestForm({
             </Select>
           )}
         </Field>
-        <Field label="Kuota orang" hint="Jumlah orang yang diundang dengan satu QR.">
-          {(id) => (
-            <Input
-              id={id}
-              type="number"
-              min={1}
-              max={500}
-              required
-              value={quota}
-              onChange={(e) => setQuota(e.target.value)}
-            />
-          )}
-        </Field>
       </div>
+      <Checkbox checked={isRombongan} onChange={(e) => setIsRombongan(e.target.checked)}>
+        Rombongan (penjaga mengisi jumlah orang saat check-in; selain itu otomatis 1 orang)
+      </Checkbox>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">Diundang ke acara</legend>
@@ -172,9 +155,6 @@ function GuestForm({
 
       <Field label="Catatan untuk penjaga" hint="Tampil di layar scanner, mis. 'Pemain inti klub'.">
         {(id) => <Input id={id} value={usherNote} onChange={(e) => setUsherNote(e.target.value)} />}
-      </Field>
-      <Field label="Catatan internal">
-        {(id) => <Input id={id} value={note} onChange={(e) => setNote(e.target.value)} />}
       </Field>
 
       {guest?.code && <p className="text-xs text-ink-soft">Kode tamu: {guest.code}</p>}

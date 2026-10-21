@@ -11,7 +11,7 @@ async function ensureIndex() {
   const next = `${await db.guests.count()}:${(await getMeta("guestRev")) ?? 0}:${await db.walkins.count()}`;
   if (index && next === signature) return index;
   index = new MiniSearch<SnapshotGuest>({
-    fields: ["displayName", "fullName", "code"],
+    fields: ["displayName", "code"],
     idField: "id",
     searchOptions: { prefix: true, fuzzy: 0.2, combineWith: "AND" },
   });

@@ -40,12 +40,10 @@ export function toGuest(row: GuestRow, invitations: GuestEventRow[]): Guest {
     id: row.id,
     code: row.code,
     displayName: row.displayName,
-    fullName: row.fullName,
     phone: row.phone,
     instagram: row.instagram,
     groupId: row.groupId,
-    quota: row.quota,
-    note: row.note,
+    isRombongan: row.isRombongan,
     usherNote: row.usherNote,
     source: row.source as GuestSource,
     events: invitations
@@ -68,10 +66,10 @@ export async function listGuests(db: Db, params: GuestListParams): Promise<Guest
     params.deleted ? isNotNull(guests.deletedAt) : isNull(guests.deletedAt),
     params.groupId ? eq(guests.groupId, params.groupId) : undefined,
     params.onlyInstagram ? and(isNull(guests.phone), isNotNull(guests.instagram)) : undefined,
+    params.rombongan ? eq(guests.isRombongan, true) : undefined,
     like
       ? or(
           ilike(guests.displayName, like),
-          ilike(guests.fullName, like),
           ilike(guests.phone, like),
           ilike(guests.instagram, like),
           ilike(guests.code, like),
@@ -154,12 +152,10 @@ async function assertReferencesExist(db: Db, input: GuestData) {
 function guestColumns(input: GuestData) {
   return {
     displayName: input.displayName,
-    fullName: input.fullName,
     phone: input.phone,
     instagram: input.instagram,
     groupId: input.groupId,
-    quota: input.quota,
-    note: input.note,
+    isRombongan: input.isRombongan,
     usherNote: input.usherNote,
   };
 }

@@ -58,7 +58,6 @@ export const dashboardResponseSchema = z.object({
     arrived: z.number(),
     /** Jumlah orang yang masuk (untuk katering dan kartu souvenir). */
     arrivedPax: z.number(),
-    expectedPax: z.number(),
     needsReview: z.number(),
     outsideSession: z.number(),
     walkins: z.number(),
@@ -72,7 +71,6 @@ export const dashboardResponseSchema = z.object({
       invited: z.number(),
       arrived: z.number(),
       pax: z.number(),
-      quota: z.number(),
     }),
   ),
   recent: z.array(dashboardRecentSchema),
@@ -95,7 +93,6 @@ export const reviewItemSchema = z.object({
   eventId: z.uuid(),
   displayName: z.string(),
   groupName: z.string().nullable(),
-  quota: z.number(),
   primary: reviewCheckinSchema,
   duplicates: z.array(reviewCheckinSchema),
 });

@@ -33,9 +33,8 @@ export const snapshotGuestSchema = z.object({
   id: z.uuid(),
   code: z.string().nullable(),
   displayName: z.string(),
-  fullName: z.string().nullable(),
   groupId: z.uuid().nullable(),
-  quota: z.number().int(),
+  isRombongan: z.boolean(),
   usherNote: z.string().nullable(),
   source: z.enum(["admin", "import", "walkin"]),
   /** false: dihapus atau tidak lagi diundang ke acara ini, jadi buang dari perangkat. */
@@ -84,7 +83,7 @@ export const walkinGuestSchema = z.object({
   phone: z.string().max(40).nullish(),
   instagram: z.string().max(60).nullish(),
   groupId: z.uuid().nullish(),
-  quota: z.number().int().min(1).max(500).default(1),
+  isRombongan: z.boolean().default(false),
   usherNote: z.string().max(300).nullish(),
 });
 export type WalkinGuest = z.input<typeof walkinGuestSchema>;

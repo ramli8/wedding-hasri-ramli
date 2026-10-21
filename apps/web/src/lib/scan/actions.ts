@@ -32,6 +32,8 @@ export type Outcome =
       /** Nama perangkat yang menerima lebih dulu, atau "perangkat ini". */
       by: string;
     }
+  /** Tamu rombongan yang belum tercatat: penjaga harus mengisi jumlah orang dulu. */
+  | { status: "need_pax"; view: GuestView; method: CheckinMethod }
   | { status: "invalid"; code: string };
 
 function toResolver(e: StoredEvent | OutboxEvent): ResolverEvent {
@@ -93,10 +95,15 @@ export function extractCode(raw: string): string | null {
 }
 
 /**
- * Mencatat check-in tamu. Jumlah orang bawaan = kuota; penjaga mengubahnya setelahnya (dalam 2
- * menit) bila yang datang berbeda. Bila tamu sudah tercatat, tidak ada yang ditulis.
+ * Mencatat check-in tamu. Tamu biasa tercatat 1 orang; tamu rombongan butuh `pax` dari penjaga
+ * (tanpa itu hasilnya `need_pax` dan tidak ada yang ditulis). Penjaga bisa mengubah jumlahnya
+ * dalam 2 menit. Bila tamu sudah tercatat, tidak ada yang ditulis.
  */
-export async function checkIn(guest: SnapshotGuest, method: CheckinMethod): Promise<Outcome> {
+export async function checkIn(
+  guest: SnapshotGuest,
+  method: CheckinMethod,
+  pax?: number,
+): Promise<Outcome> {
   const event = await getMeta("event");
   if (!event) throw new Error("Data acara belum diunduh. Hubungkan ke internet sekali.");
 
@@ -115,6 +122,11 @@ export async function checkIn(guest: SnapshotGuest, method: CheckinMethod): Prom
           by: await describeWho(state.primary.id),
         };
       }
+      if (guest.isRombongan && pax === undefined) return { status: "need_pax", view, method };
+      const count = pax ?? 1;
+      if (!Number.isInteger(count) || count < 1 || count > MAX_PAX) {
+        throw new Error(`Jumlah orang harus 1 sampai ${MAX_PAX}.`);
+      }
       const id = uuid7();
       const scannedAt = correctedIso();
       await db.outbox.add({
@@ -122,12 +134,12 @@ export async function checkIn(guest: SnapshotGuest, method: CheckinMethod): Prom
         kind: "checkin",
         guestId: guest.id,
         eventId: event.id,
-        pax: guest.quota,
+        pax: count,
         method,
         scannedAt,
         createdAt: stamp(),
       });
-      return { status: "ok", view, pax: guest.quota, checkinId: id, scannedAt, method };
+      return { status: "ok", view, pax: count, checkinId: id, scannedAt, method };
     },
   );
   if (outcome.status === "ok") syncEngine.trigger();
@@ -204,7 +216,8 @@ export type WalkinInput = {
   phone?: string;
   instagram?: string;
   groupId?: string | null;
-  quota: number;
+  /** Jumlah orang yang datang; lebih dari 1 menandai tamunya sebagai rombongan. */
+  pax: number;
   usherNote?: string;
 };
 
@@ -220,7 +233,7 @@ export async function addWalkin(input: WalkinInput): Promise<Outcome> {
     phone: input.phone?.trim() || null,
     instagram: input.instagram?.trim() || null,
     groupId: input.groupId ?? null,
-    quota: input.quota,
+    isRombongan: input.pax > 1,
     usherNote: input.usherNote?.trim() || null,
     createdAt: stamp(),
   };
@@ -228,7 +241,7 @@ export async function addWalkin(input: WalkinInput): Promise<Outcome> {
     await db.walkins.add(walkin);
     await db.guests.put(walkinToGuest(walkin));
   });
-  return checkIn(walkinToGuest(walkin), "walkin");
+  return checkIn(walkinToGuest(walkin), "walkin", input.pax);
 }
 
 /** Apakah tamu sudah tercatat masuk (menurut data yang diketahui perangkat ini). */

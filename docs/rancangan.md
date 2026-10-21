@@ -59,7 +59,7 @@ Kode lama: beri tag `legacy-v1` di `main` saat ini, lalu kerjakan di branch `rew
 ## 3. Konsep inti
 
 - **Event** (acara): akad, resepsi, dst. Hanya event dengan `checkin_enabled` yang punya QR dan check-in. Hari ini hanya **resepsi**. Event dengan `has_rsvp` punya RSVP aplikasi (hanya resepsi). Acara lain hanya diinfokan lewat pesan WhatsApp.
-- **Tamu** = satu undangan (bukan satu orang). Punya `quota` (jumlah orang maksimum yang diundang). Jumlah orang yang benar-benar hadir dicatat saat check-in.
+- **Tamu** = satu undangan (bukan satu orang). Tidak ada kuota; tamu bisa ditandai **rombongan** (`is_rombongan`), lalu penjaga mengisi jumlah orang yang datang saat check-in. Tamu biasa otomatis 1 orang.
 - **Kelompok** (kategori): label + warna + penanda VIP + **jam sesi per event** (mis. Surabaya 10.00–12.00, Lumajang 12.00–13.00). Jam sesi dipakai untuk info di undangan dan dicatat di log; **scanner tidak menampilkan peringatan** dan penjaga melihat tampilan yang sama untuk semua.
 - **Kode tamu**: 6 karakter acak dari 32 huruf/angka (tanpa `I`, `O`, `0`, `1`). QR berisi kode mentah itu saja (QR kecil, scan cepat) dan kode bisa diketik manual.
 - **Check-in** adalah log *append-only*. Status akhir tamu dihitung dari log, bukan ditimpa. Ini yang membuat sinkronisasi offline aman dan idempoten.
@@ -274,7 +274,7 @@ Total orang hadir = Σ `pax` efektif primary. Kartu souvenir terbagi = angka yan
 Semua di bawah `/api/v1`. JSON. Validasi Zod dari `packages/shared`. Error seragam `{ error: { code, message } }`.
 
 **Publik** (rate limit per IP):
-- `GET /public/ticket/:code` → nama panggilan, kelompok, kuota, acara + jam sesi. Tidak mengembalikan HP/IG. (E-ticket tetap bisa menggambar QR tanpa endpoint ini.)
+- `GET /public/ticket/:code` → nama panggilan, kelompok, acara + jam sesi. Tidak mengembalikan HP/IG. (E-ticket tetap bisa menggambar QR tanpa endpoint ini.)
 - *(fase 4)* `POST /public/rsvp`, `GET/POST /public/guestbook`.
 
 **Admin** (cookie session; semua `POST/PUT/DELETE` cek header `Origin`). Dalam implementasi semua rute ini berada di bawah awalan `/admin`, mis. `/api/v1/admin/guests`, dan pembaruan memakai `PUT` (bukan `PATCH`). Daftar di bawah menulis jalur tanpa awalan itu:
@@ -303,7 +303,7 @@ Penjaga tidak mendapat nomor HP/Instagram tamu di snapshot (tidak dibutuhkan di 
 kamera → decode → cari kode di Dexie (O(1))
    ├─ tidak ada            → MERAH  "Kode tidak dikenal"
    ├─ sudah ada check-in   → KUNING "Sudah masuk 11.42 · Gerbang A"
-   └─ belum                → HIJAU  + input jumlah orang (default = kuota; VIP = tampilan khusus)
+   └─ belum                → HIJAU  (tamu biasa: 1 orang; rombongan: penjaga mengisi jumlah dulu; VIP = tampilan khusus)
                               └─ tulis ke outbox (uuid v7) → UI siap scan berikutnya
 ```
 
@@ -365,7 +365,7 @@ Skema database, bentuk data API, dan format penyimpanan IndexedDB di HP bisa ber
 
 `GET /dashboard/checkin`, disegarkan tiap 5 detik di laptop:
 - Undangan masuk / total, **total orang hadir** (kebutuhan katering), kartu souvenir terbagi.
-- Rincian per kelompok dan per gerbang; hadir vs RSVP hadir vs kuota.
+- Rincian per kelompok dan per gerbang; hadir vs RSVP hadir.
 - 20 check-in terbaru; jumlah duplikat yang menunggu review.
 - Per perangkat: nama, terakhir sync, `pending_outbox`. Perangkat dengan outbox menumpuk atau lama tidak sync diberi tanda.
 
@@ -477,6 +477,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **UI:** tanpa shadcn/ui. Komponen dasar ditulis sendiri sesuai `design.md` dan modal memakai elemen `<dialog>` bawaan browser. Alasannya: lebih ringan dan tidak ada komponen yang tidak dipakai.
 - **Zona waktu admin:** input jam di formulir dianggap WIB (UTC+7) dan disimpan sebagai UTC.
 - **Kelompok disederhanakan** (migrasi 0003): kolom `gate` dan `sort_order` dihapus karena tidak dipakai scanner; daftar kelompok diurutkan menurut nama. Jam sesi di formulir hanya jam (`<input type="time">`); tanggalnya diambil dari `events.starts_at` saat disimpan, jadi acara tanpa tanggal mulai belum bisa diberi jam sesi.
+- **Kuota diganti rombongan** (migrasi 0005–0006): kolom `quota`, `full_name`, `note` dihapus dari `guests`, ditambah `is_rombongan`. Tamu lama dengan kuota > 1 otomatis menjadi rombongan. Snapshot/push berubah bentuk, jadi `SYNC_PROTOCOL_VERSION` dan `MIN_SUPPORTED` naik ke 2: perangkat dengan aplikasi lama menerima `426 APP_OUTDATED` dan harus memperbarui (antrean outbox-nya tidak hilang). Dexie tidak berubah (kolom yang dihapus tidak diindeks). Kolom CSV: `nama_lengkap`, `kuota`, `catatan` dihapus; `rombongan` (ya/tidak) ditambah. Dashboard tidak lagi menampilkan "orang / kuota".
 - **Acara disederhanakan** (migrasi 0004): kolom `notes` dan `sort_order` dihapus. Acara diurutkan menurut `starts_at`, lalu nama; acara check-in aktif yang dipakai scanner adalah yang paling awal mulainya.
 
 ### Fase 3 (scanner, check-in offline, dashboard)
@@ -484,12 +485,12 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 **Tabel baru:** `devices`, `checkin_events` (log yang hanya bertambah, id dibuat perangkat), `checkin_reviews`. Migrasi 0002.
 
 **Alur penjaga** (keputusan baru, belum ada di rancangan awal):
-- Scan **langsung mencatat** check-in dengan jumlah orang = kuota. Penjaga mengubah jumlah atau membatalkan dalam 2 menit, dari layar hasil atau panel "Terakhir masuk". Setelah itu hanya admin.
+- Scan **langsung mencatat** check-in 1 orang untuk tamu biasa. Untuk tamu rombongan, layar meminta jumlah orang dulu dan check-in baru dicatat setelah diisi. Penjaga mengubah jumlah atau membatalkan dalam 2 menit, dari layar hasil atau panel "Terakhir masuk". Setelah itu hanya admin.
 - Hasil layar penuh: hijau (masuk), amber (sudah masuk, dengan jam dan perangkat), merah (tidak valid), acid dengan bingkai tebal untuk VIP. Menutup sendiri setelah 2,5 sampai 3,5 detik. Getar dan nada berbeda per hasil, bisa dimatikan.
 - Laptop adalah perangkat terdaftar biasa (UI yang sama). Kolom cari difokuskan otomatis di perangkat dengan keyboard sehingga scanner USB (yang mengetik seperti keyboard) langsung bekerja.
 - Pairing: admin membuat perangkat dan mendapat kode 8 karakter (berlaku 24 jam, sekali pakai, hanya tampil sekali). Token perangkat disimpan di IndexedDB, bukan cookie. Perangkat yang dicabut baru tahu setelah online.
 
-**Protokol** (`SYNC_PROTOCOL_VERSION = 1`, `MIN_SUPPORTED = 1`): header `x-sync-version` wajib; versi terlalu lama dijawab `426 APP_OUTDATED`; perangkat dicabut dijawab `401 DEVICE_REVOKED`. Rute: `POST /device/pair`, `GET /sync/snapshot?sinceRev&sinceSeq`, `POST /sync/push`; admin: `/admin/devices`, `/admin/checkins/{dashboard,review,resolve,log,:id/undo,:id/pax}`. Snapshot tidak memuat HP atau Instagram.
+**Protokol** (`SYNC_PROTOCOL_VERSION = 2`, `MIN_SUPPORTED = 2`; naik dari 1 saat kuota diganti rombongan, lihat di bawah): header `x-sync-version` wajib; versi terlalu lama dijawab `426 APP_OUTDATED`; perangkat dicabut dijawab `401 DEVICE_REVOKED`. Rute: `POST /device/pair`, `GET /sync/snapshot?sinceRev&sinceSeq`, `POST /sync/push`; admin: `/admin/devices`, `/admin/checkins/{dashboard,review,resolve,log,:id/undo,:id/pax}`. Snapshot tidak memuat HP atau Instagram.
 
 **Hal yang ditemukan lewat pengujian dan dikoreksi dari rancangan awal** (semuanya punya tes):
 1. **`seq` bisa tidak berurutan dengan urutan commit** bila beberapa HP menulis bersamaan, sehingga perangkat yang menarik `seq > terakhir` bisa melewatkan event selamanya. Semua penulisan log check-in sekarang diserialkan dengan advisory lock. Tes konkurensi terbukti gagal bila kunci dimatikan.

@@ -15,7 +15,7 @@ import Dexie, { type Table } from "dexie";
 export type OutboxEvent = DeviceEvent & { createdAt: number; sentAt?: number };
 
 /** Tamu walk-in yang dibuat di perangkat ini dan belum dikirim. */
-export type PendingWalkin = Omit<WalkinGuest, "quota"> & { quota: number; createdAt: number };
+export type PendingWalkin = WalkinGuest & { createdAt: number };
 
 /** Event yang ditolak server (mis. lewat batas koreksi). Disimpan agar penjaga tahu. */
 export type RejectedEvent = {

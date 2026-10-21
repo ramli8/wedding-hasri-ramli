@@ -20,7 +20,13 @@ const THEME = {
  * Hasil scan layar penuh dengan warna yang bisa dikenali dari jauh. Menutup sendiri agar antrean
  * jalan; menyentuh jumlah orang atau batal menghentikan penutupan otomatis.
  */
-export function ResultOverlay({ outcome, onClose }: { outcome: Outcome; onClose: () => void }) {
+export function ResultOverlay({
+  outcome,
+  onClose,
+}: {
+  outcome: Exclude<Outcome, { status: "need_pax" }>;
+  onClose: () => void;
+}) {
   const [pax, setPax] = useState(outcome.status === "invalid" ? 0 : outcome.pax);
   const [error, setError] = useState<string | null>(null);
   const [interacted, setInteracted] = useState(false);
@@ -101,7 +107,7 @@ export function ResultOverlay({ outcome, onClose }: { outcome: Outcome; onClose:
                   {outcome.view.group.name}
                 </span>
               )}
-              <span className="tag px-2 py-1">Kuota {outcome.view.guest.quota} orang</span>
+              {outcome.view.guest.isRombongan && <span className="tag px-2 py-1">Rombongan</span>}
             </div>
             {outcome.view.guest.usherNote && (
               <p className="border-2 border-current p-3 text-xl font-semibold">

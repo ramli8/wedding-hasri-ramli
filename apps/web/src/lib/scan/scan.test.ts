@@ -49,9 +49,8 @@ function guest(overrides: Partial<SnapshotGuest> = {}): SnapshotGuest {
     id: id(),
     code: "ABC234",
     displayName: "Bpk. Budi",
-    fullName: null,
     groupId: null,
-    quota: 4,
+    isRombongan: false,
     usherNote: null,
     source: "admin",
     invited: true,
@@ -127,24 +126,24 @@ describe("extractCode", () => {
 });
 
 describe("check-in", () => {
-  it("mencatat sekali dengan jumlah = kuota; scan kedua menjadi 'sudah masuk' tanpa menulis lagi", async () => {
-    const budi = guest({ quota: 4 });
+  it("tamu biasa tercatat 1 orang sekali; scan kedua menjadi 'sudah masuk' tanpa menulis lagi", async () => {
+    const budi = guest();
     await seed(budi);
 
     const first = await handleScan("abc234", "qr");
-    expect(first).toMatchObject({ status: "ok", pax: 4 });
+    expect(first).toMatchObject({ status: "ok", pax: 1 });
     const written = await db.outbox.toArray();
     expect(written).toHaveLength(1);
     expect(written[0]).toMatchObject({
       kind: "checkin",
       guestId: budi.id,
-      pax: 4,
+      pax: 1,
       method: "qr",
       eventId: EVENT.id,
     });
 
     const second = await handleScan("ABC234", "qr");
-    expect(second).toMatchObject({ status: "already", pax: 4, by: "perangkat ini" });
+    expect(second).toMatchObject({ status: "already", pax: 1, by: "perangkat ini" });
     expect(await db.outbox.count()).toBe(1);
     expect(await isCheckedIn(budi.id)).toBe(true);
   });
@@ -217,9 +216,28 @@ describe("koreksi", () => {
     expect(await db.outbox.count()).toBe(1);
   });
 
+  it("tamu rombongan: scan minta jumlah dulu tanpa menulis; jumlah dari penjaga yang dicatat", async () => {
+    const keluarga = guest({ isRombongan: true });
+    await seed(keluarga);
+
+    const asked = await handleScan("ABC234", "qr");
+    expect(asked).toMatchObject({ status: "need_pax", method: "qr" });
+    expect(await db.outbox.count()).toBe(0);
+
+    await expect(checkIn(keluarga, "qr", 0)).rejects.toThrow(/Jumlah orang/);
+    expect(await db.outbox.count()).toBe(0);
+
+    const done = await checkIn(keluarga, "qr", 5);
+    expect(done).toMatchObject({ status: "ok", pax: 5 });
+    expect((await db.outbox.toArray())[0]).toMatchObject({ kind: "checkin", pax: 5 });
+
+    // Sudah tercatat: tidak minta jumlah lagi.
+    expect(await handleScan("ABC234", "qr")).toMatchObject({ status: "already", pax: 5 });
+  });
+
   it("mengubah jumlah memperbarui hitungan, dan menolak jumlah yang tidak masuk akal", async () => {
-    await seed(guest({ quota: 4 }));
-    const first = await handleScan("ABC234");
+    await seed(guest({ isRombongan: true }));
+    const first = await checkIn((await db.guests.toArray())[0] as SnapshotGuest, "qr", 4);
     if (first.status !== "ok") throw new Error("harus ok");
 
     await changePax(first.checkinId, 2);
@@ -242,12 +260,16 @@ describe("koreksi", () => {
 describe("tamu walk-in", () => {
   it("dibuat lokal tanpa kode, langsung tercatat masuk, dan antre untuk dikirim", async () => {
     await seed();
-    const result = await addWalkin({ displayName: "  Tamu Mendadak ", quota: 2, phone: "0812" });
+    const result = await addWalkin({ displayName: "  Tamu Mendadak ", pax: 2, phone: "0812" });
     expect(result).toMatchObject({ status: "ok", pax: 2 });
 
     const walkins = await db.walkins.toArray();
     expect(walkins).toHaveLength(1);
-    expect(walkins[0]).toMatchObject({ displayName: "Tamu Mendadak", quota: 2, eventId: EVENT.id });
+    expect(walkins[0]).toMatchObject({
+      displayName: "Tamu Mendadak",
+      isRombongan: true,
+      eventId: EVENT.id,
+    });
 
     const local = await db.guests.get(walkins[0]?.id ?? "");
     expect(local).toMatchObject({ code: null, source: "walkin", invited: true });
@@ -362,7 +384,7 @@ describe("SyncEngine", () => {
 
   it("kode untuk tamu walk-in dari server dipasang ke tamu lokal dan antreannya bersih", async () => {
     await seed();
-    await addWalkin({ displayName: "Tamu Mendadak", quota: 1 });
+    await addWalkin({ displayName: "Tamu Mendadak", pax: 1 });
     const walkin = (await db.walkins.toArray())[0];
     const engine = new SyncEngine();
     push.mockImplementation(async (_t, body) =>

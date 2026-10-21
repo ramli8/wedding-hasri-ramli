@@ -57,11 +57,7 @@ export function CheckinPage() {
 
       <section aria-label="Ringkasan" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Undangan masuk" value={`${d.totals.arrived}`} of={`/ ${d.totals.invited}`} />
-        <Stat
-          label="Orang hadir"
-          value={`${d.totals.arrivedPax}`}
-          of={`/ ${d.totals.expectedPax} diundang`}
-        />
+        <Stat label="Orang hadir" value={`${d.totals.arrivedPax}`} of="orang" />
         <Stat label="Kartu souvenir" value={`${d.totals.arrivedPax}`} of="terbagi" />
         <Stat
           label="Perlu diperiksa"
@@ -107,9 +103,7 @@ export function CheckinPage() {
                   <td className="px-4 py-3 font-mono">
                     {group.arrived} / {group.invited}
                   </td>
-                  <td className="px-4 py-3 font-mono">
-                    {group.pax} / {group.quota}
-                  </td>
+                  <td className="px-4 py-3 font-mono">{group.pax}</td>
                 </tr>
               ))}
             </tbody>
@@ -272,9 +266,7 @@ function ReviewSection({ items }: { items: ReviewItem[] }) {
         <Card key={item.guestId} tone="acid" className="flex flex-col gap-3 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-display text-xl font-bold">{item.displayName}</p>
-            <p className="text-xs">
-              {item.groupName ?? "Tanpa kelompok"} · kuota {item.quota}
-            </p>
+            <p className="text-xs">{item.groupName ?? "Tanpa kelompok"}</p>
           </div>
           <ul className="flex flex-col gap-1 text-sm">
             <li>

@@ -262,16 +262,15 @@ export function walkinToGuest(walkin: {
   id: string;
   displayName: string;
   groupId?: string | null;
-  quota: number;
+  isRombongan?: boolean;
   usherNote?: string | null;
 }): SnapshotGuest {
   return {
     id: walkin.id,
     code: null,
     displayName: walkin.displayName,
-    fullName: null,
     groupId: walkin.groupId ?? null,
-    quota: walkin.quota,
+    isRombongan: walkin.isRombongan ?? false,
     usherNote: walkin.usherNote ?? null,
     source: "walkin",
     invited: true,

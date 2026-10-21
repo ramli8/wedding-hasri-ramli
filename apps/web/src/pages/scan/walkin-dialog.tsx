@@ -42,7 +42,7 @@ function WalkinForm({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [groupId, setGroupId] = useState("");
-  const [quota, setQuota] = useState("1");
+  const [pax, setPax] = useState("1");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -55,7 +55,7 @@ function WalkinForm({
         displayName: name,
         phone,
         groupId: groupId || null,
-        quota: Math.max(1, Number(quota) || 1),
+        pax: Math.max(1, Number(pax) || 1),
       });
       onClose();
       onDone(outcome);
@@ -109,8 +109,8 @@ function WalkinForm({
               type="number"
               min={1}
               max={500}
-              value={quota}
-              onChange={(e) => setQuota(e.target.value)}
+              value={pax}
+              onChange={(e) => setPax(e.target.value)}
             />
           )}
         </Field>

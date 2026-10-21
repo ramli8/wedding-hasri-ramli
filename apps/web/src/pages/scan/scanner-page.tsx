@@ -33,6 +33,7 @@ import { db, getMeta, setMeta } from "../../lib/scan/db.js";
 import { type FeedbackKind, feedback } from "../../lib/scan/feedback.js";
 import { searchGuests } from "../../lib/scan/search.js";
 import { syncEngine, useSyncStatus } from "../../lib/scan/sync.js";
+import { PaxPrompt } from "./pax-prompt.js";
 import { ResultOverlay } from "./result-overlay.js";
 import { SyncPill } from "./sync-pill.js";
 import { WalkinDialog } from "./walkin-dialog.js";
@@ -59,7 +60,7 @@ export function ScannerPage() {
 
   const show = useCallback(
     (result: Outcome) => {
-      feedback(result.status as FeedbackKind, sound);
+      if (result.status !== "need_pax") feedback(result.status as FeedbackKind, sound);
       setOutcome(result);
       if (result.status === "ok") setLastOk(result);
     },
@@ -205,7 +206,16 @@ export function ScannerPage() {
         </div>
       </main>
 
-      {outcome && <ResultOverlay outcome={outcome} onClose={() => setOutcome(null)} />}
+      {outcome?.status === "need_pax" && (
+        <PaxPrompt
+          view={outcome.view}
+          onCancel={() => setOutcome(null)}
+          onConfirm={async (pax) => show(await checkIn(outcome.view.guest, outcome.method, pax))}
+        />
+      )}
+      {outcome && outcome.status !== "need_pax" && (
+        <ResultOverlay outcome={outcome} onClose={() => setOutcome(null)} />
+      )}
       <WalkinDialog open={walkinOpen} onClose={() => setWalkinOpen(false)} onDone={show} />
     </div>
   );
@@ -305,8 +315,8 @@ function ManualPanel({
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">{guest.displayName}</span>
                   <span className="block truncate text-xs text-ink-soft">
-                    Kuota {guest.quota}
-                    {guest.code ? ` · ${guest.code}` : " · tamu baru"}
+                    {guest.isRombongan ? "Rombongan · " : ""}
+                    {guest.code ?? "tamu baru"}
                   </span>
                 </span>
                 {checkedIn && <Badge variant="solid">Sudah masuk</Badge>}

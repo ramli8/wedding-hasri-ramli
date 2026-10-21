@@ -25,10 +25,11 @@ const HEADER_ALIASES: Record<string, string> = {
   nomor_hp: "hp",
   ig: "instagram",
   group: "kelompok",
-  jumlah: "kuota",
-  pax: "kuota",
   events: "acara",
 };
+
+const ROMBONGAN_YES = new Set(["ya", "y", "yes", "1", "true", "rombongan"]);
+const ROMBONGAN_NO = new Set(["tidak", "t", "no", "n", "0", "false"]);
 
 const normalizeHeader = (raw: string) => {
   const name = raw
@@ -107,11 +108,9 @@ async function analyze(db: Db, csv: string) {
       failed = true;
     };
 
-    let quota = 1;
-    if (record.kuota) {
-      const value = Number(record.kuota);
-      if (Number.isInteger(value)) quota = value;
-      else fail("Kuota harus angka bulat");
+    const rombongan = (record.rombongan ?? "").trim().toLowerCase();
+    if (rombongan && !ROMBONGAN_YES.has(rombongan) && !ROMBONGAN_NO.has(rombongan)) {
+      fail('Kolom rombongan harus "ya" atau "tidak"');
     }
 
     const slugs = (record.acara ?? "")
@@ -129,11 +128,9 @@ async function analyze(db: Db, csv: string) {
 
     const parsed = guestInputSchema.safeParse({
       displayName: record.nama_undangan ?? "",
-      fullName: record.nama_lengkap,
       phone: record.hp,
       instagram: record.instagram,
-      quota,
-      note: record.catatan,
+      isRombongan: ROMBONGAN_YES.has(rombongan),
       usherNote: record.catatan_penjaga,
       eventIds: invited,
     });
@@ -187,7 +184,7 @@ export async function previewImport(db: Db, csv: string): Promise<ImportPreview>
       phone: row.data?.phone ?? null,
       instagram: row.data?.instagram ?? null,
       groupName: row.groupName,
-      quota: row.data?.quota ?? null,
+      isRombongan: row.data?.isRombongan ?? null,
     })),
     newGroups,
     counts,
@@ -232,12 +229,10 @@ export async function commitImport(
         values: {
           code: codes[i] as string,
           displayName: data.displayName,
-          fullName: data.fullName,
           phone: data.phone,
           instagram: data.instagram,
           groupId: row.groupName ? (groupId.get(row.groupName.toLowerCase()) ?? null) : null,
-          quota: data.quota,
-          note: data.note,
+          isRombongan: data.isRombongan,
           usherNote: data.usherNote,
           source: "import" as const,
         },
@@ -266,12 +261,10 @@ const safeCell = (value: string | null | undefined) =>
 const EXPORT_COLUMNS = [
   "kode",
   "nama_undangan",
-  "nama_lengkap",
   "hp",
   "instagram",
   "kelompok",
-  "kuota",
-  "catatan",
+  "rombongan",
   "catatan_penjaga",
   "acara",
   "link",
@@ -304,12 +297,10 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
   const records = rows.map((g) => ({
     kode: g.code ?? "",
     nama_undangan: safeCell(g.displayName),
-    nama_lengkap: safeCell(g.fullName),
     hp: g.phone ?? "",
     instagram: g.instagram ?? "",
     kelompok: safeCell(g.groupId ? groupName.get(g.groupId) : ""),
-    kuota: g.quota,
-    catatan: safeCell(g.note),
+    rombongan: g.isRombongan ? "ya" : "tidak",
     catatan_penjaga: safeCell(g.usherNote),
     acara: invitations
       .filter((i) => i.guestId === g.id)
@@ -326,35 +317,29 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
 export function importTemplateCsv(): string {
   const columns = [
     "nama_undangan",
-    "nama_lengkap",
     "hp",
     "instagram",
     "kelompok",
-    "kuota",
-    "catatan",
+    "rombongan",
     "catatan_penjaga",
     "acara",
   ];
   const examples = [
     {
       nama_undangan: "Bpk. Budi & Keluarga",
-      nama_lengkap: "Budi Santoso",
       hp: "0812-3456-7890",
       instagram: "",
       kelompok: "Keluarga",
-      kuota: 4,
-      catatan: "",
+      rombongan: "ya",
       catatan_penjaga: "",
       acara: "",
     },
     {
       nama_undangan: "Sari",
-      nama_lengkap: "",
       hp: "",
       instagram: "@sari.rahma",
       kelompok: "Teman Kuliah",
-      kuota: 1,
-      catatan: "Tidak punya WhatsApp",
+      rombongan: "tidak",
       catatan_penjaga: "",
       acara: "resepsi",
     },

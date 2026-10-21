@@ -117,12 +117,10 @@ export const guests = pgTable(
     // Diberikan server; tamu walk-in yang dibuat offline mendapat kode saat sinkronisasi.
     code: text().unique("guests_code_unique"),
     displayName: text().notNull(),
-    fullName: text(),
     phone: text(),
     instagram: text(),
     groupId: uuid().references(() => guestGroups.id),
-    quota: integer().notNull().default(1),
-    note: text(),
+    isRombongan: boolean().notNull().default(false),
     usherNote: text(),
     source: text().notNull().default("admin"),
     rev: bigint({ mode: "number" }).notNull().default(sql`nextval('guest_rev_seq')`),
@@ -133,7 +131,6 @@ export const guests = pgTable(
   (table) => [
     index("guests_rev_idx").on(table.rev),
     index("guests_group_idx").on(table.groupId),
-    check("guests_quota_positive", sql`${table.quota} >= 1`),
     check("guests_code_length", sql`${table.code} is null or length(${table.code}) = 6`),
     check("guests_source_valid", sql`${table.source} in ('admin', 'import', 'walkin')`),
     check(

@@ -2,6 +2,7 @@ import {
   type Dashboard,
   type Device,
   type DeviceEvent,
+  MIN_SUPPORTED_SYNC_VERSION,
   type PushResponse,
   type ReviewItem,
   type SnapshotResponse,
@@ -87,7 +88,7 @@ async function setupWorld() {
 
   const budi = await createGuest({
     displayName: "Bpk. Budi",
-    quota: 4,
+    isRombongan: true,
     groupId: group.id,
     usherNote: "Pemain inti",
     eventIds: [event.id],
@@ -100,7 +101,7 @@ async function setupWorld() {
   const joko = await createGuest({
     displayName: "Pak Joko",
     phone: "0813-0000-0002",
-    quota: 2,
+    isRombongan: true,
     eventIds: [event.id],
   });
   const outsider = await createGuest({ displayName: "Tidak Diundang", phone: "0813-0000-0003" });
@@ -228,11 +229,16 @@ describe("pairing perangkat", () => {
 describe("akses sinkronisasi", () => {
   it("menolak tanpa token, dengan token asing, dan dengan versi protokol terlalu lama", async () => {
     const anonymous = await app.request("/api/v1/sync/snapshot", {
-      headers: { [SYNC_VERSION_HEADER]: "1" },
+      headers: { [SYNC_VERSION_HEADER]: String(SYNC_PROTOCOL_VERSION) },
     });
     expect(anonymous.status).toBe(401);
     expect((await deviceClient(app, "token-asing").snapshot()).status).toBe(401);
     expect((await deviceClient(app, world.gateA.token, 0).snapshot()).status).toBe(426);
+    // Aplikasi sebelum rombongan (protokol 1) harus diperbarui; datanya tetap aman di perangkat.
+    expect(
+      (await deviceClient(app, world.gateA.token, MIN_SUPPORTED_SYNC_VERSION - 1).snapshot())
+        .status,
+    ).toBe(426);
   });
 
   it("409 bila belum ada acara dengan check-in aktif", async () => {
@@ -250,7 +256,10 @@ describe("snapshot", () => {
     const res = await world.gateA.client.snapshot();
     const snap = await read<SnapshotResponse>(res);
 
-    expect(snap.protocol).toEqual({ version: SYNC_PROTOCOL_VERSION, minSupported: 1 });
+    expect(snap.protocol).toEqual({
+      version: SYNC_PROTOCOL_VERSION,
+      minSupported: MIN_SUPPORTED_SYNC_VERSION,
+    });
     expect(snap.deviceName).toBe("HP Gerbang A");
     expect(snap.event.id).toBe(world.event.id);
     expect(snap.guests.map((g) => g.displayName).sort()).toEqual(["Bpk. Budi", "Pak Joko", "Sari"]);
@@ -261,7 +270,11 @@ describe("snapshot", () => {
     expect(snap.sessions).toHaveLength(1);
 
     const budi = snap.guests.find((g) => g.id === world.budi.id);
-    expect(budi).toMatchObject({ code: world.budi.code, quota: 4, usherNote: "Pemain inti" });
+    expect(budi).toMatchObject({
+      code: world.budi.code,
+      isRombongan: true,
+      usherNote: "Pemain inti",
+    });
     // HP dan Instagram tidak boleh sampai ke perangkat penjaga
     expect(JSON.stringify(snap)).not.toMatch(/"phone"|"instagram"|6281234567890/);
     expect(snap.guestRev).toBeGreaterThan(0);
@@ -405,7 +418,11 @@ describe("push check-in", () => {
     await world.gateA.client.push(pushBody([], { pendingOutbox: 7, appVersion: "2.3.4" }));
     const list = await read<{ items: Device[] }>(await api.get("/devices"));
     const gateA = list.items.find((d) => d.id === world.gateA.id);
-    expect(gateA).toMatchObject({ pendingOutbox: 7, appVersion: "2.3.4", protocolVersion: 1 });
+    expect(gateA).toMatchObject({
+      pendingOutbox: 7,
+      appVersion: "2.3.4",
+      protocolVersion: SYNC_PROTOCOL_VERSION,
+    });
     expect(gateA?.lastSyncAt).not.toBeNull();
   });
 });
@@ -415,7 +432,12 @@ describe("tamu walk-in", () => {
     const walkinId = uuid7();
     const body = pushBody([checkinEvent(world, walkinId, { method: "walkin", pax: 2 })], {
       walkins: [
-        { id: walkinId, eventId: world.event.id, displayName: "Rekan Kerja Mempelai", quota: 2 },
+        {
+          id: walkinId,
+          eventId: world.event.id,
+          displayName: "Rekan Kerja Mempelai",
+          isRombongan: true,
+        },
       ],
     });
     const res = await read<PushResponse>(await world.gateA.client.push(body));
@@ -476,7 +498,7 @@ describe("duplikat dan keputusan admin", () => {
     const review = await read<{ items: ReviewItem[] }>(await api.get("/checkins/review"));
     expect(review.items).toHaveLength(1);
     const item = review.items[0];
-    expect(item).toMatchObject({ displayName: "Bpk. Budi", groupName: "Surabaya", quota: 4 });
+    expect(item).toMatchObject({ displayName: "Bpk. Budi", groupName: "Surabaya" });
     expect(item?.primary).toMatchObject({ id: early.id, pax: 4, deviceName: "HP Gerbang A" });
     expect(item?.duplicates[0]).toMatchObject({ id: late.id, pax: 3, deviceName: "HP Gerbang B" });
   });
@@ -537,7 +559,6 @@ describe("dashboard", () => {
       invited: 3,
       arrived: 2,
       arrivedPax: 4,
-      expectedPax: 7, // 4 + 1 + 2
       needsReview: 0,
       walkins: 0,
     });
@@ -547,7 +568,6 @@ describe("dashboard", () => {
       invited: 1,
       arrived: 1,
       pax: 3,
-      quota: 4,
       isVip: true,
     });
     const none = dash.groups.find((g) => g.name === "Tanpa kelompok");

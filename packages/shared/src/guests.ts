@@ -38,15 +38,14 @@ const instagramField = z
 export const guestInputSchema = z
   .object({
     displayName: z.string().trim().min(1, "Nama undangan wajib diisi"),
-    fullName: optionalText,
     phone: phoneField,
     instagram: instagramField,
     groupId: z
       .uuid()
       .nullish()
       .transform((value) => value ?? null),
-    quota: z.number().int().min(1, "Kuota minimal 1").max(500, "Kuota terlalu besar").default(1),
-    note: optionalText,
+    /** Rombongan: penjaga mengisi jumlah orang saat check-in. Selain itu, otomatis 1 orang. */
+    isRombongan: z.boolean().default(false),
     usherNote: optionalText,
     eventIds: z.array(z.uuid()).default([]),
   })
@@ -70,12 +69,10 @@ export const guestSchema = z.object({
   id: z.uuid(),
   code: z.string().nullable(),
   displayName: z.string(),
-  fullName: z.string().nullable(),
   phone: z.string().nullable(),
   instagram: z.string().nullable(),
   groupId: z.uuid().nullable(),
-  quota: z.number(),
-  note: z.string().nullable(),
+  isRombongan: z.boolean(),
   usherNote: z.string().nullable(),
   source: z.enum(["admin", "import", "walkin"]),
   events: z.array(guestEventSchema),
@@ -93,6 +90,8 @@ export const guestListQuerySchema = z.object({
   sent: z.enum(["sent", "unsent"]).optional(),
   /** Tamu tanpa nomor HP (hanya Instagram). */
   onlyInstagram: z.stringbool().optional(),
+  /** Hanya tamu yang ditandai rombongan. */
+  rombongan: z.stringbool().optional(),
   deleted: z.stringbool().default(false),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
@@ -120,12 +119,10 @@ export type MarkSentRequest = z.input<typeof markSentRequestSchema>;
 // --- Impor CSV ---------------------------------------------------------
 export const IMPORT_COLUMNS = [
   "nama_undangan",
-  "nama_lengkap",
   "hp",
   "instagram",
   "kelompok",
-  "kuota",
-  "catatan",
+  "rombongan",
   "catatan_penjaga",
   "acara",
 ] as const;
@@ -142,7 +139,7 @@ export const importRowSchema = z.object({
   phone: z.string().nullable(),
   instagram: z.string().nullable(),
   groupName: z.string().nullable(),
-  quota: z.number().nullable(),
+  isRombongan: z.boolean().nullable(),
 });
 
 export const importPreviewResponseSchema = z.object({

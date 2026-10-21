@@ -44,6 +44,7 @@ export function GuestsPage() {
   const [eventId, setEventId] = useState("");
   const [sent, setSent] = useState<"" | "sent" | "unsent">("");
   const [onlyInstagram, setOnlyInstagram] = useState(false);
+  const [onlyRombongan, setOnlyRombongan] = useState(false);
   const [trash, setTrash] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -54,6 +55,7 @@ export function GuestsPage() {
     eventId,
     sent: eventId && sent ? sent : undefined,
     onlyInstagram,
+    rombongan: onlyRombongan,
     deleted: trash,
     page,
     pageSize: PAGE_SIZE,
@@ -70,7 +72,7 @@ export function GuestsPage() {
 
   // Setiap perubahan filter kembali ke halaman 1.
   // biome-ignore lint/correctness/useExhaustiveDependencies: hanya filter yang mereset halaman
-  useEffect(() => setPage(1), [q, groupId, eventId, sent, onlyInstagram, trash]);
+  useEffect(() => setPage(1), [q, groupId, eventId, sent, onlyInstagram, onlyRombongan, trash]);
 
   const refresh = useRefresh();
   const restore = useMutation({
@@ -170,6 +172,9 @@ export function GuestsPage() {
         <Checkbox checked={onlyInstagram} onChange={(e) => setOnlyInstagram(e.target.checked)}>
           Hanya Instagram
         </Checkbox>
+        <Checkbox checked={onlyRombongan} onChange={(e) => setOnlyRombongan(e.target.checked)}>
+          Hanya rombongan
+        </Checkbox>
         <Checkbox checked={trash} onChange={(e) => setTrash(e.target.checked)}>
           Tempat sampah
         </Checkbox>
@@ -185,7 +190,7 @@ export function GuestsPage() {
               <th className="px-4 py-3">Nama</th>
               <th className="px-4 py-3">Kontak</th>
               <th className="px-4 py-3">Kelompok</th>
-              <th className="px-4 py-3">Kuota</th>
+              <th className="px-4 py-3">Rombongan</th>
               <th className="px-4 py-3">Kode</th>
               <th className="px-4 py-3">Undangan</th>
               <th className="px-4 py-3" />
@@ -202,7 +207,13 @@ export function GuestsPage() {
             {guests.isSuccess && items.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-ink-soft">
-                  {total === 0 && !q && !groupId && !eventId && !onlyInstagram && !trash
+                  {total === 0 &&
+                  !q &&
+                  !groupId &&
+                  !eventId &&
+                  !onlyInstagram &&
+                  !onlyRombongan &&
+                  !trash
                     ? "Belum ada tamu. Tambahkan satu per satu atau impor dari CSV."
                     : "Tidak ada tamu yang cocok dengan filter."}
                 </td>
@@ -214,7 +225,6 @@ export function GuestsPage() {
                 <tr key={guest.id}>
                   <td className="px-4 py-3">
                     <p className="font-medium">{guest.displayName}</p>
-                    {guest.fullName && <p className="text-xs text-ink-soft">{guest.fullName}</p>}
                   </td>
                   <td className="px-4 py-3">
                     {guest.phone && <p>+{guest.phone}</p>}
@@ -234,7 +244,7 @@ export function GuestsPage() {
                       <span className="text-ink-soft">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{guest.quota}</td>
+                  <td className="px-4 py-3">{guest.isRombongan ? "Ya" : "—"}</td>
                   <td className="px-4 py-3 font-mono font-semibold tabular-nums">
                     {guest.code ?? "—"}
                   </td>

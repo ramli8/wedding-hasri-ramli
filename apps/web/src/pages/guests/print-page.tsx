@@ -36,7 +36,6 @@ export function PrintPage() {
   });
 
   const groupName = new Map((groups.data ?? []).map((g) => [g.id, g.name]));
-  const totalQuota = (guests.data ?? []).reduce((sum, g) => sum + g.quota, 0);
 
   return (
     <>
@@ -70,7 +69,7 @@ export function PrintPage() {
             <h1 className="font-display text-2xl font-bold uppercase">{event.name}: daftar tamu</h1>
           </div>
           <p className="text-sm text-ink-soft print:text-ink">
-            {guests.data.length} undangan, {totalQuota} orang diundang. Urut nama.
+            {guests.data.length} undangan. Urut nama.
           </p>
           <table className="w-full border-2 border-ink bg-paper text-left text-sm print:text-xs">
             <thead className="tag border-b-2 border-ink">
@@ -78,7 +77,7 @@ export function PrintPage() {
                 <th className="w-10 px-2 py-2">✓</th>
                 <th className="px-2 py-2">Nama</th>
                 <th className="px-2 py-2">Kelompok</th>
-                <th className="px-2 py-2">Kuota</th>
+                <th className="px-2 py-2">Rombongan</th>
                 <th className="px-2 py-2">Kode</th>
                 <th className="px-2 py-2">Jumlah hadir</th>
               </tr>
@@ -93,7 +92,7 @@ export function PrintPage() {
                   <td className="px-2 py-2">
                     {guest.groupId ? (groupName.get(guest.groupId) ?? "") : ""}
                   </td>
-                  <td className="px-2 py-2 font-mono">{guest.quota}</td>
+                  <td className="px-2 py-2">{guest.isRombongan ? "Ya" : ""}</td>
                   <td className="px-2 py-2 font-mono font-semibold">{guest.code}</td>
                   <td className="px-2 py-2">
                     <span className="block h-5 w-16 border-b-2 border-ink" />

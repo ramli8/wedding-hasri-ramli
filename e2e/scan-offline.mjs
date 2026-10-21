@@ -41,6 +41,37 @@ async function checkInByCode(page, code) {
   await page.keyboard.press("Enter");
   await page.waitForSelector("[role=alertdialog]", { timeout: 8000 });
 }
+/** Tamu rombongan: isi jumlah orang di layar prompt (bawaan 2), lalu catat. */
+async function submitPax(page, pax) {
+  await page.waitForSelector('[aria-label="Jumlah orang rombongan"]');
+  await page.evaluate((target) => {
+    const root = document.querySelector('[aria-label="Jumlah orang rombongan"]');
+    const input = root.querySelector("input");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    setter.call(input, String(target));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, pax);
+  await page.waitForFunction(
+    (label) =>
+      [...document.querySelectorAll('[aria-label="Jumlah orang rombongan"] button')].some((b) =>
+        b.textContent.includes(label),
+      ),
+    {},
+    `${pax} orang`,
+  );
+  await page.evaluate((label) => {
+    [...document.querySelectorAll('[aria-label="Jumlah orang rombongan"] button')]
+      .find((b) => b.textContent.includes(label))
+      ?.click();
+  }, `Catat masuk · ${pax} orang`);
+  await page.waitForFunction(
+    () =>
+      !document.querySelector('[aria-label="Jumlah orang rombongan"]') &&
+      document.querySelector("[role=alertdialog]"),
+    { timeout: 8000 },
+  );
+}
+
 const overlayText = (page) =>
   page.evaluate(() => document.querySelector("[role=alertdialog]")?.innerText ?? "");
 async function closeOverlay(page) {
@@ -131,9 +162,13 @@ try {
         ...extra,
       })
     ).json.guest;
-  const budi = await mk("Bpk. Budi", { quota: 4, groupId: group.id, usherNote: "Pemain inti" });
+  const budi = await mk("Bpk. Budi", {
+    isRombongan: true,
+    groupId: group.id,
+    usherNote: "Pemain inti",
+  });
   const sari = await mk("Sari");
-  const joko = await mk("Pak Joko", { quota: 2 });
+  const joko = await mk("Pak Joko", { isRombongan: true });
   const dewi = await mk("Bu Dewi");
   const rina = await mk("Rina");
 
@@ -181,9 +216,16 @@ try {
   console.log("== check-in online");
   await checkInByCode(A, budi.code);
   let ov = (await overlayText(A)).toLowerCase();
-  check(ov.includes("masuk") && ov.includes("bpk. budi"), "scan Budi: layar MASUK dengan nama");
+  check(
+    ov.includes("rombongan") && ov.includes("bpk. budi") && ov.includes("berapa orang"),
+    "scan Budi (rombongan): layar menanyakan jumlah orang, belum tercatat",
+  );
+  check((await pendingCount(A)) === 0, "belum ada yang ditulis sebelum jumlah diisi");
+  await submitPax(A, 4);
+  ov = (await overlayText(A)).toLowerCase();
+  check(ov.includes("masuk") && ov.includes("bpk. budi"), "setelah jumlah diisi: layar MASUK");
   check(ov.includes("vip") && ov.includes("pemain inti"), "VIP dan catatan penjaga tampil");
-  check(ov.includes("4"), "jumlah bawaan = kuota (4)");
+  check(ov.includes("4"), "jumlah yang dicatat = 4");
   await A.screenshot({ path: `${OUT}/3-result-vip.png` });
   await A.evaluate(() => document.querySelector('[aria-label="Kurangi satu orang"]').click());
   await waitText(A, "3");
@@ -231,6 +273,7 @@ try {
   );
   await closeOverlay(B);
   await checkInByCode(B, joko.code);
+  await submitPax(B, 2);
   await closeOverlay(B);
   await sleep(3000);
   check((await headerText(A)).toLowerCase().includes("offline"), "perangkat A menampilkan OFFLINE");

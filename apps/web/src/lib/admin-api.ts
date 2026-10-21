@@ -1,4 +1,6 @@
 import {
+  adminGuestbookListResponseSchema,
+  adminGuestbookResponseSchema,
   createDeviceResponseSchema,
   dashboardResponseSchema,
   deviceListResponseSchema,
@@ -112,6 +114,31 @@ export const adminApi = {
   rsvps: {
     list: (eventId?: string) =>
       request(`${base}/rsvps${queryString({ eventId })}`, rsvpListResponseSchema),
+  },
+
+  guestbook: {
+    list: (query: { page: number; hidden?: boolean }) =>
+      request(
+        `${base}/guestbook${queryString({
+          page: query.page,
+          pageSize: 20,
+          hidden: query.hidden === undefined ? undefined : String(query.hidden),
+        })}`,
+        adminGuestbookListResponseSchema,
+      ),
+    reply: (id: string, reply: string) =>
+      request(
+        `${base}/guestbook/${id}/reply`,
+        adminGuestbookResponseSchema,
+        withBody("POST", { reply }),
+      ),
+    hide: (id: string, hidden: boolean) =>
+      request(
+        `${base}/guestbook/${id}/hide`,
+        adminGuestbookResponseSchema,
+        withBody("POST", { hidden }),
+      ),
+    remove: (id: string) => request(`${base}/guestbook/${id}`, okSchema, withBody("DELETE")),
   },
 
   checkins: {

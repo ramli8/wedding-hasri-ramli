@@ -62,8 +62,9 @@ export const guestsQuery = (query: GuestQuery) =>
 /** Menandai data sebagai usang setelah perubahan. Tamu ikut karena menampilkan kelompok/acara. */
 export function useRefresh() {
   const queryClient = useQueryClient();
-  return (...keys: ("settings" | "events" | "groups" | "guests" | "devices" | "checkin")[]) =>
-    Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+  return (
+    ...keys: ("settings" | "events" | "groups" | "guests" | "devices" | "checkin" | "guestbook")[]
+  ) => Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }
 
 export const rsvpQuery = (eventId?: string) =>
@@ -72,4 +73,11 @@ export const rsvpQuery = (eventId?: string) =>
     queryFn: () => adminApi.rsvps.list(eventId),
     refetchInterval: 15_000,
     retry: false,
+  });
+
+export const guestbookQuery = (query: { page: number; hidden?: boolean }) =>
+  queryOptions({
+    queryKey: ["guestbook", query],
+    queryFn: () => adminApi.guestbook.list(query),
+    placeholderData: (previous) => previous,
   });

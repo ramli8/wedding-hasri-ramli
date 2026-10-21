@@ -13,6 +13,7 @@ import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
 import { EventsPage } from "./pages/events-page.js";
 import { GroupsPage } from "./pages/groups-page.js";
+import { GuestbookPage } from "./pages/guestbook-page.js";
 import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
 import { PrintPage } from "./pages/guests/print-page.js";
@@ -101,6 +102,12 @@ const rsvpRoute = createRoute({
   component: RsvpPage,
 });
 
+const guestbookRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/ucapan",
+  component: GuestbookPage,
+});
+
 const checkinRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/checkin",
@@ -166,6 +173,7 @@ const routeTree = rootRoute.addChildren([
     groupsRoute,
     eventsRoute,
     rsvpRoute,
+    guestbookRoute,
     checkinRoute,
     devicesRoute,
     settingsRoute,

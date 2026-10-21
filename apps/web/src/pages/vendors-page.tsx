@@ -86,7 +86,15 @@ export function VendorsPage() {
             />
             <Stat label="Total kontrak" value={formatRupiah(data.summary.contractTotal)} />
             <Stat label="Sudah dibayar" value={formatRupiah(data.summary.paidTotal)} />
-            <Stat label="Sisa pembayaran" value={formatRupiah(data.summary.remaining)} />
+            <Stat
+              label="Sisa pembayaran"
+              value={formatRupiah(data.summary.remaining)}
+              note={
+                data.summary.overdueCount + data.summary.dueSoonCount > 0
+                  ? `${data.summary.overdueCount} terlambat · ${data.summary.dueSoonCount} segera`
+                  : undefined
+              }
+            />
           </div>
 
           {data.categories.length === 0 ? (
@@ -233,6 +241,11 @@ function VendorCard({
             {vendor.paymentStatus && (
               <Badge variant="pill">{PAYMENT_STATUS_LABEL[vendor.paymentStatus]}</Badge>
             )}
+            {vendor.dueState && (
+              <Badge variant={vendor.dueState === "terlambat" ? "solid" : "pillAcid"}>
+                {vendor.dueState === "terlambat" ? "Terlambat" : "Segera jatuh tempo"}
+              </Badge>
+            )}
           </div>
           <p className="text-sm">
             {vendor.referencePrice !== null && (
@@ -244,6 +257,12 @@ function VendorCard({
             )}
             {vendor.referencePrice === null && vendor.contractAmount === null && "Belum ada harga"}
           </p>
+          {vendor.dueOn && vendor.paymentStatus !== "lunas" && (
+            <p className="text-sm">
+              Jatuh tempo <strong>{vendor.dueOn}</strong>
+              {vendor.dueAmount !== null && <> · {formatRupiah(vendor.dueAmount)}</>}
+            </p>
+          )}
           {(vendor.contactPerson || vendor.phone || vendor.instagram) && (
             <p className="text-sm text-ink-soft">
               {[vendor.contactPerson, vendor.phone, vendor.instagram && `@${vendor.instagram}`]
@@ -321,11 +340,15 @@ function VendorForm({
   const [address, setAddress] = useState(vendor?.address ?? "");
   const [reference, setReference] = useState(vendor?.referencePrice?.toString() ?? "");
   const [contract, setContract] = useState(vendor?.contractAmount?.toString() ?? "");
+  const [dueOn, setDueOn] = useState(vendor?.dueOn ?? "");
+  const [due, setDue] = useState(vendor?.dueAmount?.toString() ?? "");
   const [note, setNote] = useState(vendor?.note ?? "");
 
   const referenceValue = reference.trim() ? parseAmount(reference) : null;
   const contractValue = contract.trim() ? parseAmount(contract) : null;
+  const dueValue = due.trim() ? parseAmount(due) : null;
   const amountsOk =
+    (!due.trim() || (dueValue ?? 0) > 0) &&
     (!reference.trim() || (referenceValue ?? 0) > 0) &&
     (!contract.trim() || (contractValue ?? 0) > 0);
 
@@ -340,6 +363,8 @@ function VendorForm({
         address,
         referencePrice: referenceValue,
         contractAmount: contractValue,
+        dueOn: dueOn || null,
+        dueAmount: dueValue,
         note,
       };
       return vendor ? adminApi.vendors.update(vendor.id, input) : adminApi.vendors.create(input);
@@ -436,6 +461,26 @@ function VendorForm({
               inputMode="numeric"
               value={contract}
               onChange={(e) => setContract(e.target.value)}
+            />
+          )}
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Jatuh tempo berikutnya" hint="Perbarui setelah tiap pembayaran.">
+          {(id) => (
+            <Input id={id} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
+          )}
+        </Field>
+        <Field
+          label="Nominal jatuh tempo (Rp)"
+          hint={dueValue ? formatRupiah(dueValue) : "Opsional."}
+        >
+          {(id) => (
+            <Input
+              id={id}
+              inputMode="numeric"
+              value={due}
+              onChange={(e) => setDue(e.target.value)}
             />
           )}
         </Field>

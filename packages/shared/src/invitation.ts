@@ -268,6 +268,7 @@ export const wishOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
 export const SECTION_KEYS = [
   "mempelai",
+  "siaran",
   "cerita",
   "galeri",
   "amplop",
@@ -280,6 +281,7 @@ export type SectionKey = z.infer<typeof sectionKeySchema>;
 
 export const SECTION_LABEL: Record<SectionKey, string> = {
   mempelai: "Mempelai",
+  siaran: "Siaran langsung",
   cerita: "Cerita kami",
   galeri: "Galeri",
   amplop: "Amplop digital",
@@ -317,9 +319,35 @@ export const coverSchema = z.object({
 });
 export type Cover = z.infer<typeof coverSchema>;
 
+/** Tautan siaran langsung (YouTube, Instagram Live, Zoom, dst.) untuk tamu yang tidak bisa hadir. */
+export const liveInputSchema = z.object({
+  url: z
+    .string()
+    .trim()
+    .max(500, "Tautan maksimal 500 karakter")
+    .nullish()
+    .transform((value, ctx) => {
+      if (!value) return null;
+      if (!z.url({ protocol: /^https$/ }).safeParse(value).success) {
+        ctx.addIssue({ code: "custom", message: "Tautan harus diawali https://" });
+        return z.NEVER;
+      }
+      return value;
+    }),
+  /** Keterangan singkat, mis. jam mulai siaran. */
+  note: optionalText(300, "Keterangan"),
+});
+export type LiveInput = z.input<typeof liveInputSchema>;
+export type LiveData = z.output<typeof liveInputSchema>;
+
+export const liveSchema = z.object({ url: z.string(), note: z.string().nullable() });
+export type Live = z.infer<typeof liveSchema>;
+export const liveResponseSchema = z.object({ live: liveSchema.nullable() });
+
 export const layoutResponseSchema = z.object({
   cover: coverSchema,
   sections: z.array(sectionSchema),
+  live: liveSchema.nullable(),
 });
 export type LayoutResponse = z.infer<typeof layoutResponseSchema>;
 export const coverResponseSchema = z.object({ cover: coverSchema });
@@ -336,6 +364,7 @@ export const invitationResponseSchema = z.object({
   wishes: z.array(wishSchema),
   cover: coverSchema,
   sections: z.array(sectionSchema),
+  live: liveSchema.nullable(),
   /** Waktu mulai acara paling awal, untuk sampul. */
   eventDate: z.string().nullable(),
 });

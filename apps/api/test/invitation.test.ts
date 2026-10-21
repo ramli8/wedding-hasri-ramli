@@ -289,6 +289,7 @@ describe("isi undangan untuk tamu", () => {
       wishes: [],
       cover: { greeting: null, photo: null },
       sections: SECTION_KEYS.map((key) => ({ key, visible: true })),
+      live: null,
       eventDate: null,
     });
   });
@@ -585,5 +586,52 @@ describe("sampul dan susunan bagian", () => {
     // Foto sampul tidak bisa dipakai bagian lain.
     expect((await api.post("/invitation/gallery", { mediaId: p2.id })).status).toBe(409);
     expect((await api.delete(`/media/${p2.id}`)).status).toBe(409);
+  });
+});
+
+describe("siaran langsung", () => {
+  const save = (body: Record<string, unknown>) => api.put("/invitation/live", body);
+  const layout = async () => read<LayoutResponse>(await api.get("/invitation/layout"));
+  const publicLive = async () =>
+    (await read<InvitationResponse>(await app.request("/api/v1/public/invitation"))).live;
+
+  it("menyimpan tautan https, menampilkannya ke tamu, dan menghapusnya dengan mengosongkan", async () => {
+    expect((await layout()).live).toBeNull();
+    expect(await publicLive()).toBeNull();
+
+    const res = await save({ url: "  https://youtube.com/live/abc  ", note: " Mulai 10.00 WIB " });
+    expect(res.status).toBe(200);
+    const expected = { url: "https://youtube.com/live/abc", note: "Mulai 10.00 WIB" };
+    expect(await publicLive()).toEqual(expected);
+    expect((await layout()).live).toEqual(expected);
+
+    await save({ url: "", note: "sisa keterangan" });
+    expect(await publicLive()).toBeNull();
+    // Keterangan tanpa tautan tidak disimpan.
+    await save({ url: "https://youtu.be/x" });
+    expect((await publicLive())?.note).toBeNull();
+  });
+
+  it("menolak tautan bukan https dan memerlukan login", async () => {
+    for (const url of [
+      "http://youtube.com/x",
+      "javascript:alert(1)",
+      "youtube.com/x",
+      "ftp://x.id/y",
+    ]) {
+      expect((await save({ url })).status).toBe(400);
+    }
+    expect((await save({ url: "https://x.id", note: "n".repeat(301) })).status).toBe(400);
+    expect(
+      (await adminClient(app, "").put("/invitation/live", { url: "https://x.id" })).status,
+    ).toBe(401);
+  });
+
+  it("tidak menimpa sampul, dan menyimpan sampul tidak menghapus siaran", async () => {
+    await api.put("/invitation/cover", { greeting: "Bismillah" });
+    await save({ url: "https://youtu.be/x" });
+    expect((await layout()).cover.greeting).toBe("Bismillah");
+    await api.put("/invitation/cover", { greeting: "Halo" });
+    expect((await publicLive())?.url).toBe("https://youtu.be/x");
   });
 });

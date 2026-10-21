@@ -3,6 +3,8 @@ import {
   type CoverData,
   type InvitationResponse,
   type LayoutResponse,
+  type Live,
+  type LiveData,
   SECTION_KEYS,
   type Section,
   type SectionKey,
@@ -53,6 +55,26 @@ export async function saveCover(db: Db, dir: string, input: CoverData): Promise<
   return getCover(db);
 }
 
+// --- Siaran langsung ------------------------------------------------------------------------------
+
+export async function getLive(db: Db): Promise<Live | null> {
+  const [row] = await db.select().from(invitationCover).limit(1);
+  return row?.liveUrl ? { url: row.liveUrl, note: row.liveNote } : null;
+}
+
+export async function saveLive(db: Db, input: LiveData): Promise<Live | null> {
+  const values = {
+    liveUrl: input.url,
+    liveNote: input.url ? input.note : null,
+    updatedAt: new Date(),
+  };
+  await db
+    .insert(invitationCover)
+    .values({ id: 1, ...values })
+    .onConflictDoUpdate({ target: invitationCover.id, set: values });
+  return getLive(db);
+}
+
 // --- Susunan bagian -------------------------------------------------------------------------------
 
 /** Semua bagian berurutan: yang tersimpan menurut urutannya, sisanya (belum diatur) menyusul. */
@@ -85,7 +107,7 @@ export async function saveSections(db: Db, items: Section[]): Promise<Section[]>
 }
 
 export async function getLayout(db: Db): Promise<LayoutResponse> {
-  return { cover: await getCover(db), sections: await getSections(db) };
+  return { cover: await getCover(db), sections: await getSections(db), live: await getLive(db) };
 }
 
 // --- Untuk tamu -----------------------------------------------------------------------------------
@@ -101,6 +123,7 @@ export async function getInvitation(db: Db): Promise<InvitationResponse> {
     wishes: await listWishes(db),
     cover: await getCover(db),
     sections: await getSections(db),
+    live: await getLive(db),
     eventDate: first?.at?.toISOString() ?? null,
   };
 }

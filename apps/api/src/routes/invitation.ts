@@ -9,6 +9,7 @@ import {
   galleryOrderSchema,
   giftInputSchema,
   giftOrderSchema,
+  liveInputSchema,
   sectionsInputSchema,
   storyInputSchema,
   storyOrderSchema,
@@ -47,7 +48,7 @@ import {
   updateStoryItem,
   updateWish,
 } from "../services/invitation.js";
-import { getLayout, saveCover, saveSections } from "../services/layout.js";
+import { getLayout, saveCover, saveLive, saveSections } from "../services/layout.js";
 import { adminWish, listAdminWishes, removeClaim } from "../services/wish-claims.js";
 
 const idParam = z.object({ id: z.uuid() });
@@ -200,6 +201,9 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
       .get("/layout", async (c) => c.json(await getLayout(db)))
       .put("/cover", validate("json", coverInputSchema), async (c) => {
         return c.json({ cover: await saveCover(db, config.mediaDir, c.req.valid("json")) });
+      })
+      .put("/live", validate("json", liveInputSchema), async (c) => {
+        return c.json({ live: await saveLive(db, c.req.valid("json")) });
       })
       .put("/sections", validate("json", sectionsInputSchema), async (c) => {
         return c.json({ sections: await saveSections(db, c.req.valid("json").items) });

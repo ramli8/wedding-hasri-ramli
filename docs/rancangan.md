@@ -562,6 +562,11 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - Halaman RSVP punya tombol **Kirim pengingat** bila masih ada tamu yang belum menjawab. Dialognya menampilkan tamu yang belum menjawab dan punya nomor HP, masing-masing dengan tombol **Buka WhatsApp** (pesan terisi dari template pengingat, admin menekan kirim sendiri) yang sekaligus menandai `guest_events.reminded_at`. Tamu yang hanya punya Instagram dihitung terpisah dan dikirim manual dari menu Tamu. Yang sudah diingatkan disembunyikan secara bawaan, bisa dikirim lagi atau ditandai ulang.
 - Template pengingat (`DEFAULT_REMINDER_TEMPLATE`, variabel sama dengan pesan undangan) bisa disunting di dialog dan diingat di peramban admin (localStorage), bukan di server. `GET /rsvps` kini memuat kode, HP, kelompok, dan `remindedAt` per tamu; hanya untuk admin.
 
+### Kalender dan siaran langsung
+
+- **Tambah ke kalender:** kartu acara di `/u/KODE` punya tombol yang mengunduh berkas `.ics` (dibuat di peramban tamu, `apps/web/src/lib/ics.ts`: UTC, teks dinetralkan, baris dilipat 75 byte, pengingat sehari sebelumnya, UID tetap `<id acara>@hasri-ramli` agar impor ulang memperbarui). Memakai jam sesi kelompok tamu bila ada, jika tidak jam acara; tombol tidak tampil bila acara belum punya waktu mulai.
+- **Siaran langsung:** `invitation_cover` kini juga memuat `live_url` (wajib https) dan `live_note`. Diatur di tab Susunan; menjadi bagian `siaran` yang bisa diurutkan/disembunyikan (bawaan kedua setelah Mempelai) dan hanya tampil bila tautannya diisi. Menyimpan sampul dan menyimpan siaran tidak saling menimpa.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

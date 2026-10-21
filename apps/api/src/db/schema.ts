@@ -336,6 +336,9 @@ export const invitationCover = pgTable(
     id: smallint().primaryKey().default(1),
     greeting: text(),
     photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    // Siaran langsung ikut disimpan di baris tunggal ini.
+    liveUrl: text(),
+    liveNote: text(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("invitation_cover_singleton", sql`${table.id} = 1`)],

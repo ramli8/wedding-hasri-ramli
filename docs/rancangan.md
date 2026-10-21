@@ -583,6 +583,11 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - Halaman Hadiah punya tombol **Kirim terima kasih** bila masih ada yang belum dibalas. Dialognya mendaftar pemberi yang belum dibalas dan punya nomor HP (dari tamu terdaftar yang tertaut; `GET /received-gifts` kini memuat `phone`, hanya untuk admin). Tombol **Buka WhatsApp** membuka pesan dari template (variabel `{panggilan}`, `{hadiah}`, `{mempelai}`; bisa disunting dan diingat di peramban admin) dan sekaligus menandai `thanked_at`. Daftarnya tidak terpengaruh filter halaman. Pemberi tanpa nomor (diketik bebas atau hanya Instagram) dihitung terpisah dan dibalas manual lalu ditandai dari daftar. `renderTemplate` kini menerima variabel apa saja.
 
+### Cadangan dan ekspor
+
+- **Cadangan otomatis:** layanan compose `backup` (profile `backup`; image `postgres:17-alpine` + rclone, `deploy/backup/`). Tiap `BACKUP_INTERVAL_HOURS` (6): `pg_dump --format=custom`, verifikasi `pg_restore --list`, unggah ke `BACKUP_DEST` (R2 lewat remote rclone dari variabel lingkungan, atau folder lokal untuk uji), salin folder foto dengan `rclone copy` (bukan `sync`), lalu hapus dump lebih tua dari `BACKUP_RETENTION_DAYS` tetapi 10 terbaru selalu disimpan. Ping opsional (`BACKUP_PING_URL`, `/fail` saat gagal) dan healthcheck berbasis berkas penanda. Diuji lokal: dump, verifikasi, retensi, jalur gagal (kode keluar non-nol), dan pemulihan ke database baru dengan jumlah baris sama. Belum diuji ke R2 sungguhan.
+- **Ekspor dari admin** (Pengaturan → Cadangan & ekspor): `GET /api/v1/admin/export/data.json` (semua tabel kecuali `admins` dan `admin_sessions`, tanpa hash token perangkat) dan `GET /export/media.zip` (aliran ZIP tanpa kompresi ulang, satu berkas per tarikan agar memori kecil). Pelengkap, bukan pengganti pg_dump. Panduan lengkap: `docs/backup.md`.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

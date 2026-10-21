@@ -56,7 +56,12 @@ docker compose -p wedding-prod --env-file deploy/.env.prod -f deploy/stack.compo
 
 Kata sandi ditanyakan tanpa tampil di layar (minimal 10 karakter). Ulangi untuk admin kedua.
 
-## 5. Pemeriksaan
+## 5. Cadangan
+
+Cadangan terjadwal ke R2 (database + folder foto) dan cara memulihkannya ada di
+[`docs/backup.md`](backup.md). Aktifkan sebelum data sungguhan masuk.
+
+## 6. Pemeriksaan
 
 - `https://contoh.com/api/health` harus mengembalikan `{"status":"ok", ...}`.
 - Pantau URL itu dengan UptimeRobot (notifikasi ke HP).

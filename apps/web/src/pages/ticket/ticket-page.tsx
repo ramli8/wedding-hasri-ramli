@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
-import { BookHeart, MapPin } from "lucide-react";
+import { BookHeart, MapPin, Ticket } from "lucide-react";
 import { Alert } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
@@ -107,7 +107,7 @@ export function TicketPage() {
   const couple = data.couple ? `${data.couple.brideName} & ${data.couple.groomName}` : null;
 
   return (
-    <Shell couple={couple}>
+    <Shell couple={couple} tabs={{ code: data.guest.code, active: "tiket" }}>
       {offline && (
         <Alert>
           Anda sedang offline. Menampilkan salinan terakhir; tiket QR tetap bisa dipakai.
@@ -156,25 +156,60 @@ export function TicketPage() {
             isRombongan={data.guest.isRombongan}
           />
         ))}
-
-      <Link
-        to="/u/$code/undangan"
-        params={{ code: data.guest.code }}
-        className="flex items-center justify-between gap-3 border-2 border-ink bg-paper px-4 py-3 font-display font-bold tracking-button uppercase shadow-hard hover:bg-acid"
-      >
-        <span className="flex items-center gap-2">
-          <BookHeart className="size-5" aria-hidden /> Kenali kami &amp; tulis ucapan
-        </span>
-        <span aria-hidden>→</span>
-      </Link>
     </Shell>
   );
 }
 
-export function Shell({ couple, children }: { couple?: string | null; children: React.ReactNode }) {
+type GuestTabs = { code: string; active: "tiket" | "undangan" };
+
+const tabClass =
+  "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-t-4 border-transparent font-display text-[11px] font-bold tracking-button uppercase";
+
+/** Bilah bawah seperti aplikasi: pindah antara tiket dan halaman cerita undangan. */
+function GuestTabBar({ code, active }: GuestTabs) {
+  return (
+    <nav
+      aria-label="Halaman undangan"
+      className="fixed inset-x-0 bottom-0 z-30 border-t-[3px] border-ink bg-bone pb-[env(safe-area-inset-bottom)]"
+    >
+      <div className="mx-auto flex max-w-xl">
+        <Link
+          to="/u/$code"
+          params={{ code }}
+          aria-current={active === "tiket" ? "page" : undefined}
+          className={`${tabClass} ${active === "tiket" ? "border-ink bg-acid" : ""}`}
+        >
+          <Ticket className="size-5" aria-hidden />
+          Tiket
+        </Link>
+        <Link
+          to="/u/$code/undangan"
+          params={{ code }}
+          aria-current={active === "undangan" ? "page" : undefined}
+          className={`${tabClass} ${active === "undangan" ? "border-ink bg-acid" : ""}`}
+        >
+          <BookHeart className="size-5" aria-hidden />
+          Undangan
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+export function Shell({
+  couple,
+  tabs,
+  children,
+}: {
+  couple?: string | null;
+  tabs?: GuestTabs;
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-dvh bg-bone">
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-8">
+      <main
+        className={`mx-auto flex w-full max-w-xl flex-col gap-5 px-4 pt-8 ${tabs ? "pb-28" : "pb-8"}`}
+      >
         <header className="flex flex-col items-center gap-2 text-center">
           <Badge variant="tag">Undangan pernikahan</Badge>
           {couple && (
@@ -185,6 +220,7 @@ export function Shell({ couple, children }: { couple?: string | null; children: 
         </header>
         {children}
       </main>
+      {tabs && <GuestTabBar {...tabs} />}
     </div>
   );
 }

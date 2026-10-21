@@ -172,6 +172,8 @@ export function GuestsPage() {
             </Select>
           </Filter>
         )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         <Checkbox checked={onlyInstagram} onChange={(e) => setOnlyInstagram(e.target.checked)}>
           Hanya Instagram
         </Checkbox>

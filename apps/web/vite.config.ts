@@ -49,6 +49,8 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    // Untuk uji di HP lewat Cloudflare Quick Tunnel (cloudflared tunnel --url http://localhost:5173).
+    allowedHosts: [".trycloudflare.com"],
     // Origin dibiarkan apa adanya (http://localhost:5173) agar lolos pemeriksaan Origin di API.
     proxy: { "/api": "http://localhost:3000" },
   },

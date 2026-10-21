@@ -10,6 +10,7 @@ import {
   ScanLine,
   Settings,
   Smartphone,
+  Store,
   Tags,
   Users,
   X,
@@ -26,6 +27,7 @@ const navItems = [
   { to: "/admin/rsvp", label: "RSVP", icon: CalendarCheck },
   { to: "/admin/undangan", label: "Undangan", icon: BookHeart },
   { to: "/admin/hadiah", label: "Hadiah", icon: Gift },
+  { to: "/admin/vendor", label: "Vendor", icon: Store },
   { to: "/admin/checkin", label: "Check-in", icon: ScanLine },
   { to: "/admin/perangkat", label: "Perangkat", icon: Smartphone },
   { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
@@ -71,10 +73,6 @@ export function AppLayout() {
             <span className="hidden sm:inline">Hasri &amp; Ramli</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 xl:flex" aria-label="Menu utama">
-            {links}
-          </nav>
-
           <div className="hidden items-center gap-3 xl:flex">
             <span className="tag hidden max-w-40 truncate text-ink-soft 2xl:inline">
               {data?.admin.name}
@@ -105,6 +103,13 @@ export function AppLayout() {
             )}
           </button>
         </div>
+
+        <nav
+          className="mx-auto hidden w-full max-w-7xl flex-wrap items-center gap-1 border-t-2 border-ink px-4 py-1.5 md:px-6 xl:flex"
+          aria-label="Menu utama"
+        >
+          {links}
+        </nav>
 
         {menuOpen && (
           <div id="menu-mobile" className="border-t-2 border-ink bg-paper px-4 py-3 xl:hidden">

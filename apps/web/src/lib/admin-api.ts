@@ -50,11 +50,19 @@ import {
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
+  type VendorInput,
+  type VendorPaymentInput,
+  vendorCategoryResponseSchema,
+  vendorOverviewSchema,
+  vendorResponseSchema,
   type WishInput,
   wishListResponseSchema,
   wishResponseSchema,
 } from "@wedding/shared";
+import { z } from "zod";
 import { okSchema, request, withBody } from "./api.js";
+
+const addedSchema = z.object({ added: z.number() });
 
 const base = "/v1/admin";
 
@@ -234,6 +242,47 @@ export const adminApi = {
       request(`${base}/invitation/cover`, coverResponseSchema, withBody("PUT", input)),
     saveSections: (items: Section[]) =>
       request(`${base}/invitation/sections`, sectionsResponseSchema, withBody("PUT", { items })),
+  },
+
+  vendors: {
+    overview: () => request(`${base}/vendors`, vendorOverviewSchema),
+    createCategory: (name: string) =>
+      request(
+        `${base}/vendors/categories`,
+        vendorCategoryResponseSchema,
+        withBody("POST", { name }),
+      ),
+    renameCategory: (id: string, name: string) =>
+      request(
+        `${base}/vendors/categories/${id}`,
+        vendorCategoryResponseSchema,
+        withBody("PUT", { name }),
+      ),
+    removeCategory: (id: string) =>
+      request(`${base}/vendors/categories/${id}`, okSchema, withBody("DELETE")),
+    addCommonCategories: () =>
+      request(`${base}/vendors/categories/common`, addedSchema, withBody("POST", {})),
+    create: (input: VendorInput) =>
+      request(`${base}/vendors`, vendorResponseSchema, withBody("POST", input)),
+    update: (id: string, input: VendorInput) =>
+      request(`${base}/vendors/${id}`, vendorResponseSchema, withBody("PUT", input)),
+    remove: (id: string) => request(`${base}/vendors/${id}`, okSchema, withBody("DELETE")),
+    select: (id: string, selected: boolean) =>
+      request(`${base}/vendors/${id}/select`, vendorResponseSchema, withBody("POST", { selected })),
+    addPayment: (id: string, input: VendorPaymentInput) =>
+      request(`${base}/vendors/${id}/payments`, vendorResponseSchema, withBody("POST", input)),
+    updatePayment: (id: string, paymentId: string, input: VendorPaymentInput) =>
+      request(
+        `${base}/vendors/${id}/payments/${paymentId}`,
+        vendorResponseSchema,
+        withBody("PUT", input),
+      ),
+    removePayment: (id: string, paymentId: string) =>
+      request(
+        `${base}/vendors/${id}/payments/${paymentId}`,
+        vendorResponseSchema,
+        withBody("DELETE"),
+      ),
   },
 
   receivedGifts: {

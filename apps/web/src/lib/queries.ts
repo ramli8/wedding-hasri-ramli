@@ -73,6 +73,7 @@ export function useRefresh() {
       | "guestbook"
       | "invitation"
       | "received-gifts"
+      | "vendors"
     )[]
   ) => Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }
@@ -133,3 +134,8 @@ export const receivedGiftsQuery = (query: ReceivedGiftFilter) =>
     queryFn: () => adminApi.receivedGifts.list(query),
     placeholderData: (previous) => previous,
   });
+
+export const vendorsQuery = queryOptions({
+  queryKey: ["vendors"],
+  queryFn: () => adminApi.vendors.overview(),
+});

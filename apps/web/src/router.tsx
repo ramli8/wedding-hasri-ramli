@@ -34,6 +34,7 @@ import { ScannerPage } from "./pages/scan/scanner-page.js";
 import { SettingsPage } from "./pages/settings-page.js";
 import { InvitationPage } from "./pages/ticket/invitation-page.js";
 import { TicketPage } from "./pages/ticket/ticket-page.js";
+import { VendorsPage } from "./pages/vendors-page.js";
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -104,6 +105,12 @@ const eventsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/acara",
   component: EventsPage,
+});
+
+const vendorsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/vendor",
+  component: VendorsPage,
 });
 
 const receivedGiftsRoute = createRoute({
@@ -254,6 +261,7 @@ const routeTree = rootRoute.addChildren([
     eventsRoute,
     rsvpRoute,
     receivedGiftsRoute,
+    vendorsRoute,
     invitationRoute.addChildren([
       invitationIndexRoute,
       coupleRoute,

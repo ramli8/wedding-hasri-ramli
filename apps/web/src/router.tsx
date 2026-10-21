@@ -18,6 +18,7 @@ import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
 import { PrintPage } from "./pages/guests/print-page.js";
 import { CouplePage } from "./pages/invitation/couple-page.js";
+import { GalleryPage } from "./pages/invitation/gallery-page.js";
 import { InvitationLayout } from "./pages/invitation/invitation-layout.js";
 import { StoryPage } from "./pages/invitation/story-page.js";
 import { LoginPage } from "./pages/login.js";
@@ -133,6 +134,12 @@ const storyRoute = createRoute({
   component: StoryPage,
 });
 
+const galleryRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "galeri",
+  component: GalleryPage,
+});
+
 const guestbookRoute = createRoute({
   getParentRoute: () => invitationRoute,
   path: "ucapan",
@@ -211,7 +218,13 @@ const routeTree = rootRoute.addChildren([
     groupsRoute,
     eventsRoute,
     rsvpRoute,
-    invitationRoute.addChildren([invitationIndexRoute, coupleRoute, storyRoute, guestbookRoute]),
+    invitationRoute.addChildren([
+      invitationIndexRoute,
+      coupleRoute,
+      storyRoute,
+      galleryRoute,
+      guestbookRoute,
+    ]),
     checkinRoute,
     devicesRoute,
     settingsRoute,

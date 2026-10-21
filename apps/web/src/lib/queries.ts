@@ -100,3 +100,8 @@ export const storyQuery = queryOptions({
   queryKey: ["invitation", "story"],
   queryFn: async () => (await adminApi.invitation.story()).items,
 });
+
+export const galleryQuery = queryOptions({
+  queryKey: ["invitation", "gallery"],
+  queryFn: async () => (await adminApi.invitation.gallery()).items,
+});

@@ -12,8 +12,12 @@ import {
   type EventInput,
   eventListResponseSchema,
   eventResponseSchema,
+  type GalleryCaptionInput,
+  type GalleryInput,
   type GroupInput,
   type GuestInput,
+  galleryItemResponseSchema,
+  galleryListResponseSchema,
   groupListResponseSchema,
   groupResponseSchema,
   guestListResponseSchema,
@@ -150,6 +154,23 @@ export const adminApi = {
       request(`${base}/invitation/story/${id}`, okSchema, withBody("DELETE")),
     reorderStory: (ids: string[]) =>
       request(`${base}/invitation/story/order`, storyListResponseSchema, withBody("PUT", { ids })),
+    gallery: () => request(`${base}/invitation/gallery`, galleryListResponseSchema),
+    addGallery: (input: GalleryInput) =>
+      request(`${base}/invitation/gallery`, galleryItemResponseSchema, withBody("POST", input)),
+    captionGallery: (id: string, input: GalleryCaptionInput) =>
+      request(
+        `${base}/invitation/gallery/${id}`,
+        galleryItemResponseSchema,
+        withBody("PUT", input),
+      ),
+    removeGallery: (id: string) =>
+      request(`${base}/invitation/gallery/${id}`, okSchema, withBody("DELETE")),
+    reorderGallery: (ids: string[]) =>
+      request(
+        `${base}/invitation/gallery/order`,
+        galleryListResponseSchema,
+        withBody("PUT", { ids }),
+      ),
   },
 
   guestbook: {

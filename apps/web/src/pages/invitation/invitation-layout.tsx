@@ -4,6 +4,7 @@ import { PageHeader } from "../../components/page-header.js";
 const tabs = [
   { to: "/admin/undangan/mempelai", label: "Mempelai" },
   { to: "/admin/undangan/cerita", label: "Cerita" },
+  { to: "/admin/undangan/galeri", label: "Galeri" },
   { to: "/admin/undangan/ucapan", label: "Ucapan" },
 ] as const;
 
@@ -18,7 +19,7 @@ export function InvitationLayout() {
       <PageHeader
         tag="Undangan"
         title="Isi undangan"
-        description="Yang Anda isi di sini tampil di halaman undangan tamu (/u/KODE). Bagian lain menyusul."
+        description="Yang Anda isi di sini tampil di halaman undangan tamu (/u/KODE)."
       />
       <nav aria-label="Bagian undangan" className="flex flex-wrap gap-2">
         {tabs.map((item) => (

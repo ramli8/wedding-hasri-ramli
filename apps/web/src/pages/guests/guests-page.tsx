@@ -20,6 +20,7 @@ import {
   useRefresh,
 } from "../../lib/queries.js";
 import { type GuestEditing, GuestFormDialog } from "./guest-form-dialog.js";
+import { QrDialog } from "./qr-dialog.js";
 import { SendDialog } from "./send-dialog.js";
 
 const PAGE_SIZE = 50;
@@ -68,6 +69,7 @@ export function GuestsPage() {
 
   const [editing, setEditing] = useState<GuestEditing>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [qrId, setQrId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Guest | null>(null);
 
   // Setiap perubahan filter kembali ke halaman 1.
@@ -86,6 +88,7 @@ export function GuestsPage() {
   const total = guests.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const sendingGuest = items.find((g) => g.id === sendingId) ?? null;
+  const qrGuest = items.find((g) => g.id === qrId) ?? null;
 
   return (
     <>
@@ -277,6 +280,14 @@ export function GuestsPage() {
                           <Button
                             size="sm"
                             variant="secondary"
+                            onClick={() => setQrId(guest.id)}
+                            disabled={!guest.code}
+                          >
+                            QR
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
                             onClick={() => setSendingId(guest.id)}
                           >
                             Kirim
@@ -344,6 +355,11 @@ export function GuestsPage() {
         groups={groups.data ?? []}
         settings={settings.data}
         onClose={() => setSendingId(null)}
+      />
+      <QrDialog
+        guest={qrGuest}
+        group={groups.data?.find((g) => g.id === qrGuest?.groupId)}
+        onClose={() => setQrId(null)}
       />
       <DeleteGuestDialog guest={deleting} onClose={() => setDeleting(null)} />
     </>

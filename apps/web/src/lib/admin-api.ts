@@ -105,6 +105,7 @@ export const adminApi = {
       request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name })),
     revoke: (id: string) =>
       request(`${base}/devices/${id}/revoke`, deviceResponseSchema, withBody("POST", {})),
+    remove: (id: string) => request(`${base}/devices/${id}`, okSchema, withBody("DELETE")),
   },
 
   checkins: {

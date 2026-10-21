@@ -427,6 +427,31 @@ describe("push check-in", () => {
   });
 });
 
+describe("hapus perangkat", () => {
+  it("menolak menghapus perangkat aktif; yang dicabut terhapus tanpa menghilangkan riwayat check-in", async () => {
+    await world.gateA.client.push(pushBody([checkinEvent(world, world.sari.id)]));
+
+    expect((await api.delete(`/devices/${world.gateA.id}`)).status).toBe(409);
+
+    await api.post(`/devices/${world.gateA.id}/revoke`);
+    expect((await api.delete(`/devices/${world.gateA.id}`)).status).toBe(200);
+    expect((await api.delete(`/devices/${world.gateA.id}`)).status).toBe(404);
+
+    const list = await read<{ items: Device[] }>(await api.get("/devices"));
+    expect(list.items.map((d) => d.id)).not.toContain(world.gateA.id);
+    const dash = await dashboard();
+    expect(dash.totals).toMatchObject({ arrived: 1, arrivedPax: 1 });
+    expect(dash.recent[0]).toMatchObject({ displayName: "Sari", deviceName: null });
+  });
+
+  it("perangkat yang belum pernah dipasang bisa langsung dihapus", async () => {
+    const pending = await read<{ device: Device }>(
+      await api.post("/devices", { name: "Cadangan" }),
+    );
+    expect((await api.delete(`/devices/${pending.device.id}`)).status).toBe(200);
+  });
+});
+
 describe("tamu walk-in", () => {
   it("dibuat di server dengan kode, diundang ke acara, dan bisa langsung check-in dalam push yang sama", async () => {
     const walkinId = uuid7();

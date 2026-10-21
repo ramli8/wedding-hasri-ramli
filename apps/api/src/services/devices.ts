@@ -4,7 +4,7 @@ import { PAIRING_CODE_LENGTH } from "@wedding/shared";
 import { eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isUniqueViolation } from "../db/errors.js";
-import { devices } from "../db/schema.js";
+import { checkinEvents, devices } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 
 export type DeviceRow = typeof devices.$inferSelect;
@@ -79,6 +79,25 @@ export async function revokeDevice(db: Db, id: string): Promise<Device> {
     .returning();
   if (!row) throw new AppError(404, "NOT_FOUND", "Perangkat tidak ditemukan");
   return toDevice(row);
+}
+
+/**
+ * Menghapus perangkat yang sudah dicabut atau belum pernah dipasang. Riwayat check-in tetap ada;
+ * hanya penanda perangkatnya yang dikosongkan, jadi log tidak lagi menyebut nama perangkat itu.
+ */
+export async function deleteDevice(db: Db, id: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ status: devices.status })
+      .from(devices)
+      .where(eq(devices.id, id));
+    if (!row) throw new AppError(404, "NOT_FOUND", "Perangkat tidak ditemukan");
+    if (row.status === "active") {
+      throw new AppError(409, "CONFLICT", "Perangkat masih aktif. Cabut dulu sebelum dihapus.");
+    }
+    await tx.update(checkinEvents).set({ deviceId: null }).where(eq(checkinEvents.deviceId, id));
+    await tx.delete(devices).where(eq(devices.id, id));
+  });
 }
 
 /** Menukar kode pairing sekali pakai dengan token perangkat. */

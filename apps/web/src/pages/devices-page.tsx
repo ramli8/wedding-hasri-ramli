@@ -27,6 +27,7 @@ export function DevicesPage() {
     null,
   );
   const [revoking, setRevoking] = useState<Device | null>(null);
+  const [deleting, setDeleting] = useState<Device | null>(null);
 
   return (
     <>
@@ -89,9 +90,13 @@ export function DevicesPage() {
                   <td className="px-4 py-3 font-mono text-xs">{device.appVersion ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
-                      {device.status !== "revoked" && (
+                      {device.status !== "revoked" ? (
                         <Button size="sm" variant="destructive" onClick={() => setRevoking(device)}>
                           Cabut
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="secondary" onClick={() => setDeleting(device)}>
+                          Hapus
                         </Button>
                       )}
                     </div>
@@ -113,6 +118,7 @@ export function DevicesPage() {
       />
       <CodeDialog code={code} onClose={() => setCode(null)} />
       <RevokeDialog device={revoking} onClose={() => setRevoking(null)} />
+      <DeleteDialog device={deleting} onClose={() => setDeleting(null)} />
     </>
   );
 }
@@ -206,6 +212,44 @@ function CodeDialog({
             <Button onClick={onClose}>Selesai</Button>
           </div>
         </div>
+      )}
+    </Dialog>
+  );
+}
+
+function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () => void }) {
+  const refresh = useRefresh();
+  const remove = useMutation({
+    mutationFn: (id: string) => adminApi.devices.remove(id),
+    onSuccess: async () => {
+      await refresh("devices");
+      onClose();
+    },
+  });
+
+  return (
+    <Dialog open={device !== null} onClose={onClose} title={`Hapus “${device?.name}”?`}>
+      {device && (
+        <>
+          <p>
+            Perangkat ini dihapus dari daftar. Check-in yang pernah dicatatnya tetap ada, tetapi
+            nama perangkatnya tidak lagi tampil di log dan dashboard. Untuk memakainya lagi, buat
+            perangkat baru dan pasangkan ulang.
+          </p>
+          {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => remove.mutate(device.id)}
+              disabled={remove.isPending}
+            >
+              Hapus perangkat
+            </Button>
+          </div>
+        </>
       )}
     </Dialog>
   );

@@ -42,10 +42,8 @@ export const eventInputSchema = z
       .nullish()
       .or(z.literal(""))
       .transform((value) => value || null),
-    notes: optionalText,
     checkinEnabled: z.boolean().default(false),
     hasRsvp: z.boolean().default(false),
-    sortOrder: z.number().int().default(0),
     messageTemplate: z.string().trim().default(""),
   })
   .refine((e) => !e.startsAt || !e.endsAt || e.endsAt >= e.startsAt, {
@@ -64,10 +62,8 @@ export const eventSchema = z.object({
   venueName: z.string().nullable(),
   address: z.string().nullable(),
   mapsUrl: z.string().nullable(),
-  notes: z.string().nullable(),
   checkinEnabled: z.boolean(),
   hasRsvp: z.boolean(),
-  sortOrder: z.number(),
   messageTemplate: z.string(),
   /** Jumlah tamu (belum dihapus) yang diundang ke acara ini. */
   invitedCount: z.number(),

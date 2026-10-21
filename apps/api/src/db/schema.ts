@@ -62,10 +62,8 @@ export const events = pgTable(
     venueName: text(),
     address: text(),
     mapsUrl: text(),
-    notes: text(),
     checkinEnabled: boolean().notNull().default(false),
     hasRsvp: boolean().notNull().default(false),
-    sortOrder: integer().notNull().default(0),
   },
   (table) => [
     check(

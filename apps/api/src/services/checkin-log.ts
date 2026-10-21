@@ -19,13 +19,13 @@ export async function lockCheckinLog(tx: Executor) {
   await tx.execute(sql`select pg_advisory_xact_lock(7301)`);
 }
 
-/** Acara dengan check-in aktif (yang pertama menurut urutan), atau `preferredId` bila diberikan. */
+/** Acara dengan check-in aktif (yang paling awal mulainya), atau `preferredId` bila diberikan. */
 export async function getCheckinEvent(db: Executor, preferredId?: string): Promise<EventRow> {
   const rows = await db
     .select()
     .from(events)
     .where(preferredId ? eq(events.id, preferredId) : eq(events.checkinEnabled, true))
-    .orderBy(asc(events.sortOrder), asc(events.startsAt), asc(events.name))
+    .orderBy(asc(events.startsAt), asc(events.name))
     .limit(1);
   const row = rows[0];
   if (!row) {

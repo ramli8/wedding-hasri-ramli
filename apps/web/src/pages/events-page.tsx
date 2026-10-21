@@ -133,10 +133,8 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
   const [venueName, setVenueName] = useState(event?.venueName ?? "");
   const [address, setAddress] = useState(event?.address ?? "");
   const [mapsUrl, setMapsUrl] = useState(event?.mapsUrl ?? "");
-  const [notes, setNotes] = useState(event?.notes ?? "");
   const [checkinEnabled, setCheckinEnabled] = useState(event?.checkinEnabled ?? false);
   const [hasRsvp, setHasRsvp] = useState(event?.hasRsvp ?? false);
-  const [sortOrder, setSortOrder] = useState(String(event?.sortOrder ?? 0));
   const [messageTemplate, setMessageTemplate] = useState(event?.messageTemplate ?? "");
 
   const save = useMutation({
@@ -149,10 +147,8 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
         venueName,
         address,
         mapsUrl,
-        notes,
         checkinEnabled,
         hasRsvp,
-        sortOrder: Number(sortOrder) || 0,
         messageTemplate,
       };
       return event ? adminApi.events.update(event.id, input) : adminApi.events.create(input);
@@ -245,9 +241,6 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
       <Field label="Alamat">
         {(id) => <Input id={id} value={address} onChange={(e) => setAddress(e.target.value)} />}
       </Field>
-      <Field label="Catatan">
-        {(id) => <Input id={id} value={notes} onChange={(e) => setNotes(e.target.value)} />}
-      </Field>
 
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         <Checkbox checked={checkinEnabled} onChange={(e) => setCheckinEnabled(e.target.checked)}>
@@ -257,18 +250,6 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
           Ada RSVP
         </Checkbox>
       </div>
-
-      <Field label="Urutan tampil">
-        {(id) => (
-          <Input
-            id={id}
-            type="number"
-            className="max-w-32"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-          />
-        )}
-      </Field>
 
       <div className="flex flex-col gap-2">
         <Field

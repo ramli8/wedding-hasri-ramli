@@ -477,6 +477,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **UI:** tanpa shadcn/ui. Komponen dasar ditulis sendiri sesuai `design.md` dan modal memakai elemen `<dialog>` bawaan browser. Alasannya: lebih ringan dan tidak ada komponen yang tidak dipakai.
 - **Zona waktu admin:** input jam di formulir dianggap WIB (UTC+7) dan disimpan sebagai UTC.
 - **Kelompok disederhanakan** (migrasi 0003): kolom `gate` dan `sort_order` dihapus karena tidak dipakai scanner; daftar kelompok diurutkan menurut nama. Jam sesi di formulir hanya jam (`<input type="time">`); tanggalnya diambil dari `events.starts_at` saat disimpan, jadi acara tanpa tanggal mulai belum bisa diberi jam sesi.
+- **Acara disederhanakan** (migrasi 0004): kolom `notes` dan `sort_order` dihapus. Acara diurutkan menurut `starts_at`, lalu nama; acara check-in aktif yang dipakai scanner adalah yang paling awal mulainya.
 
 ### Fase 3 (scanner, check-in offline, dashboard)
 

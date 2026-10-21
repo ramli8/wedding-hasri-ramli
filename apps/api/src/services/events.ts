@@ -32,10 +32,8 @@ function toEvent(row: {
     venueName: event.venueName,
     address: event.address,
     mapsUrl: event.mapsUrl,
-    notes: event.notes,
     checkinEnabled: event.checkinEnabled,
     hasRsvp: event.hasRsvp,
-    sortOrder: event.sortOrder,
     messageTemplate: row.template ?? "",
     invitedCount: row.invitedCount,
   };
@@ -46,7 +44,7 @@ export async function listEvents(db: Db): Promise<Event[]> {
     .select(selection)
     .from(events)
     .leftJoin(messageTemplates, eq(messageTemplates.eventId, events.id))
-    .orderBy(asc(events.sortOrder), asc(events.startsAt), asc(events.name));
+    .orderBy(asc(events.startsAt), asc(events.name));
   return rows.map(toEvent);
 }
 
@@ -70,10 +68,8 @@ function eventColumns(input: EventData) {
     venueName: input.venueName,
     address: input.address,
     mapsUrl: input.mapsUrl,
-    notes: input.notes,
     checkinEnabled: input.checkinEnabled,
     hasRsvp: input.hasRsvp,
-    sortOrder: input.sortOrder,
   };
 }
 

@@ -148,9 +148,18 @@ describe("acara", () => {
     });
   });
 
-  it("urutan daftar mengikuti sortOrder; invitedCount menghitung tamu aktif saja", async () => {
-    const second = await makeEvent({ slug: "kedua", name: "Kedua", sortOrder: 2 });
-    const first = await makeEvent({ slug: "pertama", name: "Pertama", sortOrder: 1 });
+  it("urutan daftar mengikuti waktu mulai; invitedCount menghitung tamu aktif saja", async () => {
+    const second = await makeEvent({
+      slug: "kedua",
+      name: "Kedua",
+      startsAt: "2027-05-21T06:00:00Z",
+      endsAt: null,
+    });
+    const first = await makeEvent({
+      slug: "pertama",
+      name: "Pertama",
+      startsAt: "2027-05-21T03:00:00Z",
+    });
     const guest = await makeGuest({ eventIds: [first.id] });
     await makeGuest({ displayName: "Siti", phone: "0813-0000-1111", eventIds: [first.id] });
     await api.delete(`/guests/${guest.id}`);
@@ -486,8 +495,13 @@ describe("impor CSV", () => {
   };
 
   beforeEach(async () => {
-    await makeEvent({ slug: "akad", name: "Akad", sortOrder: 1 });
-    await makeEvent({ slug: "resepsi", name: "Resepsi", sortOrder: 2 });
+    await makeEvent({
+      slug: "akad",
+      name: "Akad",
+      startsAt: "2027-05-21T01:00:00Z",
+      endsAt: "2027-05-21T02:00:00Z",
+    });
+    await makeEvent({ slug: "resepsi", name: "Resepsi" });
   });
 
   it("pratinjau menandai baris ok, duplikat, dan error beserta alasannya", async () => {

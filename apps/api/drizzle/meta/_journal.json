@@ -29,6 +29,13 @@
       "when": 1792546069519,
       "tag": "0003_broken_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792546384357,
+      "tag": "0004_fair_kabuki",
+      "breakpoints": true
     }
   ]
 }

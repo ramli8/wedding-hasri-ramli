@@ -8,6 +8,7 @@ import { Card } from "../../components/ui/card.js";
 import { ApiError } from "../../lib/api.js";
 import { publicApi } from "../../lib/public-api.js";
 import { loadTicket, saveTicket } from "../../lib/ticket-cache.js";
+import { GuestbookCard } from "./guestbook-card.js";
 import { RsvpCard } from "./rsvp-card.js";
 import { TicketProblem } from "./ticket-problem.js";
 import { TicketQr } from "./ticket-qr.js";
@@ -82,7 +83,7 @@ function EventCard({ event }: { event: TicketEvent }) {
   );
 }
 
-/** Halaman pribadi tamu: tiket QR, info acara, dan konfirmasi kehadiran. */
+/** Halaman pribadi tamu: tiket QR, info acara, konfirmasi kehadiran, dan buku ucapan. */
 export function TicketPage() {
   const { code = "" } = useParams({ strict: false });
   const ticket = useQuery(ticketQuery(code));
@@ -156,6 +157,8 @@ export function TicketPage() {
             isRombongan={data.guest.isRombongan}
           />
         ))}
+
+      <GuestbookCard code={data.guest.code} defaultName={data.guest.displayName} />
     </Shell>
   );
 }

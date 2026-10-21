@@ -1,4 +1,11 @@
-import { type RsvpRequest, rsvpResponseSchema, ticketResponseSchema } from "@wedding/shared";
+import {
+  type GuestbookPostRequest,
+  guestbookListResponseSchema,
+  guestbookPostResponseSchema,
+  type RsvpRequest,
+  rsvpResponseSchema,
+  ticketResponseSchema,
+} from "@wedding/shared";
 import { request, withBody } from "./api.js";
 
 const base = "/v1/public";
@@ -6,6 +13,10 @@ const base = "/v1/public";
 /** API tanpa login untuk tamu (halaman /u/KODE). */
 export const publicApi = {
   ticket: (code: string) => request(`${base}/ticket/${code}`, ticketResponseSchema),
+  guestbook: (page: number, pageSize = 10) =>
+    request(`${base}/guestbook?page=${page}&pageSize=${pageSize}`, guestbookListResponseSchema),
+  postGuestbook: (input: GuestbookPostRequest) =>
+    request(`${base}/guestbook`, guestbookPostResponseSchema, withBody("POST", input)),
   rsvp: (input: RsvpRequest) =>
     request(`${base}/rsvp`, rsvpResponseSchema, withBody("POST", input)),
 };

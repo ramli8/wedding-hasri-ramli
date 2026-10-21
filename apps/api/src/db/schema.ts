@@ -252,6 +252,18 @@ export const coupleProfiles = pgTable(
 );
 
 // Butir cerita (linimasa) di undangan, berurutan menurut sort_order.
+// Foto galeri undangan, berurutan menurut sort_order. Satu gambar hanya boleh muncul sekali.
+export const galleryItems = pgTable("gallery_items", {
+  id: uuid().primaryKey().defaultRandom(),
+  sortOrder: integer().notNull(),
+  caption: text(),
+  photoMediaId: uuid()
+    .notNull()
+    .unique()
+    .references(() => media.id),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),
   sortOrder: integer().notNull(),

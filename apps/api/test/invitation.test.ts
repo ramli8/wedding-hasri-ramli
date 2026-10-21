@@ -1,6 +1,13 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { Couple, CoupleProfile, InvitationResponse, Media, StoryItem } from "@wedding/shared";
+import type {
+  Couple,
+  CoupleProfile,
+  GalleryItem,
+  InvitationResponse,
+  Media,
+  StoryItem,
+} from "@wedding/shared";
 import { inArray } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -268,6 +275,64 @@ describe("isi undangan untuk tamu", () => {
 
   it("kosong bila belum ada isi", async () => {
     const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
-    expect(body).toEqual({ couple: { groom: null, bride: null }, story: [] });
+    expect(body).toEqual({ couple: { groom: null, bride: null }, story: [], gallery: [] });
+  });
+});
+
+describe("galeri", () => {
+  const add = async (caption?: string) => {
+    const photo = await uploadPhoto();
+    const res = await api.post("/invitation/gallery", { mediaId: photo.id, caption });
+    return { photo, res };
+  };
+  const list = async () =>
+    (await read<{ items: GalleryItem[] }>(await api.get("/invitation/gallery"))).items;
+
+  it("menambah foto berurutan, mengubah keterangan, dan menampilkannya ke tamu", async () => {
+    const first = await add("  Prewedding  ");
+    expect(first.res.status).toBe(201);
+    const a = (await read<{ item: GalleryItem }>(first.res)).item;
+    expect(a).toMatchObject({ caption: "Prewedding", photo: { id: first.photo.id } });
+    const b = (await read<{ item: GalleryItem }>((await add()).res)).item;
+    expect(b.caption).toBeNull();
+
+    const renamed = await api.put(`/invitation/gallery/${b.id}`, { caption: "Di pantai" });
+    expect((await read<{ item: GalleryItem }>(renamed)).item.caption).toBe("Di pantai");
+    expect((await list()).map((i) => i.id)).toEqual([a.id, b.id]);
+
+    const res = await app.request("/api/v1/public/invitation");
+    const body = await read<InvitationResponse>(res);
+    expect(body.gallery.map((i) => i.id)).toEqual([a.id, b.id]);
+  });
+
+  it("mengatur urutan dan menolak daftar yang tidak lengkap", async () => {
+    const a = (await read<{ item: GalleryItem }>((await add()).res)).item;
+    const b = (await read<{ item: GalleryItem }>((await add()).res)).item;
+    const ok = await api.put("/invitation/gallery/order", { ids: [b.id, a.id] });
+    expect(ok.status).toBe(200);
+    expect((await list()).map((i) => i.id)).toEqual([b.id, a.id]);
+    expect((await api.put("/invitation/gallery/order", { ids: [a.id] })).status).toBe(400);
+  });
+
+  it("menghapus foto beserta berkasnya", async () => {
+    const { photo, res } = await add();
+    const item = (await read<{ item: GalleryItem }>(res)).item;
+    expect(onDisk(photo)).toBe(true);
+    expect((await api.delete(`/invitation/gallery/${item.id}`)).status).toBe(200);
+    expect(onDisk(photo)).toBe(false);
+    expect(await list()).toEqual([]);
+    expect((await api.delete(`/invitation/gallery/${item.id}`)).status).toBe(404);
+  });
+
+  it("menolak gambar yang tidak ada atau sudah dipakai, dan gambar terpakai tidak bisa dihapus", async () => {
+    const { photo } = await add();
+    const again = await api.post("/invitation/gallery", { mediaId: photo.id });
+    expect(again.status).toBe(409);
+    const missing = await api.post("/invitation/gallery", {
+      mediaId: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(missing.status).toBe(400);
+    expect((await api.delete(`/media/${photo.id}`)).status).toBe(409);
+    expect((await adminClient(app, "").get("/invitation/gallery")).status).toBe(401);
   });
 });

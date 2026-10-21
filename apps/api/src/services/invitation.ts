@@ -2,6 +2,8 @@ import {
   type CoupleProfile,
   type CoupleProfileData,
   type CoupleRole,
+  type GalleryData,
+  type GalleryItem,
   type InvitationResponse,
   type MediaRef,
   mediaUrl,
@@ -10,7 +12,7 @@ import {
 } from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { coupleProfiles, media, storyItems } from "../db/schema.js";
+import { coupleProfiles, galleryItems, media, storyItems } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { discardMedia } from "./media.js";
 
@@ -32,7 +34,8 @@ async function assertPhotoUsable(db: Db, photoId: string | null, own: string | n
   if (!row) throw new AppError(400, "VALIDATION_ERROR", "Gambar tidak ditemukan. Unggah ulang.");
   const used = await db.execute(
     sql`select 1 from ${coupleProfiles} where ${coupleProfiles.photoMediaId} = ${photoId}
-        union all select 1 from ${storyItems} where ${storyItems.photoMediaId} = ${photoId} limit 1`,
+        union all select 1 from ${storyItems} where ${storyItems.photoMediaId} = ${photoId}
+        union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId} limit 1`,
   );
   if (used.length > 0) {
     throw new AppError(409, "CONFLICT", "Gambar ini sudah dipakai di bagian lain");
@@ -206,8 +209,102 @@ export async function reorderStory(db: Db, ids: string[]): Promise<StoryItem[]> 
   return listStory(db);
 }
 
+// --- Galeri ---------------------------------------------------------------------------------------
+
+const toGallery = (row: typeof galleryItems.$inferSelect, photo: typeof media.$inferSelect) => {
+  const ref = toRef(photo);
+  if (!ref) throw new Error("Foto galeri tanpa gambar");
+  return { id: row.id, caption: row.caption, photo: ref } satisfies GalleryItem;
+};
+
+export async function listGallery(db: Db): Promise<GalleryItem[]> {
+  const rows = await db
+    .select({ item: galleryItems, photo: media })
+    .from(galleryItems)
+    .innerJoin(media, eq(media.id, galleryItems.photoMediaId))
+    .orderBy(asc(galleryItems.sortOrder), asc(galleryItems.createdAt), asc(galleryItems.id));
+  return rows.map((r) => toGallery(r.item, r.photo));
+}
+
+async function getGalleryItem(db: Db, id: string): Promise<GalleryItem> {
+  const [row] = await db
+    .select({ item: galleryItems, photo: media })
+    .from(galleryItems)
+    .innerJoin(media, eq(media.id, galleryItems.photoMediaId))
+    .where(eq(galleryItems.id, id))
+    .limit(1);
+  if (!row) throw new AppError(404, "NOT_FOUND", "Foto galeri tidak ditemukan");
+  return toGallery(row.item, row.photo);
+}
+
+export async function createGalleryItem(db: Db, input: GalleryData): Promise<GalleryItem> {
+  await assertPhotoUsable(db, input.mediaId, null);
+  const [row] = await db
+    .insert(galleryItems)
+    .values({
+      sortOrder: sql`(select coalesce(max(${galleryItems.sortOrder}), 0) + 1 from ${galleryItems})`,
+      caption: input.caption,
+      photoMediaId: input.mediaId,
+    })
+    .returning({ id: galleryItems.id });
+  if (!row) throw new Error("Gagal menambah foto galeri");
+  return getGalleryItem(db, row.id);
+}
+
+export async function updateGalleryCaption(
+  db: Db,
+  id: string,
+  caption: string | null,
+): Promise<GalleryItem> {
+  const [row] = await db
+    .update(galleryItems)
+    .set({ caption })
+    .where(eq(galleryItems.id, id))
+    .returning({ id: galleryItems.id });
+  if (!row) throw new AppError(404, "NOT_FOUND", "Foto galeri tidak ditemukan");
+  return getGalleryItem(db, id);
+}
+
+export async function deleteGalleryItem(db: Db, dir: string, id: string): Promise<void> {
+  const [deleted] = await db
+    .delete(galleryItems)
+    .where(eq(galleryItems.id, id))
+    .returning({ photoMediaId: galleryItems.photoMediaId });
+  if (!deleted) throw new AppError(404, "NOT_FOUND", "Foto galeri tidak ditemukan");
+  await discardMedia(db, dir, deleted.photoMediaId);
+}
+
+/** Mengatur urutan: `ids` harus memuat semua foto galeri tepat satu kali. */
+export async function reorderGallery(db: Db, ids: string[]): Promise<GalleryItem[]> {
+  await db.transaction(async (tx) => {
+    const current = await tx.select({ id: galleryItems.id }).from(galleryItems);
+    const same =
+      ids.length === current.length &&
+      new Set(ids).size === ids.length &&
+      current.every((row) => ids.includes(row.id));
+    if (!same) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "Daftar urutan tidak sama dengan isi galeri. Muat ulang halaman.",
+      );
+    }
+    for (const [index, id] of ids.entries()) {
+      await tx
+        .update(galleryItems)
+        .set({ sortOrder: index + 1 })
+        .where(eq(galleryItems.id, id));
+    }
+  });
+  return listGallery(db);
+}
+
 // --- Untuk tamu -----------------------------------------------------------------------------------
 
 export async function getInvitation(db: Db): Promise<InvitationResponse> {
-  return { couple: await getCouple(db), story: await listStory(db) };
+  return {
+    couple: await getCouple(db),
+    story: await listStory(db),
+    gallery: await listGallery(db),
+  };
 }

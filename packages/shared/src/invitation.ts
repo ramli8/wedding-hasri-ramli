@@ -100,10 +100,35 @@ export const storyItemResponseSchema = z.object({ item: storyItemSchema });
 /** Urutan baru: seluruh id butir cerita, dari yang pertama. */
 export const storyOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
+// --- Galeri ---------------------------------------------------------------------------------------
+
+/** Satu foto galeri: gambar yang sudah diunggah (lihat media) ditambah keterangan opsional. */
+export const galleryInputSchema = z.object({
+  mediaId: z.uuid(),
+  caption: optionalText(160, "Keterangan"),
+});
+export type GalleryInput = z.input<typeof galleryInputSchema>;
+export type GalleryData = z.output<typeof galleryInputSchema>;
+
+export const galleryCaptionSchema = z.object({ caption: optionalText(160, "Keterangan") });
+export type GalleryCaptionInput = z.input<typeof galleryCaptionSchema>;
+
+export const galleryItemSchema = z.object({
+  id: z.uuid(),
+  caption: z.string().nullable(),
+  photo: mediaRefSchema,
+});
+export type GalleryItem = z.infer<typeof galleryItemSchema>;
+
+export const galleryListResponseSchema = z.object({ items: z.array(galleryItemSchema) });
+export const galleryItemResponseSchema = z.object({ item: galleryItemSchema });
+export const galleryOrderSchema = z.object({ ids: z.array(z.uuid()) });
+
 // --- Isi undangan untuk tamu ----------------------------------------------------------------------
 
 export const invitationResponseSchema = z.object({
   couple: coupleSchema,
   story: z.array(storyItemSchema),
+  gallery: z.array(galleryItemSchema),
 });
 export type InvitationResponse = z.infer<typeof invitationResponseSchema>;

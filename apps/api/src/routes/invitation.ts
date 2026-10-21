@@ -1,6 +1,9 @@
 import {
   coupleProfileInputSchema,
   coupleRoleSchema,
+  galleryCaptionSchema,
+  galleryInputSchema,
+  galleryOrderSchema,
   storyInputSchema,
   storyOrderSchema,
 } from "@wedding/shared";
@@ -9,12 +12,17 @@ import { z } from "zod";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { validate } from "../http/validate.js";
 import {
+  createGalleryItem,
   createStoryItem,
+  deleteGalleryItem,
   deleteStoryItem,
   getCouple,
+  listGallery,
   listStory,
+  reorderGallery,
   reorderStory,
   saveCoupleProfile,
+  updateGalleryCaption,
   updateStoryItem,
 } from "../services/invitation.js";
 
@@ -64,6 +72,31 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
       )
       .delete("/story/:id", validate("param", idParam), async (c) => {
         await deleteStoryItem(db, config.mediaDir, c.req.valid("param").id);
+        return c.json({ ok: true });
+      })
+      .get("/gallery", async (c) => c.json({ items: await listGallery(db) }))
+      .post("/gallery", validate("json", galleryInputSchema), async (c) => {
+        return c.json({ item: await createGalleryItem(db, c.req.valid("json")) }, 201);
+      })
+      // Harus sebelum "/gallery/:id" agar "order" tidak dibaca sebagai id.
+      .put("/gallery/order", validate("json", galleryOrderSchema), async (c) => {
+        return c.json({ items: await reorderGallery(db, c.req.valid("json").ids) });
+      })
+      .put(
+        "/gallery/:id",
+        validate("param", idParam),
+        validate("json", galleryCaptionSchema),
+        async (c) => {
+          const item = await updateGalleryCaption(
+            db,
+            c.req.valid("param").id,
+            c.req.valid("json").caption,
+          );
+          return c.json({ item });
+        },
+      )
+      .delete("/gallery/:id", validate("param", idParam), async (c) => {
+        await deleteGalleryItem(db, config.mediaDir, c.req.valid("param").id);
         return c.json({ ok: true });
       })
   );

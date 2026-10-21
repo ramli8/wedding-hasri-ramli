@@ -567,6 +567,10 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **Tambah ke kalender:** kartu acara di `/u/KODE` punya tombol yang mengunduh berkas `.ics` (dibuat di peramban tamu, `apps/web/src/lib/ics.ts`: UTC, teks dinetralkan, baris dilipat 75 byte, pengingat sehari sebelumnya, UID tetap `<id acara>@hasri-ramli` agar impor ulang memperbarui). Memakai jam sesi kelompok tamu bila ada, jika tidak jam acara; tombol tidak tampil bila acara belum punya waktu mulai.
 - **Siaran langsung:** `invitation_cover` kini juga memuat `live_url` (wajib https) dan `live_note`. Diatur di tab Susunan; menjadi bagian `siaran` yang bisa diurutkan/disembunyikan (bawaan kedua setelah Mempelai) dan hanya tampil bila tautannya diisi. Menyimpan sampul dan menyimpan siaran tidak saling menimpa.
 
+### Wishlist ke hadiah masuk
+
+- Di tab Wishlist admin, tiap pilihan tamu punya tombol **Tandai diterima**: membuat catatan hadiah masuk jenis `barang` atas nama tamu itu (nama barang, dengan "× jumlah" bila lebih dari satu, catatan "Dari wishlist", tanggal hari ini, pencatat dari sesi) dan menautkannya lewat `wishlist_claims.received_gift_id` sehingga tidak tercatat dua kali (baris pilihan dikunci `for update`; kedua kalinya 409). Pilihan tetap dihitung sebagai terpenuhi. Menghapus catatan hadiahnya mengosongkan tautan sehingga bisa dicatat ulang.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

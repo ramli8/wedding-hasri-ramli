@@ -422,7 +422,12 @@ describe("wishlist: tamu memilih hadiah", () => {
     isFulfilled: boolean;
   };
   type AdminWishView = WishView & {
-    claims: { guestId: string; guestName: string; quantity: number }[];
+    claims: {
+      guestId: string;
+      guestName: string;
+      quantity: number;
+      receivedGiftId: string | null;
+    }[];
   };
 
   const addWish = async (body: Record<string, unknown>) =>
@@ -479,7 +484,7 @@ describe("wishlist: tamu memilih hadiah", () => {
 
     const listed = await read<{ items: AdminWishView[] }>(await api.get("/invitation/wishes"));
     expect(listed.items[0]?.claims).toEqual([
-      { guestId: world.sari.id, guestName: "Sari", quantity: 2 },
+      { guestId: world.sari.id, guestName: "Sari", quantity: 2, receivedGiftId: null },
     ]);
     // Respons publik tidak memuat nama pemilih.
     expect(JSON.stringify(await (await pub.get("/invitation")).json())).not.toContain("Sari");
@@ -507,6 +512,60 @@ describe("wishlist: tamu memilih hadiah", () => {
     expect((await claim(world.sari.code, piring.id, -1)).status).toBe(400);
     expect((await claim(world.sari.code, piring.id, 3)).status).toBe(409);
     expect((await pub.get("/claims/ZZZZZZ")).status).toBe(404);
+  });
+
+  it("barang yang diterima dicatat sebagai hadiah masuk atas nama tamu, sekali saja", async () => {
+    const gelas = await addWish({ name: "Gelas", quantity: 6 });
+    await claim(world.sari.code, gelas.id, 2);
+    const path = `/invitation/wishes/${gelas.id}/claims/${world.sari.id}/received`;
+
+    const res = await api.post(path, {});
+    expect(res.status).toBe(200);
+    const after = (await read<{ item: AdminWishView }>(res)).item;
+    expect(after.claims[0]?.receivedGiftId).toBeTruthy();
+    // Pilihan tetap dihitung: barang masih terpenuhi.
+    expect(after.claimed).toBe(2);
+
+    type Gift = {
+      id: string;
+      guestId: string | null;
+      giverName: string;
+      kind: string;
+      itemDescription: string | null;
+      amount: number | null;
+      recordedBy: string | null;
+    };
+    const gifts = (await read<{ items: Gift[] }>(await api.get("/received-gifts"))).items;
+    expect(gifts).toHaveLength(1);
+    expect(gifts[0]).toMatchObject({
+      id: after.claims[0]?.receivedGiftId,
+      guestId: world.sari.id,
+      giverName: "Sari",
+      kind: "barang",
+      itemDescription: "Gelas × 2",
+      amount: null,
+    });
+    expect(gifts[0]?.recordedBy).toBeTruthy();
+
+    // Kedua kalinya ditolak dan tidak menggandakan catatan.
+    expect((await api.post(path, {})).status).toBe(409);
+    expect((await read<{ items: Gift[] }>(await api.get("/received-gifts"))).items).toHaveLength(1);
+
+    // Menghapus catatan hadiah membuka kembali kemungkinan mencatat ulang.
+    await api.delete(`/received-gifts/${gifts[0]?.id}`);
+    const reopened = (await read<{ items: AdminWishView[] }>(await api.get("/invitation/wishes")))
+      .items;
+    expect(reopened[0]?.claims[0]?.receivedGiftId).toBeNull();
+    expect((await api.post(path, {})).status).toBe(200);
+  });
+
+  it("mencatat barang diterima menolak pilihan yang tidak ada dan memerlukan login", async () => {
+    const piring = await addWish({ name: "Piring", quantity: 2 });
+    const ghost = `/invitation/wishes/${piring.id}/claims/${world.sari.id}/received`;
+    expect((await api.post(ghost, {})).status).toBe(404);
+    await claim(world.sari.code, piring.id, 1);
+    const anonymous = adminClient(ctx.makeApp(), "");
+    expect((await anonymous.post(ghost, {})).status).toBe(401);
   });
 
   it("pilihan ikut terhapus bersama hadiahnya", async () => {

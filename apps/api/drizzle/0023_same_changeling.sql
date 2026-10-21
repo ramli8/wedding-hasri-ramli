@@ -1,0 +1,2 @@
+ALTER TABLE "wishlist_claims" ADD COLUMN "received_gift_id" uuid;--> statement-breakpoint
+ALTER TABLE "wishlist_claims" ADD CONSTRAINT "wishlist_claims_received_gift_id_received_gifts_id_fk" FOREIGN KEY ("received_gift_id") REFERENCES "public"."received_gifts"("id") ON DELETE set null ON UPDATE no action;

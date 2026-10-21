@@ -49,7 +49,12 @@ import {
   updateWish,
 } from "../services/invitation.js";
 import { getLayout, saveCover, saveLive, saveSections } from "../services/layout.js";
-import { adminWish, listAdminWishes, removeClaim } from "../services/wish-claims.js";
+import {
+  adminWish,
+  listAdminWishes,
+  markClaimReceived,
+  removeClaim,
+} from "../services/wish-claims.js";
 
 const idParam = z.object({ id: z.uuid() });
 const roleParam = z.object({ role: coupleRoleSchema });
@@ -182,6 +187,15 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
         async (c) => {
           const { id } = c.req.valid("param");
           await updateWish(db, config.mediaDir, id, c.req.valid("json"));
+          return c.json({ item: await adminWish(db, id) });
+        },
+      )
+      .post(
+        "/wishes/:id/claims/:guestId/received",
+        validate("param", z.object({ id: z.uuid(), guestId: z.uuid() })),
+        async (c) => {
+          const { id, guestId } = c.req.valid("param");
+          await markClaimReceived(db, c.get("admin").id, id, guestId);
           return c.json({ item: await adminWish(db, id) });
         },
       )

@@ -321,6 +321,10 @@ export const wishlistClaims = pgTable(
       .notNull()
       .references(() => guests.id, { onDelete: "cascade" }),
     quantity: integer().notNull(),
+    // Terisi saat barangnya sudah diterima dan dicatat sebagai hadiah masuk.
+    receivedGiftId: uuid().references((): AnyPgColumn => receivedGifts.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

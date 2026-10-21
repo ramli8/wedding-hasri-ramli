@@ -1,9 +1,10 @@
 import type { AdminWish, Wish } from "@wedding/shared";
 import { and, asc, eq, ne, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { guests, wishlistClaims, wishlistItems } from "../db/schema.js";
+import { guests, receivedGifts, wishlistClaims, wishlistItems } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { getWish, listWishes } from "./invitation.js";
+import { todayWib } from "./received-gifts.js";
 
 // --- Untuk admin: siapa memilih apa ---------------------------------------------------------------
 
@@ -14,6 +15,7 @@ async function claimsFor(db: Db) {
       guestId: wishlistClaims.guestId,
       guestName: guests.displayName,
       quantity: wishlistClaims.quantity,
+      receivedGiftId: wishlistClaims.receivedGiftId,
     })
     .from(wishlistClaims)
     .innerJoin(guests, eq(guests.id, wishlistClaims.guestId))
@@ -42,6 +44,53 @@ export async function removeClaim(db: Db, wishId: string, guestId: string): Prom
     .where(and(eq(wishlistClaims.wishId, wishId), eq(wishlistClaims.guestId, guestId)))
     .returning({ wishId: wishlistClaims.wishId });
   if (!row) throw new AppError(404, "NOT_FOUND", "Pilihan tamu tidak ditemukan");
+}
+
+/**
+ * Barang yang dipilih tamu sudah diterima: membuat catatan hadiah masuk (jenis barang) atas nama
+ * tamu itu dan menautkannya ke pilihan, sehingga tidak tercatat dua kali.
+ */
+export async function markClaimReceived(
+  db: Db,
+  adminId: string,
+  wishId: string,
+  guestId: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [claim] = await tx
+      .select()
+      .from(wishlistClaims)
+      .where(and(eq(wishlistClaims.wishId, wishId), eq(wishlistClaims.guestId, guestId)))
+      .for("update");
+    if (!claim) throw new AppError(404, "NOT_FOUND", "Pilihan tamu tidak ditemukan");
+    if (claim.receivedGiftId) {
+      throw new AppError(409, "CONFLICT", "Barang ini sudah dicatat sebagai hadiah masuk");
+    }
+    const [wish] = await tx.select().from(wishlistItems).where(eq(wishlistItems.id, wishId));
+    const [guest] = await tx
+      .select({ displayName: guests.displayName })
+      .from(guests)
+      .where(eq(guests.id, guestId));
+    if (!wish || !guest) throw new AppError(404, "NOT_FOUND", "Hadiah atau tamu tidak ditemukan");
+
+    const [gift] = await tx
+      .insert(receivedGifts)
+      .values({
+        guestId,
+        giverName: guest.displayName,
+        kind: "barang",
+        itemDescription: claim.quantity > 1 ? `${wish.name} × ${claim.quantity}` : wish.name,
+        note: "Dari wishlist",
+        receivedOn: todayWib(),
+        recordedBy: adminId,
+      })
+      .returning({ id: receivedGifts.id });
+    if (!gift) throw new Error("Gagal mencatat hadiah masuk");
+    await tx
+      .update(wishlistClaims)
+      .set({ receivedGiftId: gift.id })
+      .where(and(eq(wishlistClaims.wishId, wishId), eq(wishlistClaims.guestId, guestId)));
+  });
 }
 
 // --- Untuk tamu -----------------------------------------------------------------------------------

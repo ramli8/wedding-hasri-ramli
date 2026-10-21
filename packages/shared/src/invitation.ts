@@ -242,7 +242,13 @@ export type Wish = z.infer<typeof wishSchema>;
 /** Versi admin: dengan siapa saja yang memilih hadiah ini. */
 export const adminWishSchema = wishSchema.extend({
   claims: z.array(
-    z.object({ guestId: z.uuid(), guestName: z.string(), quantity: z.number().int() }),
+    z.object({
+      guestId: z.uuid(),
+      guestName: z.string(),
+      quantity: z.number().int(),
+      /** Catatan hadiah masuk bila barangnya sudah diterima. */
+      receivedGiftId: z.uuid().nullable(),
+    }),
   ),
 });
 export type AdminWish = z.infer<typeof adminWishSchema>;

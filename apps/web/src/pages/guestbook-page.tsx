@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type AdminGuestbookEntry, GUESTBOOK_MAX_MESSAGE } from "@wedding/shared";
 import { type FormEvent, useState } from "react";
-import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
 import { Badge } from "../components/ui/badge.js";
 import { Button } from "../components/ui/button.js";
@@ -30,12 +29,10 @@ export function GuestbookPage() {
 
   return (
     <>
-      <PageHeader
-        tag="Undangan"
-        title="Ucapan"
-        description="Ucapan dari tamu. Balasan Anda tampil di bawah ucapan itu; ucapan yang disembunyikan tidak terlihat oleh tamu."
-      />
-
+      <p className="max-w-prose text-ink-soft">
+        Ucapan dari tamu. Balasan Anda tampil di bawah ucapan itu; ucapan yang disembunyikan tidak
+        terlihat oleh tamu.
+      </p>
       <div className="max-w-xs">
         <Select
           compact

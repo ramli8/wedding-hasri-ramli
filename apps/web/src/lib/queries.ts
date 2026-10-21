@@ -63,7 +63,16 @@ export const guestsQuery = (query: GuestQuery) =>
 export function useRefresh() {
   const queryClient = useQueryClient();
   return (
-    ...keys: ("settings" | "events" | "groups" | "guests" | "devices" | "checkin" | "guestbook")[]
+    ...keys: (
+      | "settings"
+      | "events"
+      | "groups"
+      | "guests"
+      | "devices"
+      | "checkin"
+      | "guestbook"
+      | "invitation"
+    )[]
   ) => Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }
 
@@ -81,3 +90,13 @@ export const guestbookQuery = (query: { page: number; hidden?: boolean }) =>
     queryFn: () => adminApi.guestbook.list(query),
     placeholderData: (previous) => previous,
   });
+
+export const coupleQuery = queryOptions({
+  queryKey: ["invitation", "couple"],
+  queryFn: async () => (await adminApi.invitation.couple()).couple,
+});
+
+export const storyQuery = queryOptions({
+  queryKey: ["invitation", "story"],
+  queryFn: async () => (await adminApi.invitation.story()).items,
+});

@@ -17,12 +17,16 @@ import { GuestbookPage } from "./pages/guestbook-page.js";
 import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
 import { PrintPage } from "./pages/guests/print-page.js";
+import { CouplePage } from "./pages/invitation/couple-page.js";
+import { InvitationLayout } from "./pages/invitation/invitation-layout.js";
+import { StoryPage } from "./pages/invitation/story-page.js";
 import { LoginPage } from "./pages/login.js";
 import { RsvpPage } from "./pages/rsvp-page.js";
 import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
 import { SettingsPage } from "./pages/settings-page.js";
+import { InvitationPage } from "./pages/ticket/invitation-page.js";
 import { TicketPage } from "./pages/ticket/ticket-page.js";
 
 type RouterContext = { queryClient: QueryClient };
@@ -102,9 +106,36 @@ const rsvpRoute = createRoute({
   component: RsvpPage,
 });
 
-const guestbookRoute = createRoute({
+// Isi undangan: satu kerangka dengan tab (mempelai, cerita, ucapan; bagian lain menyusul).
+const invitationRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: "/admin/ucapan",
+  path: "/admin/undangan",
+  component: InvitationLayout,
+});
+
+const invitationIndexRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "/",
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/undangan/mempelai" });
+  },
+});
+
+const coupleRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "mempelai",
+  component: CouplePage,
+});
+
+const storyRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "cerita",
+  component: StoryPage,
+});
+
+const guestbookRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "ucapan",
   component: GuestbookPage,
 });
 
@@ -131,6 +162,12 @@ const ticketRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$code",
   component: TicketPage,
+});
+
+const guestInvitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/u/$code/undangan",
+  component: InvitationPage,
 });
 
 // Aplikasi penjaga pintu: tidak memakai login admin, melainkan token perangkat (lihat /scan/pasang).
@@ -162,6 +199,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   ticketRoute,
+  guestInvitationRoute,
   scanRoute,
   pairRoute,
   readinessRoute,
@@ -173,7 +211,7 @@ const routeTree = rootRoute.addChildren([
     groupsRoute,
     eventsRoute,
     rsvpRoute,
-    guestbookRoute,
+    invitationRoute.addChildren([invitationIndexRoute, coupleRoute, storyRoute, guestbookRoute]),
     checkinRoute,
     devicesRoute,
     settingsRoute,

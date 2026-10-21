@@ -1,20 +1,19 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
-import { MapPin } from "lucide-react";
+import { BookHeart, MapPin } from "lucide-react";
 import { Alert } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
 import { ApiError } from "../../lib/api.js";
 import { publicApi } from "../../lib/public-api.js";
 import { loadTicket, saveTicket } from "../../lib/ticket-cache.js";
-import { GuestbookCard } from "./guestbook-card.js";
 import { RsvpCard } from "./rsvp-card.js";
 import { TicketProblem } from "./ticket-problem.js";
 import { TicketQr } from "./ticket-qr.js";
 
 /** Tiket dari server; bila tak ada sinyal, salinan terakhir di perangkat. */
-const ticketQuery = (code: string) =>
+export const ticketQuery = (code: string) =>
   queryOptions({
     queryKey: ["ticket", code],
     retry: false,
@@ -83,7 +82,7 @@ function EventCard({ event }: { event: TicketEvent }) {
   );
 }
 
-/** Halaman pribadi tamu: tiket QR, info acara, konfirmasi kehadiran, dan buku ucapan. */
+/** Halaman pribadi tamu: tiket QR, info acara, dan konfirmasi kehadiran. */
 export function TicketPage() {
   const { code = "" } = useParams({ strict: false });
   const ticket = useQuery(ticketQuery(code));
@@ -158,12 +157,21 @@ export function TicketPage() {
           />
         ))}
 
-      <GuestbookCard code={data.guest.code} defaultName={data.guest.displayName} />
+      <Link
+        to="/u/$code/undangan"
+        params={{ code: data.guest.code }}
+        className="flex items-center justify-between gap-3 border-2 border-ink bg-paper px-4 py-3 font-display font-bold tracking-button uppercase shadow-hard hover:bg-acid"
+      >
+        <span className="flex items-center gap-2">
+          <BookHeart className="size-5" aria-hidden /> Kenali kami &amp; tulis ucapan
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
     </Shell>
   );
 }
 
-function Shell({ couple, children }: { couple?: string | null; children: React.ReactNode }) {
+export function Shell({ couple, children }: { couple?: string | null; children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-bone">
       <main className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-8">

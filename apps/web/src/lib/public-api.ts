@@ -2,6 +2,7 @@ import {
   type GuestbookPostRequest,
   guestbookListResponseSchema,
   guestbookPostResponseSchema,
+  invitationResponseSchema,
   type RsvpRequest,
   rsvpResponseSchema,
   ticketResponseSchema,
@@ -13,6 +14,7 @@ const base = "/v1/public";
 /** API tanpa login untuk tamu (halaman /u/KODE). */
 export const publicApi = {
   ticket: (code: string) => request(`${base}/ticket/${code}`, ticketResponseSchema),
+  invitation: () => request(`${base}/invitation`, invitationResponseSchema),
   guestbook: (page: number, pageSize = 10) =>
     request(`${base}/guestbook?page=${page}&pageSize=${pageSize}`, guestbookListResponseSchema),
   postGuestbook: (input: GuestbookPostRequest) =>

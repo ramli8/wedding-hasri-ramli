@@ -1,6 +1,10 @@
 import {
   adminGuestbookListResponseSchema,
   adminGuestbookResponseSchema,
+  type CoupleProfileInput,
+  type CoupleRole,
+  coupleProfileResponseSchema,
+  coupleResponseSchema,
   createDeviceResponseSchema,
   dashboardResponseSchema,
   deviceListResponseSchema,
@@ -23,7 +27,10 @@ import {
   reviewListResponseSchema,
   rsvpListResponseSchema,
   type SettingsInput,
+  type StoryInput,
   settingsResponseSchema,
+  storyItemResponseSchema,
+  storyListResponseSchema,
 } from "@wedding/shared";
 import { okSchema, request, withBody } from "./api.js";
 
@@ -124,6 +131,25 @@ export const adminApi = {
       form.append("file", file);
       return request(`${base}/media`, mediaResponseSchema, { method: "POST", body: form });
     },
+  },
+
+  invitation: {
+    couple: () => request(`${base}/invitation/couple`, coupleResponseSchema),
+    saveCouple: (role: CoupleRole, input: CoupleProfileInput) =>
+      request(
+        `${base}/invitation/couple/${role}`,
+        coupleProfileResponseSchema,
+        withBody("PUT", input),
+      ),
+    story: () => request(`${base}/invitation/story`, storyListResponseSchema),
+    createStory: (input: StoryInput) =>
+      request(`${base}/invitation/story`, storyItemResponseSchema, withBody("POST", input)),
+    updateStory: (id: string, input: StoryInput) =>
+      request(`${base}/invitation/story/${id}`, storyItemResponseSchema, withBody("PUT", input)),
+    removeStory: (id: string) =>
+      request(`${base}/invitation/story/${id}`, okSchema, withBody("DELETE")),
+    reorderStory: (ids: string[]) =>
+      request(`${base}/invitation/story/order`, storyListResponseSchema, withBody("PUT", { ids })),
   },
 
   guestbook: {

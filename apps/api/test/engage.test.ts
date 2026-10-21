@@ -413,3 +413,109 @@ describe("admin: ucapan", () => {
     expect(left.total).toBe(1);
   });
 });
+
+describe("wishlist: tamu memilih hadiah", () => {
+  type WishView = {
+    id: string;
+    quantity: number;
+    received: number;
+    claimed: number;
+    isFulfilled: boolean;
+  };
+  type AdminWishView = WishView & {
+    claims: { guestId: string; guestName: string; quantity: number }[];
+  };
+
+  const addWish = async (body: Record<string, unknown>) =>
+    (await read<{ item: AdminWishView }>(await api.post("/invitation/wishes", body))).item;
+  const claim = (code: string, wishId: string, quantity: number) =>
+    pub.post("/claims", { code, wishId, quantity });
+  const publicWish = async (id: string) =>
+    (await read<{ wishes: WishView[] }>(await pub.get("/invitation"))).wishes.find(
+      (w) => w.id === id,
+    ) as WishView;
+
+  it("memilih, mengubah jumlah, dan melepas; hasilnya tampil ke semua orang", async () => {
+    const gelas = await addWish({ name: "Gelas", quantity: 6, received: 1 });
+
+    const first = await claim(world.sari.code, gelas.id, 2);
+    expect(first.status).toBe(200);
+    expect(await read<{ wish: WishView; mine: number }>(first)).toMatchObject({
+      mine: 2,
+      wish: { claimed: 2, isFulfilled: false },
+    });
+    await claim(world.budi.code, gelas.id, 3);
+    expect((await publicWish(gelas.id)).claimed).toBe(5);
+
+    // Sari menambah ke 2 -> 2 (tetap), lalu 3 gagal karena hanya sisa 2 untuk Sari.
+    expect((await claim(world.sari.code, gelas.id, 3)).status).toBe(409);
+    const full = await claim(world.sari.code, gelas.id, 2);
+    expect(full.status).toBe(200);
+
+    const mine = await read<{ claims: { wishId: string; quantity: number }[] }>(
+      await pub.get(`/claims/${world.sari.code}`),
+    );
+    expect(mine.claims).toEqual([{ wishId: gelas.id, quantity: 2 }]);
+
+    const release = await claim(world.sari.code, gelas.id, 0);
+    expect((await read<{ mine: number }>(release)).mine).toBe(0);
+    expect((await publicWish(gelas.id)).claimed).toBe(3);
+  });
+
+  it("tidak melebihi sisa, walau dua tamu memilih unit terakhir bersamaan", async () => {
+    const mixer = await addWish({ name: "Mixer", quantity: 1 });
+    const results = await Promise.all([
+      claim(world.sari.code, mixer.id, 1),
+      claim(world.budi.code, mixer.id, 1),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([200, 409]);
+    const after = await publicWish(mixer.id);
+    expect(after).toMatchObject({ claimed: 1, isFulfilled: true });
+    expect((await claim(world.outsider.code, mixer.id, 1)).status).toBe(409);
+  });
+
+  it("admin melihat siapa yang memilih, bisa melepas pilihan, dan tidak bisa memangkas kuota di bawahnya", async () => {
+    const blender = await addWish({ name: "Blender", quantity: 3 });
+    await claim(world.sari.code, blender.id, 2);
+
+    const listed = await read<{ items: AdminWishView[] }>(await api.get("/invitation/wishes"));
+    expect(listed.items[0]?.claims).toEqual([
+      { guestId: world.sari.id, guestName: "Sari", quantity: 2 },
+    ]);
+    // Respons publik tidak memuat nama pemilih.
+    expect(JSON.stringify(await (await pub.get("/invitation")).json())).not.toContain("Sari");
+
+    const shrink = await api.put(`/invitation/wishes/${blender.id}`, {
+      name: "Blender",
+      quantity: 1,
+    });
+    expect(shrink.status).toBe(409);
+
+    const removed = await api.delete(`/invitation/wishes/${blender.id}/claims/${world.sari.id}`);
+    expect(removed.status).toBe(200);
+    expect((await read<{ item: AdminWishView }>(removed)).item.claimed).toBe(0);
+    expect(
+      (await api.delete(`/invitation/wishes/${blender.id}/claims/${world.sari.id}`)).status,
+    ).toBe(404);
+  });
+
+  it("menolak kode asing, hadiah tak dikenal, jumlah tak wajar, dan memerlukan kode untuk melihat pilihan", async () => {
+    const piring = await addWish({ name: "Piring", quantity: 2 });
+    expect((await claim("ZZZZZZ", piring.id, 1)).status).toBe(404);
+    expect((await claim(world.sari.code, "00000000-0000-4000-8000-000000000000", 1)).status).toBe(
+      404,
+    );
+    expect((await claim(world.sari.code, piring.id, -1)).status).toBe(400);
+    expect((await claim(world.sari.code, piring.id, 3)).status).toBe(409);
+    expect((await pub.get("/claims/ZZZZZZ")).status).toBe(404);
+  });
+
+  it("pilihan ikut terhapus bersama hadiahnya", async () => {
+    const sendok = await addWish({ name: "Sendok", quantity: 2 });
+    await claim(world.sari.code, sendok.id, 1);
+    expect((await api.delete(`/invitation/wishes/${sendok.id}`)).status).toBe(200);
+    expect(
+      (await read<{ claims: unknown[] }>(await pub.get(`/claims/${world.sari.code}`))).claims,
+    ).toEqual([]);
+  });
+});

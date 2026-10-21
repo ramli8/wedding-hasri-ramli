@@ -4,6 +4,7 @@ import {
   guestbookPostRequestSchema,
   guestCodeSchema,
   rsvpRequestSchema,
+  wishClaimRequestSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -20,6 +21,7 @@ import {
   postGuestbook,
   submitRsvp,
 } from "../services/public.js";
+import { myClaims, setClaim } from "../services/wish-claims.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const codeParam = z.object({ code: guestCodeSchema });
@@ -34,13 +36,15 @@ export function publicRoutes({ db, config }: AppDeps) {
   const tooMany = () =>
     new AppError(429, "RATE_LIMITED", "Terlalu banyak percobaan. Coba lagi nanti.");
 
-  /** Memastikan kode dikenal; tebakan salah dihitung per IP. */
+  /** Memastikan kode dikenal; tebakan salah dihitung per IP. Mengembalikan tamunya. */
   async function knownCode(ip: string, code: string) {
     if (guessLimiter.isBlocked(ip)) throw tooMany();
-    if (!(await findGuestByCode(db, code))) {
+    const guest = await findGuestByCode(db, code);
+    if (!guest) {
       guessLimiter.recordFailure(ip);
       throw new AppError(404, "NOT_FOUND", "Tiket tidak ditemukan");
     }
+    return guest;
   }
 
   function countWrite(ip: string) {
@@ -67,6 +71,19 @@ export function publicRoutes({ db, config }: AppDeps) {
         await knownCode(ip, input.code);
         countWrite(ip);
         return c.json({ rsvp: await submitRsvp(db, input) });
+      })
+      // Hadiah wishlist yang dipilih tamu ini (hanya miliknya sendiri).
+      .get("/claims/:code", validate("param", codeParam), async (c) => {
+        const guest = await knownCode(clientIp(c, config.trustProxy), c.req.valid("param").code);
+        c.header("cache-control", "no-store");
+        return c.json({ claims: await myClaims(db, guest.id) });
+      })
+      .post("/claims", validate("json", wishClaimRequestSchema), async (c) => {
+        const input = c.req.valid("json");
+        const ip = clientIp(c, config.trustProxy);
+        const guest = await knownCode(ip, input.code);
+        countWrite(ip);
+        return c.json(await setClaim(db, guest.id, input.wishId, input.quantity));
       })
       .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
         const { page, pageSize } = c.req.valid("query");

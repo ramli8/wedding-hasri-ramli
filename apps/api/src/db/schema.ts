@@ -311,6 +311,26 @@ export const wishlistItems = pgTable(
   ],
 );
 
+// Hadiah wishlist yang dipilih tamu. Satu tamu satu baris per hadiah; jumlah yang dipilih dijaga
+// agar received + total klaim tidak melebihi quantity (di dalam transaksi, lihat wish-claims).
+export const wishlistClaims = pgTable(
+  "wishlist_claims",
+  {
+    wishId: uuid()
+      .notNull()
+      .references(() => wishlistItems.id, { onDelete: "cascade" }),
+    guestId: uuid()
+      .notNull()
+      .references(() => guests.id, { onDelete: "cascade" }),
+    quantity: integer().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.wishId, table.guestId] }),
+    check("wishlist_claims_qty_valid", sql`${table.quantity} >= 1`),
+  ],
+);
+
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),
   sortOrder: integer().notNull(),

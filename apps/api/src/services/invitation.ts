@@ -26,6 +26,7 @@ import {
   giftAccounts,
   media,
   storyItems,
+  wishlistClaims,
   wishlistItems,
 } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
@@ -493,9 +494,23 @@ export async function reorderFaqs(db: Db, ids: string[]): Promise<Faq[]> {
 
 // --- Wishlist hadiah ------------------------------------------------------------------------------
 
+/** Jumlah yang dipilih tamu per hadiah. */
+async function claimedTotals(db: Db, wishId?: string): Promise<Map<string, number>> {
+  const rows = await db
+    .select({
+      wishId: wishlistClaims.wishId,
+      total: sql<number>`coalesce(sum(${wishlistClaims.quantity}), 0)::int`,
+    })
+    .from(wishlistClaims)
+    .where(wishId ? eq(wishlistClaims.wishId, wishId) : undefined)
+    .groupBy(wishlistClaims.wishId);
+  return new Map(rows.map((r) => [r.wishId, r.total]));
+}
+
 const toWish = (
   row: typeof wishlistItems.$inferSelect,
   photo: typeof media.$inferSelect | null,
+  claimed: number,
 ): Wish => ({
   id: row.id,
   name: row.name,
@@ -504,7 +519,8 @@ const toWish = (
   photo: toRef(photo),
   quantity: row.quantity,
   received: row.received,
-  isFulfilled: row.received >= row.quantity,
+  claimed,
+  isFulfilled: row.received + claimed >= row.quantity,
 });
 
 export async function listWishes(db: Db): Promise<Wish[]> {
@@ -513,10 +529,11 @@ export async function listWishes(db: Db): Promise<Wish[]> {
     .from(wishlistItems)
     .leftJoin(media, eq(media.id, wishlistItems.photoMediaId))
     .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.createdAt), asc(wishlistItems.id));
-  return rows.map((r) => toWish(r.item, r.photo));
+  const claimed = await claimedTotals(db);
+  return rows.map((r) => toWish(r.item, r.photo, claimed.get(r.item.id) ?? 0));
 }
 
-async function getWish(db: Db, id: string): Promise<Wish> {
+export async function getWish(db: Db, id: string): Promise<Wish> {
   const [row] = await db
     .select({ item: wishlistItems, photo: media })
     .from(wishlistItems)
@@ -524,7 +541,8 @@ async function getWish(db: Db, id: string): Promise<Wish> {
     .where(eq(wishlistItems.id, id))
     .limit(1);
   if (!row) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
-  return toWish(row.item, row.photo);
+  const claimed = await claimedTotals(db, id);
+  return toWish(row.item, row.photo, claimed.get(id) ?? 0);
 }
 
 export async function createWish(db: Db, input: WishData): Promise<Wish> {
@@ -549,6 +567,14 @@ export async function updateWish(db: Db, dir: string, id: string, input: WishDat
   const [existing] = await db.select().from(wishlistItems).where(eq(wishlistItems.id, id)).limit(1);
   if (!existing) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
   await assertPhotoUsable(db, input.photoMediaId, existing.photoMediaId);
+  const claimed = (await claimedTotals(db, id)).get(id) ?? 0;
+  if (input.quantity < input.received + claimed) {
+    throw new AppError(
+      409,
+      "CONFLICT",
+      `Jumlah dibutuhkan tidak boleh kurang dari yang sudah terpenuhi (${input.received + claimed}).`,
+    );
+  }
 
   await db
     .update(wishlistItems)

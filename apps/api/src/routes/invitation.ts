@@ -33,7 +33,6 @@ import {
   listGallery,
   listGifts,
   listStory,
-  listWishes,
   reorderFaqs,
   reorderGallery,
   reorderGifts,
@@ -46,6 +45,7 @@ import {
   updateStoryItem,
   updateWish,
 } from "../services/invitation.js";
+import { adminWish, listAdminWishes, removeClaim } from "../services/wish-claims.js";
 
 const idParam = z.object({ id: z.uuid() });
 const roleParam = z.object({ role: coupleRoleSchema });
@@ -161,26 +161,33 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
         await deleteFaq(db, c.req.valid("param").id);
         return c.json({ ok: true });
       })
-      .get("/wishes", async (c) => c.json({ items: await listWishes(db) }))
+      .get("/wishes", async (c) => c.json({ items: await listAdminWishes(db) }))
       .post("/wishes", validate("json", wishInputSchema), async (c) => {
-        return c.json({ item: await createWish(db, c.req.valid("json")) }, 201);
+        const created = await createWish(db, c.req.valid("json"));
+        return c.json({ item: await adminWish(db, created.id) }, 201);
       })
       // Harus sebelum "/wishes/:id" agar "order" tidak dibaca sebagai id.
       .put("/wishes/order", validate("json", wishOrderSchema), async (c) => {
-        return c.json({ items: await reorderWishes(db, c.req.valid("json").ids) });
+        await reorderWishes(db, c.req.valid("json").ids);
+        return c.json({ items: await listAdminWishes(db) });
       })
       .put(
         "/wishes/:id",
         validate("param", idParam),
         validate("json", wishInputSchema),
         async (c) => {
-          const item = await updateWish(
-            db,
-            config.mediaDir,
-            c.req.valid("param").id,
-            c.req.valid("json"),
-          );
-          return c.json({ item });
+          const { id } = c.req.valid("param");
+          await updateWish(db, config.mediaDir, id, c.req.valid("json"));
+          return c.json({ item: await adminWish(db, id) });
+        },
+      )
+      .delete(
+        "/wishes/:id/claims/:guestId",
+        validate("param", z.object({ id: z.uuid(), guestId: z.uuid() })),
+        async (c) => {
+          const { id, guestId } = c.req.valid("param");
+          await removeClaim(db, id, guestId);
+          return c.json({ item: await adminWish(db, id) });
         },
       )
       .delete("/wishes/:id", validate("param", idParam), async (c) => {

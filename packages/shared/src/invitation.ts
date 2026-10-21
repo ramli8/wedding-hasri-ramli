@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { normalizeInstagram } from "./contact.js";
 import { mediaRefSchema } from "./media.js";
+import { guestCodeSchema } from "./rsvp.js";
 
 const optionalText = (max: number, label: string) =>
   z
@@ -241,14 +242,38 @@ export const wishSchema = z.object({
   url: z.string().nullable(),
   photo: mediaRefSchema.nullable(),
   quantity: z.number().int(),
+  /** Diberikan di luar undangan (diisi admin). */
   received: z.number().int(),
-  /** received >= quantity, dihitung server. */
+  /** Jumlah yang dipilih tamu lewat undangan. */
+  claimed: z.number().int(),
+  /** received + claimed >= quantity, dihitung server. */
   isFulfilled: z.boolean(),
 });
 export type Wish = z.infer<typeof wishSchema>;
 
-export const wishListResponseSchema = z.object({ items: z.array(wishSchema) });
-export const wishResponseSchema = z.object({ item: wishSchema });
+/** Versi admin: dengan siapa saja yang memilih hadiah ini. */
+export const adminWishSchema = wishSchema.extend({
+  claims: z.array(
+    z.object({ guestId: z.uuid(), guestName: z.string(), quantity: z.number().int() }),
+  ),
+});
+export type AdminWish = z.infer<typeof adminWishSchema>;
+
+/** Tamu memilih (atau melepas, quantity 0) sejumlah hadiah. */
+export const wishClaimRequestSchema = z.object({
+  code: guestCodeSchema,
+  wishId: z.uuid(),
+  quantity: z.number().int().min(0).max(99),
+});
+export type WishClaimRequest = z.infer<typeof wishClaimRequestSchema>;
+export const wishClaimResponseSchema = z.object({ wish: wishSchema, mine: z.number().int() });
+
+export const myClaimsResponseSchema = z.object({
+  claims: z.array(z.object({ wishId: z.uuid(), quantity: z.number().int() })),
+});
+
+export const wishListResponseSchema = z.object({ items: z.array(adminWishSchema) });
+export const wishResponseSchema = z.object({ item: adminWishSchema });
 export const wishOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
 // --- Isi undangan untuk tamu ----------------------------------------------------------------------

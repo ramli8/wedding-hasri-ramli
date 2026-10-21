@@ -26,6 +26,12 @@ export function WishlistPage() {
     onSuccess: () => refresh("invitation"),
   });
 
+  const receive = useMutation({
+    mutationFn: (v: { wishId: string; guestId: string }) =>
+      adminApi.invitation.receiveWishClaim(v.wishId, v.guestId),
+    onSuccess: () => Promise.all([refresh("invitation"), refresh("received-gifts")]),
+  });
+
   const unclaim = useMutation({
     mutationFn: (v: { wishId: string; guestId: string }) =>
       adminApi.invitation.removeWishClaim(v.wishId, v.guestId),
@@ -60,6 +66,7 @@ export function WishlistPage() {
       {wishes.isError && <Alert tone="error">{wishes.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
       {unclaim.error && <Alert tone="error">{unclaim.error.message}</Alert>}
+      {receive.error && <Alert tone="error">{receive.error.message}</Alert>}
 
       {wishes.data && items.length === 0 ? (
         <Card className="text-center text-ink-soft">Belum ada hadiah dalam wishlist.</Card>
@@ -113,6 +120,20 @@ export function WishlistPage() {
                             Dipilih <strong>{claim.guestName}</strong>
                             {item.quantity > 1 ? ` × ${claim.quantity}` : ""}
                           </span>
+                          {claim.receivedGiftId ? (
+                            <Badge variant="pillAcid">Sudah diterima</Badge>
+                          ) : (
+                            <button
+                              type="button"
+                              className="font-semibold underline"
+                              disabled={receive.isPending}
+                              onClick={() =>
+                                receive.mutate({ wishId: item.id, guestId: claim.guestId })
+                              }
+                            >
+                              Tandai diterima
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="underline hover:text-alert"

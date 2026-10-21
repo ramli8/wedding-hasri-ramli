@@ -243,6 +243,12 @@ export const adminApi = {
         wishResponseSchema,
         withBody("DELETE"),
       ),
+    receiveWishClaim: (wishId: string, guestId: string) =>
+      request(
+        `${base}/invitation/wishes/${wishId}/claims/${guestId}/received`,
+        wishResponseSchema,
+        withBody("POST", {}),
+      ),
     reorderWishes: (ids: string[]) =>
       request(`${base}/invitation/wishes/order`, wishListResponseSchema, withBody("PUT", { ids })),
     layout: () => request(`${base}/invitation/layout`, layoutResponseSchema),

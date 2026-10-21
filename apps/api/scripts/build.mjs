@@ -13,7 +13,7 @@ await build({
   target: "node24",
   format: "esm",
   sourcemap: true,
-  external: ["@node-rs/argon2", "pino-pretty"],
+  external: ["@node-rs/argon2", "sharp", "pino-pretty"],
   // beberapa dependensi (pino) masih memakai require() di dalam bundel ESM
   banner: {
     js: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);",

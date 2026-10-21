@@ -6,6 +6,7 @@ import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
 import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
+import { mediaAdminRoutes } from "./media.js";
 import { settingsRoutes } from "./settings.js";
 
 /** Semua rute di bawah /api/v1/admin memerlukan sesi admin. */
@@ -18,6 +19,7 @@ export function adminRoutes(deps: AppDeps) {
     .route("/guests", guestRoutes(deps))
     .route("/devices", deviceAdminRoutes(deps))
     .route("/checkins", checkinAdminRoutes(deps))
+    .route("/media", mediaAdminRoutes(deps))
     .route("/rsvps", rsvpAdminRoutes(deps))
     .route("/guestbook", guestbookAdminRoutes(deps));
 }

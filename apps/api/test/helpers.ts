@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { createApp } from "../src/app.js";
 import { hashPassword } from "../src/auth/password.js";
@@ -9,6 +12,9 @@ import { createLogger } from "../src/logger.js";
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? "postgres://wedding:wedding@localhost:5433/wedding_test";
 
+// Folder gambar tes terpisah dari data pengembangan; dibuat sekali per proses vitest.
+export const TEST_MEDIA_DIR = mkdtempSync(join(tmpdir(), "wedding-media-"));
+
 export const ORIGIN = "http://localhost:5173";
 export const PASSWORD = "kata-sandi-panjang-1";
 
@@ -17,6 +23,7 @@ export function createTestContext(overrides: Record<string, string> = {}) {
     NODE_ENV: "test",
     DATABASE_URL: TEST_DATABASE_URL,
     ALLOWED_ORIGINS: ORIGIN,
+    MEDIA_DIR: TEST_MEDIA_DIR,
     ...overrides,
   });
   const { db, close } = createDb(config.databaseUrl);
@@ -28,7 +35,7 @@ export function createTestContext(overrides: Record<string, string> = {}) {
 
 export async function resetDb(db: ReturnType<typeof createDb>["db"]) {
   await db.execute(
-    sql`truncate table admins, settings, events, guest_groups, guests, devices, rsvps, guestbook restart identity cascade`,
+    sql`truncate table admins, settings, events, guest_groups, guests, devices, rsvps, guestbook, media restart identity cascade`,
   );
 }
 

@@ -42,7 +42,7 @@ export default defineConfig({
         globIgnores: ["**/*vietnamese*", "**/*latin-ext*"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
         cleanupOutdatedCaches: true,
       },
     }),
@@ -52,10 +52,10 @@ export default defineConfig({
     // Untuk uji di HP lewat Cloudflare Quick Tunnel (cloudflared tunnel --url http://localhost:5173).
     allowedHosts: [".trycloudflare.com"],
     // Origin dibiarkan apa adanya (http://localhost:5173) agar lolos pemeriksaan Origin di API.
-    proxy: { "/api": "http://localhost:3000" },
+    proxy: { "/api": "http://localhost:3000", "/media": "http://localhost:3000" },
   },
   preview: {
     port: 4173,
-    proxy: { "/api": "http://localhost:3000" },
+    proxy: { "/api": "http://localhost:3000", "/media": "http://localhost:3000" },
   },
 });

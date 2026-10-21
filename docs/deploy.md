@@ -62,6 +62,19 @@ Kata sandi ditanyakan tanpa tampil di layar (minimal 10 karakter). Ulangi untuk 
 - Pantau URL itu dengan UptimeRobot (notifikasi ke HP).
 - Log: `docker compose -p wedding-prod ... logs -f api`.
 
+## Gambar unggahan
+
+Foto yang diunggah admin disimpan di volume Docker `media` (dipasang di `/data/media` pada container
+api, variabel `MEDIA_DIR`) dalam folder per gambar: `<id>/large.webp` (resolusi asli, near-lossless,
+sehingga cukup besar) dan `<id>/thumb.webp`. Caddy meneruskan `/media/*` ke API, yang memberi
+`Cache-Control: immutable`.
+
+- **Volume ini harus ikut backup**, bersama `pg_dump`. Database hanya menyimpan metadatanya;
+  kalau volume hilang, baris gambar masih ada tetapi fotonya tidak.
+- Aturan cache Cloudflare: `/media/*` boleh di-cache (WebP di-cache secara bawaan); hanya `/api/*` yang dilewati.
+- Image API memasang `sharp` (modul native) saat build, seperti argon2; versinya mengikuti `pnpm-lock.yaml`.
+- Satu foto resolusi asli bisa beberapa MB. Perhatikan sisa disk VPS bila galeri besar.
+
 ## Belum ada (menyusul)
 
 - Backup `pg_dump` terjadwal ke Cloudflare R2 dan uji restore. Dikerjakan begitu VPS dan akun R2 siap.

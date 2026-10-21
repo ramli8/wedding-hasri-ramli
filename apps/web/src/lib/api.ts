@@ -26,7 +26,10 @@ export async function request<T>(path: string, schema: z.ZodType<T>, init: Reque
     res = await fetch(`/api${path}`, {
       credentials: "same-origin",
       ...init,
-      headers: { "content-type": "application/json", ...init.headers },
+      headers:
+        init.body instanceof FormData
+          ? init.headers
+          : { "content-type": "application/json", ...init.headers },
     });
   } catch {
     throw new ApiError(0, "NETWORK", "Tidak bisa terhubung ke server");

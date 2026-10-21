@@ -37,6 +37,9 @@ services:
       TRUST_PROXY: "true"
       APP_VERSION: ${APP_VERSION:-dev}
       LOG_LEVEL: info
+      MEDIA_DIR: /data/media
+    volumes:
+      - media:/data/media
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 15s
@@ -64,6 +67,7 @@ services:
 
 volumes:
   pgdata:
+  media:
 
 networks:
   edge:

@@ -10,6 +10,7 @@ const configSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   MIGRATIONS_DIR: z.string().default("drizzle"),
   APP_VERSION: z.string().default("dev"),
+  MEDIA_DIR: z.string().default("data/media"),
 });
 
 export function loadConfig(source: Record<string, string | undefined> = process.env) {
@@ -33,6 +34,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     logLevel: v.LOG_LEVEL,
     migrationsDir: v.MIGRATIONS_DIR,
     version: v.APP_VERSION,
+    mediaDir: v.MEDIA_DIR,
   };
 }
 

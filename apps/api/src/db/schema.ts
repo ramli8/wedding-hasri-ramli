@@ -224,6 +224,17 @@ export const checkinEvents = pgTable(
   ],
 );
 
+// Gambar unggahan admin. Berkasnya ada di disk (config.mediaDir/<id>/{large,thumb}.webp), bukan di
+// database. Satu baris dimiliki satu tempat (foto mempelai, butir cerita, dst.).
+export const media = pgTable("media", {
+  id: uuid().primaryKey().defaultRandom(),
+  width: integer().notNull(),
+  height: integer().notNull(),
+  bytes: integer().notNull(),
+  originalName: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 // Jawaban RSVP tamu per acara (hanya acara dengan has_rsvp).
 export const rsvps = pgTable(
   "rsvps",

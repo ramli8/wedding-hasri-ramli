@@ -11,6 +11,11 @@
 		reverse_proxy api:3000
 	}
 
+	# Gambar unggahan: API memberi Cache-Control immutable karena id-nya tidak pernah berubah isinya.
+	handle /media/* {
+		reverse_proxy api:3000
+	}
+
 	handle {
 		root * /srv
 		header {

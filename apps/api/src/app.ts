@@ -6,6 +6,7 @@ import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
+import { mediaPublicRoutes } from "./routes/media.js";
 import { publicRoutes } from "./routes/public.js";
 
 export function createApp(deps: AppDeps) {
@@ -21,6 +22,7 @@ export function createApp(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use("*", requestLogger(deps.logger))
     .route("/api", api)
+    .route("/media", mediaPublicRoutes(deps))
     .onError(errorHandler(deps.logger))
     .notFound(notFoundHandler);
 }

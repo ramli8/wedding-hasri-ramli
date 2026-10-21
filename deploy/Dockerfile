@@ -20,8 +20,11 @@ RUN pnpm --filter @wedding/api build && pnpm --filter @wedding/web build
 FROM node:24-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
-# Modul native tidak ikut dibundel; versinya harus sama dengan pnpm-lock.yaml.
-RUN npm install --no-save --no-audit --no-fund @node-rs/argon2@2.2.2
+# Modul native tidak ikut dibundel; versinya harus sama dengan pnpm-lock.yaml (sharp 0.35.5).
+RUN npm install --no-save --no-audit --no-fund @node-rs/argon2@2.2.2 sharp@0.35.5
+# Folder gambar unggahan; volume Docker bernama mewarisi pemiliknya saat pertama dipasang.
+RUN mkdir -p /data/media && chown node:node /data/media
+ENV MEDIA_DIR=/data/media
 COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=build /repo/apps/api/drizzle ./drizzle
 USER node

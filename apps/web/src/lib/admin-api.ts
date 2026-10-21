@@ -18,6 +18,7 @@ import {
   importPreviewResponseSchema,
   logResponseSchema,
   type MarkSentRequest,
+  mediaResponseSchema,
   type ResolveRequest,
   reviewListResponseSchema,
   rsvpListResponseSchema,
@@ -114,6 +115,15 @@ export const adminApi = {
   rsvps: {
     list: (eventId?: string) =>
       request(`${base}/rsvps${queryString({ eventId })}`, rsvpListResponseSchema),
+  },
+
+  media: {
+    /** Mengunggah satu gambar (resolusi asli dipertahankan oleh server). */
+    upload: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return request(`${base}/media`, mediaResponseSchema, { method: "POST", body: form });
+    },
   },
 
   guestbook: {

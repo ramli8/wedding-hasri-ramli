@@ -30,6 +30,7 @@ import {
   groupResponseSchema,
   guestListResponseSchema,
   guestResponseSchema,
+  homeResponseSchema,
   importCommitResponseSchema,
   importPreviewResponseSchema,
   type LiveInput,
@@ -259,6 +260,8 @@ export const adminApi = {
     saveSections: (items: Section[]) =>
       request(`${base}/invitation/sections`, sectionsResponseSchema, withBody("PUT", { items })),
   },
+
+  home: () => request(`${base}/home`, homeResponseSchema),
 
   vendors: {
     overview: () => request(`${base}/vendors`, vendorOverviewSchema),

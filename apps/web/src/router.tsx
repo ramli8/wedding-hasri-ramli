@@ -17,6 +17,7 @@ import { GuestbookPage } from "./pages/guestbook-page.js";
 import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
 import { PrintPage } from "./pages/guests/print-page.js";
+import { HomePage } from "./pages/home-page.js";
 import { CouplePage } from "./pages/invitation/couple-page.js";
 import { FaqPage } from "./pages/invitation/faq-page.js";
 import { GalleryPage } from "./pages/invitation/gallery-page.js";
@@ -72,9 +73,7 @@ const appRoute = createRoute({
 const adminIndexRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin",
-  beforeLoad: () => {
-    throw redirect({ to: "/admin/tamu" });
-  },
+  component: HomePage,
 });
 
 const guestsRoute = createRoute({

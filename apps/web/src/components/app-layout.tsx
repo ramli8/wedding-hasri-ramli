@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CalendarDays,
   Gift,
+  Home,
   LogOut,
   MoreHorizontal,
   ScanLine,
@@ -21,6 +22,7 @@ import { Button } from "./ui/button.js";
 import { Dialog } from "./ui/dialog.js";
 
 const navItems = [
+  { to: "/admin", label: "Beranda", icon: Home },
   { to: "/admin/tamu", label: "Tamu", icon: Users },
   { to: "/admin/kelompok", label: "Kelompok", icon: Tags },
   { to: "/admin/acara", label: "Acara", icon: CalendarDays },
@@ -34,7 +36,7 @@ const navItems = [
 ] as const;
 
 /** Menu yang paling sering dipakai tampil di bilah bawah (HP); sisanya di tombol "Lainnya". */
-const PRIMARY = ["/admin/tamu", "/admin/checkin", "/admin/undangan", "/admin/hadiah"] as const;
+const PRIMARY = ["/admin", "/admin/tamu", "/admin/checkin", "/admin/undangan"] as const;
 const primaryItems = PRIMARY.map((to) => navItems.find((item) => item.to === to)).filter(
   (item) => item !== undefined,
 );
@@ -81,7 +83,7 @@ export function AppLayout() {
       <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-bone pt-[env(safe-area-inset-top)] print:hidden">
         <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6 xl:h-16">
           <Link
-            to="/admin/tamu"
+            to="/admin"
             className="flex items-center gap-3 font-display text-sm font-bold tracking-h3 whitespace-nowrap uppercase"
           >
             <span className="tag grid size-9 place-items-center border-2 border-ink bg-acid">
@@ -104,7 +106,12 @@ export function AppLayout() {
           aria-label="Menu utama"
         >
           {navItems.map((item) => (
-            <Link key={item.to} to={item.to} className={navLink}>
+            <Link
+              key={item.to}
+              to={item.to}
+              className={navLink}
+              activeOptions={{ exact: item.to === "/admin" }}
+            >
               <item.icon className="size-4" aria-hidden />
               {item.label}
             </Link>
@@ -125,6 +132,7 @@ export function AppLayout() {
           <Link
             key={item.to}
             to={item.to}
+            activeOptions={{ exact: item.to === "/admin" }}
             className={`${tabBase} data-[status=active]:border-ink data-[status=active]:bg-acid`}
           >
             <item.icon className="size-5" aria-hidden />

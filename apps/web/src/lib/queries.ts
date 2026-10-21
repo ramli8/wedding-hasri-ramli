@@ -139,3 +139,10 @@ export const vendorsQuery = queryOptions({
   queryKey: ["vendors"],
   queryFn: () => adminApi.vendors.overview(),
 });
+
+export const homeQuery = queryOptions({
+  queryKey: ["home"],
+  queryFn: () => adminApi.home(),
+  refetchInterval: 30_000,
+  retry: false,
+});

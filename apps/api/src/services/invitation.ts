@@ -9,7 +9,6 @@ import {
   type Gift,
   type GiftData,
   type GiftKind,
-  type InvitationResponse,
   type MediaRef,
   mediaUrl,
   type StoryData,
@@ -24,6 +23,7 @@ import {
   faqItems,
   galleryItems,
   giftAccounts,
+  invitationCover,
   media,
   storyItems,
   wishlistClaims,
@@ -32,7 +32,7 @@ import {
 import { AppError } from "../http/errors.js";
 import { discardMedia } from "./media.js";
 
-const toRef = (row: typeof media.$inferSelect | null): MediaRef | null =>
+export const toRef = (row: typeof media.$inferSelect | null): MediaRef | null =>
   row
     ? {
         id: row.id,
@@ -44,7 +44,7 @@ const toRef = (row: typeof media.$inferSelect | null): MediaRef | null =>
     : null;
 
 /** Gambar yang dipilih harus sudah diunggah dan belum dipakai bagian lain. */
-async function assertPhotoUsable(db: Db, photoId: string | null, own: string | null) {
+export async function assertPhotoUsable(db: Db, photoId: string | null, own: string | null) {
   if (!photoId || photoId === own) return;
   const [row] = await db.select({ id: media.id }).from(media).where(eq(media.id, photoId)).limit(1);
   if (!row) throw new AppError(400, "VALIDATION_ERROR", "Gambar tidak ditemukan. Unggah ulang.");
@@ -53,7 +53,8 @@ async function assertPhotoUsable(db: Db, photoId: string | null, own: string | n
         union all select 1 from ${storyItems} where ${storyItems.photoMediaId} = ${photoId}
         union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId}
         union all select 1 from ${giftAccounts} where ${giftAccounts.qrMediaId} = ${photoId}
-        union all select 1 from ${wishlistItems} where ${wishlistItems.photoMediaId} = ${photoId} limit 1`,
+        union all select 1 from ${wishlistItems} where ${wishlistItems.photoMediaId} = ${photoId}
+        union all select 1 from ${invitationCover} where ${invitationCover.photoMediaId} = ${photoId} limit 1`,
   );
   if (used.length > 0) {
     throw new AppError(409, "CONFLICT", "Gambar ini sudah dipakai di bagian lain");
@@ -622,17 +623,4 @@ export async function reorderWishes(db: Db, ids: string[]): Promise<Wish[]> {
     }
   });
   return listWishes(db);
-}
-
-// --- Untuk tamu -----------------------------------------------------------------------------------
-
-export async function getInvitation(db: Db): Promise<InvitationResponse> {
-  return {
-    couple: await getCouple(db),
-    story: await listStory(db),
-    gallery: await listGallery(db),
-    gifts: await listGifts(db),
-    faqs: await listFaqs(db),
-    wishes: await listWishes(db),
-  };
 }

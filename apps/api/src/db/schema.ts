@@ -325,6 +325,25 @@ export const wishlistClaims = pgTable(
   ],
 );
 
+// Sampul undangan (satu baris): foto dan kalimat pembuka di atas halaman tamu.
+export const invitationCover = pgTable(
+  "invitation_cover",
+  {
+    id: smallint().primaryKey().default(1),
+    greeting: text(),
+    photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("invitation_cover_singleton", sql`${table.id} = 1`)],
+);
+
+// Urutan dan tampil/sembunyi tiap bagian undangan. Bagian yang belum punya baris memakai bawaan.
+export const invitationSections = pgTable("invitation_sections", {
+  key: text().primaryKey(),
+  sortOrder: integer().notNull(),
+  isVisible: boolean().notNull().default(true),
+});
+
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),
   sortOrder: integer().notNull(),

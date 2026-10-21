@@ -7,10 +7,12 @@ import type {
   GalleryItem,
   Gift,
   InvitationResponse,
+  LayoutResponse,
   Media,
   StoryItem,
   Wish,
 } from "@wedding/shared";
+import { SECTION_KEYS } from "@wedding/shared";
 import { inArray } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -285,6 +287,9 @@ describe("isi undangan untuk tamu", () => {
       gifts: [],
       faqs: [],
       wishes: [],
+      cover: { greeting: null, photo: null },
+      sections: SECTION_KEYS.map((key) => ({ key, visible: true })),
+      eventDate: null,
     });
   });
 });
@@ -504,5 +509,81 @@ describe("wishlist", () => {
       400,
     );
     expect((await adminClient(app, "").get("/invitation/wishes")).status).toBe(401);
+  });
+});
+
+describe("sampul dan susunan bagian", () => {
+  const sections = async () =>
+    (await read<LayoutResponse>(await api.get("/invitation/layout"))).sections;
+
+  it("bawaan: semua bagian tampil dengan urutan standar", async () => {
+    const layout = await read<LayoutResponse>(await api.get("/invitation/layout"));
+    expect(layout.cover).toEqual({ greeting: null, photo: null });
+    expect(layout.sections.map((s) => s.key)).toEqual([...SECTION_KEYS]);
+    expect(layout.sections.every((s) => s.visible)).toBe(true);
+  });
+
+  it("menyimpan urutan dan menyembunyikan bagian, lalu tamu menerimanya", async () => {
+    const next = [...SECTION_KEYS].reverse().map((key) => ({ key, visible: key !== "faq" }));
+    const res = await api.put("/invitation/sections", { items: next });
+    expect(res.status).toBe(200);
+    expect(await sections()).toEqual(next);
+
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body.sections).toEqual(next);
+  });
+
+  it("menolak susunan yang tidak lengkap, ganda, atau berisi bagian asing", async () => {
+    const all = SECTION_KEYS.map((key) => ({ key, visible: true }));
+    expect((await api.put("/invitation/sections", { items: all.slice(1) })).status).toBe(400);
+    expect(
+      (await api.put("/invitation/sections", { items: [...all.slice(1), all[1]] })).status,
+    ).toBe(400);
+    expect(
+      (
+        await api.put("/invitation/sections", {
+          items: [...all.slice(1), { key: "musik", visible: true }],
+        })
+      ).status,
+    ).toBe(400);
+    expect((await adminClient(app, "").put("/invitation/sections", { items: all })).status).toBe(
+      401,
+    );
+  });
+
+  it("menyimpan sampul, mengganti foto dengan pembersihan, dan mengirim tanggal acara", async () => {
+    const p1 = await uploadPhoto("sampul1.png");
+    const saved = await api.put("/invitation/cover", {
+      greeting: "  Bismillah  ",
+      photoMediaId: p1.id,
+    });
+    expect(saved.status).toBe(200);
+    expect(
+      (await read<{ cover: { greeting: string; photo: { id: string } } }>(saved)).cover,
+    ).toMatchObject({
+      greeting: "Bismillah",
+      photo: { id: p1.id },
+    });
+    // Menyimpan ulang dengan foto yang sama tidak dianggap "sudah dipakai".
+    expect((await api.put("/invitation/cover", { photoMediaId: p1.id })).status).toBe(200);
+
+    const p2 = await uploadPhoto("sampul2.png");
+    await api.put("/invitation/cover", { greeting: "Halo", photoMediaId: p2.id });
+    expect(onDisk(p1)).toBe(false);
+    expect(onDisk(p2)).toBe(true);
+
+    await api.post("/events", {
+      slug: "resepsi",
+      name: "Resepsi",
+      startsAt: "2027-05-21T03:00:00Z",
+      endsAt: "2027-05-21T07:00:00Z",
+    });
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body.eventDate).toBe("2027-05-21T03:00:00.000Z");
+    expect(body.cover.photo?.id).toBe(p2.id);
+
+    // Foto sampul tidak bisa dipakai bagian lain.
+    expect((await api.post("/invitation/gallery", { mediaId: p2.id })).status).toBe(409);
+    expect((await api.delete(`/media/${p2.id}`)).status).toBe(409);
   });
 });

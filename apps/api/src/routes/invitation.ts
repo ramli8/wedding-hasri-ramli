@@ -1,6 +1,7 @@
 import {
   coupleProfileInputSchema,
   coupleRoleSchema,
+  coverInputSchema,
   faqInputSchema,
   faqOrderSchema,
   galleryCaptionSchema,
@@ -8,6 +9,7 @@ import {
   galleryOrderSchema,
   giftInputSchema,
   giftOrderSchema,
+  sectionsInputSchema,
   storyInputSchema,
   storyOrderSchema,
   wishInputSchema,
@@ -45,6 +47,7 @@ import {
   updateStoryItem,
   updateWish,
 } from "../services/invitation.js";
+import { getLayout, saveCover, saveSections } from "../services/layout.js";
 import { adminWish, listAdminWishes, removeClaim } from "../services/wish-claims.js";
 
 const idParam = z.object({ id: z.uuid() });
@@ -193,6 +196,13 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
       .delete("/wishes/:id", validate("param", idParam), async (c) => {
         await deleteWish(db, config.mediaDir, c.req.valid("param").id);
         return c.json({ ok: true });
+      })
+      .get("/layout", async (c) => c.json(await getLayout(db)))
+      .put("/cover", validate("json", coverInputSchema), async (c) => {
+        return c.json({ cover: await saveCover(db, config.mediaDir, c.req.valid("json")) });
+      })
+      .put("/sections", validate("json", sectionsInputSchema), async (c) => {
+        return c.json({ sections: await saveSections(db, c.req.valid("json").items) });
       })
   );
 }

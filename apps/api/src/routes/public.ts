@@ -13,7 +13,7 @@ import type { AppDeps, AppEnv } from "../http/env.js";
 import { AppError } from "../http/errors.js";
 import { clientIp } from "../http/middleware.js";
 import { validate } from "../http/validate.js";
-import { getInvitation } from "../services/invitation.js";
+import { getInvitation } from "../services/layout.js";
 import {
   findGuestByCode,
   getTicket,

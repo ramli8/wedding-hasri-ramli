@@ -264,6 +264,67 @@ export const wishListResponseSchema = z.object({ items: z.array(adminWishSchema)
 export const wishResponseSchema = z.object({ item: adminWishSchema });
 export const wishOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
+// --- Sampul dan susunan bagian --------------------------------------------------------------------
+
+export const SECTION_KEYS = [
+  "mempelai",
+  "cerita",
+  "galeri",
+  "amplop",
+  "wishlist",
+  "faq",
+  "ucapan",
+] as const;
+export const sectionKeySchema = z.enum(SECTION_KEYS);
+export type SectionKey = z.infer<typeof sectionKeySchema>;
+
+export const SECTION_LABEL: Record<SectionKey, string> = {
+  mempelai: "Mempelai",
+  cerita: "Cerita kami",
+  galeri: "Galeri",
+  amplop: "Amplop digital",
+  wishlist: "Wishlist hadiah",
+  faq: "Tanya jawab",
+  ucapan: "Ucapan",
+};
+
+export const sectionSchema = z.object({ key: sectionKeySchema, visible: z.boolean() });
+export type Section = z.infer<typeof sectionSchema>;
+
+/** Susunan baru: setiap bagian tepat satu kali, urut dari yang pertama. */
+export const sectionsInputSchema = z.object({
+  items: z
+    .array(sectionSchema)
+    .refine(
+      (items) =>
+        items.length === SECTION_KEYS.length &&
+        new Set(items.map((i) => i.key)).size === items.length,
+      { message: "Susunan harus memuat setiap bagian tepat satu kali" },
+    ),
+});
+
+export const coverInputSchema = z.object({
+  /** Kalimat pembuka di bawah nama mempelai, mis. basmalah atau ajakan singkat. */
+  greeting: optionalText(400, "Kalimat pembuka"),
+  photoMediaId: photoId,
+});
+export type CoverInput = z.input<typeof coverInputSchema>;
+export type CoverData = z.output<typeof coverInputSchema>;
+
+export const coverSchema = z.object({
+  greeting: z.string().nullable(),
+  photo: mediaRefSchema.nullable(),
+});
+export type Cover = z.infer<typeof coverSchema>;
+
+export const layoutResponseSchema = z.object({
+  cover: coverSchema,
+  sections: z.array(sectionSchema),
+});
+export type LayoutResponse = z.infer<typeof layoutResponseSchema>;
+export const coverResponseSchema = z.object({ cover: coverSchema });
+export const sectionsResponseSchema = z.object({ sections: z.array(sectionSchema) });
+
 // --- Isi undangan untuk tamu ----------------------------------------------------------------------
 
 export const invitationResponseSchema = z.object({
@@ -273,5 +334,9 @@ export const invitationResponseSchema = z.object({
   gifts: z.array(giftSchema),
   faqs: z.array(faqSchema),
   wishes: z.array(wishSchema),
+  cover: coverSchema,
+  sections: z.array(sectionSchema),
+  /** Waktu mulai acara paling awal, untuk sampul. */
+  eventDate: z.string().nullable(),
 });
 export type InvitationResponse = z.infer<typeof invitationResponseSchema>;

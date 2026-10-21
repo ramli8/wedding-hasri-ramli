@@ -127,6 +127,13 @@
       "when": 1792564035835,
       "tag": "0017_tiresome_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792564280370,
+      "tag": "0018_volatile_riptide",
+      "breakpoints": true
     }
   ]
 }

@@ -46,7 +46,7 @@ export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string
       <ul className="flex flex-col gap-3">
         {wishes.map((wish) => {
           const picked = mineBy.get(wish.id) ?? 0;
-          const remaining = wish.quantity - wish.received - wish.claimed;
+          const remaining = wish.quantity - wish.claimed;
           const canChoose = mine.isSuccess && (remaining > 0 || picked > 0);
           const max = remaining + picked;
           const busy = claim.isPending && claim.variables?.wishId === wish.id;

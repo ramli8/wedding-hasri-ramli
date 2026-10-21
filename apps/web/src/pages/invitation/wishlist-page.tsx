@@ -101,9 +101,7 @@ export function WishlistPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-display text-lg font-bold">{item.name}</p>
                     <Badge variant="pill">
-                      {item.isFulfilled
-                        ? "Terpenuhi"
-                        : `${item.received + item.claimed}/${item.quantity}`}
+                      {item.isFulfilled ? "Terpenuhi" : `${item.claimed}/${item.quantity}`}
                     </Badge>
                   </div>
                   {item.note && <p className="text-sm break-words">{item.note}</p>}
@@ -128,11 +126,6 @@ export function WishlistPage() {
                         </li>
                       ))}
                     </ul>
-                  )}
-                  {item.received > 0 && (
-                    <p className="text-sm text-ink-soft">
-                      {item.received} diberikan di luar undangan
-                    </p>
                   )}
                   {item.url && (
                     <a
@@ -188,7 +181,6 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
   const [url, setUrl] = useState(item?.url ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(item?.photo ?? null);
   const [quantity, setQuantity] = useState(String(item?.quantity ?? 1));
-  const [received, setReceived] = useState(String(item?.received ?? 0));
 
   const save = useMutation({
     mutationFn: () => {
@@ -198,7 +190,6 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
         url,
         photoMediaId: photo?.id ?? null,
         quantity: Number(quantity),
-        received: Number(received),
       };
       return item
         ? adminApi.invitation.updateWish(item.id, input)
@@ -251,7 +242,7 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
         recommendation="persegi 1:1, 800 × 800 px. Di undangan foto tampil kecil sebagai kotak, dan sisi yang tidak persegi dipotong dari tengah."
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Jumlah dibutuhkan">
+        <Field label="Jumlah dibutuhkan" hint="Yang terpenuhi dihitung dari pilihan tamu.">
           {(id) => (
             <Input
               id={id}
@@ -262,23 +253,6 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
               required
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field
-          label="Sudah diberikan di luar undangan"
-          hint="Mis. tamu memberi langsung. Pilihan tamu lewat undangan dihitung otomatis."
-        >
-          {(id) => (
-            <Input
-              id={id}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={Number(quantity) || 99}
-              required
-              value={received}
-              onChange={(e) => setReceived(e.target.value)}
             />
           )}
         </Field>

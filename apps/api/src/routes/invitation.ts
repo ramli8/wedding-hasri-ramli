@@ -4,6 +4,8 @@ import {
   galleryCaptionSchema,
   galleryInputSchema,
   galleryOrderSchema,
+  giftInputSchema,
+  giftOrderSchema,
   storyInputSchema,
   storyOrderSchema,
 } from "@wedding/shared";
@@ -13,16 +15,21 @@ import type { AppDeps, AppEnv } from "../http/env.js";
 import { validate } from "../http/validate.js";
 import {
   createGalleryItem,
+  createGift,
   createStoryItem,
   deleteGalleryItem,
+  deleteGift,
   deleteStoryItem,
   getCouple,
   listGallery,
+  listGifts,
   listStory,
   reorderGallery,
+  reorderGifts,
   reorderStory,
   saveCoupleProfile,
   updateGalleryCaption,
+  updateGift,
   updateStoryItem,
 } from "../services/invitation.js";
 
@@ -97,6 +104,32 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
       )
       .delete("/gallery/:id", validate("param", idParam), async (c) => {
         await deleteGalleryItem(db, config.mediaDir, c.req.valid("param").id);
+        return c.json({ ok: true });
+      })
+      .get("/gifts", async (c) => c.json({ items: await listGifts(db) }))
+      .post("/gifts", validate("json", giftInputSchema), async (c) => {
+        return c.json({ item: await createGift(db, c.req.valid("json")) }, 201);
+      })
+      // Harus sebelum "/gifts/:id" agar "order" tidak dibaca sebagai id.
+      .put("/gifts/order", validate("json", giftOrderSchema), async (c) => {
+        return c.json({ items: await reorderGifts(db, c.req.valid("json").ids) });
+      })
+      .put(
+        "/gifts/:id",
+        validate("param", idParam),
+        validate("json", giftInputSchema),
+        async (c) => {
+          const item = await updateGift(
+            db,
+            config.mediaDir,
+            c.req.valid("param").id,
+            c.req.valid("json"),
+          );
+          return c.json({ item });
+        },
+      )
+      .delete("/gifts/:id", validate("param", idParam), async (c) => {
+        await deleteGift(db, config.mediaDir, c.req.valid("param").id);
         return c.json({ ok: true });
       })
   );

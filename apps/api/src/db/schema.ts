@@ -264,6 +264,22 @@ export const galleryItems = pgTable("gallery_items", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
+// Rekening bank / e-wallet untuk amplop digital, berurutan menurut sort_order.
+export const giftAccounts = pgTable(
+  "gift_accounts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    sortOrder: integer().notNull(),
+    kind: text().notNull(),
+    provider: text().notNull(),
+    accountName: text().notNull(),
+    accountNumber: text().notNull(),
+    qrMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("gift_accounts_kind_valid", sql`${table.kind} in ('bank', 'ewallet')`)],
+);
+
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),
   sortOrder: integer().notNull(),

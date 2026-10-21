@@ -78,6 +78,13 @@
       "when": 1792562483793,
       "tag": "0010_dear_korg",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792562774006,
+      "tag": "0011_many_christian_walker",
+      "breakpoints": true
     }
   ]
 }

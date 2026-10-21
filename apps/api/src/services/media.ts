@@ -25,6 +25,7 @@ export const MEDIA_USERS: { table: string; column: string }[] = [
   { table: "couple_profiles", column: "photo_media_id" },
   { table: "story_items", column: "photo_media_id" },
   { table: "gallery_items", column: "photo_media_id" },
+  { table: "gift_accounts", column: "qr_media_id" },
 ];
 
 const toMedia = (row: typeof media.$inferSelect): Media => ({

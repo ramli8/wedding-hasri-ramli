@@ -4,6 +4,9 @@ import {
   type CoupleRole,
   type GalleryData,
   type GalleryItem,
+  type Gift,
+  type GiftData,
+  type GiftKind,
   type InvitationResponse,
   type MediaRef,
   mediaUrl,
@@ -12,7 +15,7 @@ import {
 } from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { coupleProfiles, galleryItems, media, storyItems } from "../db/schema.js";
+import { coupleProfiles, galleryItems, giftAccounts, media, storyItems } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { discardMedia } from "./media.js";
 
@@ -35,7 +38,8 @@ async function assertPhotoUsable(db: Db, photoId: string | null, own: string | n
   const used = await db.execute(
     sql`select 1 from ${coupleProfiles} where ${coupleProfiles.photoMediaId} = ${photoId}
         union all select 1 from ${storyItems} where ${storyItems.photoMediaId} = ${photoId}
-        union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId} limit 1`,
+        union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId}
+        union all select 1 from ${giftAccounts} where ${giftAccounts.qrMediaId} = ${photoId} limit 1`,
   );
   if (used.length > 0) {
     throw new AppError(409, "CONFLICT", "Gambar ini sudah dipakai di bagian lain");
@@ -299,6 +303,112 @@ export async function reorderGallery(db: Db, ids: string[]): Promise<GalleryItem
   return listGallery(db);
 }
 
+// --- Amplop digital -------------------------------------------------------------------------------
+
+const toGift = (
+  row: typeof giftAccounts.$inferSelect,
+  qr: typeof media.$inferSelect | null,
+): Gift => ({
+  id: row.id,
+  kind: row.kind as GiftKind,
+  provider: row.provider,
+  accountName: row.accountName,
+  accountNumber: row.accountNumber,
+  qr: toRef(qr),
+});
+
+export async function listGifts(db: Db): Promise<Gift[]> {
+  const rows = await db
+    .select({ item: giftAccounts, qr: media })
+    .from(giftAccounts)
+    .leftJoin(media, eq(media.id, giftAccounts.qrMediaId))
+    .orderBy(asc(giftAccounts.sortOrder), asc(giftAccounts.createdAt), asc(giftAccounts.id));
+  return rows.map((r) => toGift(r.item, r.qr));
+}
+
+async function getGift(db: Db, id: string): Promise<Gift> {
+  const [row] = await db
+    .select({ item: giftAccounts, qr: media })
+    .from(giftAccounts)
+    .leftJoin(media, eq(media.id, giftAccounts.qrMediaId))
+    .where(eq(giftAccounts.id, id))
+    .limit(1);
+  if (!row) throw new AppError(404, "NOT_FOUND", "Rekening tidak ditemukan");
+  return toGift(row.item, row.qr);
+}
+
+export async function createGift(db: Db, input: GiftData): Promise<Gift> {
+  await assertPhotoUsable(db, input.qrMediaId, null);
+  const [row] = await db
+    .insert(giftAccounts)
+    .values({
+      sortOrder: sql`(select coalesce(max(${giftAccounts.sortOrder}), 0) + 1 from ${giftAccounts})`,
+      kind: input.kind,
+      provider: input.provider,
+      accountName: input.accountName,
+      accountNumber: input.accountNumber,
+      qrMediaId: input.qrMediaId,
+    })
+    .returning({ id: giftAccounts.id });
+  if (!row) throw new Error("Gagal menambah rekening");
+  return getGift(db, row.id);
+}
+
+export async function updateGift(db: Db, dir: string, id: string, input: GiftData): Promise<Gift> {
+  const [existing] = await db.select().from(giftAccounts).where(eq(giftAccounts.id, id)).limit(1);
+  if (!existing) throw new AppError(404, "NOT_FOUND", "Rekening tidak ditemukan");
+  await assertPhotoUsable(db, input.qrMediaId, existing.qrMediaId);
+
+  await db
+    .update(giftAccounts)
+    .set({
+      kind: input.kind,
+      provider: input.provider,
+      accountName: input.accountName,
+      accountNumber: input.accountNumber,
+      qrMediaId: input.qrMediaId,
+    })
+    .where(eq(giftAccounts.id, id));
+  if (existing.qrMediaId && existing.qrMediaId !== input.qrMediaId) {
+    await discardMedia(db, dir, existing.qrMediaId);
+  }
+  return getGift(db, id);
+}
+
+export async function deleteGift(db: Db, dir: string, id: string): Promise<void> {
+  const [deleted] = await db
+    .delete(giftAccounts)
+    .where(eq(giftAccounts.id, id))
+    .returning({ qrMediaId: giftAccounts.qrMediaId });
+  if (!deleted) throw new AppError(404, "NOT_FOUND", "Rekening tidak ditemukan");
+  await discardMedia(db, dir, deleted.qrMediaId);
+}
+
+/** Mengatur urutan: `ids` harus memuat semua rekening tepat satu kali. */
+export async function reorderGifts(db: Db, ids: string[]): Promise<Gift[]> {
+  await db.transaction(async (tx) => {
+    const current = await tx.select({ id: giftAccounts.id }).from(giftAccounts);
+    const same =
+      ids.length === current.length &&
+      new Set(ids).size === ids.length &&
+      current.every((row) => ids.includes(row.id));
+    if (!same) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "Daftar urutan tidak sama dengan isi amplop. Muat ulang halaman.",
+      );
+    }
+    for (const [index, id] of ids.entries()) {
+      await tx
+        .update(giftAccounts)
+        .set({ sortOrder: index + 1 })
+        .where(eq(giftAccounts.id, id));
+    }
+  });
+  return listGifts(db);
+}
+
 // --- Untuk tamu -----------------------------------------------------------------------------------
 
 export async function getInvitation(db: Db): Promise<InvitationResponse> {
@@ -306,5 +416,6 @@ export async function getInvitation(db: Db): Promise<InvitationResponse> {
     couple: await getCouple(db),
     story: await listStory(db),
     gallery: await listGallery(db),
+    gifts: await listGifts(db),
   };
 }

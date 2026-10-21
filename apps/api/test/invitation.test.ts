@@ -4,6 +4,7 @@ import type {
   Couple,
   CoupleProfile,
   GalleryItem,
+  Gift,
   InvitationResponse,
   Media,
   StoryItem,
@@ -275,7 +276,12 @@ describe("isi undangan untuk tamu", () => {
 
   it("kosong bila belum ada isi", async () => {
     const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
-    expect(body).toEqual({ couple: { groom: null, bride: null }, story: [], gallery: [] });
+    expect(body).toEqual({
+      couple: { groom: null, bride: null },
+      story: [],
+      gallery: [],
+      gifts: [],
+    });
   });
 });
 
@@ -334,5 +340,68 @@ describe("galeri", () => {
     expect(missing.status).toBe(400);
     expect((await api.delete(`/media/${photo.id}`)).status).toBe(409);
     expect((await adminClient(app, "").get("/invitation/gallery")).status).toBe(401);
+  });
+});
+
+describe("amplop digital", () => {
+  const BCA = {
+    kind: "bank",
+    provider: " BCA ",
+    accountName: "Ramli Hidayat",
+    accountNumber: "1234567890",
+  };
+  const create = async (body: object = BCA) =>
+    read<{ item: Gift }>(await api.post("/invitation/gifts", body));
+  const list = async () =>
+    (await read<{ items: Gift[] }>(await api.get("/invitation/gifts"))).items;
+
+  it("menambah, mengubah, mengurutkan, dan menampilkan ke tamu", async () => {
+    const a = (await create()).item;
+    expect(a).toMatchObject({ kind: "bank", provider: "BCA", qr: null });
+    const b = (
+      await create({
+        kind: "ewallet",
+        provider: "DANA",
+        accountName: "Hasri",
+        accountNumber: "0812",
+      })
+    ).item;
+
+    const edited = await api.put(`/invitation/gifts/${b.id}`, {
+      kind: "ewallet",
+      provider: "GoPay",
+      accountName: "Hasri L.",
+      accountNumber: "0813",
+    });
+    expect((await read<{ item: Gift }>(edited)).item).toMatchObject({ provider: "GoPay" });
+
+    expect((await api.put("/invitation/gifts/order", { ids: [b.id, a.id] })).status).toBe(200);
+    expect((await list()).map((i) => i.id)).toEqual([b.id, a.id]);
+    expect((await api.put("/invitation/gifts/order", { ids: [a.id] })).status).toBe(400);
+
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body.gifts.map((i) => i.id)).toEqual([b.id, a.id]);
+  });
+
+  it("menyimpan gambar QR, membersihkannya saat diganti atau dihapus", async () => {
+    const qr1 = await uploadPhoto("qr1.png");
+    const item = (await create({ ...BCA, kind: "ewallet", qrMediaId: qr1.id })).item;
+    expect(item.qr?.id).toBe(qr1.id);
+    expect((await api.post("/invitation/gifts", { ...BCA, qrMediaId: qr1.id })).status).toBe(409);
+
+    const qr2 = await uploadPhoto("qr2.png");
+    await api.put(`/invitation/gifts/${item.id}`, { ...BCA, kind: "ewallet", qrMediaId: qr2.id });
+    expect(onDisk(qr1)).toBe(false);
+    expect(onDisk(qr2)).toBe(true);
+
+    expect((await api.delete(`/invitation/gifts/${item.id}`)).status).toBe(200);
+    expect(onDisk(qr2)).toBe(false);
+    expect((await api.delete(`/invitation/gifts/${item.id}`)).status).toBe(404);
+  });
+
+  it("menolak isian tidak lengkap, jenis asing, dan memerlukan login", async () => {
+    expect((await api.post("/invitation/gifts", { ...BCA, accountNumber: " " })).status).toBe(400);
+    expect((await api.post("/invitation/gifts", { ...BCA, kind: "kripto" })).status).toBe(400);
+    expect((await adminClient(app, "").get("/invitation/gifts")).status).toBe(401);
   });
 });

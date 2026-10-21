@@ -124,11 +124,61 @@ export const galleryListResponseSchema = z.object({ items: z.array(galleryItemSc
 export const galleryItemResponseSchema = z.object({ item: galleryItemSchema });
 export const galleryOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
+// --- Amplop digital -------------------------------------------------------------------------------
+
+export const GIFT_KINDS = ["bank", "ewallet"] as const;
+export const giftKindSchema = z.enum(GIFT_KINDS);
+export type GiftKind = z.infer<typeof giftKindSchema>;
+
+export const GIFT_KIND_LABEL: Record<GiftKind, string> = {
+  bank: "Rekening bank",
+  ewallet: "E-wallet",
+};
+
+export const giftInputSchema = z.object({
+  kind: giftKindSchema,
+  /** Nama bank atau e-wallet, mis. "BCA" atau "DANA". */
+  provider: z
+    .string()
+    .trim()
+    .min(1, "Nama bank/e-wallet wajib diisi")
+    .max(60, "Nama bank/e-wallet maksimal 60 karakter"),
+  accountName: z
+    .string()
+    .trim()
+    .min(1, "Atas nama wajib diisi")
+    .max(120, "Atas nama maksimal 120 karakter"),
+  accountNumber: z
+    .string()
+    .trim()
+    .min(1, "Nomor wajib diisi")
+    .max(40, "Nomor maksimal 40 karakter"),
+  /** Gambar QR (mis. QRIS), opsional. */
+  qrMediaId: photoId,
+});
+export type GiftInput = z.input<typeof giftInputSchema>;
+export type GiftData = z.output<typeof giftInputSchema>;
+
+export const giftSchema = z.object({
+  id: z.uuid(),
+  kind: giftKindSchema,
+  provider: z.string(),
+  accountName: z.string(),
+  accountNumber: z.string(),
+  qr: mediaRefSchema.nullable(),
+});
+export type Gift = z.infer<typeof giftSchema>;
+
+export const giftListResponseSchema = z.object({ items: z.array(giftSchema) });
+export const giftResponseSchema = z.object({ item: giftSchema });
+export const giftOrderSchema = z.object({ ids: z.array(z.uuid()) });
+
 // --- Isi undangan untuk tamu ----------------------------------------------------------------------
 
 export const invitationResponseSchema = z.object({
   couple: coupleSchema,
   story: z.array(storyItemSchema),
   gallery: z.array(galleryItemSchema),
+  gifts: z.array(giftSchema),
 });
 export type InvitationResponse = z.infer<typeof invitationResponseSchema>;

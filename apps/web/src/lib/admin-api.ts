@@ -36,7 +36,11 @@ import {
   logResponseSchema,
   type MarkSentRequest,
   mediaResponseSchema,
+  type ReceivedGiftInput,
+  type ReceivedGiftKind,
   type ResolveRequest,
+  receivedGiftListResponseSchema,
+  receivedGiftResponseSchema,
   reviewListResponseSchema,
   rsvpListResponseSchema,
   type Section,
@@ -65,6 +69,13 @@ export type GuestQuery = {
   deleted?: boolean;
   page?: number;
   pageSize?: number;
+};
+
+export type ReceivedGiftFilter = {
+  q?: string;
+  kind?: ReceivedGiftKind;
+  /** true: sudah dibalas; false: belum. */
+  thanked?: boolean;
 };
 
 function queryString(params: Record<string, string | number | boolean | undefined>) {
@@ -223,6 +234,32 @@ export const adminApi = {
       request(`${base}/invitation/cover`, coverResponseSchema, withBody("PUT", input)),
     saveSections: (items: Section[]) =>
       request(`${base}/invitation/sections`, sectionsResponseSchema, withBody("PUT", { items })),
+  },
+
+  receivedGifts: {
+    list: (query: ReceivedGiftFilter) => {
+      // `thanked=false` harus ikut terkirim, padahal queryString membuang nilai false.
+      const search = new URLSearchParams();
+      if (query.q) search.set("q", query.q);
+      if (query.kind) search.set("kind", query.kind);
+      if (query.thanked !== undefined) search.set("thanked", String(query.thanked));
+      const text = search.toString();
+      return request(
+        `${base}/received-gifts${text ? `?${text}` : ""}`,
+        receivedGiftListResponseSchema,
+      );
+    },
+    create: (input: ReceivedGiftInput) =>
+      request(`${base}/received-gifts`, receivedGiftResponseSchema, withBody("POST", input)),
+    update: (id: string, input: ReceivedGiftInput) =>
+      request(`${base}/received-gifts/${id}`, receivedGiftResponseSchema, withBody("PUT", input)),
+    thank: (id: string, thanked: boolean) =>
+      request(
+        `${base}/received-gifts/${id}/thanked`,
+        receivedGiftResponseSchema,
+        withBody("POST", { thanked }),
+      ),
+    remove: (id: string) => request(`${base}/received-gifts/${id}`, okSchema, withBody("DELETE")),
   },
 
   guestbook: {

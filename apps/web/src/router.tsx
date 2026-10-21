@@ -26,6 +26,7 @@ import { LayoutPage } from "./pages/invitation/layout-page.js";
 import { StoryPage } from "./pages/invitation/story-page.js";
 import { WishlistPage } from "./pages/invitation/wishlist-page.js";
 import { LoginPage } from "./pages/login.js";
+import { ReceivedGiftsPage } from "./pages/received-gifts-page.js";
 import { RsvpPage } from "./pages/rsvp-page.js";
 import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
@@ -103,6 +104,12 @@ const eventsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/acara",
   component: EventsPage,
+});
+
+const receivedGiftsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/hadiah",
+  component: ReceivedGiftsPage,
 });
 
 const rsvpRoute = createRoute({
@@ -246,6 +253,7 @@ const routeTree = rootRoute.addChildren([
     groupsRoute,
     eventsRoute,
     rsvpRoute,
+    receivedGiftsRoute,
     invitationRoute.addChildren([
       invitationIndexRoute,
       coupleRoute,

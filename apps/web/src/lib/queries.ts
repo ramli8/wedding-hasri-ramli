@@ -1,5 +1,5 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
-import { adminApi, type GuestQuery } from "./admin-api.js";
+import { adminApi, type GuestQuery, type ReceivedGiftFilter } from "./admin-api.js";
 import { api } from "./api.js";
 
 export const meQuery = queryOptions({
@@ -72,6 +72,7 @@ export function useRefresh() {
       | "checkin"
       | "guestbook"
       | "invitation"
+      | "received-gifts"
     )[]
   ) => Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }
@@ -125,3 +126,10 @@ export const layoutQuery = queryOptions({
   queryKey: ["invitation", "layout"],
   queryFn: () => adminApi.invitation.layout(),
 });
+
+export const receivedGiftsQuery = (query: ReceivedGiftFilter) =>
+  queryOptions({
+    queryKey: ["received-gifts", query],
+    queryFn: () => adminApi.receivedGifts.list(query),
+    placeholderData: (previous) => previous,
+  });

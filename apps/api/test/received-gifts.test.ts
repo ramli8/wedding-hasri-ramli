@@ -95,6 +95,10 @@ describe("hadiah masuk", () => {
     ).guest;
     const linked = await add({ guestId: guest.id, kind: "amplop", amount: 200_000 });
     expect(linked.gift).toMatchObject({ guestId: guest.id, giverName: "Bpk. Budi & Keluarga" });
+    // Nomor HP tamu tertaut ikut (untuk ucapan terima kasih); pemberi bebas tidak punya.
+    expect(linked.gift?.phone).toMatch(/^\+?62812/);
+    const free = await add({ giverName: "Orang Lain", kind: "amplop", amount: 1000 });
+    expect(free.gift?.phone).toBeNull();
 
     const renamed = await add({
       guestId: guest.id,

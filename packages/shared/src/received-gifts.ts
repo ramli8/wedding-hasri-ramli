@@ -67,9 +67,41 @@ export const receivedGiftInputSchema = z
 export type ReceivedGiftInput = z.input<typeof receivedGiftInputSchema>;
 export type ReceivedGiftData = z.output<typeof receivedGiftInputSchema>;
 
+/** Bawaan pesan terima kasih; variabel: {panggilan} {hadiah} {mempelai}. */
+export const DEFAULT_THANKS_TEMPLATE = [
+  "Assalamualaikum {panggilan},",
+  "",
+  "Terima kasih banyak atas {hadiah} yang Anda berikan, juga doa dan kehadiran Anda di pernikahan kami.",
+  "Semoga kebaikan Anda dibalas berlipat ganda.",
+  "",
+  "Salam hangat,",
+  "{mempelai}",
+].join("\n");
+
+export const THANKS_TEMPLATE_VARIABLES = [
+  { name: "{panggilan}", description: "Nama pemberi" },
+  {
+    name: "{hadiah}",
+    description: "Jenis pemberian: amplop, transfer, atau hadiah berupa nama barang",
+  },
+  { name: "{mempelai}", description: "Nama kedua mempelai (dari Pengaturan)" },
+] as const;
+
+/** Frasa untuk variabel {hadiah}. */
+export function giftPhrase(gift: {
+  kind: ReceivedGiftKind;
+  itemDescription: string | null;
+}): string {
+  if (gift.kind === "amplop") return "amplop";
+  if (gift.kind === "transfer") return "kiriman (transfer)";
+  return `hadiah berupa ${gift.itemDescription ?? "barang"}`;
+}
+
 export const receivedGiftSchema = z.object({
   id: z.uuid(),
   guestId: z.uuid().nullable(),
+  /** Nomor HP tamu yang tertaut (untuk ucapan terima kasih); hanya untuk admin. */
+  phone: z.string().nullable(),
   giverName: z.string(),
   kind: receivedGiftKindSchema,
   amount: z.number().nullable(),

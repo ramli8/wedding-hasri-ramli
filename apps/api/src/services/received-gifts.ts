@@ -18,11 +18,16 @@ export const todayWib = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString()
 
 const notFound = () => new AppError(404, "NOT_FOUND", "Catatan hadiah tidak ditemukan");
 
-type Row = { gift: typeof receivedGifts.$inferSelect; recordedBy: string | null };
+type Row = {
+  gift: typeof receivedGifts.$inferSelect;
+  recordedBy: string | null;
+  phone: string | null;
+};
 
-const toGift = ({ gift, recordedBy }: Row): ReceivedGift => ({
+const toGift = ({ gift, recordedBy, phone }: Row): ReceivedGift => ({
   id: gift.id,
   guestId: gift.guestId,
+  phone,
   giverName: gift.giverName,
   kind: gift.kind as ReceivedGiftKind,
   amount: gift.amount,
@@ -36,9 +41,10 @@ const toGift = ({ gift, recordedBy }: Row): ReceivedGift => ({
 
 const selectGifts = (db: Db) =>
   db
-    .select({ gift: receivedGifts, recordedBy: admins.name })
+    .select({ gift: receivedGifts, recordedBy: admins.name, phone: guests.phone })
     .from(receivedGifts)
-    .leftJoin(admins, eq(admins.id, receivedGifts.recordedBy));
+    .leftJoin(admins, eq(admins.id, receivedGifts.recordedBy))
+    .leftJoin(guests, eq(guests.id, receivedGifts.guestId));
 
 async function queryGifts(db: Db, query: ReceivedGiftListParams) {
   const term = query.q?.trim();

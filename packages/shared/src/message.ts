@@ -13,7 +13,7 @@ export type TemplateVariables = {
  * Baris yang hanya berisi variabel kosong dibuang seluruhnya (mis. "Waktu: {jam_sesi}"
  * saat acara belum punya jam), supaya tidak tersisa label yang menggantung.
  */
-export function renderTemplate(body: string, vars: TemplateVariables): string {
+export function renderTemplate(body: string, vars: Record<string, string>): string {
   return body
     .split("\n")
     .flatMap((line) => {
@@ -25,7 +25,7 @@ export function renderTemplate(body: string, vars: TemplateVariables): string {
           return match;
         }
         hasKnown = true;
-        const value = vars[name as keyof TemplateVariables];
+        const value = vars[name] ?? "";
         if (value) keep = true;
         return value;
       });

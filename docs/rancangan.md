@@ -579,6 +579,10 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - `/admin` kini Beranda (sebelumnya mengalihkan ke daftar tamu), ringkasan dari satu endpoint `GET /api/v1/admin/home`: hitung mundur ke acara paling awal (hari menurut WIB), daftar **Perlu dikerjakan** (hanya yang jumlahnya lebih dari nol; yang mendesak: pembayaran vendor terlambat dan duplikat check-in), angka tamu/RSVP/check-in/hadiah, dan ringkasan vendor beserta yang jatuh tempo. "Belum dikirimi undangan" berarti tamu yang diundang ke suatu acara tetapi tidak ada satu pun undangannya yang ditandai terkirim. RSVP dan check-in bernilai null bila belum ada acara yang cocok. Ucapan terima kasih baru masuk daftar setelah tanggal acara lewat. Menu bilah bawah HP: Beranda, Tamu, Check-in, Undangan, Lainnya.
 
+### Ucapan terima kasih
+
+- Halaman Hadiah punya tombol **Kirim terima kasih** bila masih ada yang belum dibalas. Dialognya mendaftar pemberi yang belum dibalas dan punya nomor HP (dari tamu terdaftar yang tertaut; `GET /received-gifts` kini memuat `phone`, hanya untuk admin). Tombol **Buka WhatsApp** membuka pesan dari template (variabel `{panggilan}`, `{hadiah}`, `{mempelai}`; bisa disunting dan diingat di peramban admin) dan sekaligus menandai `thanked_at`. Daftarnya tidak terpengaruh filter halaman. Pemberi tanpa nomor (diketik bebas atau hanya Instagram) dihitung terpisah dan dibalas manual lalu ditandai dari daftar. `renderTemplate` kini menerima variabel apa saja.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

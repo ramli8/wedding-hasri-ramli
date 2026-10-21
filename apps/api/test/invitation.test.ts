@@ -447,19 +447,41 @@ describe("wishlist", () => {
 
   it("menyimpan hadiah, menandai terpenuhi, mengurutkan, dan menampilkan ke tamu", async () => {
     const a = (await create({ name: "Rice cooker", url: "https://toko.example/rc" })).item;
-    expect(a).toMatchObject({ url: "https://toko.example/rc", isFulfilled: false, photo: null });
+    expect(a).toMatchObject({
+      url: "https://toko.example/rc",
+      quantity: 1,
+      received: 0,
+      isFulfilled: false,
+      photo: null,
+    });
     const b = (await create()).item;
 
     const done = await api.put(`/invitation/wishes/${a.id}`, {
       name: "Rice cooker",
-      isFulfilled: true,
+      quantity: 2,
+      received: 2,
     });
-    expect((await read<{ item: Wish }>(done)).item).toMatchObject({ isFulfilled: true, url: null });
+    expect((await read<{ item: Wish }>(done)).item).toMatchObject({
+      isFulfilled: true,
+      received: 2,
+      url: null,
+    });
 
     expect((await api.put("/invitation/wishes/order", { ids: [b.id, a.id] })).status).toBe(200);
     expect((await api.put("/invitation/wishes/order", { ids: [a.id] })).status).toBe(400);
     const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
     expect(body.wishes.map((i) => i.id)).toEqual([b.id, a.id]);
+  });
+
+  it("mencatat sebagian terpenuhi dan menolak jumlah yang tidak masuk akal", async () => {
+    const partial = (await create({ name: "Gelas", quantity: 6, received: 2 })).item;
+    expect(partial).toMatchObject({ quantity: 6, received: 2, isFulfilled: false });
+    const put = (body: object) => api.put(`/invitation/wishes/${partial.id}`, body);
+    expect((await put({ name: "Gelas", quantity: 6, received: 7 })).status).toBe(400);
+    expect((await put({ name: "Gelas", quantity: 0 })).status).toBe(400);
+    expect((await put({ name: "Gelas", quantity: 3, received: -1 })).status).toBe(400);
+    const full = await put({ name: "Gelas", quantity: 6, received: 6 });
+    expect((await read<{ item: Wish }>(full)).item.isFulfilled).toBe(true);
   });
 
   it("menyimpan foto, membersihkannya saat diganti atau dihapus", async () => {

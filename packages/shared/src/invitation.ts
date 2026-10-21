@@ -199,28 +199,38 @@ export const faqOrderSchema = z.object({ ids: z.array(z.uuid()) });
 
 // --- Wishlist hadiah ------------------------------------------------------------------------------
 
-export const wishInputSchema = z.object({
-  name: z.string().trim().min(1, "Nama hadiah wajib diisi").max(120, "Nama maksimal 120 karakter"),
-  note: optionalText(300, "Keterangan"),
-  /** Tautan toko atau produk, opsional. */
-  url: z
-    .string()
-    .trim()
-    .max(500, "Tautan maksimal 500 karakter")
-    .nullish()
-    .transform((value, ctx) => {
-      if (!value) return null;
-      const parsed = z.url({ protocol: /^https?$/ }).safeParse(value);
-      if (!parsed.success) {
-        ctx.addIssue({ code: "custom", message: "Tautan harus diawali http:// atau https://" });
-        return z.NEVER;
-      }
-      return value;
-    }),
-  photoMediaId: photoId,
-  /** Sudah ada yang memberikan; diatur admin. */
-  isFulfilled: z.boolean().default(false),
-});
+export const wishInputSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Nama hadiah wajib diisi")
+      .max(120, "Nama maksimal 120 karakter"),
+    note: optionalText(300, "Keterangan"),
+    /** Tautan toko atau produk, opsional. */
+    url: z
+      .string()
+      .trim()
+      .max(500, "Tautan maksimal 500 karakter")
+      .nullish()
+      .transform((value, ctx) => {
+        if (!value) return null;
+        const parsed = z.url({ protocol: /^https?$/ }).safeParse(value);
+        if (!parsed.success) {
+          ctx.addIssue({ code: "custom", message: "Tautan harus diawali http:// atau https://" });
+          return z.NEVER;
+        }
+        return value;
+      }),
+    photoMediaId: photoId,
+    /** Jumlah yang dibutuhkan dan jumlah yang sudah diberikan; diatur admin. */
+    quantity: z.number().int().min(1, "Jumlah minimal 1").max(99, "Jumlah maksimal 99").default(1),
+    received: z.number().int().min(0, "Tidak boleh negatif").max(99).default(0),
+  })
+  .refine((value) => value.received <= value.quantity, {
+    message: "Yang sudah terpenuhi tidak boleh melebihi jumlah dibutuhkan",
+    path: ["received"],
+  });
 export type WishInput = z.input<typeof wishInputSchema>;
 export type WishData = z.output<typeof wishInputSchema>;
 
@@ -230,6 +240,9 @@ export const wishSchema = z.object({
   note: z.string().nullable(),
   url: z.string().nullable(),
   photo: mediaRefSchema.nullable(),
+  quantity: z.number().int(),
+  received: z.number().int(),
+  /** received >= quantity, dihitung server. */
   isFulfilled: z.boolean(),
 });
 export type Wish = z.infer<typeof wishSchema>;

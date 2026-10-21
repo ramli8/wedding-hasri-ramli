@@ -1,0 +1,1 @@
+ALTER TABLE "wishlist_items" ADD CONSTRAINT "wishlist_items_qty_valid" CHECK ("wishlist_items"."quantity" >= 1 and "wishlist_items"."received" between 0 and "wishlist_items"."quantity");

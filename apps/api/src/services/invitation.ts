@@ -502,7 +502,9 @@ const toWish = (
   note: row.note,
   url: row.url,
   photo: toRef(photo),
-  isFulfilled: row.isFulfilled,
+  quantity: row.quantity,
+  received: row.received,
+  isFulfilled: row.received >= row.quantity,
 });
 
 export async function listWishes(db: Db): Promise<Wish[]> {
@@ -535,7 +537,8 @@ export async function createWish(db: Db, input: WishData): Promise<Wish> {
       note: input.note,
       url: input.url,
       photoMediaId: input.photoMediaId,
-      isFulfilled: input.isFulfilled,
+      quantity: input.quantity,
+      received: input.received,
     })
     .returning({ id: wishlistItems.id });
   if (!row) throw new Error("Gagal menambah hadiah");
@@ -554,7 +557,8 @@ export async function updateWish(db: Db, dir: string, id: string, input: WishDat
       note: input.note,
       url: input.url,
       photoMediaId: input.photoMediaId,
-      isFulfilled: input.isFulfilled,
+      quantity: input.quantity,
+      received: input.received,
     })
     .where(eq(wishlistItems.id, id));
   if (existing.photoMediaId && existing.photoMediaId !== input.photoMediaId) {

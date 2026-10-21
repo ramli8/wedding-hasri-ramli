@@ -289,17 +289,27 @@ export const faqItems = pgTable("faq_items", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-// Ide hadiah (wishlist). is_fulfilled diatur admin bila sudah ada yang memberikan.
-export const wishlistItems = pgTable("wishlist_items", {
-  id: uuid().primaryKey().defaultRandom(),
-  sortOrder: integer().notNull(),
-  name: text().notNull(),
-  note: text(),
-  url: text(),
-  photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
-  isFulfilled: boolean().notNull().default(false),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+// Ide hadiah (wishlist). quantity = jumlah dibutuhkan, received = jumlah yang sudah diberikan (diatur admin).
+export const wishlistItems = pgTable(
+  "wishlist_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    sortOrder: integer().notNull(),
+    name: text().notNull(),
+    note: text(),
+    url: text(),
+    photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    quantity: integer().notNull().default(1),
+    received: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "wishlist_items_qty_valid",
+      sql`${table.quantity} >= 1 and ${table.received} between 0 and ${table.quantity}`,
+    ),
+  ],
+);
 
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),

@@ -6,6 +6,7 @@ import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
 import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
+import { homeRoutes } from "./home.js";
 import { invitationAdminRoutes } from "./invitation.js";
 import { mediaAdminRoutes } from "./media.js";
 import { receivedGiftRoutes } from "./received-gifts.js";
@@ -16,6 +17,7 @@ import { vendorRoutes } from "./vendors.js";
 export function adminRoutes(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use("*", originCheck(deps.config.allowedOrigins), requireAdmin(deps))
+    .route("/home", homeRoutes(deps))
     .route("/settings", settingsRoutes(deps))
     .route("/events", eventRoutes(deps))
     .route("/groups", groupRoutes(deps))

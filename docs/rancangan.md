@@ -575,6 +575,10 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 - Vendor punya `due_on` (jatuh tempo berikutnya) dan `due_amount` opsional, diperbarui admin setelah tiap pembayaran. Server menghitung `dueState`: `terlambat` (tanggal sudah lewat) atau `segera` (dalam 14 hari), hanya untuk vendor **terpilih** yang belum lunas; kandidat dan vendor lunas tidak pernah ditandai. Ringkasan vendor menambah `overdueCount` dan `dueSoonCount`, dipakai Beranda admin. Sengaja bukan tabel jadwal termin: satu tanggal berikutnya per vendor cukup untuk satu pernikahan dan tidak perlu mencocokkan pembayaran dengan termin.
 
+### Beranda admin
+
+- `/admin` kini Beranda (sebelumnya mengalihkan ke daftar tamu), ringkasan dari satu endpoint `GET /api/v1/admin/home`: hitung mundur ke acara paling awal (hari menurut WIB), daftar **Perlu dikerjakan** (hanya yang jumlahnya lebih dari nol; yang mendesak: pembayaran vendor terlambat dan duplikat check-in), angka tamu/RSVP/check-in/hadiah, dan ringkasan vendor beserta yang jatuh tempo. "Belum dikirimi undangan" berarti tamu yang diundang ke suatu acara tetapi tidak ada satu pun undangannya yang ditandai terkirim. RSVP dan check-in bernilai null bila belum ada acara yang cocok. Ucapan terima kasih baru masuk daftar setelah tanggal acara lewat. Menu bilah bawah HP: Beranda, Tamu, Check-in, Undangan, Lainnya.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

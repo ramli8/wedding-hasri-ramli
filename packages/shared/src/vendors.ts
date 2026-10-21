@@ -111,6 +111,8 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
 export const DUE_SOON_DAYS = 14;
 
 export const DUE_STATES = ["terlambat", "segera"] as const;
+/** Nilai yang sama untuk z.enum di skema lain (tuple harus literal). */
+export const dueStateSchemaValues = DUE_STATES;
 export type DueState = (typeof DUE_STATES)[number];
 
 /**

@@ -64,7 +64,7 @@ async function queryGifts(db: Db, query: ReceivedGiftListParams) {
 }
 
 export async function listReceivedGifts(db: Db, query: ReceivedGiftListParams) {
-  return { items: await queryGifts(db, query), summary: await summary(db) };
+  return { items: await queryGifts(db, query), summary: await receivedGiftSummary(db) };
 }
 
 const CSV_COLUMNS = [
@@ -102,7 +102,7 @@ export async function exportReceivedGiftsCsv(
   return `\ufeff${stringify(records, { header: true, columns: CSV_COLUMNS })}`;
 }
 
-async function summary(db: Db): Promise<ReceivedGiftSummary> {
+export async function receivedGiftSummary(db: Db): Promise<ReceivedGiftSummary> {
   const [row] = await db
     .select({
       count: sql<number>`count(*)::int`,

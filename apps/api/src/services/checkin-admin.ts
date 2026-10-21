@@ -20,6 +20,7 @@ import {
 import { AppError } from "../http/errors.js";
 import { findCheckin, getCheckinEvent, loadEvents, lockCheckinLog } from "./checkin-log.js";
 import { toDevice } from "./devices.js";
+import { rsvpHadirPax } from "./engage.js";
 
 const NO_GROUP = { name: "Tanpa kelompok", color: "#737373" };
 
@@ -140,6 +141,7 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       invited: invited.length,
       arrived: states.filter((s) => guestById.has(s.guestId)).length,
       arrivedPax,
+      rsvpPax: event.hasRsvp ? await rsvpHadirPax(db, event.id) : null,
       needsReview: states.filter(needsReview).length,
       outsideSession: states.filter((s) => s.primary.outsideSession).length,
       walkins,

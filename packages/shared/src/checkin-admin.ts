@@ -58,6 +58,8 @@ export const dashboardResponseSchema = z.object({
     arrived: z.number(),
     /** Jumlah orang yang masuk (untuk katering dan kartu souvenir). */
     arrivedPax: z.number(),
+    /** Jumlah orang yang menjawab RSVP hadir; null bila acara check-in tidak memakai RSVP. */
+    rsvpPax: z.number().nullable(),
     needsReview: z.number(),
     outsideSession: z.number(),
     walkins: z.number(),

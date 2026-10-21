@@ -1,0 +1,75 @@
+import {
+  guestbookListQuerySchema,
+  guestbookListResponseSchema,
+  guestbookPostRequestSchema,
+  guestCodeSchema,
+  rsvpRequestSchema,
+} from "@wedding/shared";
+import { Hono } from "hono";
+import { z } from "zod";
+import { FailureLimiter } from "../auth/rate-limit.js";
+import type { AppDeps, AppEnv } from "../http/env.js";
+import { AppError } from "../http/errors.js";
+import { clientIp } from "../http/middleware.js";
+import { validate } from "../http/validate.js";
+import {
+  findGuestByCode,
+  getTicket,
+  listGuestbook,
+  postGuestbook,
+  submitRsvp,
+} from "../services/public.js";
+
+const WINDOW_MS = 15 * 60 * 1000;
+const codeParam = z.object({ code: guestCodeSchema });
+
+/**
+ * Rute tanpa login untuk tamu. Dua pembatas per IP: tebakan kode yang salah (agar kode tidak bisa
+ * dicoba satu per satu) dan jumlah kiriman RSVP/ucapan (agar tidak dipakai spam).
+ */
+export function publicRoutes({ db, config }: AppDeps) {
+  const guessLimiter = new FailureLimiter({ max: 30, windowMs: WINDOW_MS });
+  const writeLimiter = new FailureLimiter({ max: 20, windowMs: WINDOW_MS });
+  const tooMany = () =>
+    new AppError(429, "RATE_LIMITED", "Terlalu banyak percobaan. Coba lagi nanti.");
+
+  /** Memastikan kode dikenal; tebakan salah dihitung per IP. */
+  async function knownCode(ip: string, code: string) {
+    if (guessLimiter.isBlocked(ip)) throw tooMany();
+    if (!(await findGuestByCode(db, code))) {
+      guessLimiter.recordFailure(ip);
+      throw new AppError(404, "NOT_FOUND", "Tiket tidak ditemukan");
+    }
+  }
+
+  function countWrite(ip: string) {
+    if (writeLimiter.isBlocked(ip)) throw tooMany();
+    writeLimiter.recordFailure(ip);
+  }
+
+  return new Hono<AppEnv>()
+    .get("/ticket/:code", validate("param", codeParam), async (c) => {
+      const { code } = c.req.valid("param");
+      await knownCode(clientIp(c, config.trustProxy), code);
+      c.header("cache-control", "no-store");
+      return c.json(await getTicket(db, code));
+    })
+    .post("/rsvp", validate("json", rsvpRequestSchema), async (c) => {
+      const input = c.req.valid("json");
+      const ip = clientIp(c, config.trustProxy);
+      await knownCode(ip, input.code);
+      countWrite(ip);
+      return c.json({ rsvp: await submitRsvp(db, input) });
+    })
+    .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
+      const { page, pageSize } = c.req.valid("query");
+      return c.json(guestbookListResponseSchema.parse(await listGuestbook(db, page, pageSize)));
+    })
+    .post("/guestbook", validate("json", guestbookPostRequestSchema), async (c) => {
+      const input = c.req.valid("json");
+      const ip = clientIp(c, config.trustProxy);
+      await knownCode(ip, input.code);
+      countWrite(ip);
+      return c.json({ entry: await postGuestbook(db, input) }, 201);
+    });
+}

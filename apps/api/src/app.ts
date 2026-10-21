@@ -6,11 +6,13 @@ import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
+import { publicRoutes } from "./routes/public.js";
 
 export function createApp(deps: AppDeps) {
   const v1 = new Hono<AppEnv>()
     .route("/auth", authRoutes(deps))
     .route("/admin", adminRoutes(deps))
+    .route("/public", publicRoutes(deps))
     .route("/device", deviceRoutes(deps))
     .route("/sync", syncRoutes(deps));
 

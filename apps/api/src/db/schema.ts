@@ -224,6 +224,43 @@ export const checkinEvents = pgTable(
   ],
 );
 
+// Jawaban RSVP tamu per acara (hanya acara dengan has_rsvp).
+export const rsvps = pgTable(
+  "rsvps",
+  {
+    guestId: uuid()
+      .notNull()
+      .references(() => guests.id, { onDelete: "cascade" }),
+    eventId: uuid()
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    status: text().notNull(),
+    pax: integer().notNull().default(1),
+    submittedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.guestId, table.eventId] }),
+    check("rsvps_status_valid", sql`${table.status} in ('hadir', 'tidak_hadir', 'ragu')`),
+    check("rsvps_pax_valid", sql`${table.pax} >= 0`),
+  ],
+);
+
+// Ucapan tamu. Tamu yang dihapus tidak menghapus ucapannya (guest_id jadi NULL).
+export const guestbook = pgTable(
+  "guestbook",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    guestId: uuid().references(() => guests.id, { onDelete: "set null" }),
+    name: text().notNull(),
+    message: text().notNull(),
+    reply: text(),
+    repliedAt: timestamp({ withTimezone: true }),
+    isHidden: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("guestbook_created_idx").on(table.createdAt)],
+);
+
 // Keputusan admin atas duplikat check-in untuk satu (tamu, acara).
 export const checkinReviews = pgTable(
   "checkin_reviews",

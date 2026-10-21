@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { originCheck, requireAdmin } from "../http/middleware.js";
 import { checkinAdminRoutes, deviceAdminRoutes } from "./checkin-admin.js";
+import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
 import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
@@ -16,5 +17,7 @@ export function adminRoutes(deps: AppDeps) {
     .route("/groups", groupRoutes(deps))
     .route("/guests", guestRoutes(deps))
     .route("/devices", deviceAdminRoutes(deps))
-    .route("/checkins", checkinAdminRoutes(deps));
+    .route("/checkins", checkinAdminRoutes(deps))
+    .route("/rsvps", rsvpAdminRoutes(deps))
+    .route("/guestbook", guestbookAdminRoutes(deps));
 }

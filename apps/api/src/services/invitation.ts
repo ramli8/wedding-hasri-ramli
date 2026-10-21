@@ -518,9 +518,8 @@ const toWish = (
   url: row.url,
   photo: toRef(photo),
   quantity: row.quantity,
-  received: row.received,
   claimed,
-  isFulfilled: row.received + claimed >= row.quantity,
+  isFulfilled: claimed >= row.quantity,
 });
 
 export async function listWishes(db: Db): Promise<Wish[]> {
@@ -556,7 +555,6 @@ export async function createWish(db: Db, input: WishData): Promise<Wish> {
       url: input.url,
       photoMediaId: input.photoMediaId,
       quantity: input.quantity,
-      received: input.received,
     })
     .returning({ id: wishlistItems.id });
   if (!row) throw new Error("Gagal menambah hadiah");
@@ -568,11 +566,11 @@ export async function updateWish(db: Db, dir: string, id: string, input: WishDat
   if (!existing) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
   await assertPhotoUsable(db, input.photoMediaId, existing.photoMediaId);
   const claimed = (await claimedTotals(db, id)).get(id) ?? 0;
-  if (input.quantity < input.received + claimed) {
+  if (input.quantity < claimed) {
     throw new AppError(
       409,
       "CONFLICT",
-      `Jumlah dibutuhkan tidak boleh kurang dari yang sudah terpenuhi (${input.received + claimed}).`,
+      `Jumlah dibutuhkan tidak boleh kurang dari yang sudah terpenuhi (${claimed}).`,
     );
   }
 
@@ -584,7 +582,6 @@ export async function updateWish(db: Db, dir: string, id: string, input: WishDat
       url: input.url,
       photoMediaId: input.photoMediaId,
       quantity: input.quantity,
-      received: input.received,
     })
     .where(eq(wishlistItems.id, id));
   if (existing.photoMediaId && existing.photoMediaId !== input.photoMediaId) {

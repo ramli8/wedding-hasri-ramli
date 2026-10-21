@@ -82,7 +82,7 @@ export async function setClaim(
       .select({ total: sql<number>`coalesce(sum(${wishlistClaims.quantity}), 0)::int` })
       .from(wishlistClaims)
       .where(and(eq(wishlistClaims.wishId, wishId), ne(wishlistClaims.guestId, guestId)));
-    const remaining = wish.quantity - wish.received - (others?.total ?? 0);
+    const remaining = wish.quantity - (others?.total ?? 0);
     if (quantity > remaining) {
       throw new AppError(
         409,

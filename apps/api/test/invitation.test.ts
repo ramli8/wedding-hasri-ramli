@@ -450,20 +450,19 @@ describe("wishlist", () => {
     expect(a).toMatchObject({
       url: "https://toko.example/rc",
       quantity: 1,
-      received: 0,
+      claimed: 0,
       isFulfilled: false,
       photo: null,
     });
     const b = (await create()).item;
 
-    const done = await api.put(`/invitation/wishes/${a.id}`, {
+    const edited = await api.put(`/invitation/wishes/${a.id}`, {
       name: "Rice cooker",
       quantity: 2,
-      received: 2,
     });
-    expect((await read<{ item: Wish }>(done)).item).toMatchObject({
-      isFulfilled: true,
-      received: 2,
+    expect((await read<{ item: Wish }>(edited)).item).toMatchObject({
+      quantity: 2,
+      isFulfilled: false,
       url: null,
     });
 
@@ -473,15 +472,12 @@ describe("wishlist", () => {
     expect(body.wishes.map((i) => i.id)).toEqual([b.id, a.id]);
   });
 
-  it("mencatat sebagian terpenuhi dan menolak jumlah yang tidak masuk akal", async () => {
-    const partial = (await create({ name: "Gelas", quantity: 6, received: 2 })).item;
-    expect(partial).toMatchObject({ quantity: 6, received: 2, isFulfilled: false });
-    const put = (body: object) => api.put(`/invitation/wishes/${partial.id}`, body);
-    expect((await put({ name: "Gelas", quantity: 6, received: 7 })).status).toBe(400);
+  it("menolak jumlah dibutuhkan yang tidak masuk akal", async () => {
+    const gelas = (await create({ name: "Gelas", quantity: 6 })).item;
+    expect(gelas).toMatchObject({ quantity: 6, claimed: 0, isFulfilled: false });
+    const put = (body: object) => api.put(`/invitation/wishes/${gelas.id}`, body);
     expect((await put({ name: "Gelas", quantity: 0 })).status).toBe(400);
-    expect((await put({ name: "Gelas", quantity: 3, received: -1 })).status).toBe(400);
-    const full = await put({ name: "Gelas", quantity: 6, received: 6 });
-    expect((await read<{ item: Wish }>(full)).item.isFulfilled).toBe(true);
+    expect((await put({ name: "Gelas", quantity: 100 })).status).toBe(400);
   });
 
   it("menyimpan foto, membersihkannya saat diganti atau dihapus", async () => {

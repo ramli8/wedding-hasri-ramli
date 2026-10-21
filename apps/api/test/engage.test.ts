@@ -418,7 +418,6 @@ describe("wishlist: tamu memilih hadiah", () => {
   type WishView = {
     id: string;
     quantity: number;
-    received: number;
     claimed: number;
     isFulfilled: boolean;
   };
@@ -436,7 +435,7 @@ describe("wishlist: tamu memilih hadiah", () => {
     ) as WishView;
 
   it("memilih, mengubah jumlah, dan melepas; hasilnya tampil ke semua orang", async () => {
-    const gelas = await addWish({ name: "Gelas", quantity: 6, received: 1 });
+    const gelas = await addWish({ name: "Gelas", quantity: 5 });
 
     const first = await claim(world.sari.code, gelas.id, 2);
     expect(first.status).toBe(200);

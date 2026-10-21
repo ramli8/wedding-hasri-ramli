@@ -289,7 +289,7 @@ export const faqItems = pgTable("faq_items", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-// Ide hadiah (wishlist). quantity = jumlah dibutuhkan, received = jumlah yang sudah diberikan (diatur admin).
+// Ide hadiah (wishlist). quantity = jumlah dibutuhkan; yang terpenuhi dihitung dari wishlist_claims.
 export const wishlistItems = pgTable(
   "wishlist_items",
   {
@@ -300,19 +300,13 @@ export const wishlistItems = pgTable(
     url: text(),
     photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
     quantity: integer().notNull().default(1),
-    received: integer().notNull().default(0),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    check(
-      "wishlist_items_qty_valid",
-      sql`${table.quantity} >= 1 and ${table.received} between 0 and ${table.quantity}`,
-    ),
-  ],
+  (table) => [check("wishlist_items_qty_valid", sql`${table.quantity} >= 1`)],
 );
 
 // Hadiah wishlist yang dipilih tamu. Satu tamu satu baris per hadiah; jumlah yang dipilih dijaga
-// agar received + total klaim tidak melebihi quantity (di dalam transaksi, lihat wish-claims).
+// agar total klaim tidak melebihi quantity (di dalam transaksi, lihat wish-claims).
 export const wishlistClaims = pgTable(
   "wishlist_claims",
   {

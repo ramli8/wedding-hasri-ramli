@@ -110,3 +110,13 @@ export const giftsQuery = queryOptions({
   queryKey: ["invitation", "gifts"],
   queryFn: async () => (await adminApi.invitation.gifts()).items,
 });
+
+export const faqsQuery = queryOptions({
+  queryKey: ["invitation", "faqs"],
+  queryFn: async () => (await adminApi.invitation.faqs()).items,
+});
+
+export const wishesQuery = queryOptions({
+  queryKey: ["invitation", "wishes"],
+  queryFn: async () => (await adminApi.invitation.wishes()).items,
+});

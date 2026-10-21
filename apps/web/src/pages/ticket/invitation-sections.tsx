@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CoupleProfile, GalleryItem, Gift, StoryItem } from "@wedding/shared";
-import { AtSign, Check, ChevronLeft, ChevronRight, Copy, X } from "lucide-react";
+import type { CoupleProfile, Faq, GalleryItem, Gift, StoryItem, Wish } from "@wedding/shared";
+import { AtSign, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
@@ -230,6 +230,77 @@ function Gifts({ gifts }: { gifts: Gift[] }) {
   );
 }
 
+function Wishlist({ wishes }: { wishes: Wish[] }) {
+  return (
+    <Card className="flex flex-col gap-4">
+      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Wishlist hadiah</h2>
+      <p className="text-sm text-ink-soft">
+        Bila ingin memberi hadiah berupa barang, berikut beberapa yang kami butuhkan:
+      </p>
+      <ul className="flex flex-col gap-3">
+        {wishes.map((wish) => (
+          <li
+            key={wish.id}
+            className={`flex gap-3 border-2 border-ink p-3 ${wish.isFulfilled ? "bg-bone-2" : "bg-bone"}`}
+          >
+            {wish.photo && (
+              <img
+                src={wish.photo.thumb}
+                alt=""
+                width={wish.photo.width}
+                height={wish.photo.height}
+                loading="lazy"
+                decoding="async"
+                className="size-20 shrink-0 border-2 border-ink object-cover"
+              />
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className={`font-display font-bold ${wish.isFulfilled ? "line-through" : ""}`}>
+                {wish.name}
+              </p>
+              {wish.note && <p className="text-sm break-words text-ink-soft">{wish.note}</p>}
+              {wish.isFulfilled ? (
+                <Badge variant="pill" className="w-fit">
+                  Sudah terpenuhi
+                </Badge>
+              ) : (
+                wish.url && (
+                  <a
+                    href={wish.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-fit items-center gap-1 text-sm font-semibold underline"
+                  >
+                    Lihat di toko <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                )
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function Faqs({ faqs }: { faqs: Faq[] }) {
+  return (
+    <Card className="flex flex-col gap-3">
+      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Tanya jawab</h2>
+      <div className="flex flex-col gap-2">
+        {faqs.map((faq) => (
+          <details key={faq.id} className="group border-2 border-ink bg-bone">
+            <summary className="cursor-pointer list-none px-4 py-3 font-semibold marker:hidden group-open:bg-acid">
+              {faq.question}
+            </summary>
+            <p className="px-4 py-3 break-words whitespace-pre-wrap">{faq.answer}</p>
+          </details>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 /** Perkenalan mempelai dan linimasa cerita. Tidak tampil sama sekali bila admin belum mengisinya. */
 export function InvitationSections() {
   const invitation = useQuery({
@@ -240,7 +311,7 @@ export function InvitationSections() {
   });
   if (!invitation.data) return null;
 
-  const { couple, story, gallery, gifts } = invitation.data;
+  const { couple, story, gallery, gifts, faqs, wishes } = invitation.data;
   const profiles = [
     couple.bride && { profile: couple.bride, label: "Mempelai wanita" },
     couple.groom && { profile: couple.groom, label: "Mempelai pria" },
@@ -267,6 +338,8 @@ export function InvitationSections() {
       )}
       {gallery.length > 0 && <Gallery items={gallery} />}
       {gifts.length > 0 && <Gifts gifts={gifts} />}
+      {wishes.length > 0 && <Wishlist wishes={wishes} />}
+      {faqs.length > 0 && <Faqs faqs={faqs} />}
     </>
   );
 }

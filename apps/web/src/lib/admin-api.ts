@@ -12,6 +12,9 @@ import {
   type EventInput,
   eventListResponseSchema,
   eventResponseSchema,
+  type FaqInput,
+  faqListResponseSchema,
+  faqResponseSchema,
   type GalleryCaptionInput,
   type GalleryInput,
   type GiftInput,
@@ -38,6 +41,9 @@ import {
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
+  type WishInput,
+  wishListResponseSchema,
+  wishResponseSchema,
 } from "@wedding/shared";
 import { okSchema, request, withBody } from "./api.js";
 
@@ -183,6 +189,24 @@ export const adminApi = {
       request(`${base}/invitation/gifts/${id}`, okSchema, withBody("DELETE")),
     reorderGifts: (ids: string[]) =>
       request(`${base}/invitation/gifts/order`, giftListResponseSchema, withBody("PUT", { ids })),
+    faqs: () => request(`${base}/invitation/faqs`, faqListResponseSchema),
+    createFaq: (input: FaqInput) =>
+      request(`${base}/invitation/faqs`, faqResponseSchema, withBody("POST", input)),
+    updateFaq: (id: string, input: FaqInput) =>
+      request(`${base}/invitation/faqs/${id}`, faqResponseSchema, withBody("PUT", input)),
+    removeFaq: (id: string) =>
+      request(`${base}/invitation/faqs/${id}`, okSchema, withBody("DELETE")),
+    reorderFaqs: (ids: string[]) =>
+      request(`${base}/invitation/faqs/order`, faqListResponseSchema, withBody("PUT", { ids })),
+    wishes: () => request(`${base}/invitation/wishes`, wishListResponseSchema),
+    createWish: (input: WishInput) =>
+      request(`${base}/invitation/wishes`, wishResponseSchema, withBody("POST", input)),
+    updateWish: (id: string, input: WishInput) =>
+      request(`${base}/invitation/wishes/${id}`, wishResponseSchema, withBody("PUT", input)),
+    removeWish: (id: string) =>
+      request(`${base}/invitation/wishes/${id}`, okSchema, withBody("DELETE")),
+    reorderWishes: (ids: string[]) =>
+      request(`${base}/invitation/wishes/order`, wishListResponseSchema, withBody("PUT", { ids })),
   },
 
   guestbook: {

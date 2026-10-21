@@ -1,11 +1,12 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
-import { BookHeart, MapPin, Ticket } from "lucide-react";
+import { BookHeart, CalendarPlus, MapPin, Ticket } from "lucide-react";
 import { Alert } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
 import { ApiError } from "../../lib/api.js";
+import { buildIcs, downloadIcs, icsFilename } from "../../lib/ics.js";
 import { publicApi } from "../../lib/public-api.js";
 import { loadTicket, saveTicket } from "../../lib/ticket-cache.js";
 import { RsvpCard } from "./rsvp-card.js";
@@ -39,6 +40,27 @@ function EventCard({ event }: { event: TicketEvent }) {
       ? { label: "Waktu", value: formatTimeRange(event.startsAt, event.endsAt) }
       : null;
 
+  // Jam sesi kelompok tamu bila ada; kalau tidak, jam acara.
+  const calendarStart = event.session?.startsAt ?? event.startsAt;
+  const calendarEnd = event.session?.endsAt ?? event.endsAt;
+  const location = [event.venueName, event.address].filter(Boolean).join(", ");
+
+  function addToCalendar() {
+    if (!calendarStart) return;
+    downloadIcs(
+      icsFilename(event.name),
+      buildIcs({
+        uid: `${event.id}@hasri-ramli`,
+        title: event.name,
+        startsAt: calendarStart,
+        endsAt: calendarEnd,
+        location,
+        description: event.mapsUrl ? `Peta: ${event.mapsUrl}` : null,
+        url: event.mapsUrl,
+      }),
+    );
+  }
+
   return (
     <Card className="flex flex-col gap-3">
       <h2 className="font-display text-xl font-bold tracking-h2 uppercase">{event.name}</h2>
@@ -68,6 +90,15 @@ function EventCard({ event }: { event: TicketEvent }) {
           </>
         )}
       </dl>
+      {calendarStart && (
+        <button
+          type="button"
+          onClick={addToCalendar}
+          className="inline-flex w-fit items-center gap-2 border-2 border-ink bg-paper px-3 py-2 text-sm font-semibold hover:bg-acid max-md:min-h-11"
+        >
+          <CalendarPlus className="size-4" aria-hidden /> Tambah ke kalender
+        </button>
+      )}
       {event.mapsUrl && (
         <a
           href={event.mapsUrl}

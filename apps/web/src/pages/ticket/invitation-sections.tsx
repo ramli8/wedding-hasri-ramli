@@ -5,10 +5,20 @@ import {
   formatEventDate,
   type GalleryItem,
   type Gift,
+  type Live,
   type SectionKey,
   type StoryItem,
 } from "@wedding/shared";
-import { AtSign, Check, ChevronLeft, ChevronRight, Copy, X } from "lucide-react";
+import {
+  AtSign,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  Radio,
+  X,
+} from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
@@ -267,6 +277,26 @@ export const invitationQuery = queryOptions({
   staleTime: 60_000,
 });
 
+function LiveCard({ live }: { live: Live }) {
+  return (
+    <Card tone="acid" className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 font-display text-xl font-bold tracking-h2 uppercase">
+        <Radio className="size-5" aria-hidden /> Siaran langsung
+      </h2>
+      <p>Tidak bisa hadir? Ikuti acaranya dari mana saja.</p>
+      {live.note && <p className="font-semibold break-words">{live.note}</p>}
+      <a
+        href={live.url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex w-fit items-center gap-2 border-2 border-ink bg-paper px-4 py-2.5 font-display font-bold tracking-button uppercase shadow-hard hover:bg-bone"
+      >
+        Tonton siaran <ExternalLink className="size-4" aria-hidden />
+      </a>
+    </Card>
+  );
+}
+
 /** Sampul di atas halaman: foto, nama mempelai (dari header), tanggal acara, dan kalimat pembuka. */
 export function InvitationCover() {
   const invitation = useQuery(invitationQuery);
@@ -303,7 +333,7 @@ export function InvitationSections({ code, guestName }: { code: string; guestNam
   const invitation = useQuery(invitationQuery);
   if (!invitation.data) return null;
 
-  const { couple, story, gallery, gifts, faqs, wishes, sections } = invitation.data;
+  const { couple, story, gallery, gifts, faqs, wishes, sections, live } = invitation.data;
   const profiles = [
     couple.bride && { profile: couple.bride, label: "Mempelai wanita" },
     couple.groom && { profile: couple.groom, label: "Mempelai pria" },
@@ -318,6 +348,7 @@ export function InvitationSections({ code, guestName }: { code: string; guestNam
           ))}
         </section>
       ),
+    siaran: () => live && <LiveCard live={live} />,
     cerita: () =>
       story.length > 0 && (
         <Card className="flex flex-col gap-6">

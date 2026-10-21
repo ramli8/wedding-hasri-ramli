@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type MediaRef, SECTION_LABEL, type Section } from "@wedding/shared";
+import { type Live, type MediaRef, SECTION_LABEL, type Section } from "@wedding/shared";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ImageField } from "../../components/image-field.js";
@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button.js";
 import { Card } from "../../components/ui/card.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
 import { Field } from "../../components/ui/field.js";
+import { Input } from "../../components/ui/input.js";
 import { Textarea } from "../../components/ui/textarea.js";
 import { adminApi } from "../../lib/admin-api.js";
 import { layoutQuery, useRefresh } from "../../lib/queries.js";
@@ -24,11 +25,8 @@ export function LayoutPage() {
       {layout.isError && <Alert tone="error">{layout.error.message}</Alert>}
       {layout.data && (
         <>
-          <CoverForm
-            key={layout.dataUpdatedAt}
-            greeting={layout.data.cover.greeting}
-            photo={layout.data.cover.photo}
-          />
+          <CoverForm greeting={layout.data.cover.greeting} photo={layout.data.cover.photo} />
+          <LiveForm live={layout.data.live} />
           <SectionList sections={layout.data.sections} />
         </>
       )}
@@ -167,5 +165,72 @@ function SectionList({ sections }: { sections: Section[] }) {
         ))}
       </ol>
     </div>
+  );
+}
+
+function LiveForm({ live }: { live: Live | null }) {
+  const refresh = useRefresh();
+  const [url, setUrl] = useState(live?.url ?? "");
+  const [note, setNote] = useState(live?.note ?? "");
+  const [saved, setSaved] = useState(false);
+
+  const save = useMutation({
+    mutationFn: () => adminApi.invitation.saveLive({ url, note }),
+    onSuccess: async () => {
+      await refresh("invitation");
+      setSaved(true);
+    },
+  });
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setSaved(false);
+    save.mutate();
+  }
+
+  return (
+    <Card>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Siaran langsung</h2>
+        <p className="text-sm text-ink-soft">
+          Untuk tamu yang tidak bisa hadir. Isi tautan YouTube, Instagram Live, atau Zoom bila sudah
+          ada; kosongkan untuk menyembunyikan bagian ini.
+        </p>
+        <Field label="Tautan siaran" hint="Harus diawali https://">
+          {(id) => (
+            <Input
+              id={id}
+              type="url"
+              inputMode="url"
+              value={url}
+              onChange={(e) => {
+                setSaved(false);
+                setUrl(e.target.value);
+              }}
+            />
+          )}
+        </Field>
+        <Field label="Keterangan" hint="Opsional, mis. jam mulai siaran.">
+          {(id) => (
+            <Input
+              id={id}
+              maxLength={300}
+              value={note}
+              onChange={(e) => {
+                setSaved(false);
+                setNote(e.target.value);
+              }}
+            />
+          )}
+        </Field>
+        {save.error && <Alert tone="error">{save.error.message}</Alert>}
+        <div className="flex items-center justify-end gap-3">
+          {saved && <span className="text-sm font-semibold text-ok">Tersimpan</span>}
+          <Button type="submit" disabled={save.isPending}>
+            {save.isPending ? "Menyimpan…" : "Simpan siaran"}
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }

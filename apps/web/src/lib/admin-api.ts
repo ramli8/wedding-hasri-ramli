@@ -32,7 +32,9 @@ import {
   guestResponseSchema,
   importCommitResponseSchema,
   importPreviewResponseSchema,
+  type LiveInput,
   layoutResponseSchema,
+  liveResponseSchema,
   logResponseSchema,
   type MarkSentRequest,
   mediaResponseSchema,
@@ -246,6 +248,8 @@ export const adminApi = {
     layout: () => request(`${base}/invitation/layout`, layoutResponseSchema),
     saveCover: (input: CoverInput) =>
       request(`${base}/invitation/cover`, coverResponseSchema, withBody("PUT", input)),
+    saveLive: (input: LiveInput) =>
+      request(`${base}/invitation/live`, liveResponseSchema, withBody("PUT", input)),
     saveSections: (items: Section[]) =>
       request(`${base}/invitation/sections`, sectionsResponseSchema, withBody("PUT", { items })),
   },

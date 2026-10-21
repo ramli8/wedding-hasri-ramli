@@ -2,6 +2,8 @@ import {
   type CoupleProfile,
   type CoupleProfileData,
   type CoupleRole,
+  type Faq,
+  type FaqData,
   type GalleryData,
   type GalleryItem,
   type Gift,
@@ -12,10 +14,20 @@ import {
   mediaUrl,
   type StoryData,
   type StoryItem,
+  type Wish,
+  type WishData,
 } from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { coupleProfiles, galleryItems, giftAccounts, media, storyItems } from "../db/schema.js";
+import {
+  coupleProfiles,
+  faqItems,
+  galleryItems,
+  giftAccounts,
+  media,
+  storyItems,
+  wishlistItems,
+} from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { discardMedia } from "./media.js";
 
@@ -39,7 +51,8 @@ async function assertPhotoUsable(db: Db, photoId: string | null, own: string | n
     sql`select 1 from ${coupleProfiles} where ${coupleProfiles.photoMediaId} = ${photoId}
         union all select 1 from ${storyItems} where ${storyItems.photoMediaId} = ${photoId}
         union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId}
-        union all select 1 from ${giftAccounts} where ${giftAccounts.qrMediaId} = ${photoId} limit 1`,
+        union all select 1 from ${giftAccounts} where ${giftAccounts.qrMediaId} = ${photoId}
+        union all select 1 from ${wishlistItems} where ${wishlistItems.photoMediaId} = ${photoId} limit 1`,
   );
   if (used.length > 0) {
     throw new AppError(409, "CONFLICT", "Gambar ini sudah dipakai di bagian lain");
@@ -409,6 +422,181 @@ export async function reorderGifts(db: Db, ids: string[]): Promise<Gift[]> {
   return listGifts(db);
 }
 
+// --- FAQ ------------------------------------------------------------------------------------------
+
+const toFaq = (row: typeof faqItems.$inferSelect): Faq => ({
+  id: row.id,
+  question: row.question,
+  answer: row.answer,
+});
+
+export async function listFaqs(db: Db): Promise<Faq[]> {
+  const rows = await db
+    .select()
+    .from(faqItems)
+    .orderBy(asc(faqItems.sortOrder), asc(faqItems.createdAt), asc(faqItems.id));
+  return rows.map(toFaq);
+}
+
+export async function createFaq(db: Db, input: FaqData): Promise<Faq> {
+  const [row] = await db
+    .insert(faqItems)
+    .values({
+      sortOrder: sql`(select coalesce(max(${faqItems.sortOrder}), 0) + 1 from ${faqItems})`,
+      question: input.question,
+      answer: input.answer,
+    })
+    .returning();
+  if (!row) throw new Error("Gagal menambah FAQ");
+  return toFaq(row);
+}
+
+export async function updateFaq(db: Db, id: string, input: FaqData): Promise<Faq> {
+  const [row] = await db
+    .update(faqItems)
+    .set({ question: input.question, answer: input.answer })
+    .where(eq(faqItems.id, id))
+    .returning();
+  if (!row) throw new AppError(404, "NOT_FOUND", "FAQ tidak ditemukan");
+  return toFaq(row);
+}
+
+export async function deleteFaq(db: Db, id: string): Promise<void> {
+  const [row] = await db.delete(faqItems).where(eq(faqItems.id, id)).returning({ id: faqItems.id });
+  if (!row) throw new AppError(404, "NOT_FOUND", "FAQ tidak ditemukan");
+}
+
+/** Mengatur urutan: `ids` harus memuat semua FAQ tepat satu kali. */
+export async function reorderFaqs(db: Db, ids: string[]): Promise<Faq[]> {
+  await db.transaction(async (tx) => {
+    const current = await tx.select({ id: faqItems.id }).from(faqItems);
+    const same =
+      ids.length === current.length &&
+      new Set(ids).size === ids.length &&
+      current.every((row) => ids.includes(row.id));
+    if (!same) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "Daftar urutan tidak sama dengan isinya. Muat ulang halaman.",
+      );
+    }
+    for (const [index, id] of ids.entries()) {
+      await tx
+        .update(faqItems)
+        .set({ sortOrder: index + 1 })
+        .where(eq(faqItems.id, id));
+    }
+  });
+  return listFaqs(db);
+}
+
+// --- Wishlist hadiah ------------------------------------------------------------------------------
+
+const toWish = (
+  row: typeof wishlistItems.$inferSelect,
+  photo: typeof media.$inferSelect | null,
+): Wish => ({
+  id: row.id,
+  name: row.name,
+  note: row.note,
+  url: row.url,
+  photo: toRef(photo),
+  isFulfilled: row.isFulfilled,
+});
+
+export async function listWishes(db: Db): Promise<Wish[]> {
+  const rows = await db
+    .select({ item: wishlistItems, photo: media })
+    .from(wishlistItems)
+    .leftJoin(media, eq(media.id, wishlistItems.photoMediaId))
+    .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.createdAt), asc(wishlistItems.id));
+  return rows.map((r) => toWish(r.item, r.photo));
+}
+
+async function getWish(db: Db, id: string): Promise<Wish> {
+  const [row] = await db
+    .select({ item: wishlistItems, photo: media })
+    .from(wishlistItems)
+    .leftJoin(media, eq(media.id, wishlistItems.photoMediaId))
+    .where(eq(wishlistItems.id, id))
+    .limit(1);
+  if (!row) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
+  return toWish(row.item, row.photo);
+}
+
+export async function createWish(db: Db, input: WishData): Promise<Wish> {
+  await assertPhotoUsable(db, input.photoMediaId, null);
+  const [row] = await db
+    .insert(wishlistItems)
+    .values({
+      sortOrder: sql`(select coalesce(max(${wishlistItems.sortOrder}), 0) + 1 from ${wishlistItems})`,
+      name: input.name,
+      note: input.note,
+      url: input.url,
+      photoMediaId: input.photoMediaId,
+      isFulfilled: input.isFulfilled,
+    })
+    .returning({ id: wishlistItems.id });
+  if (!row) throw new Error("Gagal menambah hadiah");
+  return getWish(db, row.id);
+}
+
+export async function updateWish(db: Db, dir: string, id: string, input: WishData): Promise<Wish> {
+  const [existing] = await db.select().from(wishlistItems).where(eq(wishlistItems.id, id)).limit(1);
+  if (!existing) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
+  await assertPhotoUsable(db, input.photoMediaId, existing.photoMediaId);
+
+  await db
+    .update(wishlistItems)
+    .set({
+      name: input.name,
+      note: input.note,
+      url: input.url,
+      photoMediaId: input.photoMediaId,
+      isFulfilled: input.isFulfilled,
+    })
+    .where(eq(wishlistItems.id, id));
+  if (existing.photoMediaId && existing.photoMediaId !== input.photoMediaId) {
+    await discardMedia(db, dir, existing.photoMediaId);
+  }
+  return getWish(db, id);
+}
+
+export async function deleteWish(db: Db, dir: string, id: string): Promise<void> {
+  const [deleted] = await db
+    .delete(wishlistItems)
+    .where(eq(wishlistItems.id, id))
+    .returning({ photoMediaId: wishlistItems.photoMediaId });
+  if (!deleted) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
+  await discardMedia(db, dir, deleted.photoMediaId);
+}
+
+/** Mengatur urutan: `ids` harus memuat semua hadiah tepat satu kali. */
+export async function reorderWishes(db: Db, ids: string[]): Promise<Wish[]> {
+  await db.transaction(async (tx) => {
+    const current = await tx.select({ id: wishlistItems.id }).from(wishlistItems);
+    const same =
+      ids.length === current.length &&
+      new Set(ids).size === ids.length &&
+      current.every((row) => ids.includes(row.id));
+    if (!same) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "Daftar urutan tidak sama dengan isinya. Muat ulang halaman.",
+      );
+    }
+    for (const [index, id] of ids.entries()) {
+      await tx
+        .update(wishlistItems)
+        .set({ sortOrder: index + 1 })
+        .where(eq(wishlistItems.id, id));
+    }
+  });
+  return listWishes(db);
+}
+
 // --- Untuk tamu -----------------------------------------------------------------------------------
 
 export async function getInvitation(db: Db): Promise<InvitationResponse> {
@@ -417,5 +605,7 @@ export async function getInvitation(db: Db): Promise<InvitationResponse> {
     story: await listStory(db),
     gallery: await listGallery(db),
     gifts: await listGifts(db),
+    faqs: await listFaqs(db),
+    wishes: await listWishes(db),
   };
 }

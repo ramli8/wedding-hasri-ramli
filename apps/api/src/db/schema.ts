@@ -280,6 +280,27 @@ export const giftAccounts = pgTable(
   (table) => [check("gift_accounts_kind_valid", sql`${table.kind} in ('bank', 'ewallet')`)],
 );
 
+// Pertanyaan yang sering diajukan tamu, berurutan menurut sort_order.
+export const faqItems = pgTable("faq_items", {
+  id: uuid().primaryKey().defaultRandom(),
+  sortOrder: integer().notNull(),
+  question: text().notNull(),
+  answer: text().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+// Ide hadiah (wishlist). is_fulfilled diatur admin bila sudah ada yang memberikan.
+export const wishlistItems = pgTable("wishlist_items", {
+  id: uuid().primaryKey().defaultRandom(),
+  sortOrder: integer().notNull(),
+  name: text().notNull(),
+  note: text(),
+  url: text(),
+  photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+  isFulfilled: boolean().notNull().default(false),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 export const storyItems = pgTable("story_items", {
   id: uuid().primaryKey().defaultRandom(),
   sortOrder: integer().notNull(),

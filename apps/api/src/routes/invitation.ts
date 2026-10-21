@@ -1,6 +1,8 @@
 import {
   coupleProfileInputSchema,
   coupleRoleSchema,
+  faqInputSchema,
+  faqOrderSchema,
   galleryCaptionSchema,
   galleryInputSchema,
   galleryOrderSchema,
@@ -8,29 +10,41 @@ import {
   giftOrderSchema,
   storyInputSchema,
   storyOrderSchema,
+  wishInputSchema,
+  wishOrderSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { validate } from "../http/validate.js";
 import {
+  createFaq,
   createGalleryItem,
   createGift,
   createStoryItem,
+  createWish,
+  deleteFaq,
   deleteGalleryItem,
   deleteGift,
   deleteStoryItem,
+  deleteWish,
   getCouple,
+  listFaqs,
   listGallery,
   listGifts,
   listStory,
+  listWishes,
+  reorderFaqs,
   reorderGallery,
   reorderGifts,
   reorderStory,
+  reorderWishes,
   saveCoupleProfile,
+  updateFaq,
   updateGalleryCaption,
   updateGift,
   updateStoryItem,
+  updateWish,
 } from "../services/invitation.js";
 
 const idParam = z.object({ id: z.uuid() });
@@ -130,6 +144,47 @@ export function invitationAdminRoutes({ db, config }: AppDeps) {
       )
       .delete("/gifts/:id", validate("param", idParam), async (c) => {
         await deleteGift(db, config.mediaDir, c.req.valid("param").id);
+        return c.json({ ok: true });
+      })
+      .get("/faqs", async (c) => c.json({ items: await listFaqs(db) }))
+      .post("/faqs", validate("json", faqInputSchema), async (c) => {
+        return c.json({ item: await createFaq(db, c.req.valid("json")) }, 201);
+      })
+      // Harus sebelum "/faqs/:id" agar "order" tidak dibaca sebagai id.
+      .put("/faqs/order", validate("json", faqOrderSchema), async (c) => {
+        return c.json({ items: await reorderFaqs(db, c.req.valid("json").ids) });
+      })
+      .put("/faqs/:id", validate("param", idParam), validate("json", faqInputSchema), async (c) => {
+        return c.json({ item: await updateFaq(db, c.req.valid("param").id, c.req.valid("json")) });
+      })
+      .delete("/faqs/:id", validate("param", idParam), async (c) => {
+        await deleteFaq(db, c.req.valid("param").id);
+        return c.json({ ok: true });
+      })
+      .get("/wishes", async (c) => c.json({ items: await listWishes(db) }))
+      .post("/wishes", validate("json", wishInputSchema), async (c) => {
+        return c.json({ item: await createWish(db, c.req.valid("json")) }, 201);
+      })
+      // Harus sebelum "/wishes/:id" agar "order" tidak dibaca sebagai id.
+      .put("/wishes/order", validate("json", wishOrderSchema), async (c) => {
+        return c.json({ items: await reorderWishes(db, c.req.valid("json").ids) });
+      })
+      .put(
+        "/wishes/:id",
+        validate("param", idParam),
+        validate("json", wishInputSchema),
+        async (c) => {
+          const item = await updateWish(
+            db,
+            config.mediaDir,
+            c.req.valid("param").id,
+            c.req.valid("json"),
+          );
+          return c.json({ item });
+        },
+      )
+      .delete("/wishes/:id", validate("param", idParam), async (c) => {
+        await deleteWish(db, config.mediaDir, c.req.valid("param").id);
         return c.json({ ok: true });
       })
   );

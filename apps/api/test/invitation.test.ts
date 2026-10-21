@@ -3,11 +3,13 @@ import { join } from "node:path";
 import type {
   Couple,
   CoupleProfile,
+  Faq,
   GalleryItem,
   Gift,
   InvitationResponse,
   Media,
   StoryItem,
+  Wish,
 } from "@wedding/shared";
 import { inArray } from "drizzle-orm";
 import sharp from "sharp";
@@ -281,6 +283,8 @@ describe("isi undangan untuk tamu", () => {
       story: [],
       gallery: [],
       gifts: [],
+      faqs: [],
+      wishes: [],
     });
   });
 });
@@ -403,5 +407,84 @@ describe("amplop digital", () => {
     expect((await api.post("/invitation/gifts", { ...BCA, accountNumber: " " })).status).toBe(400);
     expect((await api.post("/invitation/gifts", { ...BCA, kind: "kripto" })).status).toBe(400);
     expect((await adminClient(app, "").get("/invitation/gifts")).status).toBe(401);
+  });
+});
+
+describe("FAQ", () => {
+  const create = async (question = "Dress code?", answer = "Bebas rapi.") =>
+    (await read<{ item: Faq }>(await api.post("/invitation/faqs", { question, answer }))).item;
+
+  it("menambah, mengubah, mengurutkan, menghapus, dan menampilkan ke tamu", async () => {
+    const a = await create();
+    const b = await create("Parkir?", "  Tersedia.  ");
+    expect(b.answer).toBe("Tersedia.");
+
+    const edited = await api.put(`/invitation/faqs/${a.id}`, {
+      question: "Pakaian?",
+      answer: "Rapi",
+    });
+    expect((await read<{ item: Faq }>(edited)).item.question).toBe("Pakaian?");
+
+    expect((await api.put("/invitation/faqs/order", { ids: [b.id, a.id] })).status).toBe(200);
+    expect((await api.put("/invitation/faqs/order", { ids: [a.id] })).status).toBe(400);
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body.faqs.map((i) => i.id)).toEqual([b.id, a.id]);
+
+    expect((await api.delete(`/invitation/faqs/${a.id}`)).status).toBe(200);
+    expect((await api.delete(`/invitation/faqs/${a.id}`)).status).toBe(404);
+  });
+
+  it("menolak pertanyaan atau jawaban kosong dan memerlukan login", async () => {
+    expect((await api.post("/invitation/faqs", { question: " ", answer: "x" })).status).toBe(400);
+    expect((await api.post("/invitation/faqs", { question: "x", answer: "" })).status).toBe(400);
+    expect((await adminClient(app, "").get("/invitation/faqs")).status).toBe(401);
+  });
+});
+
+describe("wishlist", () => {
+  const create = async (body: object = { name: "Rice cooker" }) =>
+    read<{ item: Wish }>(await api.post("/invitation/wishes", body));
+
+  it("menyimpan hadiah, menandai terpenuhi, mengurutkan, dan menampilkan ke tamu", async () => {
+    const a = (await create({ name: "Rice cooker", url: "https://toko.example/rc" })).item;
+    expect(a).toMatchObject({ url: "https://toko.example/rc", isFulfilled: false, photo: null });
+    const b = (await create()).item;
+
+    const done = await api.put(`/invitation/wishes/${a.id}`, {
+      name: "Rice cooker",
+      isFulfilled: true,
+    });
+    expect((await read<{ item: Wish }>(done)).item).toMatchObject({ isFulfilled: true, url: null });
+
+    expect((await api.put("/invitation/wishes/order", { ids: [b.id, a.id] })).status).toBe(200);
+    expect((await api.put("/invitation/wishes/order", { ids: [a.id] })).status).toBe(400);
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body.wishes.map((i) => i.id)).toEqual([b.id, a.id]);
+  });
+
+  it("menyimpan foto, membersihkannya saat diganti atau dihapus", async () => {
+    const p1 = await uploadPhoto("a.png");
+    const item = (await create({ name: "Blender", photoMediaId: p1.id })).item;
+    expect(item.photo?.id).toBe(p1.id);
+    expect((await api.post("/invitation/wishes", { name: "X", photoMediaId: p1.id })).status).toBe(
+      409,
+    );
+
+    const p2 = await uploadPhoto("b.png");
+    await api.put(`/invitation/wishes/${item.id}`, { name: "Blender", photoMediaId: p2.id });
+    expect(onDisk(p1)).toBe(false);
+    expect((await api.delete(`/invitation/wishes/${item.id}`)).status).toBe(200);
+    expect(onDisk(p2)).toBe(false);
+  });
+
+  it("menolak nama kosong, tautan bukan http(s), dan memerlukan login", async () => {
+    expect((await api.post("/invitation/wishes", { name: " " })).status).toBe(400);
+    expect(
+      (await api.post("/invitation/wishes", { name: "X", url: "javascript:alert(1)" })).status,
+    ).toBe(400);
+    expect((await api.post("/invitation/wishes", { name: "X", url: "bukan url" })).status).toBe(
+      400,
+    );
+    expect((await adminClient(app, "").get("/invitation/wishes")).status).toBe(401);
   });
 });

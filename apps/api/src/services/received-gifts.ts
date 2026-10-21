@@ -14,7 +14,7 @@ import { AppError } from "../http/errors.js";
 import { safeCell } from "./guest-import.js";
 
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-const todayWib = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
+export const todayWib = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
 
 const notFound = () => new AppError(404, "NOT_FOUND", "Catatan hadiah tidak ditemukan");
 

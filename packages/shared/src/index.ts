@@ -15,4 +15,5 @@ export * from "./rsvp.js";
 export * from "./settings.js";
 export * from "./sync.js";
 export * from "./uuid.js";
+export * from "./vendors.js";
 export * from "./version.js";

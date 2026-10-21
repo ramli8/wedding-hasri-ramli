@@ -15,6 +15,7 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -444,4 +445,57 @@ export const receivedGifts = pgTable(
     ),
     index("received_gifts_received_idx").on(table.receivedOn),
   ],
+);
+
+// Vendor pernikahan. Satu kategori punya beberapa kandidat; paling banyak satu yang dipilih.
+export const vendorCategories = pgTable("vendor_categories", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull().unique("vendor_categories_name_unique"),
+  sortOrder: integer().notNull().default(0),
+});
+
+export const vendors = pgTable(
+  "vendors",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    categoryId: uuid()
+      .notNull()
+      .references(() => vendorCategories.id),
+    name: text().notNull(),
+    contactPerson: text(),
+    phone: text(),
+    instagram: text(),
+    address: text(),
+    referencePrice: bigint({ mode: "number" }),
+    contractAmount: bigint({ mode: "number" }),
+    isSelected: boolean().notNull().default(false),
+    note: text(),
+    deletedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("one_selected_vendor_per_category")
+      .on(table.categoryId)
+      .where(sql`${table.isSelected} and ${table.deletedAt} is null`),
+    check(
+      "vendors_amounts_valid",
+      sql`(${table.referencePrice} is null or ${table.referencePrice} > 0)
+        and (${table.contractAmount} is null or ${table.contractAmount} > 0)`,
+    ),
+  ],
+);
+
+export const vendorPayments = pgTable(
+  "vendor_payments",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    vendorId: uuid()
+      .notNull()
+      .references(() => vendors.id, { onDelete: "cascade" }),
+    paidOn: date({ mode: "string" }).notNull(),
+    amount: bigint({ mode: "number" }).notNull(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("vendor_payments_amount_valid", sql`${table.amount} > 0`)],
 );

@@ -304,4 +304,13 @@ export const adminApi = {
 export const downloads = {
   guestsCsv: `/api${base}/guests/export.csv`,
   templateCsv: `/api${base}/guests/template.csv`,
+  /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
+  receivedGiftsCsv: (filter: ReceivedGiftFilter) => {
+    const search = new URLSearchParams();
+    if (filter.q) search.set("q", filter.q);
+    if (filter.kind) search.set("kind", filter.kind);
+    if (filter.thanked !== undefined) search.set("thanked", String(filter.thanked));
+    const text = search.toString();
+    return `/api${base}/received-gifts/export.csv${text ? `?${text}` : ""}`;
+  },
 };

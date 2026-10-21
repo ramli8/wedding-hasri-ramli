@@ -1,14 +1,17 @@
-import type {
-  ReceivedGift,
-  ReceivedGiftData,
-  ReceivedGiftKind,
-  ReceivedGiftListParams,
-  ReceivedGiftSummary,
+import {
+  RECEIVED_GIFT_KIND_LABEL,
+  type ReceivedGift,
+  type ReceivedGiftData,
+  type ReceivedGiftKind,
+  type ReceivedGiftListParams,
+  type ReceivedGiftSummary,
 } from "@wedding/shared";
+import { stringify } from "csv-stringify/sync";
 import { and, desc, eq, ilike, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { admins, guests, receivedGifts } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
+import { safeCell } from "./guest-import.js";
 
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 const todayWib = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
@@ -37,7 +40,7 @@ const selectGifts = (db: Db) =>
     .from(receivedGifts)
     .leftJoin(admins, eq(admins.id, receivedGifts.recordedBy));
 
-export async function listReceivedGifts(db: Db, query: ReceivedGiftListParams) {
+async function queryGifts(db: Db, query: ReceivedGiftListParams) {
   const term = query.q?.trim();
   const rows = await selectGifts(db)
     .where(
@@ -57,7 +60,46 @@ export async function listReceivedGifts(db: Db, query: ReceivedGiftListParams) {
       ),
     )
     .orderBy(desc(receivedGifts.receivedOn), desc(receivedGifts.createdAt), desc(receivedGifts.id));
-  return { items: rows.map(toGift), summary: await summary(db) };
+  return rows.map(toGift);
+}
+
+export async function listReceivedGifts(db: Db, query: ReceivedGiftListParams) {
+  return { items: await queryGifts(db, query), summary: await summary(db) };
+}
+
+const CSV_COLUMNS = [
+  "tanggal_diterima",
+  "pemberi",
+  "jenis",
+  "nominal",
+  "barang",
+  "catatan",
+  "sudah_dibalas",
+  "tanggal_dibalas",
+  "dicatat_oleh",
+];
+
+/** Ekspor sesuai filter yang sama dengan daftar. Nominal berupa angka polos agar bisa dijumlah. */
+export async function exportReceivedGiftsCsv(
+  db: Db,
+  query: ReceivedGiftListParams,
+): Promise<string> {
+  const rows = await queryGifts(db, query);
+  const records = rows.map((gift) => ({
+    tanggal_diterima: gift.receivedOn,
+    pemberi: safeCell(gift.giverName),
+    jenis: RECEIVED_GIFT_KIND_LABEL[gift.kind],
+    nominal: gift.amount ?? "",
+    barang: safeCell(gift.itemDescription),
+    catatan: safeCell(gift.note),
+    sudah_dibalas: gift.thankedAt ? "ya" : "tidak",
+    tanggal_dibalas: gift.thankedAt
+      ? new Date(new Date(gift.thankedAt).getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10)
+      : "",
+    dicatat_oleh: safeCell(gift.recordedBy),
+  }));
+  // BOM agar Excel membaca UTF-8 dengan benar.
+  return `\ufeff${stringify(records, { header: true, columns: CSV_COLUMNS })}`;
 }
 
 async function summary(db: Db): Promise<ReceivedGiftSummary> {

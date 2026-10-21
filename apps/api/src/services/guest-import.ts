@@ -255,7 +255,7 @@ export async function commitImport(
 // --- Ekspor & template -----------------------------------------------------
 
 /** Mencegah sel yang diawali = + - @ dibaca sebagai rumus oleh Excel/Sheets. */
-const safeCell = (value: string | null | undefined) =>
+export const safeCell = (value: string | null | undefined) =>
   value && /^[=+\-@\t\r]/.test(value) ? `'${value}` : (value ?? "");
 
 const EXPORT_COLUMNS = [

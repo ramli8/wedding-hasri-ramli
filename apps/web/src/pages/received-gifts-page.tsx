@@ -5,18 +5,18 @@ import {
   type ReceivedGift,
   type ReceivedGiftKind,
 } from "@wedding/shared";
-import { Check, Plus } from "lucide-react";
+import { Check, Download, Plus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
 import { Badge } from "../components/ui/badge.js";
-import { Button } from "../components/ui/button.js";
+import { Button, buttonStyles } from "../components/ui/button.js";
 import { Card } from "../components/ui/card.js";
 import { Dialog } from "../components/ui/dialog.js";
 import { Field } from "../components/ui/field.js";
 import { Input } from "../components/ui/input.js";
 import { Select } from "../components/ui/select.js";
-import { adminApi } from "../lib/admin-api.js";
+import { adminApi, downloads } from "../lib/admin-api.js";
 import { formatRupiah, parseAmount } from "../lib/format.js";
 import { receivedGiftsQuery, useRefresh } from "../lib/queries.js";
 
@@ -43,13 +43,12 @@ export function ReceivedGiftsPage() {
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<ReceivedGift | null>(null);
 
-  const list = useQuery(
-    receivedGiftsQuery({
-      q: search,
-      kind: kind || undefined,
-      thanked: thanked === "" ? undefined : thanked === "yes",
-    }),
-  );
+  const filter = {
+    q: search,
+    kind: kind || undefined,
+    thanked: thanked === "" ? undefined : thanked === "yes",
+  };
+  const list = useQuery(receivedGiftsQuery(filter));
   const items = list.data?.items ?? [];
   const summary = list.data?.summary;
 
@@ -66,9 +65,18 @@ export function ReceivedGiftsPage() {
         title="Hadiah masuk"
         description="Catat amplop, transfer, dan barang yang diterima, lalu tandai bila sudah dibalas ucapan terima kasih."
         actions={
-          <Button onClick={() => setEditing({ kind: "new" })}>
-            <Plus className="size-4" aria-hidden /> Catat hadiah
-          </Button>
+          <>
+            <a
+              href={downloads.receivedGiftsCsv(filter)}
+              className={buttonStyles({ variant: "secondary" })}
+            >
+              <Download className="size-4" aria-hidden />
+              Ekspor CSV
+            </a>
+            <Button onClick={() => setEditing({ kind: "new" })}>
+              <Plus className="size-4" aria-hidden /> Catat hadiah
+            </Button>
+          </>
         }
       />
 

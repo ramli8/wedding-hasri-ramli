@@ -181,9 +181,49 @@ describe("hadiah masuk", () => {
     );
   });
 
+  it("mengekspor CSV: angka polos, tanda terima kasih, filter yang sama, dan sel aman dari rumus", async () => {
+    await add({ giverName: "Pak Joko", kind: "amplop", amount: 500_000, receivedOn: "2027-05-21" });
+    await add({
+      giverName: '=HYPERLINK("http://jahat")',
+      kind: "transfer",
+      amount: 1_250_000,
+      note: "BCA, titipan Bu Tini",
+      receivedOn: "2027-05-20",
+    });
+    const rice = (await add({ giverName: "Budi", kind: "barang", itemDescription: "Rice cooker" }))
+      .gift;
+    await api.post(`/received-gifts/${rice?.id}/thanked`, { thanked: true });
+
+    const res = await api.get("/received-gifts/export.csv");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/csv");
+    expect(res.headers.get("content-disposition")).toContain("hadiah-masuk.csv");
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    // BOM UTF-8 di awal agar Excel membaca huruf non-ASCII dengan benar (text() membuangnya).
+    expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    const csv = new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes).slice(1);
+    expect(csv.startsWith("tanggal_diterima,pemberi,jenis,nominal,barang,catatan,")).toBe(true);
+    const lines = csv.trim().split("\n");
+    expect(lines).toHaveLength(4);
+    expect(csv).toContain("2027-05-21,Pak Joko,Amplop (tunai),500000,,,tidak,,Ramli");
+    expect(csv).toContain('"BCA, titipan Bu Tini"');
+    expect(csv).toContain(",1250000,");
+    // Rumus dinetralkan dengan awalan apostrof.
+    expect(csv).toContain("'=HYPERLINK");
+    expect(csv).not.toMatch(/,=HYPERLINK/);
+    const barangLine = lines.find((l) => l.includes("Rice cooker")) ?? "";
+    expect(barangLine).toMatch(/,ya,\d{4}-\d{2}-\d{2},Ramli$/);
+
+    const onlyTransfer = await (await api.get("/received-gifts/export.csv?kind=transfer")).text();
+    expect(onlyTransfer.trim().split("\n")).toHaveLength(2);
+    const notThanked = await (await api.get("/received-gifts/export.csv?thanked=false")).text();
+    expect(notThanked).not.toContain("Rice cooker");
+  });
+
   it("memerlukan login admin", async () => {
     const anonymous = adminClient(ctx.makeApp(), "");
     expect((await anonymous.get("/received-gifts")).status).toBe(401);
+    expect((await anonymous.get("/received-gifts/export.csv")).status).toBe(401);
     expect(
       (await anonymous.post("/received-gifts", { giverName: "A", kind: "amplop", amount: 1000 }))
         .status,

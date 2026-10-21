@@ -8,7 +8,7 @@ Wedding system for Hasri & Ramli (event 21 May 2027): guest management, message 
 
 `docs/rancangan.md` is the approved design (schema, API, offline sync, phases) and §14 records where the implementation deliberately diverged from it. Read it before changing sync, check-in or schema. `docs/design.md` + `docs/design-tokens.json` define the "light brutalist" admin look (cream + dot pattern, 2px black borders, hard shadows, radius 0, acid `#d8ff3e` / electric `#2b2be8`).
 
-Phases 1–3 (foundation, guests, scanner/check-in/devices/dashboard) are done. Next is phase 4 (e-ticket, RSVP, guestbook), then invitation editor/design, then vendors/gifts. Don't propose other stacks or dropped features (dynamic RBAC, Google OAuth, multi-tenant, seating plans).
+Phases 1–4 (foundation, guests, scanner/check-in/devices/dashboard, e-ticket/RSVP) are done. Next is the invitation editor/design (phase 5), which also owns the guestbook UI: the API (`/public/guestbook`, `/admin/guestbook` with reply/hide/delete) and tables already exist but nothing in the web app uses them yet. Then vendors/gifts. Don't propose other stacks or dropped features (dynamic RBAC, Google OAuth, multi-tenant, seating plans).
 
 ## Commands
 
@@ -47,9 +47,10 @@ pnpm workspace: `apps/api`, `apps/web`, `packages/shared`.
 
 **`packages/shared`** is the contract: Zod schemas and inferred types used by both API (validation, via `http/validate.ts`) and web. Exported as raw TypeScript (`exports: ./src/index.ts`, no build step). It also holds the pure check-in conflict logic (`resolveCheckins` in `src/checkin.ts`), the sync protocol constants (`SYNC_PROTOCOL_VERSION`, `MIN_SUPPORTED_SYNC_VERSION`) and phone/Instagram normalizers. API shapes change here first.
 
-**`apps/api`** (Hono + Drizzle + postgres.js). `createApp(deps)` in `src/app.ts` mounts `/api/v1/{auth,admin,device,sync}` plus `/api/health`; `deps` = `{ db, config, logger }` is passed to every route factory, which is how tests build isolated apps. Layering: `routes/` (HTTP + validation) → `services/` (logic, Drizzle queries) → `db/schema.ts`. Migrations in `apps/api/drizzle/` are generated, committed, and applied automatically at startup (`db/migrate.ts`). There are two auth worlds:
+**`apps/api`** (Hono + Drizzle + postgres.js). `createApp(deps)` in `src/app.ts` mounts `/api/v1/{auth,admin,device,sync,public}` plus `/api/health`; `deps` = `{ db, config, logger }` is passed to every route factory, which is how tests build isolated apps. Layering: `routes/` (HTTP + validation) → `services/` (logic, Drizzle queries) → `db/schema.ts`. Migrations in `apps/api/drizzle/` are generated, committed, and applied automatically at startup (`db/migrate.ts`). There are three auth worlds:
 - Admin: cookie session (`__Host-session` in production), `originCheck` on all mutating requests, in-memory login rate limiter. Everything under `/api/v1/admin/*`.
 - Device (door staff): `Authorization: Bearer <device token>` plus a required `x-sync-version` header; only `/device/pair` and `/sync/*`. Staff have no accounts. Devices are registered with **single-use pairing codes** (never a static PIN) so each device can be revoked individually; revoked devices get `401 DEVICE_REVOKED`, too-old clients `426 APP_OUTDATED`.
+- Guests (`/api/v1/public/*`): no login; the 6-char guest code in the request is the credential. Two per-IP in-memory limiters (wrong-code guesses, RSVP/guestbook submissions). Responses never include phone/Instagram. The guest page is `/u/CODE` in the web app (e-ticket QR, RSVP, guestbook).
 
 **`apps/web`** (Vite + React 19 + TanStack Router/Query + Tailwind 4, own UI components in `components/ui`, no shadcn). One PWA serves the admin (`/admin/*`) and the scanner (`/scan`). `src/lib/scan/` is the offline engine, independent of React: Dexie store (`db.ts`), sync loop (`sync.ts`), check-in actions (`actions.ts`), QR decoding via `zxing-wasm` (`detector.ts`). `vite-plugin-pwa` is deliberately `registerType: "prompt"`: the app must never swap versions by itself during the event.
 

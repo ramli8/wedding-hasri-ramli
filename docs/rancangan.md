@@ -425,8 +425,8 @@ Detail dan perintahnya ada di [deploy.md](deploy.md).
 | 1 | Fondasi: repo, CI, Postgres + migrasi, auth admin, deploy VPS + staging, domain | pertengahan Nov 2026 |
 | 2 | Tamu: CRUD, kelompok + sesi, acara, impor/ekspor CSV, template pesan, tombol WhatsApp/Instagram | awal Des 2026 |
 | 3 | **Scanner + check-in offline**, perangkat + pairing, dashboard, duplikat, Uji Kesiapan | akhir Des 2026 |
-| 4 | E-ticket, RSVP (resepsi), ucapan | Jan 2027 |
-| 5 | Editor konten + desain undangan | Jan–Feb 2027 |
+| 4 | E-ticket, RSVP (resepsi) | Jan 2027 |
+| 5 | Editor konten + desain undangan, termasuk buku ucapan | Jan–Feb 2027 |
 | 6 | Vendor, amplop/hadiah | Feb–Mar 2027 |
 | — | **Uji nyata fase 3** (simulasi, internet mati, restore) paralel dengan fase 4–6 | Jan–Mar 2027 |
 
@@ -504,7 +504,23 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 **Belum teruji** (butuh perangkat fisik): kamera sungguhan dan pembacaan QR dari layar HP tamu, Chrome Android (mesin QR bawaan, getar, suara, senter, kunci layar), iPhone, dua HP fisik di venue, beban 1000 tamu dengan 4 perangkat (k6), uji restore backup.
 
-## 15. Belum diputuskan (tidak memblokir fase 1–3)
+### Fase 4 (e-ticket, RSVP)
+
+**Tabel baru:** `rsvps` (kunci `guest_id` + `event_id`, status `hadir | tidak_hadir | ragu`, `pax`) dan `guestbook` (`guest_id` menjadi NULL bila tamunya dihapus permanen). Migrasi 0007. Tidak ada tipe enum Postgres; status memakai `text` + `CHECK`, seperti tabel lain.
+
+**Halaman tamu `/u/KODE`** (tanpa login): tiket QR yang digambar di perangkat (hanya bila ada acara `checkin_enabled` yang diundang), kartu per acara yang diundang (tanggal, jam sesi kelompok atau jam acara, tempat, peta), kartu RSVP untuk acara `has_rsvp`, Tiket terakhir disimpan di `localStorage` per kode, jadi QR tetap terbuka saat sinyal hilang. Gaya halaman memakai token desain admin; desain undangan menyusul di fase 5.
+
+**RSVP:** jawaban boleh diubah kapan saja (upsert). Jumlah orang hanya ditanyakan untuk tamu **rombongan** yang menjawab hadir; tamu biasa selalu 1 dan "tidak hadir" selalu 0. Hanya tamu yang diundang ke acara itu yang bisa menjawab, dan hanya acara dengan `has_rsvp`.
+
+**Ucapan dipindah ke fase 5** (keputusan: buku ucapan yang bisa dibaca tamu lain lebih cocok menjadi bagian undangan). Di fase 4 hanya **API dan tabelnya** yang sudah ada; belum ada tampilan di halaman tamu maupun menu admin, dan tampilannya akan didesain bersama undangan. Aturan yang sudah dipasang: ucapan hanya bisa dikirim dari tautan pribadi (kode tamu wajib), nama bawaan = nama undangan (boleh diganti), daftar publik hanya memuat yang tidak disembunyikan dan terbaru dulu. Admin mempelai bisa **membalas** (balasan tampil di bawah ucapan), menyembunyikan, dan menghapus lewat API admin; menu adminnya dibuat di fase 5.
+
+**API publik** (`/api/v1/public`, dua pembatas per IP, 15 menit): `GET /ticket/:code`, `POST /rsvp`, `GET /guestbook`, `POST /guestbook`. Tebakan kode salah dibatasi 30 kali (setelah itu semua permintaan IP itu ditolak 429, termasuk kode benar); kiriman RSVP dan ucapan dibatasi 20 kali. Respons tiket tidak memuat HP/Instagram dan memakai `Cache-Control: no-store`. Pembatas hidup di memori proses, seperti pembatas login.
+
+**Admin:** menu RSVP (rekap hadir/tidak hadir/belum pasti/belum menjawab beserta jumlah orang, filter status dan nama) . Dashboard check-in menampilkan "orang hadir / N RSVP hadir" bila acara check-in memakai RSVP. Modal QR di daftar tamu punya tautan ke halaman undangan tamu.
+
+**Pengujian:** 161 tes API (tiket, RSVP, API ucapan publik dan admin, pembatas, dashboard) dan 44 tes web (termasuk cache tiket). Tampilan halaman tamu diperiksa di Firefox headless dengan API palsu; belum diuji di HP sungguhan.
+
+## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).
 - Rincian fitur sisi tamu: wishlist dengan klaim, foto tamu, musik latar, live streaming.

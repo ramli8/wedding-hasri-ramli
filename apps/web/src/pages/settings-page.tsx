@@ -1,13 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MIN_PASSWORD_LENGTH, type Settings } from "@wedding/shared";
+import { Download } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { PageHeader } from "../components/page-header.js";
 import { Alert } from "../components/ui/alert.js";
-import { Button } from "../components/ui/button.js";
+import { Button, buttonStyles } from "../components/ui/button.js";
 import { Card } from "../components/ui/card.js";
 import { Field } from "../components/ui/field.js";
 import { Input } from "../components/ui/input.js";
-import { adminApi } from "../lib/admin-api.js";
+import { adminApi, downloads } from "../lib/admin-api.js";
 import { api } from "../lib/api.js";
 import { settingsQuery, useRefresh } from "../lib/queries.js";
 
@@ -28,6 +29,7 @@ export function SettingsPage() {
       ) : (
         <WeddingForm initial={settings.data} />
       )}
+      <ExportCard />
       <PasswordForm />
     </>
   );
@@ -168,6 +170,40 @@ function PasswordForm() {
           </Button>
         </div>
       </form>
+    </Card>
+  );
+}
+
+function ExportCard() {
+  return (
+    <Card>
+      <div className="flex max-w-lg flex-col gap-4">
+        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Cadangan & ekspor</h2>
+        <p className="text-sm text-ink-soft">
+          Unduh salinan data Anda kapan saja untuk arsip pribadi. Cadangan otomatis ke penyimpanan
+          cloud dijalankan di server (lihat docs/backup.md); unduhan ini pelengkapnya, bukan
+          penggantinya.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <a href={downloads.dataJson} className={buttonStyles({ variant: "secondary" })}>
+            <Download className="size-4" aria-hidden />
+            Semua data (JSON)
+          </a>
+          <a href={downloads.mediaZip} className={buttonStyles({ variant: "secondary" })}>
+            <Download className="size-4" aria-hidden />
+            Semua foto (ZIP)
+          </a>
+          <a href={downloads.guestsCsv} className={buttonStyles({ variant: "secondary" })}>
+            <Download className="size-4" aria-hidden />
+            Daftar tamu (CSV)
+          </a>
+        </div>
+        <p className="text-xs text-ink-soft">
+          Data JSON memuat semua tabel (tamu, undangan, check-in, hadiah, vendor, dan lainnya) tanpa
+          akun admin dan token perangkat. ZIP foto bisa besar bila fotonya banyak; berkasnya disusun
+          sambil diunduh.
+        </p>
+      </div>
     </Card>
   );
 }

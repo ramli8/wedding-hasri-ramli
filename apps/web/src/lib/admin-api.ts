@@ -372,6 +372,8 @@ export const adminApi = {
 export const downloads = {
   guestsCsv: `/api${base}/guests/export.csv`,
   templateCsv: `/api${base}/guests/template.csv`,
+  dataJson: `/api${base}/export/data.json`,
+  mediaZip: `/api${base}/export/media.zip`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
   receivedGiftsCsv: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();

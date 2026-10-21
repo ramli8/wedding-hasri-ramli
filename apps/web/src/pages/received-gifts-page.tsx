@@ -19,6 +19,7 @@ import { Select } from "../components/ui/select.js";
 import { adminApi, downloads } from "../lib/admin-api.js";
 import { formatRupiah, parseAmount } from "../lib/format.js";
 import { receivedGiftsQuery, useRefresh } from "../lib/queries.js";
+import { ThanksDialog } from "./received-gifts-thanks-dialog.js";
 
 type Thanked = "" | "yes" | "no";
 type Editing = { kind: "new" } | { kind: "edit"; gift: ReceivedGift };
@@ -42,6 +43,7 @@ export function ReceivedGiftsPage() {
   const [thanked, setThanked] = useState<Thanked>("");
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<ReceivedGift | null>(null);
+  const [thanking, setThanking] = useState(false);
 
   const filter = {
     q: search,
@@ -66,6 +68,11 @@ export function ReceivedGiftsPage() {
         description="Catat amplop, transfer, dan barang yang diterima, lalu tandai bila sudah dibalas ucapan terima kasih."
         actions={
           <>
+            {summary && summary.notThanked > 0 && (
+              <Button variant="secondary" onClick={() => setThanking(true)}>
+                Kirim terima kasih
+              </Button>
+            )}
             <a
               href={downloads.receivedGiftsCsv(filter)}
               className={buttonStyles({ variant: "secondary" })}
@@ -208,6 +215,7 @@ export function ReceivedGiftsPage() {
           />
         )}
       </Dialog>
+      <ThanksDialog open={thanking} onClose={() => setThanking(false)} />
       <DeleteDialog gift={deleting} onClose={() => setDeleting(null)} />
     </>
   );

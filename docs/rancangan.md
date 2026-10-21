@@ -512,13 +512,23 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 **RSVP:** jawaban boleh diubah kapan saja (upsert). Jumlah orang hanya ditanyakan untuk tamu **rombongan** yang menjawab hadir; tamu biasa selalu 1 dan "tidak hadir" selalu 0. Hanya tamu yang diundang ke acara itu yang bisa menjawab, dan hanya acara dengan `has_rsvp`.
 
-**Ucapan dipindah ke fase 5** (keputusan: buku ucapan yang bisa dibaca tamu lain lebih cocok menjadi bagian undangan). Di fase 4 hanya **API dan tabelnya** yang sudah ada; belum ada tampilan di halaman tamu maupun menu admin, dan tampilannya akan didesain bersama undangan. Aturan yang sudah dipasang: ucapan hanya bisa dikirim dari tautan pribadi (kode tamu wajib), nama bawaan = nama undangan (boleh diganti), daftar publik hanya memuat yang tidak disembunyikan dan terbaru dulu. Admin mempelai bisa **membalas** (balasan tampil di bawah ucapan), menyembunyikan, dan menghapus lewat API admin; menu adminnya dibuat di fase 5.
+**Ucapan dipindah ke fase 5** (keputusan: buku ucapan yang bisa dibaca tamu lain lebih cocok menjadi bagian undangan). Di fase 4 hanya **API dan tabelnya** yang ada; tampilan tamu dan menu admin dikerjakan sebagai slice pertama fase 5 (lihat di bawah). Aturan yang sudah dipasang: ucapan hanya bisa dikirim dari tautan pribadi (kode tamu wajib), nama bawaan = nama undangan (boleh diganti), daftar publik hanya memuat yang tidak disembunyikan dan terbaru dulu. Admin mempelai bisa **membalas** (balasan tampil di bawah ucapan), menyembunyikan, dan menghapus.
 
 **API publik** (`/api/v1/public`, dua pembatas per IP, 15 menit): `GET /ticket/:code`, `POST /rsvp`, `GET /guestbook`, `POST /guestbook`. Tebakan kode salah dibatasi 30 kali (setelah itu semua permintaan IP itu ditolak 429, termasuk kode benar); kiriman RSVP dan ucapan dibatasi 20 kali. Respons tiket tidak memuat HP/Instagram dan memakai `Cache-Control: no-store`. Pembatas hidup di memori proses, seperti pembatas login.
 
 **Admin:** menu RSVP (rekap hadir/tidak hadir/belum pasti/belum menjawab beserta jumlah orang, filter status dan nama) . Dashboard check-in menampilkan "orang hadir / N RSVP hadir" bila acara check-in memakai RSVP. Modal QR di daftar tamu punya tautan ke halaman undangan tamu.
 
 **Pengujian:** 161 tes API (tiket, RSVP, API ucapan publik dan admin, pembatas, dashboard) dan 44 tes web (termasuk cache tiket). Tampilan halaman tamu diperiksa di Firefox headless dengan API palsu; belum diuji di HP sungguhan.
+
+### Fase 5 (editor konten dan desain undangan): berjalan
+
+**Keputusan (21 Okt 2026):**
+- **Bagian undangan tahap pertama:** profil mempelai + cerita, galeri foto, amplop digital (rekening bank dan e-wallet), FAQ + wishlist hadiah, ditambah buku ucapan.
+- **Media:** foto dan musik diunggah admin lewat editor dan disimpan di server VPS (bukan file statis di repo, bukan tautan eksternal). Perlu pengecilan gambar dan penyimpanan yang ikut dibackup.
+- **Gaya visual:** brutalis terang seperti admin (krem, bingkai hitam 2px, bayangan keras, aksen acid dan biru listrik); halaman tiket sekarang sudah memakainya.
+- **Urutan kerja:** (1) buku ucapan + balasan admin, (2) rangka undangan berbagian di `/u/KODE`, (3) editor konten per bagian. Tabel konten dirinci saat tiap bagian dikerjakan (aturan tetap: tabel biasa, `sort_order`, tanpa `wedding_id`).
+
+**Selesai (slice 1):** buku ucapan tampil di halaman tamu (tulis ucapan dengan nama bawaan nama undangan, daftar terbaru dulu dengan balasan mempelai, muat lebih banyak) dan menu **Ucapan** di admin (balas, ubah balasan, sembunyikan, hapus, filter tampil/disembunyikan). Navigasi admin sekarang menjadi hamburger di bawah 1280px karena sudah ada sembilan menu; header memakai lebar `max-w-7xl` dan nama pengguna disembunyikan di bawah 1536px.
 
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 

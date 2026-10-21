@@ -8,7 +8,7 @@ Wedding system for Hasri & Ramli (event 21 May 2027): guest management, message 
 
 `docs/rancangan.md` is the approved design (schema, API, offline sync, phases) and §14 records where the implementation deliberately diverged from it. Read it before changing sync, check-in or schema. `docs/design.md` + `docs/design-tokens.json` define the "light brutalist" admin look (cream + dot pattern, 2px black borders, hard shadows, radius 0, acid `#d8ff3e` / electric `#2b2be8`).
 
-Phases 1–4 (foundation, guests, scanner/check-in/devices/dashboard, e-ticket/RSVP) are done. Next is the invitation editor/design (phase 5), which also owns the guestbook UI: the API (`/public/guestbook`, `/admin/guestbook` with reply/hide/delete) and tables already exist but nothing in the web app uses them yet. Then vendors/gifts. Don't propose other stacks or dropped features (dynamic RBAC, Google OAuth, multi-tenant, seating plans).
+Phases 1–4 (foundation, guests, scanner/check-in/devices/dashboard, e-ticket/RSVP) are done. Phase 5 (invitation editor/design) is in progress: the guestbook (guest page + admin "Ucapan" menu with reply/hide/delete) is done; next are the sectioned invitation at `/u/CODE` (couple profile + story, photo gallery, digital envelope, FAQ + wishlist) and the per-section content editors, with media uploaded by the admin and stored on the server. Same light-brutalist style as the admin. Decisions are in `docs/rancangan.md` §14 (Fase 5). Then vendors/gifts. Don't propose other stacks or dropped features (dynamic RBAC, Google OAuth, multi-tenant, seating plans).
 
 ## Commands
 

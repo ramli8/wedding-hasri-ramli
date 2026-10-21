@@ -21,6 +21,7 @@ import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
 import { SettingsPage } from "./pages/settings-page.js";
+import { TicketPage } from "./pages/ticket/ticket-page.js";
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -111,6 +112,13 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+// Halaman pribadi tamu (tiket QR, RSVP): terbuka tanpa login, dikenali dari kode di URL.
+const ticketRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/u/$code",
+  component: TicketPage,
+});
+
 // Aplikasi penjaga pintu: tidak memakai login admin, melainkan token perangkat (lihat /scan/pasang).
 const requirePairedDevice = async () => {
   if (!(await getMeta("auth"))) throw redirect({ to: "/scan/pasang" });
@@ -139,6 +147,7 @@ const readinessRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  ticketRoute,
   scanRoute,
   pairRoute,
   readinessRoute,

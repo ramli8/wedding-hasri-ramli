@@ -64,6 +64,14 @@ function QrBody({ guest, group }: { guest: Guest; group: Group | undefined }) {
         </div>
       </div>
       <a
+        href={`/u/${code}`}
+        target="_blank"
+        rel="noreferrer"
+        className="text-sm underline underline-offset-4 hover:bg-acid"
+      >
+        Buka halaman undangan tamu
+      </a>
+      <a
         href={image ?? undefined}
         download={`qr-${code}.png`}
         aria-disabled={!image}

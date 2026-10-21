@@ -57,7 +57,11 @@ export function CheckinPage() {
 
       <section aria-label="Ringkasan" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Undangan masuk" value={`${d.totals.arrived}`} of={`/ ${d.totals.invited}`} />
-        <Stat label="Orang hadir" value={`${d.totals.arrivedPax}`} of="orang" />
+        <Stat
+          label="Orang hadir"
+          value={`${d.totals.arrivedPax}`}
+          of={d.totals.rsvpPax === null ? "orang" : `/ ${d.totals.rsvpPax} RSVP hadir`}
+        />
         <Stat label="Kartu souvenir" value={`${d.totals.arrivedPax}`} of="terbagi" />
         <Stat
           label="Perlu diperiksa"

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
+  CalendarCheck,
   CalendarDays,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ const navItems = [
   { to: "/admin/tamu", label: "Tamu", icon: Users },
   { to: "/admin/kelompok", label: "Kelompok", icon: Tags },
   { to: "/admin/acara", label: "Acara", icon: CalendarDays },
+  { to: "/admin/rsvp", label: "RSVP", icon: CalendarCheck },
   { to: "/admin/checkin", label: "Check-in", icon: ScanLine },
   { to: "/admin/perangkat", label: "Perangkat", icon: Smartphone },
   { to: "/admin/pengaturan", label: "Pengaturan", icon: Settings },

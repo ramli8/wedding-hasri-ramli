@@ -65,3 +65,11 @@ export function useRefresh() {
   return (...keys: ("settings" | "events" | "groups" | "guests" | "devices" | "checkin")[]) =>
     Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 }
+
+export const rsvpQuery = (eventId?: string) =>
+  queryOptions({
+    queryKey: ["rsvp", eventId ?? null],
+    queryFn: () => adminApi.rsvps.list(eventId),
+    refetchInterval: 15_000,
+    retry: false,
+  });

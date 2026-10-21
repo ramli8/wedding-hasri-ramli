@@ -18,6 +18,7 @@ import {
   type MarkSentRequest,
   type ResolveRequest,
   reviewListResponseSchema,
+  rsvpListResponseSchema,
   type SettingsInput,
   settingsResponseSchema,
 } from "@wedding/shared";
@@ -106,6 +107,11 @@ export const adminApi = {
     revoke: (id: string) =>
       request(`${base}/devices/${id}/revoke`, deviceResponseSchema, withBody("POST", {})),
     remove: (id: string) => request(`${base}/devices/${id}`, okSchema, withBody("DELETE")),
+  },
+
+  rsvps: {
+    list: (eventId?: string) =>
+      request(`${base}/rsvps${queryString({ eventId })}`, rsvpListResponseSchema),
   },
 
   checkins: {

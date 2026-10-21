@@ -1,10 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
-import type { CoupleProfile, Faq, GalleryItem, Gift, StoryItem } from "@wedding/shared";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  type CoupleProfile,
+  type Faq,
+  formatEventDate,
+  type GalleryItem,
+  type Gift,
+  type SectionKey,
+  type StoryItem,
+} from "@wedding/shared";
 import { AtSign, Check, ChevronLeft, ChevronRight, Copy, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/ui/badge.js";
 import { Card } from "../../components/ui/card.js";
 import { publicApi } from "../../lib/public-api.js";
+import { GuestbookCard } from "./guestbook-card.js";
 import { WishlistSection } from "./wishlist-section.js";
 
 function ProfileCard({ profile, label }: { profile: CoupleProfile; label: string }) {
@@ -250,31 +259,67 @@ function Faqs({ faqs }: { faqs: Faq[] }) {
 }
 
 /** Perkenalan mempelai dan linimasa cerita. Tidak tampil sama sekali bila admin belum mengisinya. */
-export function InvitationSections({ code }: { code: string }) {
-  const invitation = useQuery({
-    queryKey: ["public", "invitation"],
-    queryFn: () => publicApi.invitation(),
-    retry: false,
-    staleTime: 60_000,
-  });
+
+export const invitationQuery = queryOptions({
+  queryKey: ["public", "invitation"],
+  queryFn: () => publicApi.invitation(),
+  retry: false,
+  staleTime: 60_000,
+});
+
+/** Sampul di atas halaman: foto, nama mempelai (dari header), tanggal acara, dan kalimat pembuka. */
+export function InvitationCover() {
+  const invitation = useQuery(invitationQuery);
+  if (!invitation.data) return null;
+  const { cover, eventDate } = invitation.data;
+  if (!cover.photo && !cover.greeting && !eventDate) return null;
+
+  return (
+    <Card className="flex flex-col gap-4 p-0 text-center">
+      {cover.photo && (
+        <img
+          src={cover.photo.large}
+          alt="Foto sampul"
+          width={cover.photo.width}
+          height={cover.photo.height}
+          decoding="async"
+          className="h-auto w-full border-b-2 border-ink"
+        />
+      )}
+      <div className="flex flex-col gap-3 px-5 pb-5">
+        {eventDate && (
+          <p className="font-display text-xl font-bold tracking-h2 uppercase">
+            {formatEventDate(eventDate)}
+          </p>
+        )}
+        {cover.greeting && <p className="break-words whitespace-pre-wrap">{cover.greeting}</p>}
+      </div>
+    </Card>
+  );
+}
+
+/** Bagian-bagian undangan sesuai urutan dan tampilan yang diatur admin; yang kosong dilewati. */
+export function InvitationSections({ code, guestName }: { code: string; guestName: string }) {
+  const invitation = useQuery(invitationQuery);
   if (!invitation.data) return null;
 
-  const { couple, story, gallery, gifts, faqs, wishes } = invitation.data;
+  const { couple, story, gallery, gifts, faqs, wishes, sections } = invitation.data;
   const profiles = [
     couple.bride && { profile: couple.bride, label: "Mempelai wanita" },
     couple.groom && { profile: couple.groom, label: "Mempelai pria" },
   ].filter((entry): entry is { profile: CoupleProfile; label: string } => !!entry);
 
-  return (
-    <>
-      {profiles.length > 0 && (
+  const render: Record<SectionKey, () => ReactNode> = {
+    mempelai: () =>
+      profiles.length > 0 && (
         <section aria-label="Mempelai" className="flex flex-col gap-5">
           {profiles.map(({ profile, label }) => (
             <ProfileCard key={profile.role} profile={profile} label={label} />
           ))}
         </section>
-      )}
-      {story.length > 0 && (
+      ),
+    cerita: () =>
+      story.length > 0 && (
         <Card className="flex flex-col gap-6">
           <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Cerita kami</h2>
           <ol className="flex flex-col gap-8">
@@ -283,11 +328,21 @@ export function InvitationSections({ code }: { code: string }) {
             ))}
           </ol>
         </Card>
-      )}
-      {gallery.length > 0 && <Gallery items={gallery} />}
-      {gifts.length > 0 && <Gifts gifts={gifts} />}
-      {wishes.length > 0 && <WishlistSection wishes={wishes} code={code} />}
-      {faqs.length > 0 && <Faqs faqs={faqs} />}
+      ),
+    galeri: () => gallery.length > 0 && <Gallery items={gallery} />,
+    amplop: () => gifts.length > 0 && <Gifts gifts={gifts} />,
+    wishlist: () => wishes.length > 0 && <WishlistSection wishes={wishes} code={code} />,
+    faq: () => faqs.length > 0 && <Faqs faqs={faqs} />,
+    ucapan: () => <GuestbookCard code={code} defaultName={guestName} />,
+  };
+
+  return (
+    <>
+      {sections
+        .filter((section) => section.visible)
+        .map((section) => (
+          <Fragment key={section.key}>{render[section.key]()}</Fragment>
+        ))}
     </>
   );
 }

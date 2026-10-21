@@ -22,6 +22,7 @@ import { FaqPage } from "./pages/invitation/faq-page.js";
 import { GalleryPage } from "./pages/invitation/gallery-page.js";
 import { GiftsPage } from "./pages/invitation/gifts-page.js";
 import { InvitationLayout } from "./pages/invitation/invitation-layout.js";
+import { LayoutPage } from "./pages/invitation/layout-page.js";
 import { StoryPage } from "./pages/invitation/story-page.js";
 import { WishlistPage } from "./pages/invitation/wishlist-page.js";
 import { LoginPage } from "./pages/login.js";
@@ -161,6 +162,12 @@ const wishlistRoute = createRoute({
   component: WishlistPage,
 });
 
+const layoutRoute = createRoute({
+  getParentRoute: () => invitationRoute,
+  path: "susunan",
+  component: LayoutPage,
+});
+
 const guestbookRoute = createRoute({
   getParentRoute: () => invitationRoute,
   path: "ucapan",
@@ -247,6 +254,7 @@ const routeTree = rootRoute.addChildren([
       giftsRoute,
       faqRoute,
       wishlistRoute,
+      layoutRoute,
       guestbookRoute,
     ]),
     checkinRoute,

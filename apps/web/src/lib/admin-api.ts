@@ -3,8 +3,10 @@ import {
   adminGuestbookResponseSchema,
   type CoupleProfileInput,
   type CoupleRole,
+  type CoverInput,
   coupleProfileResponseSchema,
   coupleResponseSchema,
+  coverResponseSchema,
   createDeviceResponseSchema,
   dashboardResponseSchema,
   deviceListResponseSchema,
@@ -30,14 +32,17 @@ import {
   guestResponseSchema,
   importCommitResponseSchema,
   importPreviewResponseSchema,
+  layoutResponseSchema,
   logResponseSchema,
   type MarkSentRequest,
   mediaResponseSchema,
   type ResolveRequest,
   reviewListResponseSchema,
   rsvpListResponseSchema,
+  type Section,
   type SettingsInput,
   type StoryInput,
+  sectionsResponseSchema,
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
@@ -213,6 +218,11 @@ export const adminApi = {
       ),
     reorderWishes: (ids: string[]) =>
       request(`${base}/invitation/wishes/order`, wishListResponseSchema, withBody("PUT", { ids })),
+    layout: () => request(`${base}/invitation/layout`, layoutResponseSchema),
+    saveCover: (input: CoverInput) =>
+      request(`${base}/invitation/cover`, coverResponseSchema, withBody("PUT", input)),
+    saveSections: (items: Section[]) =>
+      request(`${base}/invitation/sections`, sectionsResponseSchema, withBody("PUT", { items })),
   },
 
   guestbook: {

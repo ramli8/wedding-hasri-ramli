@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { GuestbookCard } from "./guestbook-card.js";
-import { InvitationSections } from "./invitation-sections.js";
+import { InvitationCover, InvitationSections } from "./invitation-sections.js";
 import { Shell, ticketQuery } from "./ticket-page.js";
 import { TicketProblem } from "./ticket-problem.js";
 
@@ -31,6 +30,7 @@ export function InvitationPage() {
 
   return (
     <Shell couple={couple}>
+      <InvitationCover />
       <Link
         to="/u/$code"
         params={{ code: data.guest.code }}
@@ -38,8 +38,7 @@ export function InvitationPage() {
       >
         <ArrowLeft className="size-4" aria-hidden /> Kembali ke tiket
       </Link>
-      <InvitationSections code={data.guest.code} />
-      <GuestbookCard code={data.guest.code} defaultName={data.guest.displayName} />
+      <InvitationSections code={data.guest.code} guestName={data.guest.displayName} />
     </Shell>
   );
 }

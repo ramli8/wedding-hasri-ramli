@@ -8,6 +8,7 @@ const tabs = [
   { to: "/admin/undangan/amplop", label: "Amplop" },
   { to: "/admin/undangan/faq", label: "FAQ" },
   { to: "/admin/undangan/wishlist", label: "Wishlist" },
+  { to: "/admin/undangan/susunan", label: "Susunan" },
   { to: "/admin/undangan/ucapan", label: "Ucapan" },
 ] as const;
 

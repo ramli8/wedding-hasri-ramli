@@ -120,3 +120,8 @@ export const wishesQuery = queryOptions({
   queryKey: ["invitation", "wishes"],
   queryFn: async () => (await adminApi.invitation.wishes()).items,
 });
+
+export const layoutQuery = queryOptions({
+  queryKey: ["invitation", "layout"],
+  queryFn: () => adminApi.invitation.layout(),
+});

@@ -235,6 +235,33 @@ export const media = pgTable("media", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
+// Profil mempelai untuk undangan: satu baris per peran.
+export const coupleProfiles = pgTable(
+  "couple_profiles",
+  {
+    role: text().primaryKey(),
+    fullName: text().notNull(),
+    nickname: text(),
+    parents: text(),
+    bio: text(),
+    instagram: text(),
+    photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("couple_profiles_role_valid", sql`${table.role} in ('groom', 'bride')`)],
+);
+
+// Butir cerita (linimasa) di undangan, berurutan menurut sort_order.
+export const storyItems = pgTable("story_items", {
+  id: uuid().primaryKey().defaultRandom(),
+  sortOrder: integer().notNull(),
+  whenLabel: text(),
+  title: text().notNull(),
+  body: text().notNull().default(""),
+  photoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 // Jawaban RSVP tamu per acara (hanya acara dengan has_rsvp).
 export const rsvps = pgTable(
   "rsvps",

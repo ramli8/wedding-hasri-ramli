@@ -12,6 +12,7 @@ import type { AppDeps, AppEnv } from "../http/env.js";
 import { AppError } from "../http/errors.js";
 import { clientIp } from "../http/middleware.js";
 import { validate } from "../http/validate.js";
+import { getInvitation } from "../services/invitation.js";
 import {
   findGuestByCode,
   getTicket,
@@ -47,29 +48,36 @@ export function publicRoutes({ db, config }: AppDeps) {
     writeLimiter.recordFailure(ip);
   }
 
-  return new Hono<AppEnv>()
-    .get("/ticket/:code", validate("param", codeParam), async (c) => {
-      const { code } = c.req.valid("param");
-      await knownCode(clientIp(c, config.trustProxy), code);
-      c.header("cache-control", "no-store");
-      return c.json(await getTicket(db, code));
-    })
-    .post("/rsvp", validate("json", rsvpRequestSchema), async (c) => {
-      const input = c.req.valid("json");
-      const ip = clientIp(c, config.trustProxy);
-      await knownCode(ip, input.code);
-      countWrite(ip);
-      return c.json({ rsvp: await submitRsvp(db, input) });
-    })
-    .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
-      const { page, pageSize } = c.req.valid("query");
-      return c.json(guestbookListResponseSchema.parse(await listGuestbook(db, page, pageSize)));
-    })
-    .post("/guestbook", validate("json", guestbookPostRequestSchema), async (c) => {
-      const input = c.req.valid("json");
-      const ip = clientIp(c, config.trustProxy);
-      await knownCode(ip, input.code);
-      countWrite(ip);
-      return c.json({ entry: await postGuestbook(db, input) }, 201);
-    });
+  return (
+    new Hono<AppEnv>()
+      // Isi undangan (mempelai, cerita) tidak memuat data tamu, jadi tidak memerlukan kode.
+      .get("/invitation", async (c) => {
+        c.header("cache-control", "public, max-age=30");
+        return c.json(await getInvitation(db));
+      })
+      .get("/ticket/:code", validate("param", codeParam), async (c) => {
+        const { code } = c.req.valid("param");
+        await knownCode(clientIp(c, config.trustProxy), code);
+        c.header("cache-control", "no-store");
+        return c.json(await getTicket(db, code));
+      })
+      .post("/rsvp", validate("json", rsvpRequestSchema), async (c) => {
+        const input = c.req.valid("json");
+        const ip = clientIp(c, config.trustProxy);
+        await knownCode(ip, input.code);
+        countWrite(ip);
+        return c.json({ rsvp: await submitRsvp(db, input) });
+      })
+      .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
+        const { page, pageSize } = c.req.valid("query");
+        return c.json(guestbookListResponseSchema.parse(await listGuestbook(db, page, pageSize)));
+      })
+      .post("/guestbook", validate("json", guestbookPostRequestSchema), async (c) => {
+        const input = c.req.valid("json");
+        const ip = clientIp(c, config.trustProxy);
+        await knownCode(ip, input.code);
+        countWrite(ip);
+        return c.json({ entry: await postGuestbook(db, input) }, 201);
+      })
+  );
 }

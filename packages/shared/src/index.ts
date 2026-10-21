@@ -7,6 +7,7 @@ export * from "./events.js";
 export * from "./groups.js";
 export * from "./guestbook.js";
 export * from "./guests.js";
+export * from "./invitation.js";
 export * from "./media.js";
 export * from "./message.js";
 export * from "./rsvp.js";

@@ -1,0 +1,273 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import type { Couple, CoupleProfile, InvitationResponse, Media, StoryItem } from "@wedding/shared";
+import { inArray } from "drizzle-orm";
+import sharp from "sharp";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { media as mediaTable } from "../src/db/schema.js";
+import {
+  adminClient,
+  createTestContext,
+  insertAdmin,
+  login,
+  ORIGIN,
+  resetDb,
+  TEST_MEDIA_DIR,
+} from "./helpers.js";
+
+const ctx = createTestContext();
+afterAll(() => ctx.close());
+
+type App = ReturnType<typeof ctx.makeApp>;
+let app: App;
+let cookie: string;
+let api: ReturnType<typeof adminClient>;
+
+beforeEach(async () => {
+  await resetDb(ctx.db);
+  await insertAdmin(ctx.db);
+  app = ctx.makeApp();
+  ({ cookie } = await login(app));
+  api = adminClient(app, cookie);
+});
+
+const read = async <T>(res: Response) => (await res.json()) as T;
+
+async function uploadPhoto(name = "foto.png"): Promise<Media> {
+  const png = await sharp({
+    create: { width: 240, height: 160, channels: 3, background: "#d8ff3e" },
+  })
+    .png()
+    .toBuffer();
+  const form = new FormData();
+  form.append("file", new File([new Uint8Array(png)], name));
+  const res = await app.request("/api/v1/admin/media", {
+    method: "POST",
+    headers: { origin: ORIGIN, cookie },
+    body: form,
+  });
+  expect(res.status).toBe(201);
+  return (await read<{ media: Media }>(res)).media;
+}
+
+const onDisk = (media: Media) => existsSync(join(TEST_MEDIA_DIR, media.id, "large.webp"));
+const mediaCount = async () =>
+  (await read<{ items: Media[] }>(await api.get("/media"))).items.length;
+
+const GROOM = { fullName: "Ramli Hidayat", nickname: "Ramli", instagram: "@Ramli.H" };
+
+describe("profil mempelai", () => {
+  it("menyimpan dan memperbarui profil per peran, dengan Instagram dinormalkan", async () => {
+    const empty = await read<{ couple: Couple }>(await api.get("/invitation/couple"));
+    expect(empty.couple).toEqual({ groom: null, bride: null });
+
+    const saved = await api.put("/invitation/couple/groom", {
+      ...GROOM,
+      parents: "Putra dari Bpk. A & Ibu B",
+      bio: "  Suka kopi.  ",
+    });
+    expect(saved.status).toBe(200);
+    expect((await read<{ profile: CoupleProfile }>(saved)).profile).toMatchObject({
+      role: "groom",
+      fullName: "Ramli Hidayat",
+      nickname: "Ramli",
+      parents: "Putra dari Bpk. A & Ibu B",
+      bio: "Suka kopi.",
+      instagram: "ramli.h",
+      photo: null,
+    });
+
+    await api.put("/invitation/couple/bride", { fullName: "Hasri Lestari" });
+    const updated = await api.put("/invitation/couple/groom", { fullName: "Ramli H." });
+    expect((await read<{ profile: CoupleProfile }>(updated)).profile).toMatchObject({
+      fullName: "Ramli H.",
+      nickname: null,
+      instagram: null,
+    });
+
+    const both = await read<{ couple: Couple }>(await api.get("/invitation/couple"));
+    expect(both.couple.groom?.fullName).toBe("Ramli H.");
+    expect(both.couple.bride?.fullName).toBe("Hasri Lestari");
+  });
+
+  it("menolak nama kosong, Instagram ngawur, peran asing, dan memerlukan login", async () => {
+    expect((await api.put("/invitation/couple/groom", { fullName: "  " })).status).toBe(400);
+    expect(
+      (await api.put("/invitation/couple/groom", { fullName: "A", instagram: "nama salah!" }))
+        .status,
+    ).toBe(400);
+    expect((await api.put("/invitation/couple/penghulu", { fullName: "A" })).status).toBe(400);
+    expect((await adminClient(app, "").get("/invitation/couple")).status).toBe(401);
+  });
+
+  it("memasang foto, lalu mengganti atau melepasnya menghapus foto lama dari disk", async () => {
+    const first = await uploadPhoto("a.png");
+    const withPhoto = await read<{ profile: CoupleProfile }>(
+      await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: first.id }),
+    );
+    expect(withPhoto.profile.photo).toMatchObject({
+      id: first.id,
+      width: 240,
+      height: 160,
+      large: `/media/${first.id}/large.webp`,
+    });
+
+    const second = await uploadPhoto("b.png");
+    await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: second.id });
+    expect(onDisk(first)).toBe(false);
+    expect(onDisk(second)).toBe(true);
+    expect(await mediaCount()).toBe(1);
+
+    await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: null });
+    expect(onDisk(second)).toBe(false);
+    expect(await mediaCount()).toBe(0);
+  });
+
+  it("menolak foto yang tidak ada atau sudah dipakai bagian lain", async () => {
+    const missing = await api.put("/invitation/couple/groom", {
+      ...GROOM,
+      photoMediaId: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(missing.status).toBe(400);
+
+    const photo = await uploadPhoto();
+    expect(
+      (await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: photo.id })).status,
+    ).toBe(200);
+    const reuse = await api.put("/invitation/couple/bride", {
+      fullName: "Hasri",
+      photoMediaId: photo.id,
+    });
+    expect(reuse.status).toBe(409);
+  });
+
+  it("gambar yang masih dipakai tidak bisa dihapus lewat menu media", async () => {
+    const photo = await uploadPhoto();
+    await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: photo.id });
+    expect((await api.delete(`/media/${photo.id}`)).status).toBe(409);
+    expect(onDisk(photo)).toBe(true);
+  });
+});
+
+describe("cerita", () => {
+  const create = async (title: string, extra: Record<string, unknown> = {}) => {
+    const res = await api.post("/invitation/story", { title, ...extra });
+    expect(res.status).toBe(201);
+    return (await read<{ item: StoryItem }>(res)).item;
+  };
+  const titles = async () =>
+    (await read<{ items: StoryItem[] }>(await api.get("/invitation/story"))).items.map(
+      (i) => i.title,
+    );
+
+  it("membuat butir baru di urutan paling akhir, dan memperbaruinya", async () => {
+    const a = await create("Bertemu", { whenLabel: "2019", body: " Di kampus. " });
+    await create("Lamaran", { whenLabel: "Mei 2026" });
+    await create("Menikah");
+    expect(await titles()).toEqual(["Bertemu", "Lamaran", "Menikah"]);
+    expect(a).toMatchObject({ whenLabel: "2019", body: "Di kampus.", photo: null });
+
+    const res = await api.put(`/invitation/story/${a.id}`, { title: "Pertama bertemu" });
+    expect(res.status).toBe(200);
+    expect((await read<{ item: StoryItem }>(res)).item).toMatchObject({
+      title: "Pertama bertemu",
+      whenLabel: null,
+      body: "",
+    });
+    expect(await titles()).toEqual(["Pertama bertemu", "Lamaran", "Menikah"]);
+  });
+
+  it("mengatur urutan dari daftar id, dan menolak daftar yang tidak lengkap", async () => {
+    const a = await create("A");
+    const b = await create("B");
+    const c = await create("C");
+
+    const ok = await api.put("/invitation/story/order", { ids: [c.id, a.id, b.id] });
+    expect(ok.status).toBe(200);
+    expect((await read<{ items: StoryItem[] }>(ok)).items.map((i) => i.title)).toEqual([
+      "C",
+      "A",
+      "B",
+    ]);
+
+    expect((await api.put("/invitation/story/order", { ids: [a.id, b.id] })).status).toBe(400);
+    expect((await api.put("/invitation/story/order", { ids: [a.id, a.id, b.id] })).status).toBe(
+      400,
+    );
+    expect((await api.put("/invitation/story/order", { ids: ["bukan-uuid"] })).status).toBe(400);
+    expect(await titles()).toEqual(["C", "A", "B"]);
+
+    // Butir baru tetap jatuh di akhir setelah diurutkan ulang.
+    await create("D");
+    expect(await titles()).toEqual(["C", "A", "B", "D"]);
+  });
+
+  it("menghapus butir ikut menghapus fotonya; 404 untuk yang tidak ada", async () => {
+    const photo = await uploadPhoto();
+    const item = await create("Dengan foto", { photoMediaId: photo.id });
+    expect(item.photo?.id).toBe(photo.id);
+
+    expect((await api.delete(`/invitation/story/${item.id}`)).status).toBe(200);
+    expect(onDisk(photo)).toBe(false);
+    expect(await mediaCount()).toBe(0);
+    expect((await api.delete(`/invitation/story/${item.id}`)).status).toBe(404);
+    expect((await api.put(`/invitation/story/${item.id}`, { title: "x" })).status).toBe(404);
+  });
+
+  it("menolak judul kosong, cerita terlalu panjang, dan memerlukan login", async () => {
+    expect((await api.post("/invitation/story", { title: "  " })).status).toBe(400);
+    expect(
+      (await api.post("/invitation/story", { title: "A", body: "x".repeat(1501) })).status,
+    ).toBe(400);
+    expect((await adminClient(app, "").post("/invitation/story", { title: "A" })).status).toBe(401);
+  });
+});
+
+describe("gambar yatim", () => {
+  it("unggahan lama yang tidak dipakai disapu saat ada unggahan baru; yang dipakai tetap aman", async () => {
+    const orphan = await uploadPhoto("yatim.png");
+    const used = await uploadPhoto("dipakai.png");
+    await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: used.id });
+    const fresh = await uploadPhoto("baru-saja.png");
+
+    // Mundurkan umur ketiganya melewati batas satu jam.
+    const longAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    await ctx.db
+      .update(mediaTable)
+      .set({ createdAt: longAgo })
+      .where(inArray(mediaTable.id, [orphan.id, used.id]));
+
+    await uploadPhoto("pemicu.png");
+    expect(onDisk(orphan)).toBe(false);
+    expect(onDisk(used)).toBe(true);
+    // Yang baru diunggah (belum lewat satu jam) belum disapu, supaya sempat disimpan.
+    expect(onDisk(fresh)).toBe(true);
+    const ids = (await read<{ items: Media[] }>(await api.get("/media"))).items.map((m) => m.id);
+    expect(ids).not.toContain(orphan.id);
+    expect(ids).toContain(used.id);
+  });
+});
+
+describe("isi undangan untuk tamu", () => {
+  it("terbuka tanpa login dan memuat mempelai, cerita berurutan, dan foto", async () => {
+    const photo = await uploadPhoto();
+    await api.put("/invitation/couple/groom", { ...GROOM, photoMediaId: photo.id });
+    await api.put("/invitation/couple/bride", { fullName: "Hasri Lestari" });
+    await api.post("/invitation/story", { title: "Pertama", whenLabel: "2019" });
+    await api.post("/invitation/story", { title: "Kedua" });
+
+    const anonymous = ctx.makeApp();
+    const res = await anonymous.request("/api/v1/public/invitation");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=30");
+    const body = await read<InvitationResponse>(res);
+    expect(body.couple.groom).toMatchObject({ fullName: "Ramli Hidayat", photo: { id: photo.id } });
+    expect(body.couple.bride).toMatchObject({ fullName: "Hasri Lestari", photo: null });
+    expect(body.story.map((s) => s.title)).toEqual(["Pertama", "Kedua"]);
+  });
+
+  it("kosong bila belum ada isi", async () => {
+    const body = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(body).toEqual({ couple: { groom: null, bride: null }, story: [] });
+  });
+});

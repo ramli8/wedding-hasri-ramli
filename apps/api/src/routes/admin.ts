@@ -6,6 +6,7 @@ import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
 import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
+import { invitationAdminRoutes } from "./invitation.js";
 import { mediaAdminRoutes } from "./media.js";
 import { settingsRoutes } from "./settings.js";
 
@@ -19,6 +20,7 @@ export function adminRoutes(deps: AppDeps) {
     .route("/guests", guestRoutes(deps))
     .route("/devices", deviceAdminRoutes(deps))
     .route("/checkins", checkinAdminRoutes(deps))
+    .route("/invitation", invitationAdminRoutes(deps))
     .route("/media", mediaAdminRoutes(deps))
     .route("/rsvps", rsvpAdminRoutes(deps))
     .route("/guestbook", guestbookAdminRoutes(deps));

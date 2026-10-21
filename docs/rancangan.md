@@ -551,7 +551,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 ### Tampilan HP seperti aplikasi
 
-- Admin di bawah breakpoint `xl`: bilah tab bawah (Tamu, Check-in, Undangan, Hadiah, dan tombol Lainnya yang membuka lembar berisi menu sisanya serta tombol Keluar); header atas hanya logo. Di layar lebar menu tetap dua baris di header.
+- Admin di bawah breakpoint `xl`: bilah tab bawah (Beranda, Tamu, Check-in, Undangan, dan tombol Lainnya yang membuka lembar berisi menu sisanya serta tombol Keluar); header atas hanya logo. Di layar lebar (`xl` ke atas) menu berupa **sidebar kiri** selebar 16rem yang dikelompokkan (Beranda; Tamu & undangan; Hari-H; Keuangan; Pengaturan, nama admin, dan Keluar di bawah), menggantikan baris menu di header yang meluap setelah menu bertambah jadi sebelas.
 - `Dialog` di bawah `md` menjadi lembar yang naik dari bawah (animasi singkat, hormat `prefers-reduced-motion`), selebar layar, dengan baris tombol terakhir formulir menempel di bawah.
 - Semua tabel admin (Tamu, Kelompok, Perangkat, RSVP, keempat tabel Check-in, dan pratinjau impor CSV) menjadi kartu di HP lewat kelas `table-cards` dan atribut `data-label`; hanya halaman cetak daftar tamu yang tetap berupa tabel lebar.
 - Halaman tamu: bilah bawah Tiket | Undangan menggantikan tautan "Kenali kami" dan "Kembali ke tiket".

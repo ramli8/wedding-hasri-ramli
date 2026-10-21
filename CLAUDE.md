@@ -68,7 +68,7 @@ pnpm workspace: `apps/api`, `apps/web`, `packages/shared`.
 
 ## Conventions and gotchas
 
-- Mobile app feel: below `xl` the admin uses a fixed bottom tab bar (4 main menus + "Lainnya" sheet); below `md` `Dialog` is a bottom sheet (form button row sticks to the bottom) and tables with the `table-cards` class turn into cards using each cell's `data-label` (add `data-label` to new columns; only the print page keeps its wide table). Guest pages have a bottom bar Tiket | Undangan. Mind `env(safe-area-inset-*)`, 44px touch targets and 16px inputs (iOS zooms below that).
+- Admin navigation: `xl`+ a grouped left sidebar (edit `navGroups` in `components/app-layout.tsx` when adding a menu); below `xl` a fixed bottom tab bar (Beranda/Tamu/Check-in/Undangan + "Lainnya" sheet). Mobile app feel: below `md` `Dialog` is a bottom sheet (form button row sticks to the bottom) and tables with the `table-cards` class turn into cards using each cell's `data-label` (add `data-label` to new columns; only the print page keeps its wide table). Guest pages have a bottom bar Tiket | Undangan. Mind `env(safe-area-inset-*)`, 44px touch targets and 16px inputs (iOS zooms below that).
 - Biome: 2-space indent, width 100, double quotes, organized imports. `docs/` and `apps/api/drizzle/` are excluded.
 - TypeScript is strict with `noUncheckedIndexedAccess` and `verbatimModuleSyntax`; use `import type` and `.js` extensions on relative imports in `apps/api`.
 - `guests.rev` is bumped in code via `nextval` (not a trigger) on every change/delete/restore; any new guest write path must do the same or devices won't sync it.

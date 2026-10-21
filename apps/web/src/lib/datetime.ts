@@ -14,6 +14,21 @@ export function wibInputToIso(local: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+/** Tanggal WIB dari ISO, untuk dipasangkan dengan jam: "2027-05-21". Kosong → "". */
+export function isoToWibDate(iso: string | null | undefined): string {
+  return isoToWibInput(iso).slice(0, 10);
+}
+
+/** ISO → nilai <input type="time"> dalam WIB: "10:00". */
+export function isoToWibTime(iso: string | null | undefined): string {
+  return isoToWibInput(iso).slice(11);
+}
+
+/** Tanggal WIB ("2027-05-21") + jam WIB ("10:00") → ISO UTC. Salah satu kosong → null. */
+export function wibTimeToIso(date: string, time: string): string | null {
+  return date && time ? wibInputToIso(`${date}T${time}`) : null;
+}
+
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("id-ID", {

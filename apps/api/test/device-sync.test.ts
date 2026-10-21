@@ -81,7 +81,6 @@ async function setupWorld() {
   const groupRes = await api.post("/groups", {
     name: "Surabaya",
     isVip: true,
-    gate: "A",
     sessions: [{ eventId: event.id, ...SESSION }],
   });
   const group = (await read<{ group: { id: string } }>(groupRes)).group;
@@ -257,7 +256,7 @@ describe("snapshot", () => {
     expect(snap.guests.map((g) => g.displayName).sort()).toEqual(["Bpk. Budi", "Pak Joko", "Sari"]);
     expect(snap.guests.every((g) => g.invited)).toBe(true);
     expect(snap.groups).toEqual([
-      { id: world.group.id, name: "Surabaya", color: "#737373", isVip: true, gate: "A" },
+      { id: world.group.id, name: "Surabaya", color: "#737373", isVip: true },
     ]);
     expect(snap.sessions).toHaveLength(1);
 
@@ -550,7 +549,6 @@ describe("dashboard", () => {
       pax: 3,
       quota: 4,
       isVip: true,
-      gate: "A",
     });
     const none = dash.groups.find((g) => g.name === "Tanpa kelompok");
     expect(none).toMatchObject({ invited: 2, arrived: 1, pax: 1 });

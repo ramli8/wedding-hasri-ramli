@@ -88,8 +88,6 @@ export const guestGroups = pgTable("guest_groups", {
   name: text().notNull().unique("guest_groups_name_unique"),
   color: text().notNull().default("#737373"),
   isVip: boolean().notNull().default(false),
-  gate: text(),
-  sortOrder: integer().notNull().default(0),
 });
 
 // Jam sesi kelompok per acara, mis. kelompok Surabaya 10.00–12.00 di resepsi.

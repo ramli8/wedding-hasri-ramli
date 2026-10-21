@@ -22,6 +22,13 @@
       "when": 1792482118899,
       "tag": "0002_whole_thunderbolt_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792546069519,
+      "tag": "0003_broken_ezekiel",
+      "breakpoints": true
     }
   ]
 }

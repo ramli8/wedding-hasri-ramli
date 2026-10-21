@@ -60,7 +60,7 @@ Kode lama: beri tag `legacy-v1` di `main` saat ini, lalu kerjakan di branch `rew
 
 - **Event** (acara): akad, resepsi, dst. Hanya event dengan `checkin_enabled` yang punya QR dan check-in. Hari ini hanya **resepsi**. Event dengan `has_rsvp` punya RSVP aplikasi (hanya resepsi). Acara lain hanya diinfokan lewat pesan WhatsApp.
 - **Tamu** = satu undangan (bukan satu orang). Punya `quota` (jumlah orang maksimum yang diundang). Jumlah orang yang benar-benar hadir dicatat saat check-in.
-- **Kelompok** (kategori): label + warna + penanda VIP + gerbang opsional + **jam sesi per event** (mis. Surabaya 10.00–12.00, Lumajang 12.00–13.00). Jam sesi dipakai untuk info di undangan dan dicatat di log; **scanner tidak menampilkan peringatan** dan penjaga melihat tampilan yang sama untuk semua.
+- **Kelompok** (kategori): label + warna + penanda VIP + **jam sesi per event** (mis. Surabaya 10.00–12.00, Lumajang 12.00–13.00). Jam sesi dipakai untuk info di undangan dan dicatat di log; **scanner tidak menampilkan peringatan** dan penjaga melihat tampilan yang sama untuk semua.
 - **Kode tamu**: 6 karakter acak dari 32 huruf/angka (tanpa `I`, `O`, `0`, `1`). QR berisi kode mentah itu saja (QR kecil, scan cepat) dan kode bisa diketik manual.
 - **Check-in** adalah log *append-only*. Status akhir tamu dihitung dari log, bukan ditimpa. Ini yang membuat sinkronisasi offline aman dan idempoten.
 
@@ -334,7 +334,7 @@ Hasil muncul dalam <100 ms karena hanya baca IndexedDB. Jaringan tidak ada di ja
 - **Duplikat**: dua perangkat offline menerima tamu yang sama. Saat tersinkron, primary = `scanned_at` paling awal; sisanya masuk antrean review admin. Hasil akhir **tidak bergantung urutan kedatangan** (properti ini diuji, lihat §9).
 - **Jam HP bisa salah.** Setiap kali sync berhasil, klien menyimpan `server_offset_ms = server_time − jam_lokal`. `scanned_at` ditulis sebagai `jam_lokal + offset_terakhir`; jam mentah disimpan di `device_time` untuk audit.
 - **Undo / koreksi jumlah**: penjaga hanya boleh untuk check-in terakhir miliknya dalam 2 menit (dicek klien **dan** server, berdasarkan `scanned_at`). Selebihnya hanya admin.
-- Gerbang pada kelompok hanya petunjuk (tidak memblokir). Dipakai untuk mengurangi duplikat dengan membagi tamu per gerbang.
+- Kelompok tidak punya atribut gerbang (dihapus di migrasi 0003; lihat §14). Duplikat antar gerbang ditangani antrean review, bukan pembagian tamu.
 
 ### 6.5 Ketahanan PWA
 
@@ -476,6 +476,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **Tautan pesan:** `https://wa.me/<hp>?text=…` untuk WhatsApp. Untuk Instagram dipakai `https://ig.me/m/<username>` (membuka DM) dan teks disalin ke clipboard. Format `ig.me` belum pernah saya uji pada akun sungguhan.
 - **UI:** tanpa shadcn/ui. Komponen dasar ditulis sendiri sesuai `design.md` dan modal memakai elemen `<dialog>` bawaan browser. Alasannya: lebih ringan dan tidak ada komponen yang tidak dipakai.
 - **Zona waktu admin:** input jam di formulir dianggap WIB (UTC+7) dan disimpan sebagai UTC.
+- **Kelompok disederhanakan** (migrasi 0003): kolom `gate` dan `sort_order` dihapus karena tidak dipakai scanner; daftar kelompok diurutkan menurut nama. Jam sesi di formulir hanya jam (`<input type="time">`); tanggalnya diambil dari `events.starts_at` saat disimpan, jadi acara tanpa tanggal mulai belum bisa diberi jam sesi.
 
 ### Fase 3 (scanner, check-in offline, dashboard)
 
@@ -499,7 +500,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 **Pengujian:** 142 tes API (termasuk properti konvergensi pemecah status: 200 log acak × 25 urutan, idempotensi, konkurensi), 37 tes logika perangkat (IndexedDB tiruan), dan `pnpm e2e` (lihat `e2e/README.md`) yang menjalankan dua "HP" di Firefox headless, mematikan server, dan membuka aplikasi tanpa server sama sekali.
 
-**Belum teruji** (butuh perangkat fisik): kamera sungguhan dan pembacaan QR dari layar HP tamu, Chrome Android (mesin QR bawaan, getar, suara, senter, kunci layar), iPhone, dua HP fisik di venue, beban 1000 tamu dengan 4 perangkat (k6), uji restore backup. Gerbang pada kelompok hanya tampil di dashboard; scanner tidak memperingatkan.
+**Belum teruji** (butuh perangkat fisik): kamera sungguhan dan pembacaan QR dari layar HP tamu, Chrome Android (mesin QR bawaan, getar, suara, senter, kunci layar), iPhone, dua HP fisik di venue, beban 1000 tamu dengan 4 perangkat (k6), uji restore backup.
 
 ## 15. Belum diputuskan (tidak memblokir fase 1–3)
 

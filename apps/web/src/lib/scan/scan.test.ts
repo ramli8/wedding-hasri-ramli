@@ -66,7 +66,7 @@ function snap(overrides: Partial<SnapshotResponse> = {}): SnapshotResponse {
     protocol: { version: 1, minSupported: 1 },
     deviceName: "HP Gerbang A",
     event: EVENT,
-    groups: [{ id: GROUP, name: "Surabaya", color: "#737373", isVip: true, gate: "A" }],
+    groups: [{ id: GROUP, name: "Surabaya", color: "#737373", isVip: true }],
     sessions: [],
     guests: [],
     guestRev: 0,
@@ -170,7 +170,7 @@ describe("check-in", () => {
   it("menyertakan kelompok untuk penanda VIP di layar", async () => {
     const vip = guest({ groupId: GROUP });
     await seed(vip);
-    await db.groups.put({ id: GROUP, name: "Surabaya", color: "#737373", isVip: true, gate: "A" });
+    await db.groups.put({ id: GROUP, name: "Surabaya", color: "#737373", isVip: true });
     const result = await handleScan("ABC234");
     expect(result.status === "ok" && result.view.group?.isVip).toBe(true);
   });

@@ -61,7 +61,6 @@ export const snapshotResponseSchema = z.object({
       name: z.string(),
       color: z.string(),
       isVip: z.boolean(),
-      gate: z.string().nullable(),
     }),
   ),
   sessions: z.array(z.object({ groupId: z.uuid(), startsAt: z.string(), endsAt: z.string() })),

@@ -12,7 +12,7 @@ import { Dialog } from "../components/ui/dialog.js";
 import { Field } from "../components/ui/field.js";
 import { Input } from "../components/ui/input.js";
 import { adminApi } from "../lib/admin-api.js";
-import { isoToWibInput, wibInputToIso } from "../lib/datetime.js";
+import { isoToWibDate, isoToWibTime, wibTimeToIso } from "../lib/datetime.js";
 import { eventsQuery, groupsQuery, useRefresh } from "../lib/queries.js";
 
 type Editing = { kind: "new" } | { kind: "edit"; group: Group } | null;
@@ -30,7 +30,7 @@ export function GroupsPage() {
       <PageHeader
         tag="Kelompok"
         title="Kelompok tamu"
-        description="Kelompok menentukan warna, penanda VIP, gerbang, dan jam sesi tamu di tiap acara."
+        description="Kelompok menentukan warna, penanda VIP, dan jam sesi tamu di tiap acara."
         actions={
           <Button onClick={() => setEditing({ kind: "new" })}>
             <Plus className="size-4" aria-hidden />
@@ -55,7 +55,6 @@ export function GroupsPage() {
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Kelompok</th>
-                <th className="px-4 py-3">Gerbang</th>
                 <th className="px-4 py-3">Tamu</th>
                 <th className="px-4 py-3">Jam sesi</th>
                 <th className="px-4 py-3" />
@@ -74,7 +73,6 @@ export function GroupsPage() {
                       {group.isVip && <Badge variant="solid">VIP</Badge>}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{group.gate ?? "—"}</td>
                   <td className="px-4 py-3">{group.guestCount}</td>
                   <td className="px-4 py-3">
                     {group.sessions.length === 0
@@ -138,14 +136,13 @@ function GroupForm({
   const [name, setName] = useState(group?.name ?? "");
   const [color, setColor] = useState(group?.color ?? "#737373");
   const [isVip, setIsVip] = useState(group?.isVip ?? false);
-  const [gate, setGate] = useState(group?.gate ?? "");
-  const [sortOrder, setSortOrder] = useState(String(group?.sortOrder ?? 0));
-  // Jam sesi per acara, disimpan sebagai nilai input datetime-local (WIB).
+  // Jam sesi per acara (WIB), disimpan sebagai nilai input time ("10:00"). Tanggalnya diambil dari
+  // tanggal acara saat disimpan.
   const [sessions, setSessions] = useState<Record<string, { start: string; end: string }>>(() =>
     Object.fromEntries(
       (group?.sessions ?? []).map((s) => [
         s.eventId,
-        { start: isoToWibInput(s.startsAt), end: isoToWibInput(s.endsAt) },
+        { start: isoToWibTime(s.startsAt), end: isoToWibTime(s.endsAt) },
       ]),
     ),
   );
@@ -162,11 +159,10 @@ function GroupForm({
         name,
         color,
         isVip,
-        gate,
-        sortOrder: Number(sortOrder) || 0,
         sessions: Object.entries(sessions).flatMap(([eventId, range]) => {
-          const startsAt = wibInputToIso(range.start);
-          const endsAt = wibInputToIso(range.end);
+          const date = isoToWibDate(events.find((e) => e.id === eventId)?.startsAt);
+          const startsAt = wibTimeToIso(date, range.start);
+          const endsAt = wibTimeToIso(date, range.end);
           return startsAt && endsAt ? [{ eventId, startsAt, endsAt }] : [];
         }),
       };
@@ -191,9 +187,6 @@ function GroupForm({
             <Input id={id} required value={name} onChange={(e) => setName(e.target.value)} />
           )}
         </Field>
-        <Field label="Gerbang" hint="Opsional, mis. A atau B.">
-          {(id) => <Input id={id} value={gate} onChange={(e) => setGate(e.target.value)} />}
-        </Field>
         <Field label="Warna">
           {(id) => (
             <input
@@ -205,16 +198,6 @@ function GroupForm({
             />
           )}
         </Field>
-        <Field label="Urutan tampil">
-          {(id) => (
-            <Input
-              id={id}
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            />
-          )}
-        </Field>
       </div>
       <Checkbox checked={isVip} onChange={(e) => setIsVip(e.target.checked)}>
         VIP (tampil berbeda di layar penjaga)
@@ -223,29 +206,40 @@ function GroupForm({
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-medium">Jam sesi per acara</legend>
         <p className="text-xs text-ink-soft">
-          Kosongkan bila kelompok ini tidak punya jam khusus. Sesi dipakai untuk info di undangan
-          dan dicatat di log; penjaga tidak diberi peringatan.
+          Isi jam saja (WIB); tanggalnya mengikuti tanggal acara. Kosongkan bila kelompok ini tidak
+          punya jam khusus. Sesi dipakai untuk info di undangan dan dicatat di log; penjaga tidak
+          diberi peringatan.
         </p>
         {events.length === 0 ? (
           <p className="text-ink-soft">Belum ada acara.</p>
         ) : (
-          events.map((event) => (
-            <div key={event.id} className="grid items-center gap-2 sm:grid-cols-[8rem_1fr_1fr]">
-              <span className="text-sm">{event.name}</span>
-              <Input
-                type="datetime-local"
-                aria-label={`Mulai sesi di ${event.name}`}
-                value={sessions[event.id]?.start ?? ""}
-                onChange={(e) => setSession(event.id, { start: e.target.value })}
-              />
-              <Input
-                type="datetime-local"
-                aria-label={`Selesai sesi di ${event.name}`}
-                value={sessions[event.id]?.end ?? ""}
-                onChange={(e) => setSession(event.id, { end: e.target.value })}
-              />
-            </div>
-          ))
+          events.map((event) => {
+            const noDate = !event.startsAt;
+            return (
+              <div key={event.id} className="grid items-center gap-2 sm:grid-cols-[8rem_1fr_1fr]">
+                <span className="text-sm">{event.name}</span>
+                <Input
+                  type="time"
+                  aria-label={`Mulai sesi di ${event.name}`}
+                  disabled={noDate}
+                  value={sessions[event.id]?.start ?? ""}
+                  onChange={(e) => setSession(event.id, { start: e.target.value })}
+                />
+                <Input
+                  type="time"
+                  aria-label={`Selesai sesi di ${event.name}`}
+                  disabled={noDate}
+                  value={sessions[event.id]?.end ?? ""}
+                  onChange={(e) => setSession(event.id, { end: e.target.value })}
+                />
+                {noDate && (
+                  <p className="text-xs text-ink-soft sm:col-span-3">
+                    Isi tanggal mulai acara ini dulu di menu Acara.
+                  </p>
+                )}
+              </div>
+            );
+          })
         )}
       </fieldset>
 

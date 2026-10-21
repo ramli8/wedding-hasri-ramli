@@ -69,7 +69,6 @@ export const dashboardResponseSchema = z.object({
       name: z.string(),
       color: z.string(),
       isVip: z.boolean(),
-      gate: z.string().nullable(),
       invited: z.number(),
       arrived: z.number(),
       pax: z.number(),

@@ -175,12 +175,11 @@ describe("kelompok", () => {
     const group = await makeGroup({
       name: "Surabaya",
       color: "#2563eb",
-      gate: "A",
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
       ],
     });
-    expect(group).toMatchObject({ name: "Surabaya", gate: "A", guestCount: 0 });
+    expect(group).toMatchObject({ name: "Surabaya", guestCount: 0 });
     expect(group.sessions).toEqual([
       {
         eventId: event.id,

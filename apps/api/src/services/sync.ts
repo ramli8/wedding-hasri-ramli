@@ -116,7 +116,6 @@ export async function buildSnapshot(
       name: g.name,
       color: g.color,
       isVip: g.isVip,
-      gate: g.gate,
     })),
     sessions: sessionRows.map((s) => ({
       groupId: s.groupId,

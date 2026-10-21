@@ -20,12 +20,6 @@ export const groupInputSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, "Warna harus berformat #rrggbb")
     .default("#737373"),
   isVip: z.boolean().default(false),
-  gate: z
-    .string()
-    .trim()
-    .nullish()
-    .transform((value) => value || null),
-  sortOrder: z.number().int().default(0),
   sessions: z.array(groupSessionInputSchema).default([]),
 });
 export type GroupInput = z.input<typeof groupInputSchema>;
@@ -36,8 +30,6 @@ export const groupSchema = z.object({
   name: z.string(),
   color: z.string(),
   isVip: z.boolean(),
-  gate: z.string().nullable(),
-  sortOrder: z.number(),
   guestCount: z.number(),
   sessions: z.array(z.object({ eventId: z.uuid(), startsAt: z.string(), endsAt: z.string() })),
 });

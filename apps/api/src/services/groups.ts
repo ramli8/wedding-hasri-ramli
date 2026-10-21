@@ -32,8 +32,6 @@ async function withSessions(
       name: group.name,
       color: group.color,
       isVip: group.isVip,
-      gate: group.gate,
-      sortOrder: group.sortOrder,
       guestCount,
       sessions: sessions
         .filter((s) => s.groupId === group.id)
@@ -50,7 +48,7 @@ export async function listGroups(db: Db): Promise<Group[]> {
   const rows = await db
     .select({ group: guestGroups, guestCount })
     .from(guestGroups)
-    .orderBy(asc(guestGroups.sortOrder), asc(guestGroups.name));
+    .orderBy(asc(guestGroups.name));
   return withSessions(db, rows);
 }
 
@@ -106,8 +104,6 @@ export async function createGroup(db: Db, input: GroupData): Promise<Group> {
           name: input.name,
           color: input.color,
           isVip: input.isVip,
-          gate: input.gate,
-          sortOrder: input.sortOrder,
         })
         .returning({ id: guestGroups.id });
       if (!row) throw new Error("Gagal membuat kelompok");
@@ -134,8 +130,6 @@ export async function updateGroup(db: Db, id: string, input: GroupData): Promise
           name: input.name,
           color: input.color,
           isVip: input.isVip,
-          gate: input.gate,
-          sortOrder: input.sortOrder,
         })
         .where(eq(guestGroups.id, id))
         .returning({ id: guestGroups.id });

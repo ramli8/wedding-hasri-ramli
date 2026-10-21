@@ -7,7 +7,7 @@ import {
 } from "@wedding/shared";
 import { parse } from "csv-parse/sync";
 import { stringify } from "csv-stringify/sync";
-import { asc, inArray, isNotNull, isNull, max } from "drizzle-orm";
+import { asc, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { events, guestEvents, guestGroups, guests } from "../db/schema.js";
 import { generateUniqueCodes } from "../domain/guest-code.js";
@@ -207,11 +207,9 @@ export async function commitImport(
 
   await db.transaction(async (tx) => {
     if (newGroups.length) {
-      const [top] = await tx.select({ value: max(guestGroups.sortOrder) }).from(guestGroups);
-      const base = (top?.value ?? -1) + 1;
       await tx
         .insert(guestGroups)
-        .values(newGroups.map((name, i) => ({ name, sortOrder: base + i })))
+        .values(newGroups.map((name) => ({ name })))
         .onConflictDoNothing();
     }
     const groups = await tx

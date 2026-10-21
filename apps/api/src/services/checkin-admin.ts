@@ -69,7 +69,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       name: string;
       color: string;
       isVip: boolean;
-      gate: string | null;
       invited: number;
       arrived: number;
       pax: number;
@@ -85,7 +84,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       name: group?.name ?? NO_GROUP.name,
       color: group?.color ?? NO_GROUP.color,
       isVip: group?.isVip ?? false,
-      gate: group?.gate ?? null,
       invited: 0,
       arrived: 0,
       pax: 0,

@@ -87,7 +87,6 @@ export function CheckinPage() {
             <thead className="tag border-b-2 border-ink text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Kelompok</th>
-                <th className="px-4 py-3">Gerbang</th>
                 <th className="px-4 py-3">Masuk</th>
                 <th className="px-4 py-3">Orang</th>
               </tr>
@@ -105,7 +104,6 @@ export function CheckinPage() {
                       {group.isVip && <Badge variant="solid">VIP</Badge>}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{group.gate ?? "—"}</td>
                   <td className="px-4 py-3 font-mono">
                     {group.arrived} / {group.invited}
                   </td>

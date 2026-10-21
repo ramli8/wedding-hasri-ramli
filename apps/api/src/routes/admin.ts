@@ -8,6 +8,7 @@ import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
 import { invitationAdminRoutes } from "./invitation.js";
 import { mediaAdminRoutes } from "./media.js";
+import { receivedGiftRoutes } from "./received-gifts.js";
 import { settingsRoutes } from "./settings.js";
 
 /** Semua rute di bawah /api/v1/admin memerlukan sesi admin. */
@@ -22,6 +23,7 @@ export function adminRoutes(deps: AppDeps) {
     .route("/checkins", checkinAdminRoutes(deps))
     .route("/invitation", invitationAdminRoutes(deps))
     .route("/media", mediaAdminRoutes(deps))
+    .route("/received-gifts", receivedGiftRoutes(deps))
     .route("/rsvps", rsvpAdminRoutes(deps))
     .route("/guestbook", guestbookAdminRoutes(deps));
 }

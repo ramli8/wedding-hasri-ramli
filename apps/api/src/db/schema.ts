@@ -5,6 +5,7 @@ import {
   bigserial,
   boolean,
   check,
+  date,
   index,
   inet,
   integer,
@@ -414,5 +415,33 @@ export const checkinReviews = pgTable(
       "checkin_reviews_resolution_valid",
       sql`${table.resolution} in ('keep_first', 'merge_pax')`,
     ),
+  ],
+);
+
+// Amplop, transfer, dan barang yang diterima. Pemberi boleh tamu terdaftar (guest_id) atau diketik
+// bebas; nama pemberi disimpan sendiri agar catatan tetap utuh bila tamunya dihapus.
+export const receivedGifts = pgTable(
+  "received_gifts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    guestId: uuid().references(() => guests.id, { onDelete: "set null" }),
+    giverName: text().notNull(),
+    kind: text().notNull(),
+    amount: bigint({ mode: "number" }),
+    itemDescription: text(),
+    note: text(),
+    receivedOn: date({ mode: "string" }).notNull(),
+    thankedAt: timestamp({ withTimezone: true }),
+    recordedBy: uuid().references(() => admins.id, { onDelete: "set null" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("received_gifts_kind_valid", sql`${table.kind} in ('amplop', 'transfer', 'barang')`),
+    check(
+      "received_gifts_amount_valid",
+      sql`(${table.kind} = 'barang' and ${table.itemDescription} is not null)
+        or (${table.kind} <> 'barang' and ${table.amount} > 0)`,
+    ),
+    index("received_gifts_received_idx").on(table.receivedOn),
   ],
 );

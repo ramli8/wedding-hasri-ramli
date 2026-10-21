@@ -520,7 +520,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 
 **Pengujian:** 161 tes API (tiket, RSVP, API ucapan publik dan admin, pembatas, dashboard) dan 44 tes web (termasuk cache tiket). Tampilan halaman tamu diperiksa di Firefox headless dengan API palsu; belum diuji di HP sungguhan.
 
-### Fase 5 (editor konten dan desain undangan): berjalan
+### Fase 5 (editor konten dan desain undangan): selesai
 
 **Keputusan (21 Okt 2026):**
 - **Bagian undangan tahap pertama:** profil mempelai + cerita, galeri foto, amplop digital (rekening bank dan e-wallet), FAQ + wishlist hadiah, ditambah buku ucapan.
@@ -542,6 +542,10 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **Galeri:** tabel `gallery_items` (satu gambar hanya sekali, urutan lewat `sort_order`). Admin memilih banyak foto sekaligus; tiap foto diunggah ke sistem media lalu dipasang ke galeri. Tamu melihat kisi thumbnail dan membuka resolusi penuh (`large`) di pemutar layar penuh.
 - **Deploy:** volume Docker `media` di `/data/media` (harus ikut backup), `sharp` dipasang di image API seperti argon2 (musl, sudah dicoba di Alpine), lihat `docs/deploy.md`.
 - **Pengujian:** 183 tes API (22 baru untuk media dan undangan, termasuk perbandingan piksel dan EXIF) dan uji peramban terisolasi (API port 3101, database `wedding_e2e`): unggah foto 3200x2400 lewat form, simpan profil dan cerita, urutan, halaman tamu menampilkan gambar 3200x2400 penuh, hapus cerita menghapus foto.
+
+### Fase 6 (vendor, amplop/hadiah): berjalan
+
+- **Hadiah masuk** (`/admin/hadiah`, API `/api/v1/admin/received-gifts`): tabel `received_gifts`, bukan `gifts` seperti di sketsa skema, agar tidak tertukar dengan rekening amplop digital (`gift_accounts`) di undangan. Jenis `amplop` (tunai), `transfer`, dan `barang`; amplop dan transfer wajib bernominal bulat (rupiah, maksimal Rp 10 miliar), barang wajib bernama dan tidak bernominal (dijaga juga oleh batasan database). Pemberi boleh tamu terdaftar (`guest_id`, nama terisi otomatis dan boleh diubah) atau diketik bebas; nama disimpan sendiri sehingga catatan tetap utuh bila tamunya dihapus. Tanggal diterima bawaan hari ini (WIB). Penanda `thanked_at` untuk ucapan terima kasih, ringkasan (total amplop, transfer, jumlah barang, belum dibalas) dihitung dari seluruh catatan tanpa terpengaruh filter. Pencatat (`recorded_by`) diambil dari sesi admin. Belum ada ekspor CSV atau kaitan ke wishlist.
 
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 

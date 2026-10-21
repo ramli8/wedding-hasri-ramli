@@ -10,6 +10,7 @@ export * from "./guests.js";
 export * from "./invitation.js";
 export * from "./media.js";
 export * from "./message.js";
+export * from "./received-gifts.js";
 export * from "./rsvp.js";
 export * from "./settings.js";
 export * from "./sync.js";

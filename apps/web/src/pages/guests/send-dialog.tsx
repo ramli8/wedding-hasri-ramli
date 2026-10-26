@@ -7,12 +7,15 @@ import {
   type Settings,
   whatsappUrl,
 } from "@wedding/shared";
+import { Copy, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Textarea } from "../../components/ui/textarea.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { SwitchRow } from "@/components/kit/form-rows";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { formatDateTime } from "../../lib/datetime.js";
 import { buildMessage } from "../../lib/message.js";
@@ -51,27 +54,50 @@ function SendBody({
     const event = events.find((e) => e.id === invitation.eventId);
     return event ? [{ invitation, event }] : [];
   });
+  const first = invitations[0];
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        {guest.phone && <span>WhatsApp +{guest.phone}</span>}
+        {guest.instagram && <span>Instagram @{guest.instagram}</span>}
+        {!guest.phone && !guest.instagram && (
+          <span>Tamu ini belum punya nomor HP atau Instagram; pesan hanya bisa disalin.</span>
+        )}
+      </div>
       {!settings && (
         <Alert tone="error">
-          Alamat situs belum diisi, jadi link undangan belum bisa dibuat. Isi di menu Pengaturan.
+          Alamat situs belum diisi, jadi link undangan belum bisa dibuat. Isi di Pengaturan →
+          Pernikahan.
         </Alert>
       )}
-      {invitations.length === 0 && (
+      {!first ? (
         <Alert>Tamu ini belum diundang ke acara apa pun. Ubah tamu untuk memilih acara.</Alert>
+      ) : (
+        <Tabs defaultValue={first.event.id} className="gap-4">
+          {invitations.length > 1 && (
+            <TabsList>
+              {invitations.map(({ event, invitation }) => (
+                <TabsTrigger key={event.id} value={event.id}>
+                  {event.name}
+                  {invitation.sentAt && " ✓"}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          )}
+          {invitations.map(({ invitation, event }) => (
+            <TabsContent key={event.id} value={event.id}>
+              <EventMessage
+                guest={guest}
+                event={event}
+                sentAt={invitation.sentAt}
+                sentVia={invitation.sentVia}
+                initialText={buildMessage({ guest, event, group, settings })}
+              />
+            </TabsContent>
+          ))}
+        </Tabs>
       )}
-      {invitations.map(({ invitation, event }) => (
-        <EventMessage
-          key={event.id}
-          guest={guest}
-          event={event}
-          sentAt={invitation.sentAt}
-          sentVia={invitation.sentVia}
-          initialText={buildMessage({ guest, event, group, settings })}
-        />
-      ))}
     </div>
   );
 }
@@ -128,54 +154,61 @@ function EventMessage({
   }
 
   return (
-    <section className="flex flex-col gap-3 border-2 border-ink p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{event.name}</h3>
-        {sentAt ? (
-          <Badge variant="solid">
-            Terkirim via {viaLabel[sentVia ?? "other"]} · {formatDateTime(sentAt)}
-          </Badge>
-        ) : (
-          <Badge variant="pill">Belum dikirim</Badge>
-        )}
+    <div className="grid gap-4">
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor={`pesan-${event.id}`} className="text-sm leading-none font-medium">
+            Isi pesan
+          </label>
+          {sentAt ? (
+            <Badge variant="secondary">
+              Terkirim via {viaLabel[sentVia ?? "other"]} · {formatDateTime(sentAt)}
+            </Badge>
+          ) : (
+            <Badge variant="outline">Belum dikirim</Badge>
+          )}
+        </div>
+        <Textarea
+          id={`pesan-${event.id}`}
+          spellCheck={false}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="min-h-44 font-mono text-sm"
+        />
+        <p className="text-sm text-muted-foreground">
+          Pesan bisa disunting dulu.{" "}
+          {notice ?? "Anda sendiri yang menekan tombol kirim di aplikasinya."}
+        </p>
       </div>
-      <Textarea
-        aria-label={`Pesan untuk ${event.name}`}
-        spellCheck={false}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="min-h-32"
-      />
-      {notice && <p className="text-xs text-ink-soft">{notice}</p>}
-      {mark.error && <Alert tone="error">{mark.error.message}</Alert>}
-      <div className="flex flex-wrap gap-2">
-        {guest.phone && <Button onClick={sendWhatsApp}>Buka WhatsApp</Button>}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        {guest.phone && (
+          <Button onClick={sendWhatsApp}>
+            <MessageCircle aria-hidden />
+            Buka WhatsApp
+          </Button>
+        )}
         {guest.instagram && (
-          <Button variant={guest.phone ? "secondary" : "primary"} onClick={sendInstagram}>
+          <Button variant={guest.phone ? "outline" : "default"} onClick={sendInstagram}>
+            <Send aria-hidden />
             Salin &amp; buka DM Instagram
           </Button>
         )}
-        <Button variant="secondary" onClick={copy}>
+        <Button variant="outline" onClick={copy}>
+          <Copy aria-hidden />
           Salin pesan
         </Button>
-        {sentAt ? (
-          <Button
-            variant="secondary"
-            onClick={() => mark.mutate({ sent: false })}
-            disabled={mark.isPending}
-          >
-            Batal tandai terkirim
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            onClick={() => mark.mutate({ sent: true, via: "other" })}
-            disabled={mark.isPending}
-          >
-            Tandai terkirim
-          </Button>
-        )}
       </div>
-    </section>
+
+      <SwitchRow
+        title="Sudah terkirim"
+        description="Tandai manual bila Anda mengirimnya lewat cara lain."
+        checked={sentAt !== null}
+        onCheckedChange={(checked) =>
+          mark.mutate(checked ? { sent: true, via: "other" } : { sent: false })
+        }
+      />
+      {mark.error && <Alert tone="error">{mark.error.message}</Alert>}
+    </div>
   );
 }

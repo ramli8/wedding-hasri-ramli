@@ -13,6 +13,7 @@ export * from "./media.js";
 export * from "./message.js";
 export * from "./received-gifts.js";
 export * from "./rsvp.js";
+export * from "./seo.js";
 export * from "./settings.js";
 export * from "./sync.js";
 export * from "./uuid.js";

@@ -1,15 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { MediaRef, StoryItem } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, BookHeart, Plus, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { ImageField } from "../../components/image-field.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Textarea } from "../../components/ui/textarea.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { ImageField } from "@/components/image-field";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormSection } from "@/components/kit/form-rows";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { storyQuery, useRefresh } from "../../lib/queries.js";
 
@@ -40,77 +44,74 @@ export function StoryPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-ink-soft">
-          Linimasa cerita Anda berdua, tampil berurutan dari atas ke bawah di undangan.
-        </p>
-        <Button onClick={() => setEditing({ kind: "new" })}>
-          <Plus className="size-4" aria-hidden /> Tambah cerita
-        </Button>
-      </div>
+      <Toolbar
+        summary={`${items.length} tahap`}
+        addLabel="Tambah cerita"
+        onAdd={() => setEditing({ kind: "new" })}
+      />
+      <Tip>
+        Tahap tampil berurutan dari atas ke bawah di undangan. Foto opsional; potret atau lanskap
+        sama baiknya.
+      </Tip>
 
       {story.isError && <Alert tone="error">{story.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
       {story.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">
-          Belum ada cerita. Tambahkan momen pertama Anda, mis. "Pertama bertemu".
-        </Card>
+        <EmptyState
+          icon={BookHeart}
+          title="Belum ada cerita"
+          description="Mulai dari momen pertama kalian, mis. “Pertama bertemu”."
+          addLabel="Tambah cerita"
+          onAdd={() => setEditing({ kind: "new" })}
+        />
       ) : (
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-3">
           {items.map((item, index) => (
             <li key={item.id}>
-              <Card className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Naikkan"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0 || reorder.isPending}
-                  >
-                    <ArrowUp className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Turunkan"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1 || reorder.isPending}
-                  >
-                    <ArrowDown className="size-4" aria-hidden />
-                  </Button>
-                </div>
+              <Card className="flex-row flex-wrap items-start gap-4 p-4">
+                <ReorderButtons
+                  index={index}
+                  count={items.length}
+                  busy={reorder.isPending}
+                  onMove={move}
+                />
                 {item.photo && (
                   <img
                     src={item.photo.thumb}
                     alt=""
                     width={item.photo.width}
                     height={item.photo.height}
-                    className="size-24 shrink-0 border-2 border-ink object-cover"
+                    className="size-20 shrink-0 rounded-lg border object-cover"
                   />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  {item.whenLabel && <p className="tag text-ink-soft">{item.whenLabel}</p>}
-                  <p className="font-display text-lg font-bold">{item.title}</p>
+                  {item.whenLabel && (
+                    <p className="text-xs font-medium text-muted-foreground">{item.whenLabel}</p>
+                  )}
+                  <p className="font-semibold">{item.title}</p>
                   {item.body && (
                     <p className="line-clamp-3 break-words whitespace-pre-wrap text-sm">
                       {item.body}
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setEditing({ kind: "edit", item })}
-                  >
-                    Ubah
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(item)}>
-                    Hapus
-                  </Button>
-                </div>
+                <DataTableRowActions
+                  actions={[
+                    {
+                      label: "Ubah",
+                      icon: <SquarePen />,
+                      onSelect: () => setEditing({ kind: "edit", item }),
+                    },
+                    "separator",
+                    {
+                      label: "Hapus",
+                      icon: <Trash2 />,
+                      destructive: true,
+                      onSelect: () => setDeleting(item),
+                    },
+                  ]}
+                />
               </Card>
             </li>
           ))}
@@ -161,46 +162,44 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
-        <Field label="Waktu" hint='Mis. "2019" atau "Mei 2022".'>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection title="Momen" description="Satu tahap dalam perjalanan kalian.">
+        <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
+          <Field label="Waktu" hint='Mis. "2019" atau "Mei 2022".'>
+            {(id) => (
+              <Input id={id} value={whenLabel} onChange={(e) => setWhenLabel(e.target.value)} />
+            )}
+          </Field>
+          <Field label="Judul">
+            {(id) => (
+              <Input id={id} required value={title} onChange={(e) => setTitle(e.target.value)} />
+            )}
+          </Field>
+        </div>
+        <Field label="Cerita" hint={`${body.length}/1500 karakter.`}>
           {(id) => (
-            <Input id={id} value={whenLabel} onChange={(e) => setWhenLabel(e.target.value)} />
+            <Textarea
+              id={id}
+              className="min-h-32"
+              maxLength={1500}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+            />
           )}
         </Field>
-        <Field label="Judul">
-          {(id) => (
-            <Input id={id} required value={title} onChange={(e) => setTitle(e.target.value)} />
-          )}
-        </Field>
-      </div>
-      <Field label="Cerita" hint="Maksimal 1500 karakter.">
-        {(id) => (
-          <Textarea
-            id={id}
-            className="min-h-32"
-            maxLength={1500}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-        )}
-      </Field>
-      <ImageField
-        label="Foto"
-        value={photo}
-        onChange={setPhoto}
-        recommendation="lanskap 3:2, 2400 × 1600 px (minimal 1200 px lebar). Foto tampil utuh selebar kartu tanpa dipotong, jadi potret pun boleh."
-      />
+      </FormSection>
+
+      <FormSection title="Foto" description="Opsional.">
+        <ImageField
+          label="Foto"
+          value={photo}
+          onChange={setPhoto}
+          recommendation="lanskap 3:2, 2400 × 1600 px (minimal 1200 px lebar). Foto tampil utuh selebar kartu tanpa dipotong, jadi potret pun boleh."
+        />
+      </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !title.trim()}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!!title.trim()} />
     </form>
   );
 }
@@ -221,8 +220,8 @@ function DeleteDialog({ item, onClose }: { item: StoryItem | null; onClose: () =
         <>
           <p>Cerita ini dan fotonya dihapus dari undangan.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

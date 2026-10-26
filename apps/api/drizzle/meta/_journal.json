@@ -176,6 +176,13 @@
       "when": 1792568252701,
       "tag": "0024_colorful_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793016678680,
+      "tag": "0025_many_apocalypse",
+      "breakpoints": true
     }
   ]
 }

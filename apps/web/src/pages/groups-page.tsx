@@ -1,16 +1,21 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { type Event, formatTimeRange, type Group } from "@wedding/shared";
-import { Plus } from "lucide-react";
+import { Plus, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { PageHeader } from "../components/page-header.js";
-import { Alert } from "../components/ui/alert.js";
-import { Badge } from "../components/ui/badge.js";
-import { Button } from "../components/ui/button.js";
-import { Card } from "../components/ui/card.js";
-import { Checkbox } from "../components/ui/checkbox.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Field } from "../components/ui/field.js";
-import { Input } from "../components/ui/input.js";
+import { DataTableColumnHeader } from "@/components/data-table/column-header";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { selectColumn } from "@/components/data-table/select-column";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Checkbox } from "@/components/kit/checkbox";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../lib/admin-api.js";
 import { isoToWibDate, isoToWibTime, wibTimeToIso } from "../lib/datetime.js";
 import { eventsQuery, groupsQuery, useRefresh } from "../lib/queries.js";
@@ -25,10 +30,69 @@ export function GroupsPage() {
 
   const eventName = (id: string) => events.data?.find((e) => e.id === id)?.name ?? "Acara";
 
+  const columns: ColumnDef<Group, unknown>[] = [
+    selectColumn<Group>(),
+    {
+      id: "nama",
+      accessorFn: (group) => group.name,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Kelompok" />,
+      cell: ({ row }) => (
+        <span className="flex items-center gap-2 font-medium">
+          <span
+            className="size-3 shrink-0 rounded-full border"
+            style={{ backgroundColor: row.original.color }}
+          />
+          {row.original.name}
+          {row.original.isVip && <Badge variant="default">VIP</Badge>}
+        </span>
+      ),
+    },
+    {
+      id: "tamu",
+      accessorFn: (group) => group.guestCount,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Tamu" />,
+    },
+    {
+      id: "sesi",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Jam sesi" />,
+      cell: ({ row }) =>
+        row.original.sessions.length === 0
+          ? "—"
+          : row.original.sessions.map((s) => (
+              <p key={s.eventId}>
+                {eventName(s.eventId)}: {formatTimeRange(s.startsAt, s.endsAt)}
+              </p>
+            )),
+      enableSorting: false,
+    },
+    {
+      id: "aksi",
+      cell: ({ row }) => (
+        <DataTableRowActions
+          actions={[
+            {
+              label: "Ubah",
+              icon: <SquarePen />,
+              onSelect: () => setEditing({ kind: "edit", group: row.original }),
+            },
+            "separator",
+            {
+              label: "Hapus",
+              icon: <Trash2 />,
+              destructive: true,
+              onSelect: () => setDeleting(row.original),
+            },
+          ]}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
   return (
     <>
       <PageHeader
-        tag="Kelompok"
         title="Kelompok tamu"
         description="Kelompok menentukan warna, penanda VIP, dan jam sesi tamu di tiap acara."
         actions={
@@ -39,72 +103,19 @@ export function GroupsPage() {
         }
       />
 
-      {groups.isPending ? (
-        <p className="text-ink-soft">Memuat…</p>
-      ) : groups.isError ? (
-        <Alert tone="error">{groups.error.message}</Alert>
-      ) : groups.data.length === 0 ? (
-        <Card>
-          <p className="text-ink-soft">
-            Belum ada kelompok, misalnya Keluarga, Teman Kuliah, atau Tim Klub.
-          </p>
-        </Card>
-      ) : (
-        <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="table-cards w-full text-left text-sm">
-            <thead className="tag border-b-2 border-ink text-ink-soft">
-              <tr>
-                <th className="px-4 py-3">Kelompok</th>
-                <th className="px-4 py-3">Tamu</th>
-                <th className="px-4 py-3">Jam sesi</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bone-2">
-              {groups.data.map((group) => (
-                <tr key={group.id}>
-                  <td className="px-4 py-3">
-                    <span className="flex items-center gap-2 font-medium">
-                      <span
-                        className="size-3 shrink-0 border-2 border-ink"
-                        style={{ backgroundColor: group.color }}
-                      />
-                      {group.name}
-                      {group.isVip && <Badge variant="solid">VIP</Badge>}
-                    </span>
-                  </td>
-                  <td data-label="Tamu" className="px-4 py-3">
-                    {group.guestCount}
-                  </td>
-                  <td data-label="Jam sesi" className="px-4 py-3">
-                    {group.sessions.length === 0
-                      ? "—"
-                      : group.sessions.map((s) => (
-                          <p key={s.eventId}>
-                            {eventName(s.eventId)}: {formatTimeRange(s.startsAt, s.endsAt)}
-                          </p>
-                        ))}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1 max-md:flex-wrap max-md:justify-start">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setEditing({ kind: "edit", group })}
-                      >
-                        Ubah
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => setDeleting(group)}>
-                        Hapus
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {groups.isError && <Alert tone="error">{groups.error.message}</Alert>}
+      <DataTable
+        columns={columns}
+        data={groups.data ?? []}
+        getRowId={(group) => group.id}
+        searchPlaceholder="Cari kelompok"
+        searchKey="nama"
+        emptyText={
+          groups.isPending
+            ? "Memuat…"
+            : "Belum ada kelompok, misalnya Keluarga, Teman Kuliah, atau Tim Klub."
+        }
+      />
 
       <Dialog
         open={editing !== null}
@@ -196,7 +207,7 @@ function GroupForm({
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="h-9 w-16 cursor-pointer border-2 border-ink bg-bone p-1"
+              className="h-9 w-16 cursor-pointer border bg-background p-1"
             />
           )}
         </Field>
@@ -207,13 +218,13 @@ function GroupForm({
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-medium">Jam sesi per acara</legend>
-        <p className="text-xs text-ink-soft">
+        <p className="text-xs text-muted-foreground">
           Isi jam saja (WIB); tanggalnya mengikuti tanggal acara. Kosongkan bila kelompok ini tidak
           punya jam khusus. Sesi dipakai untuk info di undangan dan dicatat di log; penjaga tidak
           diberi peringatan.
         </p>
         {events.length === 0 ? (
-          <p className="text-ink-soft">Belum ada acara.</p>
+          <p className="text-muted-foreground">Belum ada acara.</p>
         ) : (
           events.map((event) => {
             const noDate = !event.startsAt;
@@ -235,7 +246,7 @@ function GroupForm({
                   onChange={(e) => setSession(event.id, { end: e.target.value })}
                 />
                 {noDate && (
-                  <p className="text-xs text-ink-soft sm:col-span-3">
+                  <p className="text-xs text-muted-foreground sm:col-span-3">
                     Isi tanggal mulai acara ini dulu di menu Acara.
                   </p>
                 )}
@@ -247,7 +258,7 @@ function GroupForm({
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
+        <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending}>
@@ -282,7 +293,7 @@ function DeleteGroupDialog({ group, onClose }: { group: Group | null; onClose: (
           )}
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

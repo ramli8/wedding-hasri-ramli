@@ -1,15 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { InvitationResponse, Wish } from "@wedding/shared";
 import { ExternalLink } from "lucide-react";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Select } from "../../components/ui/select.js";
+import { Alert } from "../../components/guest-ui/alert.js";
+import { Badge } from "../../components/guest-ui/badge.js";
+import { Button } from "../../components/guest-ui/button.js";
+import { Select } from "../../components/guest-ui/select.js";
 import { publicApi } from "../../lib/public-api.js";
+import { BODY_COL, HEAD_COL, MagHead } from "./mag.js";
 
 /** Wishlist hadiah: tamu memilih hadiah agar tidak ada yang memberi hal yang sama. */
-export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string }) {
+export function WishlistSection({
+  wishes,
+  code,
+  folio,
+}: {
+  wishes: Wish[];
+  code: string;
+  folio: string;
+}) {
   const queryClient = useQueryClient();
   const mine = useQuery({
     queryKey: ["public", "claims", code],
@@ -36,14 +44,20 @@ export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string
   });
 
   return (
-    <Card className="flex flex-col gap-4">
-      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Wishlist hadiah</h2>
-      <p className="text-sm text-ink-soft">
-        Bila ingin memberi hadiah berupa barang, pilih salah satu agar tidak ada yang memberi hal
-        yang sama. Anda bisa membatalkan pilihan kapan saja.
-      </p>
-      {claim.error && <Alert tone="error">{claim.error.message}</Alert>}
-      <ul className="flex flex-col gap-3">
+    <section
+      id="wishlist"
+      aria-label="Wishlist hadiah"
+      className="flex scroll-mt-16 flex-col gap-8"
+    >
+      <div className={`flex flex-col gap-4 ${HEAD_COL}`}>
+        <MagHead
+          folio={folio}
+          title="Wishlist hadiah"
+          kicker="Pilih satu hadiah agar tidak ada yang memberi hal yang sama. Pilihan bisa dibatalkan kapan saja."
+        />
+        {claim.error && <Alert tone="error">{claim.error.message}</Alert>}
+      </div>
+      <ul className={`grid gap-x-10 md:grid-cols-2 ${BODY_COL}`}>
         {wishes.map((wish) => {
           const picked = mineBy.get(wish.id) ?? 0;
           const remaining = wish.quantity - wish.claimed;
@@ -56,7 +70,7 @@ export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string
           return (
             <li
               key={wish.id}
-              className={`flex gap-3 border-2 border-ink p-3 ${dimmed ? "bg-bone-2" : "bg-bone"}`}
+              className={`flex gap-4 border-t border-ink/30 py-5 ${dimmed ? "opacity-60" : ""}`}
             >
               {wish.photo && (
                 <img
@@ -66,7 +80,7 @@ export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string
                   height={wish.photo.height}
                   loading="lazy"
                   decoding="async"
-                  className="size-20 shrink-0 border-2 border-ink object-cover"
+                  className="size-24 shrink-0 object-cover grayscale"
                 />
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -134,6 +148,6 @@ export function WishlistSection({ wishes, code }: { wishes: Wish[]; code: string
           );
         })}
       </ul>
-    </Card>
+    </section>
   );
 }

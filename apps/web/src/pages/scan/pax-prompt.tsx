@@ -1,12 +1,13 @@
 import { MAX_PAX } from "@wedding/shared";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Users } from "lucide-react";
 import { useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
 import type { GuestView } from "../../lib/scan/actions.js";
 
 const DEFAULT_PAX = 2;
+/** Jumlah yang paling sering muncul: satu ketukan mengisi, lalu tekan Catat masuk. */
+const QUICK = [1, 2, 3, 4, 5, 6];
 
 /** Tamu rombongan: penjaga mengisi jumlah orang yang datang sebelum check-in dicatat. */
 export function PaxPrompt({
@@ -39,33 +40,47 @@ export function PaxPrompt({
     <div
       role="alertdialog"
       aria-label="Jumlah orang rombongan"
-      className="fixed inset-0 z-50 flex flex-col justify-between gap-4 bg-bone p-5 text-ink"
+      className="fixed inset-0 z-50 flex flex-col bg-background text-foreground"
     >
-      <div className="mt-4 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <span className="tag border-2 border-current px-2 py-1">Rombongan</span>
-          {view.group?.isVip && <Badge variant="solid">VIP</Badge>}
-        </div>
-        <p className="font-display text-5xl leading-none font-bold tracking-h1 break-words">
-          {view.guest.displayName}
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto p-6 text-center">
+        <span className="grid size-20 place-items-center rounded-full bg-muted">
+          <Users className="size-10" aria-hidden />
+        </span>
+        <p className="text-sm font-semibold tracking-[0.25em] text-muted-foreground uppercase">
+          Rombongan
         </p>
-        {view.group && (
-          <span className="tag w-fit border-2 border-current px-2 py-1">{view.group.name}</span>
-        )}
+        <p className="text-5xl leading-tight font-bold break-words">{view.guest.displayName}</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {view.group?.isVip && (
+            <span className="rounded-full bg-warning px-4 py-1.5 text-sm font-bold text-black">
+              VIP
+            </span>
+          )}
+          {view.group && (
+            <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
+              <span
+                className="size-2.5 rounded-full"
+                style={{ backgroundColor: view.group.color }}
+                aria-hidden
+              />
+              {view.group.name}
+            </span>
+          )}
+        </div>
         {view.guest.usherNote && (
-          <p className="border-2 border-current p-3 text-xl font-semibold">
+          <p className="w-full max-w-md rounded-2xl border bg-muted/50 p-4 text-start text-xl font-semibold">
             {view.guest.usherNote}
           </p>
         )}
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="jumlah-rombongan" className="tag">
+        <div className="flex w-full max-w-md flex-col items-center gap-3">
+          <label htmlFor="jumlah-rombongan" className="text-sm font-medium">
             Berapa orang yang datang?
           </label>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Button
-              variant="secondary"
-              className="h-16 w-16"
+              variant="outline"
+              className="size-16 rounded-full"
               aria-label="Kurangi satu orang"
               onClick={() => setPax((p) => clamp(p - 1))}
               disabled={pax <= 1}
@@ -80,11 +95,11 @@ export function PaxPrompt({
               max={MAX_PAX}
               value={pax}
               onChange={(e) => setPax(clamp(Math.trunc(Number(e.target.value)) || 1))}
-              className="h-16 w-28 border-2 border-ink bg-paper text-center font-mono text-5xl font-bold"
+              className="h-20 w-28 rounded-2xl border bg-card text-center font-mono text-6xl font-bold"
             />
             <Button
-              variant="secondary"
-              className="h-16 w-16"
+              variant="outline"
+              className="size-16 rounded-full"
               aria-label="Tambah satu orang"
               onClick={() => setPax((p) => clamp(p + 1))}
               disabled={pax >= MAX_PAX}
@@ -92,15 +107,28 @@ export function PaxPrompt({
               <Plus className="size-7" aria-hidden />
             </Button>
           </div>
+          <fieldset className="m-0 grid w-full min-w-0 grid-cols-6 gap-2 border-0 p-0">
+            <legend className="sr-only">Pilih cepat</legend>
+            {QUICK.map((value) => (
+              <Button
+                key={value}
+                variant={pax === value ? "default" : "outline"}
+                className="h-12 text-lg"
+                onClick={() => setPax(value)}
+              >
+                {value}
+              </Button>
+            ))}
+          </fieldset>
         </div>
         {error && <Alert tone="error">{error}</Alert>}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Button className="h-16 text-base" onClick={() => void confirm()} disabled={busy}>
+      <div className="grid gap-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <Button className="h-16 text-lg" onClick={() => void confirm()} disabled={busy}>
           Catat masuk · {pax} orang
         </Button>
-        <Button variant="secondary" className="h-14" onClick={onCancel} disabled={busy}>
+        <Button variant="outline" className="h-12" onClick={onCancel} disabled={busy}>
           Batal
         </Button>
       </div>

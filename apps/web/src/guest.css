@@ -1,0 +1,320 @@
+@import "@fontsource-variable/bodoni-moda/wght.css";
+@import "@fontsource-variable/bodoni-moda/wght-italic.css";
+@import "@fontsource-variable/archivo";
+@import "@fontsource-variable/newsreader/wght.css";
+@import "@fontsource-variable/newsreader/wght-italic.css";
+@import "@fontsource/special-elite";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-600.css";
+
+/* Token dan gaya khusus halaman tamu (/u/KODE). Panel admin dan scanner memakai styles.css. */
+@theme {
+  --color-bone: #f6efe7;
+  --color-bone-2: #eadfd1;
+  --color-paper: #ffffff;
+  --color-ink: #1a1014;
+  --color-ink-soft: #5a4850;
+  --color-acid: #ffc2d1;
+  --color-electric: #7a1230;
+  --color-alert: #b3261e;
+  --color-stamp: #a52a24;
+  --color-ok: #1f6b45;
+  --color-tone-1: #ffb84d;
+  --color-tone-2: #7de0a6;
+  --color-tone-3: #8fd8f0;
+  --color-tone-4: #c4b5fd;
+  /* Hanya di dalam input putih: di atas bone kontrasnya 4,2:1. */
+  --color-placeholder: #76696f;
+
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-h1: -0.04em;
+  --tracking-h2: -0.03em;
+  --tracking-h3: -0.02em;
+  --tracking-button: 0.06em;
+  --tracking-label: 0.14em;
+
+  --shadow-hard-sm: 3px 3px 0 var(--color-ink);
+  --shadow-hard: 4px 4px 0 var(--color-ink);
+  --shadow-hard-lg: 6px 6px 0 var(--color-ink);
+  --shadow-hard-xl: 9px 9px 0 var(--color-ink);
+  --shadow-hard-on-dark: 6px 6px 0 var(--color-acid);
+}
+
+/* Label kecil: IBM Plex Mono kapital dengan tracking lebar. */
+@utility tag {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Pola titik latar halaman. Jangan dipakai di balik data padat. */
+@utility bg-raster {
+  background-image: radial-gradient(var(--color-bone-2) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Hover mengangkat, tekan menenggelamkan (bayangan hilang). */
+@utility lift {
+  transition-property: translate, box-shadow, background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover:not(:disabled) {
+    translate: -2px -2px;
+    box-shadow: var(--shadow-hard-lg);
+  }
+  &:active:not(:disabled) {
+    translate: 2px 2px;
+    box-shadow: 0 0 0 var(--color-ink);
+  }
+}
+
+/* Kotak centang persegi: kosong = putih, tercentang = acid dengan tanda centang hitam. */
+@utility check-box {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--color-ink);
+  background-color: var(--color-paper);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100%;
+  &:checked {
+    background-color: var(--color-acid);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c0c0c' stroke-width='3.5' stroke-linecap='square'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E");
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.mag :focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* Halaman tamu (/u/KODE dan /u/KODE/undangan): gaya majalah hitam putih, layar penuh.
+   Token warna dan font ditimpa di dalam .mag, jadi komponen bersama (Card, Button, Input) ikut
+   berganti rupa tanpa mengubah panel admin atau scanner. */
+.mag {
+  --color-bone: #f3f1ec;
+  --color-bone-2: #d9d5cd;
+  --color-paper: #fbfaf7;
+  --color-ink: #111010;
+  --color-ink-soft: #5c5853;
+  --color-acid: #e6e2da;
+  --color-electric: #111010;
+  --color-placeholder: #7a756e;
+  --font-display: "Bodoni Moda Variable", "Bodoni Moda", Didot, Georgia, serif;
+  --font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --tracking-h1: -0.03em;
+  --tracking-h2: -0.02em;
+  --tracking-h3: -0.01em;
+  --tracking-button: 0.16em;
+  --shadow-hard-sm: 0 0 0 transparent;
+  --shadow-hard: 0 0 0 transparent;
+  --shadow-hard-lg: 0 0 0 transparent;
+  background-color: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+.mag .card {
+  border-width: 0;
+  border-top: 1px solid var(--color-ink);
+  background: transparent;
+  padding-inline: 0;
+}
+.mag .card.bg-ink {
+  background: var(--color-ink);
+  padding-inline: 1.25rem;
+}
+/* Garis tipis seperti cetakan, bukan bingkai tebal; label memakai sans kecil, bukan mono. */
+.mag .border-2 {
+  border-width: 1px;
+}
+.mag .tag {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.mag .card h2 {
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+.mag .font-display {
+  font-optical-sizing: auto;
+}
+.mag input,
+.mag textarea,
+.mag select {
+  border-width: 0 0 1px;
+  border-color: var(--color-ink);
+  background: transparent;
+  padding-inline: 0;
+}
+.mag input:focus,
+.mag textarea:focus,
+.mag select:focus {
+  background: transparent;
+  border-bottom-width: 2px;
+}
+/* Bayangan keras bawaan komponen bersama dimatikan di halaman tamu. */
+.mag [class*="shadow-hard"],
+.mag .lift:hover:not(:disabled),
+.mag .lift:active:not(:disabled) {
+  --tw-shadow: 0 0 #0000;
+  box-shadow: none;
+  translate: 0 0;
+}
+.mag details {
+  border-width: 0 0 1px;
+}
+.mag .mag-photo img {
+  filter: grayscale(1) contrast(1.05);
+  transition:
+    filter 0.7s ease,
+    scale 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.mag .mag-photo[aria-pressed="true"] img,
+.mag .mag-photo:hover img {
+  filter: none;
+}
+.mag .mag-photo:hover img {
+  scale: 1.03;
+}
+.mag .drop::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 4.5rem;
+  line-height: 0.78;
+  padding: 0.35rem 0.6rem 0 0;
+}
+.mag .vert {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}
+
+/* Halaman undangan tamu: edisi majalah vintage. Dipasang bersama .mag (kelas .vin menimpa token-nya),
+   jadi kartu, input, dan garis tipis dari .mag ikut, hanya warna, huruf, dan hiasannya yang berganti. */
+.vin {
+  --color-bone: #14110e;
+  --color-bone-2: #2b251e;
+  --color-paper: #f5f1e8;
+  --color-ink: #1a1612;
+  --color-ink-soft: #5c554a;
+  --color-acid: #e9e2d0;
+  --color-electric: #1c1712;
+  --color-placeholder: #7d7260;
+  --font-sans: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
+  --font-typewriter: "Special Elite", "Courier New", monospace;
+  font-size: 17px;
+}
+/* Butiran kertas dan film di seluruh layar. */
+.vin::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .14  0 0 0 0 .08  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.vin .tag {
+  font-family: var(--font-typewriter);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+/* Nuansa film: foto yang gelap dan sinematik dibuat sedikit pudar dan hangat, warna aslinya muncul saat disentuh. */
+.vin .mag-photo img {
+  filter: saturate(0.72) sepia(0.2) contrast(1.04) brightness(0.98);
+}
+.vin .mag-photo[aria-pressed="true"] img,
+.vin .mag-photo:hover img {
+  filter: none;
+}
+.vin .sheet {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(120% 100% at 50% 0%, transparent 55%, rgba(140, 100, 40, 0.16)),
+    linear-gradient(
+      90deg,
+      rgba(120, 90, 40, 0.1),
+      transparent 6%,
+      transparent 94%,
+      rgba(120, 90, 40, 0.1)
+    );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 2px 3px rgba(60, 40, 10, 0.25),
+    0 30px 50px -28px rgba(50, 30, 5, 0.55);
+}
+.vin .stamp {
+  display: inline-block;
+  border: 3px double var(--color-stamp);
+  color: var(--color-stamp);
+  padding: 0.35rem 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+.vin .leader {
+  flex: 1;
+  min-width: 1rem;
+  border-bottom: 2px dotted currentColor;
+  opacity: 0.4;
+  translate: 0 -0.35em;
+}
+.vin .vert {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vin .wobble {
+    transition:
+      rotate 0.3s ease,
+      translate 0.3s ease;
+  }
+  .vin .wobble:hover {
+    rotate: 0deg;
+    translate: 0 -6px;
+  }
+}
+
+/* Kartu foto dikipas: --x geser mendatar (dalam langkah), --r sudut putar (derajat). */
+.vin .fan-card {
+  --step: 4.6rem;
+  transform-origin: 50% 120%;
+  transform: translateX(calc(-50% + var(--x) * var(--step))) rotate(calc(var(--r) * 1deg));
+  box-shadow: 0 12px 24px -12px rgba(30, 20, 8, 0.65);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (min-width: 768px) {
+  .vin .fan-card {
+    --step: 9.5rem;
+  }
+}
+.vin .fan-card:hover,
+.vin .fan-card:focus-visible {
+  z-index: 20 !important;
+  transform: translateX(calc(-50% + var(--x) * var(--step))) translateY(-2.5rem) rotate(0deg)
+    scale(1.06);
+}

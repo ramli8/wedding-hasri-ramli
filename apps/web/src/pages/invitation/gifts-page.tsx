@@ -6,17 +6,20 @@ import {
   type GiftKind,
   type MediaRef,
 } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, SquarePen, Trash2, Wallet } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { ImageField } from "../../components/image-field.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Select } from "../../components/ui/select.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { ImageField } from "@/components/image-field";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { EmptyState, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import { Select } from "@/components/kit/select";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
 import { giftsQuery, useRefresh } from "../../lib/queries.js";
 
@@ -47,77 +50,70 @@ export function GiftsPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-ink-soft">
-          Rekening bank dan e-wallet untuk tamu yang ingin mengirim hadiah. Tamu bisa menyalin
-          nomornya dengan satu ketukan.
-        </p>
-        <Button onClick={() => setEditing({ kind: "new" })}>
-          <Plus className="size-4" aria-hidden /> Tambah rekening
-        </Button>
-      </div>
+      <Toolbar
+        summary={`${items.length} rekening`}
+        addLabel="Tambah rekening"
+        onAdd={() => setEditing({ kind: "new" })}
+      />
+      <Tip>
+        Tamu bisa menyalin nomor rekening dengan satu ketukan. Gambar QR (mis. QRIS) opsional.
+      </Tip>
 
       {gifts.isError && <Alert tone="error">{gifts.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
       {gifts.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">
-          Belum ada rekening. Tambahkan rekening bank atau e-wallet Anda.
-        </Card>
+        <EmptyState
+          icon={Wallet}
+          title="Belum ada rekening"
+          description="Tambahkan rekening bank atau e-wallet untuk tamu yang ingin mengirim hadiah."
+          addLabel="Tambah rekening"
+          onAdd={() => setEditing({ kind: "new" })}
+        />
       ) : (
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-3">
           {items.map((item, index) => (
             <li key={item.id}>
-              <Card className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Naikkan"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0 || reorder.isPending}
-                  >
-                    <ArrowUp className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Turunkan"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1 || reorder.isPending}
-                  >
-                    <ArrowDown className="size-4" aria-hidden />
-                  </Button>
-                </div>
+              <Card className="flex-row flex-wrap items-start gap-4 p-4">
+                <ReorderButtons
+                  index={index}
+                  count={items.length}
+                  busy={reorder.isPending}
+                  onMove={move}
+                />
                 {item.qr && (
                   <img
                     src={item.qr.thumb}
                     alt="QR"
                     width={item.qr.width}
                     height={item.qr.height}
-                    className="size-24 shrink-0 border-2 border-ink object-cover"
+                    className="size-20 shrink-0 rounded-lg border object-cover"
                   />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <Badge variant="tag">{GIFT_KIND_LABEL[item.kind]}</Badge>
-                    <p className="font-display text-lg font-bold">{item.provider}</p>
+                    <Badge variant="secondary">{GIFT_KIND_LABEL[item.kind]}</Badge>
+                    <p className="font-semibold">{item.provider}</p>
                   </div>
                   <p className="font-mono text-lg break-all">{item.accountNumber}</p>
-                  <p className="text-sm text-ink-soft">a.n. {item.accountName}</p>
+                  <p className="text-sm text-muted-foreground">a.n. {item.accountName}</p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setEditing({ kind: "edit", item })}
-                  >
-                    Ubah
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(item)}>
-                    Hapus
-                  </Button>
-                </div>
+                <DataTableRowActions
+                  actions={[
+                    {
+                      label: "Ubah",
+                      icon: <SquarePen />,
+                      onSelect: () => setEditing({ kind: "edit", item }),
+                    },
+                    "separator",
+                    {
+                      label: "Hapus",
+                      icon: <Trash2 />,
+                      destructive: true,
+                      onSelect: () => setDeleting(item),
+                    },
+                  ]}
+                />
               </Card>
             </li>
           ))}
@@ -171,7 +167,7 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
   const ready = provider.trim() && accountName.trim() && accountNumber.trim();
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Jenis">
           {(id) => (
@@ -224,8 +220,8 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
       />
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending || !ready}>
@@ -252,8 +248,8 @@ function DeleteDialog({ item, onClose }: { item: Gift | null; onClose: () => voi
         <>
           <p>Rekening ini dihapus dari undangan.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

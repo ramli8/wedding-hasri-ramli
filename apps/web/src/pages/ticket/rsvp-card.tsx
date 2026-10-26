@@ -8,12 +8,12 @@ import {
   type TicketResponse,
 } from "@wedding/shared";
 import { useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Input } from "../../components/ui/input.js";
+import { Alert } from "../../components/guest-ui/alert.js";
+import { Button } from "../../components/guest-ui/button.js";
+import { Input } from "../../components/guest-ui/input.js";
 import { publicApi } from "../../lib/public-api.js";
 import { saveTicket } from "../../lib/ticket-cache.js";
+import { MagTitle } from "./mag.js";
 
 /** Konfirmasi kehadiran untuk satu acara. Jawaban bisa diubah kapan saja. */
 export function RsvpCard({
@@ -58,15 +58,13 @@ export function RsvpCard({
   });
 
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-display text-xl font-bold tracking-h2 uppercase">
-          Konfirmasi kehadiran
-        </h2>
-        <p className="text-sm text-ink-soft">{event.name}</p>
+    <section className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <MagTitle>Konfirmasi kehadiran</MagTitle>
+        <p className="tag text-ink-soft">{event.name}</p>
       </div>
 
-      <fieldset className="flex flex-col gap-2">
+      <fieldset className="flex flex-col border-t border-ink">
         <legend className="sr-only">Apakah Anda akan hadir?</legend>
         {RSVP_STATUSES.map((option) => (
           <button
@@ -77,11 +75,16 @@ export function RsvpCard({
               setStatus(option);
               setSaved(false);
             }}
-            className={`h-12 border-2 border-ink px-4 text-left font-display text-sm font-bold tracking-button uppercase ${
-              status === option ? "bg-acid shadow-hard-sm" : "bg-paper hover:bg-bone"
+            className={`flex min-h-16 items-center justify-between border-b border-ink/40 py-3 text-left font-display text-3xl transition-[padding] duration-200 hover:pl-3 ${
+              status === option
+                ? "pl-3 font-semibold underline decoration-1 underline-offset-8"
+                : ""
             }`}
           >
             {RSVP_LABEL[option]}
+            <span aria-hidden className="tag">
+              {status === option ? "●" : "○"}
+            </span>
           </button>
         ))}
       </fieldset>
@@ -109,11 +112,13 @@ export function RsvpCard({
 
       {send.error && <Alert tone="error">{send.error.message}</Alert>}
       {saved && !send.error && (
-        <Alert>Terima kasih, jawaban Anda tersimpan. Anda bisa mengubahnya kapan saja.</Alert>
+        <p className="font-display text-xl italic" role="status">
+          Terima kasih, jawaban Anda tersimpan. Anda bisa mengubahnya kapan saja.
+        </p>
       )}
       <Button onClick={() => send.mutate()} disabled={!status || send.isPending}>
         {send.isPending ? "Mengirim…" : event.rsvp ? "Perbarui jawaban" : "Kirim jawaban"}
       </Button>
-    </Card>
+    </section>
   );
 }

@@ -29,7 +29,19 @@ import {
 mkdirSync(OUT, { recursive: true });
 const { problems, check } = reporter();
 
+/** Di HP kolom cari ada di tab "Cari tamu"; buka tabnya dulu bila belum terlihat. */
+async function openSearch(page) {
+  if (await page.$("#cari-tamu")) return;
+  await page.evaluate(() => {
+    [...document.querySelectorAll("nav[aria-label=Mode] button")]
+      .find((b) => b.textContent.includes("Cari tamu"))
+      ?.click();
+  });
+  await page.waitForSelector("#cari-tamu");
+}
+
 async function checkInByCode(page, code) {
+  await openSearch(page);
   await page.evaluate(() => {
     const el = document.querySelector("#cari-tamu");
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
@@ -178,20 +190,20 @@ try {
   await adminPage.type("input[type=email]", ADMIN.email);
   await adminPage.type("input[type=password]", ADMIN.password);
   await adminPage.keyboard.press("Enter");
-  await adminPage.waitForFunction(() => location.pathname === "/admin/tamu", { timeout: 15000 });
+  await adminPage.waitForFunction(() => location.pathname === "/admin", { timeout: 15000 });
   await adminPage.goto(`${WEB}/admin/perangkat`, { waitUntil: "networkidle0" });
 
   const codes = [];
   for (const name of ["HP Gerbang A", "HP Gerbang B"]) {
     await clickButton(adminPage, "Tambah perangkat");
-    await adminPage.waitForSelector("dialog[open] input");
-    await adminPage.type("dialog[open] input", name);
+    await adminPage.waitForSelector("[role=dialog] input");
+    await adminPage.type("[role=dialog] input", name);
     await clickButton(adminPage, "Buat kode pairing");
     await adminPage.waitForSelector("[data-testid=pairing-code]");
     codes.push(await adminPage.$eval("[data-testid=pairing-code]", (e) => e.textContent.trim()));
     if (name === "HP Gerbang A") await adminPage.screenshot({ path: `${OUT}/1-pairing-code.png` });
     await clickButton(adminPage, "Selesai");
-    await adminPage.waitForFunction(() => !document.querySelector("dialog[open]"));
+    await adminPage.waitForFunction(() => !document.querySelector("[role=dialog]"));
   }
   check(
     codes.every((c) => /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(c)),
@@ -231,6 +243,7 @@ try {
   await waitText(A, "3");
   await sleep(700);
   await closeOverlay(A);
+  await openSearch(A);
   const cleared = await A.$eval("#cari-tamu", (el) => el.value);
   check(cleared === "", "kolom cari dikosongkan setelah check-in");
 
@@ -283,9 +296,10 @@ try {
   await A.screenshot({ path: `${OUT}/5-offline.png` });
 
   console.log("== walk-in saat offline");
+  await openSearch(A);
   await clickButton(A, "Tamu baru (tidak di daftar)");
-  await A.waitForSelector("dialog[open] input");
-  await A.type("dialog[open] input", "Tamu Mendadak");
+  await A.waitForSelector("[role=dialog] input");
+  await A.type("[role=dialog] input", "Tamu Mendadak");
   await clickButton(A, "Catat masuk");
   await A.waitForSelector("[role=alertdialog]");
   ov = (await overlayText(A)).toLowerCase();
@@ -362,6 +376,7 @@ try {
   console.log("== tamu walk-in dikenali perangkat lain");
   await B.goto(`${WEB}/scan`, { waitUntil: "networkidle0" });
   await sleep(6000);
+  await openSearch(B);
   await B.type("#cari-tamu", "mendadak");
   await sleep(600);
   const found = (await text(B)).toLowerCase();

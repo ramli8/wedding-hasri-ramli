@@ -1,41 +1,16 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { MIN_PASSWORD_LENGTH, type Settings } from "@wedding/shared";
 import { Download } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { PageHeader } from "../components/page-header.js";
-import { Alert } from "../components/ui/alert.js";
-import { Button, buttonStyles } from "../components/ui/button.js";
-import { Card } from "../components/ui/card.js";
-import { Field } from "../components/ui/field.js";
-import { Input } from "../components/ui/input.js";
-import { adminApi, downloads } from "../lib/admin-api.js";
-import { api } from "../lib/api.js";
-import { settingsQuery, useRefresh } from "../lib/queries.js";
+import { Alert } from "@/components/kit/alert";
+import { Button, buttonVariants } from "@/components/kit/button";
+import { Field } from "@/components/kit/field";
+import { Input } from "@/components/ui/input";
+import { adminApi, downloads } from "../../lib/admin-api.js";
+import { api } from "../../lib/api.js";
+import { useRefresh } from "../../lib/queries.js";
 
-export function SettingsPage() {
-  const settings = useQuery(settingsQuery);
-
-  return (
-    <>
-      <PageHeader
-        tag="Akun"
-        title="Pengaturan"
-        description="Data dasar pernikahan dan akun Anda."
-      />
-      {settings.isPending ? (
-        <p className="text-ink-soft">Memuat…</p>
-      ) : settings.isError ? (
-        <Alert tone="error">{settings.error.message}</Alert>
-      ) : (
-        <WeddingForm initial={settings.data} />
-      )}
-      <ExportCard />
-      <PasswordForm />
-    </>
-  );
-}
-
-function WeddingForm({ initial }: { initial: Settings | null }) {
+export function WeddingForm({ initial }: { initial: Settings | null }) {
   const refresh = useRefresh();
   const [groomName, setGroomName] = useState(initial?.groomName ?? "");
   const [brideName, setBrideName] = useState(initial?.brideName ?? "");
@@ -57,9 +32,8 @@ function WeddingForm({ initial }: { initial: Settings | null }) {
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Pernikahan</h2>
+    <div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         {!initial && (
           <Alert>
             Isi dulu data ini. Alamat situs dipakai untuk membuat link undangan tiap tamu.
@@ -108,11 +82,11 @@ function WeddingForm({ initial }: { initial: Settings | null }) {
           </Button>
         </div>
       </form>
-    </Card>
+    </div>
   );
 }
 
-function PasswordForm() {
+export function PasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [done, setDone] = useState(false);
@@ -133,10 +107,11 @@ function PasswordForm() {
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Ganti kata sandi</h2>
-        <p className="text-ink-soft">Perangkat lain yang sedang masuk akan dikeluarkan.</p>
+    <div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
+          Perangkat lain yang sedang masuk akan dikeluarkan.
+        </p>
         <Field label="Kata sandi saat ini">
           {(id) => (
             <Input
@@ -170,40 +145,39 @@ function PasswordForm() {
           </Button>
         </div>
       </form>
-    </Card>
+    </div>
   );
 }
 
-function ExportCard() {
+export function ExportCard() {
   return (
-    <Card>
-      <div className="flex max-w-lg flex-col gap-4">
-        <h2 className="font-display text-lg font-bold tracking-h3 uppercase">Cadangan & ekspor</h2>
-        <p className="text-sm text-ink-soft">
+    <div>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
           Unduh salinan data Anda kapan saja untuk arsip pribadi. Cadangan otomatis ke penyimpanan
           cloud dijalankan di server (lihat docs/backup.md); unduhan ini pelengkapnya, bukan
           penggantinya.
         </p>
         <div className="flex flex-wrap gap-3">
-          <a href={downloads.dataJson} className={buttonStyles({ variant: "secondary" })}>
+          <a href={downloads.dataJson} className={buttonVariants({ variant: "outline" })}>
             <Download className="size-4" aria-hidden />
             Semua data (JSON)
           </a>
-          <a href={downloads.mediaZip} className={buttonStyles({ variant: "secondary" })}>
+          <a href={downloads.mediaZip} className={buttonVariants({ variant: "outline" })}>
             <Download className="size-4" aria-hidden />
             Semua foto (ZIP)
           </a>
-          <a href={downloads.guestsCsv} className={buttonStyles({ variant: "secondary" })}>
+          <a href={downloads.guestsCsv} className={buttonVariants({ variant: "outline" })}>
             <Download className="size-4" aria-hidden />
             Daftar tamu (CSV)
           </a>
         </div>
-        <p className="text-xs text-ink-soft">
+        <p className="text-xs text-muted-foreground">
           Data JSON memuat semua tabel (tamu, undangan, check-in, hadiah, vendor, dan lainnya) tanpa
           akun admin dan token perangkat. ZIP foto bisa besar bila fotonya banyak; berkasnya disusun
           sambil diunduh.
         </p>
       </div>
-    </Card>
+    </div>
   );
 }

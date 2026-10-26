@@ -8,10 +8,10 @@ import {
   whatsappUrl,
 } from "@wedding/shared";
 import { useState } from "react";
-import { Alert } from "../components/ui/alert.js";
-import { Button } from "../components/ui/button.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Textarea } from "../components/ui/textarea.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
 import { formatRupiah } from "../lib/format.js";
 import { receivedGiftsQuery, settingsQuery } from "../lib/queries.js";
@@ -82,7 +82,7 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
       description={`${withPhone.length} pemberi belum dibalas dan punya nomor HP.`}
     >
       <div className="flex flex-col gap-2">
-        <label htmlFor="thanks-template" className="tag text-ink">
+        <label htmlFor="thanks-template" className="text-xs font-medium text-foreground">
           Isi pesan
         </label>
         <Textarea
@@ -92,7 +92,7 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
           value={template}
           onChange={(e) => changeTemplate(e.target.value)}
         />
-        <p className="text-xs text-ink-soft">
+        <p className="text-xs text-muted-foreground">
           Variabel: {THANKS_TEMPLATE_VARIABLES.map((v) => v.name).join(" ")}.{" "}
           <button
             type="button"
@@ -107,7 +107,7 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
             <summary className="cursor-pointer font-semibold">
               Contoh untuk {first.giverName}
             </summary>
-            <pre className="mt-2 border-2 border-ink bg-bone p-3 break-words whitespace-pre-wrap">
+            <pre className="mt-2 border bg-background p-3 break-words whitespace-pre-wrap">
               {textFor(first)}
             </pre>
           </details>
@@ -115,7 +115,7 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
       </div>
 
       {noPhone > 0 && (
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-muted-foreground">
           {noPhone} pemberi lain belum dibalas tetapi tidak punya nomor HP (bukan tamu terdaftar
           atau hanya Instagram); balas manual lalu tandai "Sudah dibalas" di daftar.
         </p>
@@ -123,21 +123,21 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
       {thank.error && <Alert tone="error">{thank.error.message}</Alert>}
 
       {withPhone.length === 0 ? (
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-muted-foreground">
           {pending.length === 0
             ? "Semua pemberi sudah dibalas."
             : "Tidak ada pemberi yang bisa dikirimi lewat WhatsApp."}
         </p>
       ) : (
-        <ul className="flex max-h-80 flex-col overflow-y-auto border-2 border-ink">
+        <ul className="flex max-h-80 flex-col overflow-y-auto border">
           {withPhone.map((gift) => (
             <li
               key={gift.id}
-              className="flex flex-wrap items-center justify-between gap-2 border-b border-ink p-3 last:border-b-0"
+              className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3 last:border-b-0"
             >
               <div className="min-w-0">
                 <p className="font-semibold break-words">{gift.giverName}</p>
-                <p className="text-xs text-ink-soft">
+                <p className="text-xs text-muted-foreground">
                   {gift.kind === "barang"
                     ? gift.itemDescription
                     : gift.amount !== null && formatRupiah(gift.amount)}

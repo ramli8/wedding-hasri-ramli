@@ -2,9 +2,9 @@ import { useMutation } from "@tanstack/react-query";
 import { MAX_UPLOAD_MB, type MediaRef } from "@wedding/shared";
 import { ImagePlus, Trash2 } from "lucide-react";
 import { useId, useRef } from "react";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
 import { adminApi } from "../lib/admin-api.js";
-import { Alert } from "./ui/alert.js";
-import { Button } from "./ui/button.js";
 
 /**
  * Pilih dan unggah satu foto. Berkas dikirim langsung ke server dengan resolusi asli; yang
@@ -33,11 +33,11 @@ export function ImageField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="tag text-ink">
+      <label htmlFor={id} className="text-sm leading-none font-medium">
         {label}
       </label>
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden border-2 border-ink bg-bone">
+      <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start">
+        <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
           {value ? (
             <img
               src={value.thumb}
@@ -47,10 +47,10 @@ export function ImageField({
               className="size-full object-cover"
             />
           ) : (
-            <ImagePlus className="size-8 text-ink-soft" aria-hidden />
+            <ImagePlus className="size-8 text-muted-foreground" aria-hidden />
           )}
         </div>
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex min-w-0 flex-col items-start gap-2">
           <input
             ref={input}
             id={id}
@@ -66,7 +66,7 @@ export function ImageField({
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() => input.current?.click()}
               disabled={upload.isPending}
             >
@@ -80,13 +80,13 @@ export function ImageField({
               </Button>
             )}
           </div>
-          <p className="text-xs text-ink-soft">
+          <p className="text-xs text-muted-foreground">
             JPEG, PNG, atau WebP, maksimal {MAX_UPLOAD_MB} MB. Resolusi dan detail foto
             dipertahankan.
           </p>
           {recommendation && (
-            <p className="max-w-prose text-xs font-semibold text-ink">
-              Disarankan: {recommendation}
+            <p className="max-w-prose text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Disarankan:</span> {recommendation}
             </p>
           )}
         </div>

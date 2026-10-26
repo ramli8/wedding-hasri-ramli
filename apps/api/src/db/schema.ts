@@ -48,6 +48,10 @@ export const settings = pgTable(
     groomName: text().notNull(),
     brideName: text().notNull(),
     publicBaseUrl: text().notNull(),
+    // Pratinjau tautan (Open Graph) saat undangan dibagikan ke WhatsApp atau Instagram.
+    seoTitle: text(),
+    seoDescription: text(),
+    seoImageMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("settings_singleton", sql`${table.id} = 1`)],

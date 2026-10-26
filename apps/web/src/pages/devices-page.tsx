@@ -1,23 +1,28 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { Device } from "@wedding/shared";
-import { Plus } from "lucide-react";
+import { Ban, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { PageHeader } from "../components/page-header.js";
-import { Alert } from "../components/ui/alert.js";
-import { Badge } from "../components/ui/badge.js";
-import { Button } from "../components/ui/button.js";
-import { Card } from "../components/ui/card.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Field } from "../components/ui/field.js";
-import { Input } from "../components/ui/input.js";
+import { DataTableColumnHeader } from "@/components/data-table/column-header";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { selectColumn } from "@/components/data-table/select-column";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../lib/admin-api.js";
 import { devicesQuery, useRefresh } from "../lib/queries.js";
 import { formatAgo } from "../lib/scan/format.js";
 
 const STATUS = {
-  pending: { label: "Belum dipasang", variant: "pill" },
-  active: { label: "Aktif", variant: "pillAcid" },
-  revoked: { label: "Dicabut", variant: "pill" },
+  pending: { label: "Belum dipasang", variant: "outline" },
+  active: { label: "Aktif", variant: "secondary" },
+  revoked: { label: "Dicabut", variant: "outline" },
 } as const;
 
 export function DevicesPage() {
@@ -29,10 +34,86 @@ export function DevicesPage() {
   const [revoking, setRevoking] = useState<Device | null>(null);
   const [deleting, setDeleting] = useState<Device | null>(null);
 
+  const columns: ColumnDef<Device, unknown>[] = [
+    selectColumn<Device>(),
+    {
+      id: "nama",
+      accessorFn: (device) => device.name,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
+      cell: ({ row }) => <span className="font-semibold">{row.original.name}</span>,
+    },
+    {
+      id: "status",
+      accessorFn: (device) => device.status,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const device = row.original;
+        return (
+          <div>
+            <Badge variant={STATUS[device.status].variant}>{STATUS[device.status].label}</Badge>
+            {device.pairingExpiresAt && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                kode berlaku sampai {new Date(device.pairingExpiresAt).toLocaleString("id-ID")}
+              </p>
+            )}
+          </div>
+        );
+      },
+      filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
+    },
+    {
+      id: "sinkron",
+      accessorFn: (device) => device.lastSyncAt ?? "",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Terakhir sinkron" />,
+      cell: ({ row }) =>
+        row.original.lastSyncAt ? formatAgo(Date.parse(row.original.lastSyncAt)) : "—",
+    },
+    {
+      id: "antrean",
+      accessorFn: (device) => (device.status === "active" ? device.pendingOutbox : -1),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Antrean" />,
+      cell: ({ row }) => (row.original.status === "active" ? row.original.pendingOutbox : "—"),
+    },
+    {
+      id: "versi",
+      accessorFn: (device) => device.appVersion ?? "",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Versi" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{row.original.appVersion ?? "—"}</span>
+      ),
+    },
+    {
+      id: "aksi",
+      cell: ({ row }) => {
+        const device = row.original;
+        return (
+          <DataTableRowActions
+            actions={[
+              device.status !== "revoked"
+                ? {
+                    label: "Cabut",
+                    icon: <Ban />,
+                    destructive: true,
+                    onSelect: () => setRevoking(device),
+                  }
+                : {
+                    label: "Hapus",
+                    icon: <Trash2 />,
+                    destructive: true,
+                    onSelect: () => setDeleting(device),
+                  },
+            ]}
+          />
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
   return (
     <>
       <PageHeader
-        tag="Perangkat"
         title="Perangkat penjaga"
         description="HP atau laptop yang dipakai di pintu. Tiap perangkat dipasangkan dengan kode sekali pakai dan bisa dicabut kapan saja."
         actions={
@@ -43,72 +124,30 @@ export function DevicesPage() {
         }
       />
 
-      {devices.isPending ? (
-        <p className="text-ink-soft">Memuat…</p>
-      ) : devices.isError ? (
-        <Alert tone="error">{devices.error.message}</Alert>
-      ) : devices.data.length === 0 ? (
-        <Card>
-          <p className="text-ink-soft">
-            Belum ada perangkat. Tambahkan satu per HP atau laptop yang akan dipakai di pintu.
-          </p>
-        </Card>
-      ) : (
-        <div className="overflow-x-auto border-2 border-ink bg-paper shadow-hard">
-          <table className="table-cards w-full text-left text-sm">
-            <thead className="tag border-b-2 border-ink text-ink-soft">
-              <tr>
-                <th className="px-4 py-3">Perangkat</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Terakhir sinkron</th>
-                <th className="px-4 py-3">Antrean</th>
-                <th className="px-4 py-3">Versi</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bone-2">
-              {devices.data.map((device) => (
-                <tr key={device.id}>
-                  <td className="px-4 py-3 font-semibold">{device.name}</td>
-                  <td data-label="Status" className="px-4 py-3">
-                    <Badge variant={STATUS[device.status].variant}>
-                      {STATUS[device.status].label}
-                    </Badge>
-                    {device.pairingExpiresAt && (
-                      <p className="mt-1 text-xs text-ink-soft">
-                        kode berlaku sampai{" "}
-                        {new Date(device.pairingExpiresAt).toLocaleString("id-ID")}
-                      </p>
-                    )}
-                  </td>
-                  <td data-label="Terakhir sinkron" className="px-4 py-3">
-                    {device.lastSyncAt ? formatAgo(Date.parse(device.lastSyncAt)) : "—"}
-                  </td>
-                  <td data-label="Antrean" className="px-4 py-3">
-                    {device.status === "active" ? device.pendingOutbox : "—"}
-                  </td>
-                  <td data-label="Versi" className="px-4 py-3 font-mono text-xs">
-                    {device.appVersion ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end max-md:justify-start">
-                      {device.status !== "revoked" ? (
-                        <Button size="sm" variant="destructive" onClick={() => setRevoking(device)}>
-                          Cabut
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="secondary" onClick={() => setDeleting(device)}>
-                          Hapus
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {devices.isError && <Alert tone="error">{devices.error.message}</Alert>}
+      <DataTable
+        columns={columns}
+        data={devices.data ?? []}
+        getRowId={(device) => device.id}
+        searchPlaceholder="Cari perangkat"
+        searchKey="nama"
+        emptyText={
+          devices.isPending
+            ? "Memuat…"
+            : "Belum ada perangkat. Tambahkan satu per HP atau laptop yang akan dipakai di pintu."
+        }
+        filters={[
+          {
+            columnId: "status",
+            title: "Status",
+            options: [
+              { label: STATUS.pending.label, value: "pending" },
+              { label: STATUS.active.label, value: "active" },
+              { label: STATUS.revoked.label, value: "revoked" },
+            ],
+          },
+        ]}
+      />
 
       <CreateDialog
         open={creating}
@@ -173,7 +212,7 @@ function CreateDialog({
         </Field>
         {create.error && <Alert tone="error">{create.error.message}</Alert>}
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="outline" onClick={onClose}>
             Batal
           </Button>
           <Button type="submit" disabled={create.isPending || !name.trim()}>
@@ -201,7 +240,7 @@ function CodeDialog({
             dan masukkan kode ini. Lakukan saat internet masih menyala.
           </p>
           <p
-            className="border-2 border-ink bg-acid py-4 text-center font-mono text-4xl font-bold tracking-label"
+            className="border bg-accent py-4 text-center font-mono text-4xl font-bold"
             data-testid="pairing-code"
           >
             {code.code}
@@ -240,7 +279,7 @@ function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () 
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button
@@ -278,7 +317,7 @@ function RevokeDialog({ device, onClose }: { device: Device | null; onClose: () 
           </p>
           {revoke.error && <Alert tone="error">{revoke.error.message}</Alert>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

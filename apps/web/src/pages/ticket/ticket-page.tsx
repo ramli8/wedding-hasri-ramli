@@ -1,14 +1,12 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
-import { BookHeart, CalendarPlus, MapPin, Ticket } from "lucide-react";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Card } from "../../components/ui/card.js";
+import { formatEventDate } from "@wedding/shared";
+import { Alert } from "../../components/guest-ui/alert.js";
+import { Badge } from "../../components/guest-ui/badge.js";
 import { ApiError } from "../../lib/api.js";
-import { buildIcs, downloadIcs, icsFilename } from "../../lib/ics.js";
 import { publicApi } from "../../lib/public-api.js";
 import { loadTicket, saveTicket } from "../../lib/ticket-cache.js";
+import { Barcode, MagContainer, MagTitle } from "./mag.js";
 import { RsvpCard } from "./rsvp-card.js";
 import { TicketProblem } from "./ticket-problem.js";
 import { TicketQr } from "./ticket-qr.js";
@@ -33,87 +31,7 @@ export const ticketQuery = (code: string) =>
     },
   });
 
-function EventCard({ event }: { event: TicketEvent }) {
-  const time = event.session
-    ? { label: "Sesi Anda", value: formatTimeRange(event.session.startsAt, event.session.endsAt) }
-    : event.startsAt && event.endsAt
-      ? { label: "Waktu", value: formatTimeRange(event.startsAt, event.endsAt) }
-      : null;
-
-  // Jam sesi kelompok tamu bila ada; kalau tidak, jam acara.
-  const calendarStart = event.session?.startsAt ?? event.startsAt;
-  const calendarEnd = event.session?.endsAt ?? event.endsAt;
-  const location = [event.venueName, event.address].filter(Boolean).join(", ");
-
-  function addToCalendar() {
-    if (!calendarStart) return;
-    downloadIcs(
-      icsFilename(event.name),
-      buildIcs({
-        uid: `${event.id}@hasri-ramli`,
-        title: event.name,
-        startsAt: calendarStart,
-        endsAt: calendarEnd,
-        location,
-        description: event.mapsUrl ? `Peta: ${event.mapsUrl}` : null,
-        url: event.mapsUrl,
-      }),
-    );
-  }
-
-  return (
-    <Card className="flex flex-col gap-3">
-      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">{event.name}</h2>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        {event.startsAt && (
-          <>
-            <dt className="text-ink-soft">Tanggal</dt>
-            <dd>{formatEventDate(event.startsAt)}</dd>
-          </>
-        )}
-        {time && (
-          <>
-            <dt className="text-ink-soft">{time.label}</dt>
-            <dd className="font-semibold">{time.value}</dd>
-          </>
-        )}
-        {event.venueName && (
-          <>
-            <dt className="text-ink-soft">Tempat</dt>
-            <dd>{event.venueName}</dd>
-          </>
-        )}
-        {event.address && (
-          <>
-            <dt className="text-ink-soft">Alamat</dt>
-            <dd>{event.address}</dd>
-          </>
-        )}
-      </dl>
-      {calendarStart && (
-        <button
-          type="button"
-          onClick={addToCalendar}
-          className="inline-flex w-fit items-center gap-2 border-2 border-ink bg-paper px-3 py-2 text-sm font-semibold hover:bg-acid max-md:min-h-11"
-        >
-          <CalendarPlus className="size-4" aria-hidden /> Tambah ke kalender
-        </button>
-      )}
-      {event.mapsUrl && (
-        <a
-          href={event.mapsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex w-fit items-center gap-2 border-2 border-ink bg-paper px-3 py-2 text-sm font-semibold hover:bg-acid"
-        >
-          <MapPin className="size-4" aria-hidden /> Buka peta
-        </a>
-      )}
-    </Card>
-  );
-}
-
-/** Halaman pribadi tamu: tiket QR, info acara, dan konfirmasi kehadiran. */
+/** Halaman pribadi tamu: hanya tiket QR dan konfirmasi kehadiran, dalam tata letak majalah. */
 export function TicketPage() {
   const { code = "" } = useParams({ strict: false });
   const ticket = useQuery(ticketQuery(code));
@@ -121,136 +39,180 @@ export function TicketPage() {
   if (ticket.isPending) {
     return (
       <Shell>
-        <p className="text-center text-ink-soft">Memuat undangan…</p>
+        <Narrow>
+          <p className="text-center text-ink-soft">Memuat undangan…</p>
+        </Narrow>
       </Shell>
     );
   }
   if (ticket.isError) {
     return (
       <Shell>
-        <TicketProblem error={ticket.error} code={code} onRetry={() => void ticket.refetch()} />
+        <Narrow>
+          <TicketProblem error={ticket.error} code={code} onRetry={() => void ticket.refetch()} />
+        </Narrow>
       </Shell>
     );
   }
 
   const { data, offline } = ticket.data;
   const hasQr = data.events.some((e) => e.checkinEnabled);
-  const couple = data.couple ? `${data.couple.brideName} & ${data.couple.groomName}` : null;
+  const rsvpEvents = data.events.filter((event) => event.hasRsvp);
+  const names = data.couple ? [data.couple.brideName, data.couple.groomName] : ["Undangan"];
+  const firstStart = data.events
+    .map((e) => e.startsAt)
+    .filter((value): value is string => !!value)
+    .sort()[0];
 
   return (
-    <Shell couple={couple} tabs={{ code: data.guest.code, active: "tiket" }}>
-      {offline && (
-        <Alert>
-          Anda sedang offline. Menampilkan salinan terakhir; tiket QR tetap bisa dipakai.
-        </Alert>
-      )}
-
-      <Card tone="acid" className="flex flex-col gap-2">
-        <p className="tag">Undangan untuk</p>
-        <p className="font-display text-3xl leading-tight font-bold tracking-h1 break-words">
-          {data.guest.displayName}
-        </p>
-        {data.guest.groupName && (
-          <Badge variant="pill" className="w-fit">
-            {data.guest.groupName}
-          </Badge>
-        )}
-      </Card>
-
-      {hasQr && (
-        <Card className="flex flex-col items-center gap-4 text-center">
-          <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Tiket masuk</h2>
-          <p className="text-sm text-ink-soft">
-            Tunjukkan QR ini kepada petugas di pintu masuk. Simpan gambarnya agar tetap bisa dibuka
-            tanpa sinyal.
-          </p>
-          <TicketQr code={data.guest.code} />
-          {data.guest.isRombongan && (
-            <p className="text-sm text-ink-soft">
-              Satu QR untuk seluruh rombongan. Petugas akan menanyakan jumlah orang.
+    <Shell couple={names.join(" & ")} tabs={{ code: data.guest.code, active: "tiket" }}>
+      <section className="grid lg:min-h-[calc(100dvh-3.25rem)] lg:grid-cols-[1.1fr_1fr]">
+        <div className="flex flex-col justify-between gap-14 bg-ink px-5 pt-8 pb-10 text-paper md:px-10 lg:px-16 lg:py-14">
+          <div className="tag flex justify-between gap-4">
+            <span>Undangan pernikahan</span>
+            {firstStart && <span>{formatEventDate(firstStart)}</span>}
+          </div>
+          <h1 className="font-display text-[clamp(4.5rem,18vw,12rem)] leading-[0.8] font-semibold tracking-h1 break-words uppercase">
+            {names[0]}
+            {names[1] && (
+              <>
+                <em className="my-3 block text-[0.4em] font-normal tracking-normal text-paper/60 normal-case italic">
+                  dan
+                </em>
+                {names[1]}
+              </>
+            )}
+          </h1>
+          <div className="flex flex-col gap-3 border-t border-paper/40 pt-5">
+            <p className="tag text-paper/60">Kepada Yth.</p>
+            <p className="font-display text-4xl leading-tight font-medium break-words md:text-5xl">
+              {data.guest.displayName}
             </p>
+            {data.guest.groupName && (
+              <Badge variant="pill" className="w-fit border-paper bg-transparent text-paper">
+                {data.guest.groupName}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-14 px-5 py-10 md:px-10 lg:justify-center lg:px-16 lg:py-14">
+          {offline && (
+            <Alert>
+              Anda sedang offline. Menampilkan salinan terakhir; tiket QR tetap bisa dipakai.
+            </Alert>
           )}
-        </Card>
-      )}
 
-      {data.events.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+          {hasQr && (
+            <div className="flex flex-col gap-5">
+              <MagTitle>Tiket masuk</MagTitle>
+              <p className="max-w-md text-ink-soft">
+                Tunjukkan QR ini kepada petugas di pintu masuk. Simpan gambarnya agar tetap bisa
+                dibuka tanpa sinyal.
+              </p>
+              <TicketQr code={data.guest.code} />
+              <div className="mx-auto flex w-full max-w-xs flex-col gap-1">
+                <Barcode value={data.guest.code} />
+                <p className="tag text-center text-ink-soft">Tiket {data.guest.code}</p>
+              </div>
+              {data.guest.isRombongan && (
+                <p className="text-sm text-ink-soft">
+                  Satu QR untuk seluruh rombongan. Petugas akan menanyakan jumlah orang.
+                </p>
+              )}
+            </div>
+          )}
 
-      {data.events
-        .filter((event) => event.hasRsvp)
-        .map((event) => (
-          <RsvpCard
-            key={event.id}
-            code={data.guest.code}
-            event={event}
-            isRombongan={data.guest.isRombongan}
-          />
-        ))}
+          {rsvpEvents.map((event) => (
+            <RsvpCard
+              key={event.id}
+              code={data.guest.code}
+              event={event}
+              isRombongan={data.guest.isRombongan}
+            />
+          ))}
+        </div>
+      </section>
     </Shell>
   );
 }
 
+/** Kolom sempit untuk keadaan memuat dan galat, di tengah layar. */
+export function Narrow({ children }: { children: React.ReactNode }) {
+  return <MagContainer className="max-w-xl py-16">{children}</MagContainer>;
+}
+
 type GuestTabs = { code: string; active: "tiket" | "undangan" };
 
-const tabClass =
-  "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-t-4 border-transparent font-display text-[11px] font-bold tracking-button uppercase";
+const links = [
+  { to: "/u/$code", key: "tiket", label: "Tiket" },
+  { to: "/u/$code/undangan", key: "undangan", label: "Undangan" },
+] as const;
 
-/** Bilah bawah seperti aplikasi: pindah antara tiket dan halaman cerita undangan. */
+/** Bilah bawah di HP, seperti aplikasi: pindah antara tiket dan halaman undangan. */
 function GuestTabBar({ code, active }: GuestTabs) {
   return (
     <nav
       aria-label="Halaman undangan"
-      className="fixed inset-x-0 bottom-0 z-30 border-t-[3px] border-ink bg-bone pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-ink bg-bone pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <div className="mx-auto flex max-w-xl">
-        <Link
-          to="/u/$code"
-          params={{ code }}
-          aria-current={active === "tiket" ? "page" : undefined}
-          className={`${tabClass} ${active === "tiket" ? "border-ink bg-acid" : ""}`}
-        >
-          <Ticket className="size-5" aria-hidden />
-          Tiket
-        </Link>
-        <Link
-          to="/u/$code/undangan"
-          params={{ code }}
-          aria-current={active === "undangan" ? "page" : undefined}
-          className={`${tabClass} ${active === "undangan" ? "border-ink bg-acid" : ""}`}
-        >
-          <BookHeart className="size-5" aria-hidden />
-          Undangan
-        </Link>
+      <div className="flex">
+        {links.map((link) => (
+          <Link
+            key={link.key}
+            to={link.to}
+            params={{ code }}
+            aria-current={active === link.key ? "page" : undefined}
+            className={`tag flex min-h-14 flex-1 items-center justify-center ${
+              active === link.key ? "bg-ink text-paper" : ""
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
       </div>
     </nav>
   );
 }
 
+/** Kerangka halaman tamu: bilah atas tipis (nama mempelai dan tautan) dan isi layar penuh. */
 export function Shell({
   couple,
   tabs,
+  theme,
   children,
 }: {
   couple?: string | null;
   tabs?: GuestTabs;
+  /** "vin": edisi majalah vintage untuk halaman undangan (lihat .vin di styles.css). */
+  theme?: "vin";
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-bone">
-      <main
-        className={`mx-auto flex w-full max-w-xl flex-col gap-5 px-4 pt-8 ${tabs ? "pb-28" : "pb-8"}`}
-      >
-        <header className="flex flex-col items-center gap-2 text-center">
-          <Badge variant="tag">Undangan pernikahan</Badge>
-          {couple && (
-            <h1 className="font-display text-4xl leading-none font-bold tracking-h1 uppercase">
-              {couple}
-            </h1>
+    <div className={`mag ${theme ?? ""} min-h-dvh`}>
+      <header className="sticky top-0 z-20 border-b border-ink bg-bone/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+        <MagContainer className="flex h-13 items-center justify-between gap-4">
+          <span className="tag truncate">{couple ?? "Undangan pernikahan"}</span>
+          {tabs && (
+            <nav aria-label="Halaman undangan" className="hidden gap-8 md:flex">
+              {links.map((link) => (
+                <Link
+                  key={link.key}
+                  to={link.to}
+                  params={{ code: tabs.code }}
+                  aria-current={tabs.active === link.key ? "page" : undefined}
+                  className={`tag underline-offset-8 ${
+                    tabs.active === link.key ? "underline decoration-2" : "hover:underline"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           )}
-        </header>
-        {children}
-      </main>
+        </MagContainer>
+      </header>
+      <main className={tabs ? "pb-20 md:pb-0" : ""}>{children}</main>
       {tabs && <GuestTabBar {...tabs} />}
     </div>
   );

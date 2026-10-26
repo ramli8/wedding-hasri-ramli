@@ -1,36 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { InvitationCover, InvitationSections } from "./invitation-sections.js";
-import { Shell, ticketQuery } from "./ticket-page.js";
-import { TicketProblem } from "./ticket-problem.js";
+import { IssueCover } from "./issue/cover.js";
+import { Iklan, Kolofon, Kupon, Surat, Tanya } from "./issue/extras.js";
+import { Foto } from "./issue/gallery.js";
+import { Agenda, Kisah, Profil, Redaksi } from "./issue/sections.js";
+import { Tiket } from "./issue/tiket.js";
 
-/** Halaman cerita untuk tamu: perkenalan mempelai, linimasa, dan buku ucapan. */
+/**
+ * Satu halaman penuh untuk tamu: sebuah "edisi" majalah vintage yang memuat sampul, agenda, tiket
+ * QR dan RSVP, profil, kisah, galeri, amplop, wishlist, tanya jawab, dan ucapan. Tanpa bilah
+ * navigasi; daftar isi di sampul menjadi penunjuk arah. Isinya masih contoh statis
+ * (issue/content.ts), belum dari database.
+ */
 export function InvitationPage() {
   const { code = "" } = useParams({ strict: false });
-  const ticket = useQuery(ticketQuery(code));
-
-  if (ticket.isPending) {
-    return (
-      <Shell>
-        <p className="text-center text-ink-soft">Memuat…</p>
-      </Shell>
-    );
-  }
-  if (ticket.isError) {
-    return (
-      <Shell>
-        <TicketProblem error={ticket.error} code={code} onRetry={() => void ticket.refetch()} />
-      </Shell>
-    );
-  }
-
-  const { data } = ticket.data;
-  const couple = data.couple ? `${data.couple.brideName} & ${data.couple.groomName}` : null;
-
   return (
-    <Shell couple={couple} tabs={{ code: data.guest.code, active: "undangan" }}>
-      <InvitationCover />
-      <InvitationSections code={data.guest.code} guestName={data.guest.displayName} />
-    </Shell>
+    <div className="mag vin flex min-h-dvh flex-col gap-2 md:gap-3">
+      <IssueCover code={code} />
+      <Redaksi />
+      <Agenda />
+      <Tiket code={code} />
+      <Profil />
+      <Kisah />
+      <Foto />
+      <Kupon />
+      <Iklan />
+      <Tanya />
+      <Surat />
+      <Kolofon code={code} />
+    </div>
   );
 }

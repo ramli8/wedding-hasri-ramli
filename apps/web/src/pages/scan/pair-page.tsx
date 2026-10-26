@@ -3,11 +3,11 @@ import { PAIRING_CODE_LENGTH } from "@wedding/shared";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowRight } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Field } from "@/components/kit/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { getMeta, pendingCount, resetDevice, setMeta } from "../../lib/scan/db.js";
 import { deviceApi } from "../../lib/scan/device-api.js";
 import { syncEngine } from "../../lib/scan/sync.js";
@@ -63,65 +63,69 @@ export function PairPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 py-10">
-      <Card shadow="lg" className="flex flex-col gap-5">
-        <header className="flex flex-col gap-2">
-          <span className="tag grid size-12 place-items-center border-2 border-ink bg-acid">
+    <main className="grid min-h-dvh items-center justify-center bg-muted/30 px-4">
+      <div className="mx-auto flex w-full flex-col justify-center gap-2 py-8">
+        <div className="mb-4 flex items-center justify-center">
+          <span className="me-2 grid size-6 place-items-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
             H&amp;R
           </span>
-          <h1 className="font-display text-3xl font-bold tracking-h1 uppercase">
-            Pasang perangkat
-          </h1>
-          <p className="text-ink-soft">
-            Minta admin membuat perangkat di menu Perangkat, lalu masukkan kode 8 karakternya.
-            Lakukan saat internet masih menyala.
-          </p>
-        </header>
-
-        {auth ? (
-          <div className="flex flex-col gap-3">
-            <Alert>Perangkat ini sudah terpasang sebagai “{auth.deviceName}”.</Alert>
-            {error && <Alert tone="error">{error}</Alert>}
-            <Button onClick={() => void navigate({ to: "/scan" })}>Buka scanner</Button>
-            <Button variant="destructive" onClick={() => void release()}>
-              Lepas perangkat ini
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <Field label="Kode pairing">
-              {(id) => (
-                <Input
-                  id={id}
-                  required
-                  autoFocus
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  spellCheck={false}
-                  inputMode="text"
-                  className="text-center font-mono text-2xl tracking-label uppercase"
-                  placeholder="XXXX-XXXX"
-                  value={code}
-                  onChange={(e) => setCode(formatCode(e.target.value))}
-                />
-              )}
-            </Field>
-            {error && <Alert tone="error">{error}</Alert>}
-            <Button
-              type="submit"
-              disabled={busy || code.replace("-", "").length < PAIRING_CODE_LENGTH}
-            >
-              {busy ? (
-                "Memasangkan…"
-              ) : (
-                <>
-                  Pasangkan <ArrowRight className="size-4" aria-hidden />
-                </>
-              )}
-            </Button>
-          </form>
-        )}
-      </Card>
+          <h1 className="text-xl font-medium">Scanner tamu</h1>
+        </div>
+        <Card className="w-full max-w-sm gap-4 self-center">
+          <CardHeader>
+            <CardTitle className="text-lg tracking-tight">Pasang perangkat</CardTitle>
+            <CardDescription>
+              Minta admin membuat perangkat di menu Perangkat, lalu masukkan kode 8 karakternya.
+              Lakukan saat internet masih menyala.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            {auth ? (
+              <div className="flex flex-col gap-3">
+                <Alert>Perangkat ini sudah terpasang sebagai “{auth.deviceName}”.</Alert>
+                {error && <Alert tone="error">{error}</Alert>}
+                <Button onClick={() => void navigate({ to: "/scan" })}>Buka scanner</Button>
+                <Button variant="destructive" onClick={() => void release()}>
+                  Lepas perangkat ini
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={onSubmit} className="flex flex-col gap-4">
+                <Field label="Kode pairing">
+                  {(id) => (
+                    <Input
+                      id={id}
+                      required
+                      autoFocus
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      inputMode="text"
+                      className="text-center font-mono text-2xl"
+                      placeholder="XXXX-XXXX"
+                      value={code}
+                      onChange={(e) => setCode(formatCode(e.target.value))}
+                    />
+                  )}
+                </Field>
+                {error && <Alert tone="error">{error}</Alert>}
+                <Button
+                  type="submit"
+                  disabled={busy || code.replace("-", "").length < PAIRING_CODE_LENGTH}
+                >
+                  {busy ? (
+                    "Memasangkan…"
+                  ) : (
+                    <>
+                      Pasangkan <ArrowRight className="size-4" aria-hidden />
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }

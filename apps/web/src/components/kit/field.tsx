@@ -1,4 +1,5 @@
 import { type ReactNode, useId } from "react";
+import { Label } from "@/components/ui/label";
 
 type FieldProps = {
   label: string;
@@ -7,15 +8,14 @@ type FieldProps = {
   children: (id: string) => ReactNode;
 };
 
+/** FormItem shadcn-admin: grid gap-2, Label, isian, lalu deskripsi `text-sm text-muted-foreground`. */
 export function Field({ label, hint, children }: FieldProps) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="tag text-ink">
-        {label}
-      </label>
+    <div className="grid content-start gap-2">
+      <Label htmlFor={id}>{label}</Label>
       {children(id)}
-      {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
 }

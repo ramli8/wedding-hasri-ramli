@@ -7,7 +7,27 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/drizzle", "!**/pnpm-lock.yaml", "!docs"]
+    "includes": [
+      "**",
+      "!**/drizzle",
+      "!**/pnpm-lock.yaml",
+      "!docs",
+      "!apps/web/src/components/ui",
+      "!apps/web/src/components/data-table/bulk-actions.tsx",
+      "!apps/web/src/components/data-table/column-header.tsx",
+      "!apps/web/src/components/data-table/pagination.tsx",
+      "!apps/web/src/components/data-table/toolbar.tsx",
+      "!apps/web/src/components/data-table/view-options.tsx",
+      "!apps/web/src/components/layout/nav-group.tsx",
+      "!apps/web/src/lib/utils.ts",
+      "!apps/web/src/hooks/use-mobile.tsx",
+      "!apps/web/src/assets/custom",
+      "!apps/web/src/components/config-drawer.tsx",
+      "!apps/web/src/context/direction-provider.tsx",
+      "!apps/web/src/context/layout-provider.tsx",
+      "!apps/web/src/context/theme-provider.tsx",
+      "!apps/web/src/lib/cookies.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

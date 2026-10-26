@@ -2,10 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowLeft, CircleAlert, CircleCheck, CircleX, RefreshCw } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { PageHeader } from "../../components/page-header.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button, buttonStyles } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
+import { Button, buttonVariants } from "@/components/kit/button";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { applyUpdate, usePwaState } from "../../lib/pwa.js";
 import { clockOffset } from "../../lib/scan/clock.js";
 import { db, getMeta, pendingCount } from "../../lib/scan/db.js";
@@ -20,7 +20,7 @@ type Check = { id: string; label: string; state: State; detail: string; action?:
 const ICON = {
   ok: <CircleCheck className="size-5 shrink-0" aria-label="Baik" />,
   warn: <CircleAlert className="size-5 shrink-0" aria-label="Perlu perhatian" />,
-  fail: <CircleX className="size-5 shrink-0 text-alert" aria-label="Bermasalah" />,
+  fail: <CircleX className="size-5 shrink-0 text-destructive" aria-label="Bermasalah" />,
 };
 
 const STALE_SYNC_MS = 10 * 60 * 1000;
@@ -157,7 +157,7 @@ export function ReadinessPage() {
       action: persisted ? null : (
         <Button
           size="sm"
-          variant="secondary"
+          variant="outline"
           onClick={async () => {
             await navigator.storage?.persist?.();
             await refreshPersisted();
@@ -180,7 +180,7 @@ export function ReadinessPage() {
       action: (
         <Button
           size="sm"
-          variant="secondary"
+          variant="outline"
           onClick={() => void testQr()}
           disabled={qr === "running"}
         >
@@ -194,7 +194,7 @@ export function ReadinessPage() {
       state: camera === null ? "warn" : camera === "ok" ? "ok" : "fail",
       detail: camera === null ? "Belum dites" : camera === "ok" ? "Kamera bisa dibuka" : camera,
       action: (
-        <Button size="sm" variant="secondary" onClick={async () => setCamera(await testCamera())}>
+        <Button size="sm" variant="outline" onClick={async () => setCamera(await testCamera())}>
           Tes kamera
         </Button>
       ),
@@ -226,18 +226,15 @@ export function ReadinessPage() {
         title="Uji kesiapan"
         description="Jalankan di H-1 pada setiap perangkat, lalu sekali lagi sebelum pintu dibuka."
         actions={
-          <Link to="/scan" className={buttonStyles({ variant: "secondary" })}>
+          <Link to="/scan" className={buttonVariants({ variant: "outline" })}>
             <ArrowLeft className="size-4" aria-hidden /> Scanner
           </Link>
         }
       />
 
-      <Card
-        tone={problems.length === 0 ? "acid" : "paper"}
-        className="flex items-center justify-between gap-3"
-      >
+      <Card className="px-6 flex items-center justify-between gap-3">
         <div>
-          <p className="tag">
+          <p className="text-xs font-medium">
             {problems.length === 0 ? "Siap" : failed ? "Belum siap" : "Perlu perhatian"}
           </p>
           <p className="text-sm">
@@ -255,14 +252,14 @@ export function ReadinessPage() {
       <ul className="flex flex-col gap-3">
         {checks.map((check) => (
           <li key={check.id}>
-            <Card className="flex items-start gap-3 p-3" shadow="none">
+            <Card className="flex items-start gap-3 p-3">
               {ICON[check.state]}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{check.label}</p>
-                <p className="text-sm break-words text-ink-soft">{check.detail}</p>
+                <p className="text-sm break-words text-muted-foreground">{check.detail}</p>
               </div>
               {check.action}
-              <Badge variant={check.state === "ok" ? "pillAcid" : "pill"}>
+              <Badge variant={check.state === "ok" ? "secondary" : "outline"}>
                 {check.state === "ok" ? "OK" : check.state === "warn" ? "Cek" : "Gagal"}
               </Badge>
             </Card>

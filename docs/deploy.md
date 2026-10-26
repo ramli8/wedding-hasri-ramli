@@ -84,3 +84,15 @@ sehingga cukup besar) dan `<id>/thumb.webp`. Caddy meneruskan `/media/*` ke API,
 
 - Backup `pg_dump` terjadwal ke Cloudflare R2 dan uji restore. Dikerjakan begitu VPS dan akun R2 siap.
 - Deploy otomatis dari CI (saat ini manual).
+
+## Pratinjau tautan (WhatsApp, Instagram)
+
+Crawler WhatsApp dan Instagram tidak menjalankan JavaScript, jadi tag Open Graph harus ada di HTML.
+Karena itu `/u/*` diteruskan Caddy ke API (`deploy/web.Caddyfile`), dan API menyajikan `index.html`
+aplikasi web yang sudah disisipi judul, deskripsi, dan gambar milik tamu itu. Variabel
+`WEB_INDEX_URL` (di `deploy/stack.compose.yaml`: `http://web/index.html`) memberi tahu API dari mana
+mengambil `index.html`. Isi judul, deskripsi, dan gambar di admin: Pengaturan → Pratinjau tautan.
+
+Tes setelah deploy: `curl -s https://DOMAIN/u/KODE | grep og:` harus menampilkan tag `og:title`,
+`og:description`, dan `og:image`. WhatsApp menyimpan pratinjau per tautan, jadi tautan yang sudah
+terlanjur dikirim sebelum pengaturan ini diisi tidak ikut berubah.

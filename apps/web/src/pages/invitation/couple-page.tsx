@@ -7,13 +7,13 @@ import {
   type MediaRef,
 } from "@wedding/shared";
 import { type FormEvent, useState } from "react";
-import { ImageField } from "../../components/image-field.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Textarea } from "../../components/ui/textarea.js";
+import { ImageField } from "@/components/image-field";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Field } from "@/components/kit/field";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { coupleQuery, useRefresh } from "../../lib/queries.js";
 
@@ -21,10 +21,10 @@ export function CouplePage() {
   const couple = useQuery(coupleQuery);
 
   if (couple.isError) return <Alert tone="error">{couple.error.message}</Alert>;
-  if (!couple.data) return <p className="text-ink-soft">Memuat…</p>;
+  if (!couple.data) return <p className="text-muted-foreground">Memuat…</p>;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       {COUPLE_ROLES.map((role) => (
         <ProfileCard key={role} role={role} initial={couple.data[role]} />
       ))}
@@ -73,12 +73,11 @@ function ProfileCard({ role, initial }: { role: CoupleRole; initial: CoupleProfi
     };
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <h2 className="font-display text-xl font-bold tracking-h2 uppercase">
-          {COUPLE_ROLE_LABEL[role]}
-        </h2>
-
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>{COUPLE_ROLE_LABEL[role]}</CardTitle>
+      </CardHeader>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4 px-6">
         <ImageField
           label="Foto"
           value={photo}
@@ -86,21 +85,27 @@ function ProfileCard({ role, initial }: { role: CoupleRole; initial: CoupleProfi
           recommendation="potret 4:5, 1600 × 2000 px (minimal 1200 px lebar). Foto tampil utuh selebar kartu tanpa dipotong; wajah di tengah atas paling aman."
         />
 
-        <Field label="Nama lengkap">
-          {(id) => (
-            <Input
-              id={id}
-              required
-              value={fullName}
-              onChange={(e) => touch(setFullName)(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Nama panggilan">
-          {(id) => (
-            <Input id={id} value={nickname} onChange={(e) => touch(setNickname)(e.target.value)} />
-          )}
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nama lengkap">
+            {(id) => (
+              <Input
+                id={id}
+                required
+                value={fullName}
+                onChange={(e) => touch(setFullName)(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Nama panggilan">
+            {(id) => (
+              <Input
+                id={id}
+                value={nickname}
+                onChange={(e) => touch(setNickname)(e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
         <Field label="Orang tua" hint='Mis. "Putra dari Bpk. A & Ibu B".'>
           {(id) => (
             <Input id={id} value={parents} onChange={(e) => touch(setParents)(e.target.value)} />
@@ -128,9 +133,11 @@ function ProfileCard({ role, initial }: { role: CoupleRole; initial: CoupleProfi
 
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
         {saved && !save.error && <Alert>Tersimpan.</Alert>}
-        <Button type="submit" disabled={save.isPending || !fullName.trim()}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
+        <div className="flex justify-end pb-6">
+          <Button type="submit" disabled={save.isPending || !fullName.trim()}>
+            {save.isPending ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </div>
       </form>
     </Card>
   );

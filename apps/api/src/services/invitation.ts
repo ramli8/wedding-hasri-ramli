@@ -25,6 +25,7 @@ import {
   giftAccounts,
   invitationCover,
   media,
+  settings,
   storyItems,
   wishlistClaims,
   wishlistItems,
@@ -54,7 +55,8 @@ export async function assertPhotoUsable(db: Db, photoId: string | null, own: str
         union all select 1 from ${galleryItems} where ${galleryItems.photoMediaId} = ${photoId}
         union all select 1 from ${giftAccounts} where ${giftAccounts.qrMediaId} = ${photoId}
         union all select 1 from ${wishlistItems} where ${wishlistItems.photoMediaId} = ${photoId}
-        union all select 1 from ${invitationCover} where ${invitationCover.photoMediaId} = ${photoId} limit 1`,
+        union all select 1 from ${invitationCover} where ${invitationCover.photoMediaId} = ${photoId}
+        union all select 1 from ${settings} where ${settings.seoImageMediaId} = ${photoId} limit 1`,
   );
   if (used.length > 0) {
     throw new AppError(409, "CONFLICT", "Gambar ini sudah dipakai di bagian lain");

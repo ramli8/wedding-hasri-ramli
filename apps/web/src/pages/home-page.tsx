@@ -1,11 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { formatEventDate, type HomeResponse } from "@wedding/shared";
-import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
-import { PageHeader } from "../components/page-header.js";
-import { Alert } from "../components/ui/alert.js";
-import { Card } from "../components/ui/card.js";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarCheck,
+  CheckCircle2,
+  CircleDollarSign,
+  Gift,
+  type LucideIcon,
+  Receipt,
+  ScanLine,
+  Store,
+  Users,
+  Wallet,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  Tooltip as ChartTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Alert } from "@/components/kit/alert";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatRupiah } from "../lib/format.js";
+import { useGuideSteps } from "../lib/guide.js";
 import { homeQuery } from "../lib/queries.js";
 
 const WIB_OFFSET_MS = 7 * 3600_000;
@@ -79,55 +104,76 @@ function Stat({
   value,
   note,
   to,
+  icon: Icon,
 }: {
   label: string;
   value: string;
   note?: string;
   to: string;
+  icon: LucideIcon;
 }) {
   return (
     <Link to={to} className="block">
-      <Card className="flex h-full flex-col gap-1 p-4 transition-colors hover:bg-acid">
-        <p className="tag text-ink-soft">{label}</p>
-        <p className="font-display text-2xl leading-tight font-bold break-words">{value}</p>
-        {note && <p className="text-xs text-ink-soft">{note}</p>}
+      <Card className="h-full gap-0 py-6 transition-colors hover:bg-accent/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{label}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold break-words">{value}</div>
+          {note && <p className="text-xs text-muted-foreground">{note}</p>}
+        </CardContent>
       </Card>
     </Link>
+  );
+}
+
+/** Grafik batang satu seri, bergaya Overview di dasbor shadcn-admin. */
+function BarsChart({ data, money }: { data: { name: string; total: number }[]; money?: boolean }) {
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={data}>
+        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis
+          stroke="#888888"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          width={money ? 72 : 32}
+          tickFormatter={(value: number) =>
+            money ? `${Math.round(value / 1_000_000)}jt` : String(value)
+          }
+        />
+        <ChartTooltip
+          cursor={{ fill: "var(--muted)", opacity: 0.5 }}
+          formatter={(value) => (money ? formatRupiah(Number(value)) : String(value))}
+          contentStyle={{
+            background: "var(--popover)",
+            color: "var(--popover-foreground)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+          }}
+        />
+        <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
 function Countdown({ eventDate }: { eventDate: string | null }) {
   if (!eventDate) {
     return (
-      <Card tone="acid" className="flex flex-col gap-1">
-        <p className="tag">Hitung mundur</p>
-        <p className="font-display text-xl font-bold">Belum ada tanggal acara.</p>
-        <Link
-          to="/admin/acara"
-          className="inline-flex w-fit items-center gap-1 text-sm font-semibold underline"
-        >
-          Atur di menu Acara <ArrowRight className="size-4" aria-hidden />
-        </Link>
-      </Card>
+      <Link to="/admin/acara" className="text-sm text-muted-foreground underline">
+        Atur tanggal acara
+      </Link>
     );
   }
   const days = daysUntil(eventDate);
   return (
-    <Card tone="acid" className="flex flex-col gap-1">
-      <p className="tag">
-        {days > 0 ? "Menuju hari-H" : days === 0 ? "Hari ini" : "Acara telah berlalu"}
-      </p>
-      {days > 0 ? (
-        <p className="font-display text-6xl leading-none font-bold tracking-h1">
-          {days} <span className="text-2xl tracking-h3 uppercase">hari lagi</span>
-        </p>
-      ) : (
-        <p className="font-display text-4xl leading-none font-bold tracking-h1 uppercase">
-          {days === 0 ? "Selamat berbahagia" : `${-days} hari yang lalu`}
-        </p>
-      )}
-      <p className="font-semibold">{formatEventDate(eventDate)}</p>
-    </Card>
+    <Badge variant="secondary" className="h-9 px-3 text-sm">
+      {days > 0 ? `${days} hari lagi` : days === 0 ? "Hari ini" : `${-days} hari lalu`}
+      <span className="text-muted-foreground">· {formatEventDate(eventDate)}</span>
+    </Badge>
   );
 }
 
@@ -135,150 +181,273 @@ export function HomePage() {
   const home = useQuery(homeQuery);
   const data = home.data;
   const tasks = data ? buildTasks(data) : [];
+  const guide = useGuideSteps();
+
+  const rsvpBars = data?.rsvp
+    ? [
+        { name: "Hadir", total: data.rsvp.hadir },
+        { name: "Tidak hadir", total: data.rsvp.tidakHadir },
+        { name: "Ragu", total: data.rsvp.ragu },
+        { name: "Belum", total: data.rsvp.belum },
+      ]
+    : [];
+  const vendorBars = data
+    ? [
+        { name: "Kontrak", total: data.vendors.summary.contractTotal },
+        { name: "Dibayar", total: data.vendors.summary.paidTotal },
+        { name: "Sisa", total: data.vendors.summary.remaining },
+      ]
+    : [];
 
   return (
     <>
-      <PageHeader
-        tag="Beranda"
-        title="Ringkasan"
-        description="Gambaran cepat persiapan, dan yang perlu dikerjakan berikutnya."
-      />
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">Dasbor</h1>
+        {data && <Countdown eventDate={data.eventDate} />}
+      </div>
 
       {home.isError && <Alert tone="error">{home.error.message}</Alert>}
 
       {data && (
-        <>
-          <Countdown eventDate={data.eventDate} />
+        <Tabs defaultValue="ringkasan" className="space-y-4">
+          <div className="w-full overflow-x-auto pb-2">
+            <TabsList>
+              <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+              <TabsTrigger value="tugas">
+                Perlu dikerjakan{tasks.length > 0 ? ` (${tasks.length})` : ""}
+              </TabsTrigger>
+              <TabsTrigger value="vendor">Vendor</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <section aria-label="Perlu dikerjakan" className="flex flex-col gap-3">
-            <h2 className="font-display text-xl font-bold tracking-h2 uppercase">
-              Perlu dikerjakan
-            </h2>
-            {tasks.length === 0 ? (
-              <Card className="flex items-center gap-3">
-                <CheckCircle2 className="size-6 shrink-0" aria-hidden />
-                <p>Tidak ada yang mendesak. Semua sudah beres untuk saat ini.</p>
-              </Card>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {tasks.map((task) => (
-                  <li key={task.key}>
-                    <Link
-                      to={task.to}
-                      className={`flex min-h-12 items-center justify-between gap-3 border-2 border-ink px-4 py-3 shadow-hard-sm hover:bg-acid ${task.urgent ? "bg-paper" : "bg-paper"}`}
-                    >
-                      <span className="flex items-center gap-3">
-                        {task.urgent && (
-                          <AlertTriangle
-                            className="size-5 shrink-0 text-alert"
-                            aria-label="Mendesak"
-                          />
-                        )}
-                        <span className={task.urgent ? "font-semibold" : ""}>{task.text}</span>
-                      </span>
-                      <ArrowRight className="size-4 shrink-0" aria-hidden />
+          <TabsContent value="ringkasan" className="space-y-4">
+            {guide.ready && guide.next && (
+              <Card className="gap-4">
+                <CardHeader>
+                  <CardTitle>
+                    Mulai cepat · {guide.doneCount} dari {guide.total} langkah
+                  </CardTitle>
+                  <CardDescription>
+                    Berikutnya: {guide.next.title}. {guide.next.why}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${Math.round((guide.doneCount / guide.total) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to={guide.next.to as "/admin"} className={buttonVariants()}>
+                      {guide.next.cta}
+                      <ArrowRight aria-hidden />
                     </Link>
-                  </li>
-                ))}
-              </ul>
+                    <Link to="/admin/panduan" className={buttonVariants({ variant: "outline" })}>
+                      Lihat panduan lengkap
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </section>
-
-          <section aria-label="Angka penting" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Stat
-              label="Tamu"
-              value={String(data.guests.total)}
-              note="undangan terdaftar"
-              to="/admin/tamu"
-            />
-            {data.rsvp ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat
-                label="RSVP hadir"
-                value={`${data.rsvp.hadir} / ${data.rsvp.invited}`}
-                note={`${data.rsvp.hadirPax} orang · ${data.rsvp.belum} belum menjawab`}
-                to="/admin/rsvp"
+                icon={Users}
+                label="Tamu"
+                value={String(data.guests.total)}
+                note={`${data.guests.neverSent} belum dikirimi undangan`}
+                to="/admin/tamu"
               />
-            ) : (
-              <Stat label="RSVP" value="—" note="belum ada acara dengan RSVP" to="/admin/acara" />
-            )}
-            {data.checkin ? (
+              {data.rsvp ? (
+                <Stat
+                  icon={CalendarCheck}
+                  label="RSVP hadir"
+                  value={`${data.rsvp.hadir} / ${data.rsvp.invited}`}
+                  note={`${data.rsvp.hadirPax} orang · ${data.rsvp.belum} belum menjawab`}
+                  to="/admin/rsvp"
+                />
+              ) : (
+                <Stat
+                  icon={CalendarCheck}
+                  label="RSVP"
+                  value="—"
+                  note="belum ada acara dengan RSVP"
+                  to="/admin/acara"
+                />
+              )}
+              {data.checkin ? (
+                <Stat
+                  icon={ScanLine}
+                  label="Sudah check-in"
+                  value={`${data.checkin.arrived} / ${data.checkin.invited}`}
+                  note={data.checkin.eventName}
+                  to="/admin/checkin"
+                />
+              ) : (
+                <Stat
+                  icon={ScanLine}
+                  label="Check-in"
+                  value="—"
+                  note="belum ada acara dengan check-in"
+                  to="/admin/acara"
+                />
+              )}
               <Stat
-                label="Sudah check-in"
-                value={`${data.checkin.arrived} / ${data.checkin.invited}`}
-                note={data.checkin.eventName}
-                to="/admin/checkin"
+                icon={Gift}
+                label="Hadiah masuk"
+                value={formatRupiah(data.gifts.amplopTotal + data.gifts.transferTotal)}
+                note={`${data.gifts.count} catatan · ${data.gifts.barangCount} barang`}
+                to="/admin/hadiah"
               />
-            ) : (
-              <Stat
-                label="Check-in"
-                value="—"
-                note="belum ada acara dengan check-in"
-                to="/admin/acara"
-              />
-            )}
-            <Stat
-              label="Hadiah masuk"
-              value={formatRupiah(data.gifts.amplopTotal + data.gifts.transferTotal)}
-              note={`${data.gifts.count} catatan · ${data.gifts.barangCount} barang`}
-              to="/admin/hadiah"
-            />
-          </section>
-
-          <section aria-label="Vendor" className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Vendor</h2>
-              <Link to="/admin/vendor" className="text-sm font-semibold underline">
-                Buka halaman vendor
-              </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+              <Card className="col-span-1 lg:col-span-4">
+                <CardHeader>
+                  <CardTitle>Jawaban RSVP</CardTitle>
+                  <CardDescription>
+                    {data.rsvp ? data.rsvp.eventName : "Belum ada acara dengan RSVP."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="ps-2">
+                  <BarsChart data={rsvpBars} />
+                </CardContent>
+              </Card>
+              <Card className="col-span-1 lg:col-span-3">
+                <CardHeader>
+                  <CardTitle>Perlu dikerjakan</CardTitle>
+                  <CardDescription>
+                    {tasks.length === 0 ? "Semua sudah beres." : `${tasks.length} hal menunggu.`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TaskList tasks={tasks.slice(0, 5)} />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tugas" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Perlu dikerjakan</CardTitle>
+                <CardDescription>Urut dari yang paling mendesak.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TaskList tasks={tasks} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vendor" className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat
+                icon={Store}
                 label="Vendor terpilih"
                 value={`${data.vendors.summary.selectedCount} / ${data.vendors.summary.categoryCount}`}
                 note="kategori"
                 to="/admin/vendor"
               />
               <Stat
+                icon={Receipt}
                 label="Total kontrak"
                 value={formatRupiah(data.vendors.summary.contractTotal)}
                 to="/admin/vendor"
               />
               <Stat
+                icon={CircleDollarSign}
                 label="Sudah dibayar"
                 value={formatRupiah(data.vendors.summary.paidTotal)}
                 to="/admin/vendor"
               />
               <Stat
+                icon={Wallet}
                 label="Sisa pembayaran"
                 value={formatRupiah(data.vendors.summary.remaining)}
                 to="/admin/vendor"
               />
             </div>
-            {data.vendors.due.length > 0 && (
-              <ul className="flex flex-col border-2 border-ink bg-paper">
-                {data.vendors.due.map((vendor) => (
-                  <li
-                    key={vendor.id}
-                    className="flex flex-wrap items-center justify-between gap-2 border-b border-ink p-3 last:border-b-0"
-                  >
-                    <div>
-                      <p className="font-semibold">{vendor.name}</p>
-                      <p className="text-xs text-ink-soft">{vendor.categoryName}</p>
-                    </div>
-                    <p
-                      className={`text-sm ${vendor.state === "terlambat" ? "font-semibold text-alert" : ""}`}
-                    >
-                      {vendor.state === "terlambat" ? "Terlambat · " : "Jatuh tempo "}
-                      {vendor.dueOn}
-                      {vendor.dueAmount !== null && ` · ${formatRupiah(vendor.dueAmount)}`}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+              <Card className="col-span-1 lg:col-span-4">
+                <CardHeader>
+                  <CardTitle>Pembayaran vendor</CardTitle>
+                  <CardDescription>Kontrak, yang sudah dibayar, dan sisanya.</CardDescription>
+                </CardHeader>
+                <CardContent className="ps-2">
+                  <BarsChart data={vendorBars} money />
+                </CardContent>
+              </Card>
+              <Card className="col-span-1 lg:col-span-3">
+                <CardHeader>
+                  <CardTitle>Jatuh tempo</CardTitle>
+                  <CardDescription>
+                    Vendor terpilih yang segera atau sudah terlambat.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {data.vendors.due.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Tidak ada pembayaran mendesak.</p>
+                  ) : (
+                    <ul className="space-y-6">
+                      {data.vendors.due.map((vendor) => (
+                        <li key={vendor.id} className="flex items-center gap-4">
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm leading-none font-medium">{vendor.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {vendor.categoryName} · {vendor.dueOn}
+                            </p>
+                          </div>
+                          <div className="text-end">
+                            {vendor.dueAmount !== null && (
+                              <p className="font-medium">{formatRupiah(vendor.dueAmount)}</p>
+                            )}
+                            <Badge
+                              variant={vendor.state === "terlambat" ? "destructive" : "secondary"}
+                            >
+                              {vendor.state === "terlambat" ? "Terlambat" : "Segera"}
+                            </Badge>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       )}
     </>
+  );
+}
+
+/** Daftar tugas bergaya "Recent Sales": ikon di kiri, teks, panah di kanan. */
+function TaskList({ tasks }: { tasks: Task[] }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <CheckCircle2 className="size-5 shrink-0" aria-hidden />
+        Tidak ada yang mendesak.
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-6">
+      {tasks.map((task) => (
+        <li key={task.key}>
+          <Link to={task.to} className="flex items-center gap-4 hover:opacity-80">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted">
+              {task.urgent ? (
+                <AlertTriangle className="size-4 text-destructive" aria-label="Mendesak" />
+              ) : (
+                <ArrowRight className="size-4" aria-hidden />
+              )}
+            </span>
+            <span className={`flex-1 text-sm ${task.urgent ? "font-medium" : ""}`}>
+              {task.text}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

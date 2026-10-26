@@ -1,7 +1,7 @@
 import { Download } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { buttonStyles } from "../../components/ui/button.js";
+import { buttonStyles } from "../../components/guest-ui/button.js";
 
 /** QR berisi kode tamu saja. Digambar di perangkat, tanpa jaringan. */
 export function TicketQr({ code }: { code: string }) {

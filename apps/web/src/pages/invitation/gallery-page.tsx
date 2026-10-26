@@ -1,13 +1,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { GalleryItem } from "@wedding/shared";
-import { ArrowLeft, ArrowRight, ImagePlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Images, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { EmptyState, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
 import { galleryQuery, useRefresh } from "../../lib/queries.js";
 
@@ -54,37 +57,41 @@ export function GalleryPage() {
     reorder.mutate(ids);
   };
 
+  const uploadLabel = progress
+    ? `Mengunggah ${progress.done + 1}/${progress.total}…`
+    : "Tambah foto";
+
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-ink-soft">
-          Foto-foto yang tampil sebagai galeri di undangan, urut dari kiri ke kanan. Pilih beberapa
-          foto sekaligus untuk mengunggah. Resolusi dan detail foto dipertahankan.
+      <input
+        ref={picker}
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        aria-label="Pilih foto galeri"
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          if (files.length > 0) upload.mutate(files);
+        }}
+      />
+      <Toolbar
+        summary={`${items.length} foto`}
+        addLabel={uploadLabel}
+        onAdd={() => picker.current?.click()}
+        disabled={upload.isPending}
+      />
+      <Tip>
+        <p>
+          Unggah beberapa foto sekaligus; resolusi dan detailnya dipertahankan. Sisi panjang 2400 px
+          atau lebih paling baik.
         </p>
-        <input
-          ref={picker}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp"
-          className="sr-only"
-          aria-label="Pilih foto galeri"
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            event.target.value = "";
-            if (files.length > 0) upload.mutate(files);
-          }}
-        />
-        <Button onClick={() => picker.current?.click()} disabled={upload.isPending}>
-          <ImagePlus className="size-4" aria-hidden />
-          {progress ? `Mengunggah ${progress.done + 1}/${progress.total}…` : "Tambah foto"}
-        </Button>
-      </div>
-      <p className="max-w-prose text-sm font-semibold">
-        Disarankan: sisi panjang 2400 px atau lebih (mis. 2400 × 1600 lanskap atau 1600 × 2400
-        potret), rasio bebas. Di kisi, foto tampil sebagai kotak persegi dan dipotong dari tengah,
-        jadi letakkan objek utama di tengah; saat dibuka layar penuh foto tampil utuh. Foto persegi
-        1:1 tidak dipotong sama sekali.
-      </p>
+        <p>
+          Di kisi foto tampil persegi dan dipotong dari tengah, jadi letakkan objek utama di tengah.
+          Saat dibuka layar penuh foto tampil utuh.
+        </p>
+      </Tip>
 
       {gallery.isError && <Alert tone="error">{gallery.error.message}</Alert>}
       {upload.error && (
@@ -95,49 +102,74 @@ export function GalleryPage() {
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
       {gallery.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">
-          Belum ada foto. Klik "Tambah foto" dan pilih foto-foto terbaik Anda.
-        </Card>
+        <EmptyState
+          icon={Images}
+          title="Galeri masih kosong"
+          description="Pilih foto-foto terbaik kalian. Urutannya bisa diatur setelah diunggah."
+          addLabel="Tambah foto"
+          onAdd={() => picker.current?.click()}
+        />
       ) : (
-        <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
           {items.map((item, index) => (
             <li key={item.id}>
-              <Card className="flex h-full flex-col gap-2 p-2">
-                <img
-                  src={item.photo.thumb}
-                  alt={item.caption ?? ""}
-                  width={item.photo.width}
-                  height={item.photo.height}
-                  className="aspect-square w-full border-2 border-ink object-cover"
-                />
-                <p className="min-h-5 truncate px-1 text-sm text-ink-soft">
-                  {item.caption ?? "Tanpa keterangan"}
-                </p>
-                <div className="mt-auto flex flex-wrap gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Geser ke kiri"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0 || reorder.isPending}
-                  >
-                    <ArrowLeft className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Geser ke kanan"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1 || reorder.isPending}
-                  >
-                    <ArrowRight className="size-4" aria-hidden />
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => setEditing(item)}>
-                    Ket.
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(item)}>
-                    Hapus
-                  </Button>
+              <Card className="h-full gap-0 overflow-hidden p-0">
+                <div className="relative">
+                  <img
+                    src={item.photo.thumb}
+                    alt={item.caption ?? ""}
+                    width={item.photo.width}
+                    height={item.photo.height}
+                    className="aspect-square w-full object-cover"
+                  />
+                  <Badge variant="secondary" className="absolute top-2 left-2 bg-background/90">
+                    {index + 1}
+                  </Badge>
+                </div>
+                <div className="flex flex-1 flex-col gap-2 p-3">
+                  <p className="min-h-5 truncate text-sm text-muted-foreground">
+                    {item.caption ?? "Tanpa keterangan"}
+                  </p>
+                  <div className="mt-auto flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8"
+                      aria-label="Geser ke kiri"
+                      onClick={() => move(index, -1)}
+                      disabled={index === 0 || reorder.isPending}
+                    >
+                      <ArrowLeft aria-hidden />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8"
+                      aria-label="Geser ke kanan"
+                      onClick={() => move(index, 1)}
+                      disabled={index === items.length - 1 || reorder.isPending}
+                    >
+                      <ArrowRight aria-hidden />
+                    </Button>
+                    <div className="ms-auto">
+                      <DataTableRowActions
+                        actions={[
+                          {
+                            label: "Ubah keterangan",
+                            icon: <SquarePen />,
+                            onSelect: () => setEditing(item),
+                          },
+                          "separator",
+                          {
+                            label: "Hapus",
+                            icon: <Trash2 />,
+                            destructive: true,
+                            onSelect: () => setDeleting(item),
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
                 </div>
               </Card>
             </li>
@@ -182,8 +214,8 @@ function CaptionForm({ item, onDone }: { item: GalleryItem; onDone: () => void }
         )}
       </Field>
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending}>
@@ -210,8 +242,8 @@ function DeleteDialog({ item, onClose }: { item: GalleryItem | null; onClose: ()
         <>
           <p>Foto dihapus dari galeri dan dari server.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

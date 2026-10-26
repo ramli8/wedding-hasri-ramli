@@ -47,9 +47,11 @@ import {
   reviewListResponseSchema,
   rsvpListResponseSchema,
   type Section,
+  type SeoInput,
   type SettingsInput,
   type StoryInput,
   sectionsResponseSchema,
+  seoResponseSchema,
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
@@ -100,6 +102,10 @@ function queryString(params: Record<string, string | number | boolean | undefine
 }
 
 export const adminApi = {
+  seo: {
+    get: () => request(`${base}/seo`, seoResponseSchema),
+    save: (input: SeoInput) => request(`${base}/seo`, seoResponseSchema, withBody("PUT", input)),
+  },
   settings: {
     get: () => request(`${base}/settings`, settingsResponseSchema),
     save: (input: SettingsInput) =>

@@ -7,7 +7,8 @@ import puppeteer from "puppeteer-core";
 export const REPO = fileURLToPath(new URL("..", import.meta.url)).replace(/\/$/, "");
 export const FIREFOX = process.env.FIREFOX_PATH ?? "/usr/bin/firefox";
 export const OUT = process.env.E2E_OUT ?? `${REPO}/e2e/out`;
-export const API_PORT = 3000;
+// Dapat diganti bila port bawaan sedang dipakai server pengembangan (E2E_API_PORT=3100).
+export const API_PORT = Number(process.env.E2E_API_PORT ?? 3000);
 export const WEB_PORT = 4173;
 export const API = `http://localhost:${API_PORT}`;
 export const WEB = `http://localhost:${WEB_PORT}`;
@@ -115,7 +116,13 @@ export async function startApi() {
     ["--env-file-if-exists=../../.env", "src/index.ts"],
     {
       cwd: `${REPO}/apps/api`,
-      env: { ...process.env, DATABASE_URL: DB_URL, ALLOWED_ORIGINS: ORIGINS, LOG_LEVEL: "warn" },
+      env: {
+        ...process.env,
+        DATABASE_URL: DB_URL,
+        ALLOWED_ORIGINS: ORIGINS,
+        LOG_LEVEL: "warn",
+        PORT: String(API_PORT),
+      },
       stdio: "ignore",
     },
   );
@@ -141,7 +148,11 @@ export async function startPreview() {
   previewProc = spawnTree(
     `${REPO}/apps/web/node_modules/.bin/vite`,
     ["preview", "--host", "localhost", "--port", String(WEB_PORT), "--strictPort"],
-    { cwd: `${REPO}/apps/web`, stdio: "ignore" },
+    {
+      cwd: `${REPO}/apps/web`,
+      env: { ...process.env, API_TARGET: API },
+      stdio: "ignore",
+    },
   );
   return waitHttp(`${WEB}/`);
 }

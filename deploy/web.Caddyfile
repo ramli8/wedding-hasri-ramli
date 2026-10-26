@@ -16,6 +16,12 @@
 		reverse_proxy api:3000
 	}
 
+	# Halaman tamu: API mengembalikan index.html dengan tag Open Graph (judul, deskripsi, gambar)
+	# milik tamu itu, supaya pratinjau tautan di WhatsApp dan Instagram tampil. Aset tetap statis.
+	handle /u/* {
+		reverse_proxy api:3000
+	}
+
 	handle {
 		root * /srv
 		header {

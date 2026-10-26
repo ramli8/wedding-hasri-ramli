@@ -2,9 +2,9 @@ import type { Group, Guest } from "@wedding/shared";
 import { Download } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Dialog } from "../../components/ui/dialog.js";
+import { Alert } from "@/components/kit/alert";
+import { Dialog } from "@/components/kit/dialog";
+import { Badge } from "@/components/ui/badge";
 
 type Props = { guest: Guest | null; group: Group | undefined; onClose: () => void };
 
@@ -46,28 +46,24 @@ function QrBody({ guest, group }: { guest: Guest; group: Group | undefined }) {
   return (
     <div className="flex flex-col items-center gap-4">
       {image ? (
-        <img
-          src={image}
-          alt={`QR kode ${code}`}
-          className="size-72 max-w-full border-2 border-ink bg-white"
-        />
+        <img src={image} alt={`QR kode ${code}`} className="size-72 max-w-full border bg-white" />
       ) : (
-        <div className="grid size-72 max-w-full place-items-center border-2 border-ink text-ink-soft">
+        <div className="grid size-72 max-w-full place-items-center border text-muted-foreground">
           {error ?? "Membuat QR…"}
         </div>
       )}
       <div className="flex flex-col items-center gap-2 text-center">
-        <p className="font-mono text-3xl font-bold tracking-widest">{code}</p>
+        <p className="font-mono text-3xl font-bold">{code}</p>
         <div className="flex flex-wrap justify-center gap-2">
-          {group && <Badge variant="pill">{group.name}</Badge>}
-          {guest.isRombongan && <Badge variant="pill">Rombongan</Badge>}
+          {group && <Badge variant="outline">{group.name}</Badge>}
+          {guest.isRombongan && <Badge variant="outline">Rombongan</Badge>}
         </div>
       </div>
       <a
         href={`/u/${code}`}
         target="_blank"
         rel="noreferrer"
-        className="text-sm underline underline-offset-4 hover:bg-acid"
+        className="text-sm underline underline-offset-4 hover:bg-accent"
       >
         Buka halaman undangan tamu
       </a>
@@ -75,7 +71,7 @@ function QrBody({ guest, group }: { guest: Guest; group: Group | undefined }) {
         href={image ?? undefined}
         download={`qr-${code}.png`}
         aria-disabled={!image}
-        className={`inline-flex h-11 items-center gap-2 border-2 border-ink bg-paper px-4 font-semibold hover:bg-acid ${image ? "" : "pointer-events-none opacity-50"}`}
+        className={`inline-flex h-11 items-center gap-2 rounded-lg border bg-card px-4 font-semibold hover:bg-accent ${image ? "" : "pointer-events-none opacity-50"}`}
       >
         <Download className="size-4" aria-hidden /> Unduh PNG
       </a>

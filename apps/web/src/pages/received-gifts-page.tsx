@@ -1,21 +1,49 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   RECEIVED_GIFT_KIND_LABEL,
   RECEIVED_GIFT_KINDS,
   type ReceivedGift,
   type ReceivedGiftKind,
 } from "@wedding/shared";
-import { Check, Download, Plus } from "lucide-react";
+import {
+  Check,
+  Download,
+  Gift,
+  HeartHandshake,
+  Link2,
+  type LucideIcon,
+  Plus,
+  Send,
+  SquarePen,
+  Trash2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { PageHeader } from "../components/page-header.js";
-import { Alert } from "../components/ui/alert.js";
-import { Badge } from "../components/ui/badge.js";
-import { Button, buttonStyles } from "../components/ui/button.js";
-import { Card } from "../components/ui/card.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Field } from "../components/ui/field.js";
-import { Input } from "../components/ui/input.js";
-import { Select } from "../components/ui/select.js";
+import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
+import { DataTableColumnHeader } from "@/components/data-table/column-header";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { selectColumn } from "@/components/data-table/select-column";
+import { Alert } from "@/components/kit/alert";
+import { Button, buttonVariants } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormSection } from "@/components/kit/form-rows";
+import { Select } from "@/components/kit/select";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import { adminApi, downloads } from "../lib/admin-api.js";
 import { formatRupiah, parseAmount } from "../lib/format.js";
 import { receivedGiftsQuery, useRefresh } from "../lib/queries.js";
@@ -24,33 +52,45 @@ import { ThanksDialog } from "./received-gifts-thanks-dialog.js";
 type Thanked = "" | "yes" | "no";
 type Editing = { kind: "new" } | { kind: "edit"; gift: ReceivedGift };
 
-function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
+function Stat({
+  label,
+  value,
+  note,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  icon: LucideIcon;
+}) {
   return (
-    <Card className="flex flex-col gap-1 p-4">
-      <p className="tag text-ink-soft">{label}</p>
-      <p className="font-display text-2xl leading-tight font-bold break-words">{value}</p>
-      {note && <p className="text-xs text-ink-soft">{note}</p>}
+    <Card className="gap-0">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold break-words">{value}</div>
+        {note && <p className="text-xs text-muted-foreground">{note}</p>}
+      </CardContent>
     </Card>
   );
 }
 
 const todayWib = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 
+const THANKED_OPTIONS = [
+  { label: "Belum dibalas", value: "no" },
+  { label: "Sudah dibalas", value: "yes" },
+];
+
 export function ReceivedGiftsPage() {
   const refresh = useRefresh();
-  const [search, setSearch] = useState("");
-  const [kind, setKind] = useState<ReceivedGiftKind | "">("");
-  const [thanked, setThanked] = useState<Thanked>("");
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<ReceivedGift | null>(null);
   const [thanking, setThanking] = useState(false);
 
-  const filter = {
-    q: search,
-    kind: kind || undefined,
-    thanked: thanked === "" ? undefined : thanked === "yes",
-  };
-  const list = useQuery(receivedGiftsQuery(filter));
+  const list = useQuery(receivedGiftsQuery({}));
   const items = list.data?.items ?? [];
   const summary = list.data?.summary;
 
@@ -60,147 +100,186 @@ export function ReceivedGiftsPage() {
     onSuccess: () => refresh("received-gifts"),
   });
 
+  const columns: ColumnDef<ReceivedGift, unknown>[] = [
+    selectColumn<ReceivedGift>(),
+    {
+      id: "pemberi",
+      accessorFn: (gift) => gift.giverName,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Pemberi" />,
+      cell: ({ row }) => (
+        <div className="max-w-64">
+          <p className="truncate font-medium">{row.original.giverName}</p>
+          {row.original.note && (
+            <p className="truncate text-xs text-muted-foreground">{row.original.note}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "jenis",
+      accessorFn: (gift) => gift.kind,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Jenis" />,
+      cell: ({ row }) => (
+        <Badge variant="secondary">{RECEIVED_GIFT_KIND_LABEL[row.original.kind]}</Badge>
+      ),
+      filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
+    },
+    {
+      id: "nilai",
+      accessorFn: (gift) => gift.amount ?? 0,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Nilai" />,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.kind === "barang"
+            ? row.original.itemDescription
+            : row.original.amount !== null && formatRupiah(row.original.amount)}
+        </span>
+      ),
+    },
+    {
+      id: "diterima",
+      accessorFn: (gift) => gift.receivedOn,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Diterima" />,
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.receivedOn}</span>,
+    },
+    {
+      id: "terimakasih",
+      accessorFn: (gift) => (gift.thankedAt ? "yes" : "no"),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Terima kasih" />,
+      cell: ({ row }) =>
+        row.original.thankedAt ? (
+          <Badge variant="outline">Sudah dibalas</Badge>
+        ) : (
+          <Badge variant="secondary">Belum</Badge>
+        ),
+      filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
+    },
+    {
+      id: "aksi",
+      cell: ({ row }) => {
+        const gift = row.original;
+        return (
+          <DataTableRowActions
+            actions={[
+              {
+                label: gift.thankedAt ? "Batalkan balasan" : "Tandai dibalas",
+                icon: <Check />,
+                onSelect: () => thank.mutate({ id: gift.id, thanked: !gift.thankedAt }),
+              },
+              {
+                label: "Ubah",
+                icon: <SquarePen />,
+                onSelect: () => setEditing({ kind: "edit", gift }),
+              },
+              "separator",
+              {
+                label: "Hapus",
+                icon: <Trash2 />,
+                destructive: true,
+                onSelect: () => setDeleting(gift),
+              },
+            ]}
+          />
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
   return (
     <>
       <PageHeader
-        tag="Hadiah"
         title="Hadiah masuk"
         description="Catat amplop, transfer, dan barang yang diterima, lalu tandai bila sudah dibalas ucapan terima kasih."
         actions={
           <>
             {summary && summary.notThanked > 0 && (
-              <Button variant="secondary" onClick={() => setThanking(true)}>
+              <Button variant="outline" onClick={() => setThanking(true)}>
+                <Send aria-hidden />
                 Kirim terima kasih
               </Button>
             )}
             <a
-              href={downloads.receivedGiftsCsv(filter)}
-              className={buttonStyles({ variant: "secondary" })}
+              href={downloads.receivedGiftsCsv({})}
+              className={buttonVariants({ variant: "outline" })}
             >
-              <Download className="size-4" aria-hidden />
-              Ekspor CSV
+              <Download aria-hidden />
+              Ekspor
             </a>
             <Button onClick={() => setEditing({ kind: "new" })}>
-              <Plus className="size-4" aria-hidden /> Catat hadiah
+              Catat hadiah
+              <Plus aria-hidden />
             </Button>
           </>
         }
       />
 
       {summary && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat
+            icon={Wallet}
             label="Total uang"
             value={formatRupiah(summary.amplopTotal + summary.transferTotal)}
-            note={`${summary.count - summary.barangCount} pemberian`}
+            note={`${summary.count - summary.barangCount} pemberian · amplop ${formatRupiah(summary.amplopTotal)} · transfer ${formatRupiah(summary.transferTotal)}`}
           />
-          <Stat label="Amplop" value={formatRupiah(summary.amplopTotal)} />
-          <Stat label="Transfer" value={formatRupiah(summary.transferTotal)} />
-          <Stat label="Barang" value={String(summary.barangCount)} />
+          <Stat icon={Gift} label="Barang" value={String(summary.barangCount)} note="dicatat" />
           <Stat
+            icon={HeartHandshake}
             label="Belum dibalas"
             value={String(summary.notThanked)}
             note="ucapan terima kasih"
           />
+          <Stat icon={Gift} label="Total catatan" value={String(summary.count)} />
         </div>
       )}
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-48 flex-1">
-          <Input
-            type="search"
-            aria-label="Cari pemberi atau barang"
-            placeholder="Cari pemberi atau barang"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="w-full sm:w-52">
-          <Select
-            compact
-            aria-label="Jenis"
-            value={kind}
-            onChange={(e) => setKind(e.target.value as ReceivedGiftKind | "")}
-          >
-            <option value="">Semua jenis</option>
-            {RECEIVED_GIFT_KINDS.map((value) => (
-              <option key={value} value={value}>
-                {RECEIVED_GIFT_KIND_LABEL[value]}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="w-full sm:w-52">
-          <Select
-            compact
-            aria-label="Terima kasih"
-            value={thanked}
-            onChange={(e) => setThanked(e.target.value as Thanked)}
-          >
-            <option value="">Semua status</option>
-            <option value="no">Belum dibalas</option>
-            <option value="yes">Sudah dibalas</option>
-          </Select>
-        </div>
-      </div>
 
       {list.isError && <Alert tone="error">{list.error.message}</Alert>}
       {thank.error && <Alert tone="error">{thank.error.message}</Alert>}
 
-      {list.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">
-          {summary?.count
-            ? "Tidak ada catatan yang cocok dengan filter."
-            : "Belum ada hadiah yang dicatat."}
-        </Card>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {items.map((gift) => (
-            <li key={gift.id}>
-              <Card className="flex flex-wrap items-start gap-4 p-4">
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-display text-lg font-bold break-words">{gift.giverName}</p>
-                    <Badge variant="tag">{RECEIVED_GIFT_KIND_LABEL[gift.kind]}</Badge>
-                    {gift.thankedAt && <Badge variant="pill">Sudah dibalas</Badge>}
-                  </div>
-                  <p className="text-lg font-semibold break-words">
-                    {gift.kind === "barang"
-                      ? gift.itemDescription
-                      : gift.amount !== null && formatRupiah(gift.amount)}
-                  </p>
-                  {gift.note && <p className="text-sm break-words text-ink-soft">{gift.note}</p>}
-                  <p className="text-xs text-ink-soft">
-                    Diterima {gift.receivedOn}
-                    {gift.recordedBy ? ` · dicatat ${gift.recordedBy}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={thank.isPending}
-                    onClick={() => thank.mutate({ id: gift.id, thanked: !gift.thankedAt })}
-                  >
-                    <Check className="size-4" aria-hidden />
-                    {gift.thankedAt ? "Batalkan balasan" : "Sudah dibalas"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setEditing({ kind: "edit", gift })}
-                  >
-                    Ubah
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(gift)}>
-                    Hapus
-                  </Button>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DataTable
+        columns={columns}
+        data={items}
+        getRowId={(gift) => gift.id}
+        searchPlaceholder="Cari pemberi atau barang"
+        searchKey="pemberi"
+        emptyText={
+          list.isPending
+            ? "Memuat…"
+            : "Belum ada hadiah yang dicatat. Klik “Catat hadiah” untuk mulai."
+        }
+        filters={[
+          {
+            columnId: "jenis",
+            title: "Jenis",
+            options: RECEIVED_GIFT_KINDS.map((value) => ({
+              label: RECEIVED_GIFT_KIND_LABEL[value],
+              value,
+            })),
+          },
+          { columnId: "terimakasih", title: "Terima kasih", options: THANKED_OPTIONS },
+        ]}
+        bulkActions={(table) => (
+          <DataTableBulkActions table={table} entityName="catatan">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                await Promise.all(
+                  table
+                    .getFilteredSelectedRowModel()
+                    .rows.filter((row) => !row.original.thankedAt)
+                    .map((row) => thank.mutateAsync({ id: row.original.id, thanked: true })),
+                );
+                table.resetRowSelection();
+              }}
+            >
+              <Check aria-hidden />
+              Tandai dibalas
+            </Button>
+          </DataTableBulkActions>
+        )}
+      />
 
       <Dialog
         open={editing !== null}
@@ -270,125 +349,146 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Field
-        label="Pemberi"
-        hint="Ketik nama, atau cari tamu undangan di bawah untuk menautkannya."
-      >
-        {(id) => (
-          <Input
-            id={id}
-            value={giverName}
-            maxLength={120}
-            onChange={(e) => setGiverName(e.target.value)}
-          />
-        )}
-      </Field>
-      {guestId ? (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <Badge variant="pill">Tamu terdaftar tertaut</Badge>
-          <button type="button" className="underline" onClick={() => setGuestId(null)}>
-            Lepas tautan
-          </button>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection title="Pemberi">
+        <Field label="Nama pemberi" hint="Tulis bebas, mis. “Keluarga Pak Hadi”.">
+          {(id) => (
+            <Input
+              id={id}
+              value={giverName}
+              maxLength={120}
+              onChange={(e) => setGiverName(e.target.value)}
+            />
+          )}
+        </Field>
+        <div className="grid gap-2">
+          <p className="text-sm leading-none font-medium">
+            Tamu undangan <span className="font-normal text-muted-foreground">(opsional)</span>
+          </p>
+          {guestId ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+              <p className="flex items-center gap-2 text-sm">
+                <Link2 className="size-4 text-muted-foreground" aria-hidden />
+                Tertaut ke tamu terdaftar
+              </p>
+              <Button size="sm" variant="ghost" onClick={() => setGuestId(null)}>
+                <X aria-hidden />
+                Lepas
+              </Button>
+            </div>
+          ) : (
+            <Command shouldFilter={false} className="rounded-lg border">
+              <CommandInput
+                placeholder="Cari tamu undangan…"
+                value={guestSearch}
+                onValueChange={setGuestSearch}
+              />
+              <CommandList className="max-h-44">
+                {guestSearch.trim().length < 2 ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    Ketik minimal 2 huruf untuk mencari.
+                  </p>
+                ) : guests.isFetching ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">Mencari…</p>
+                ) : (
+                  <>
+                    <CommandEmpty>Tidak ada tamu yang cocok.</CommandEmpty>
+                    <CommandGroup>
+                      {guests.data?.items.map((guest) => (
+                        <CommandItem
+                          key={guest.id}
+                          value={guest.id}
+                          onSelect={() => {
+                            setGuestId(guest.id);
+                            setGiverName(guest.displayName);
+                            setGuestSearch("");
+                          }}
+                        >
+                          {guest.displayName}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )}
+              </CommandList>
+            </Command>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Menautkan membuat hadiah ini tercatat atas nama tamu itu dan memudahkan ucapan terima
+            kasih.
+          </p>
         </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <Input
-            type="search"
-            aria-label="Cari tamu undangan"
-            placeholder="Cari tamu undangan (opsional)"
-            value={guestSearch}
-            onChange={(e) => setGuestSearch(e.target.value)}
-          />
-          {guests.data && guests.data.items.length > 0 && (
-            <ul className="flex flex-col border-2 border-ink">
-              {guests.data.items.map((guest) => (
-                <li key={guest.id} className="border-b border-ink last:border-b-0">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-acid"
-                    onClick={() => {
-                      setGuestId(guest.id);
-                      setGiverName(guest.displayName);
-                      setGuestSearch("");
-                    }}
-                  >
-                    {guest.displayName}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+      </FormSection>
+
+      <FormSection title="Hadiah">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Jenis">
+            {(id) => (
+              <Select
+                id={id}
+                value={kind}
+                onChange={(e) => setKind(e.target.value as ReceivedGiftKind)}
+              >
+                {RECEIVED_GIFT_KINDS.map((value) => (
+                  <option key={value} value={value}>
+                    {RECEIVED_GIFT_KIND_LABEL[value]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Tanggal diterima">
+            {(id) => (
+              <Input
+                id={id}
+                type="date"
+                required
+                value={receivedOn}
+                onChange={(e) => setReceivedOn(e.target.value)}
+              />
+            )}
+          </Field>
         </div>
-      )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Jenis">
-          {(id) => (
-            <Select
-              id={id}
-              value={kind}
-              onChange={(e) => setKind(e.target.value as ReceivedGiftKind)}
-            >
-              {RECEIVED_GIFT_KINDS.map((value) => (
-                <option key={value} value={value}>
-                  {RECEIVED_GIFT_KIND_LABEL[value]}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="Tanggal diterima">
-          {(id) => (
-            <Input
-              id={id}
-              type="date"
-              required
-              value={receivedOn}
-              onChange={(e) => setReceivedOn(e.target.value)}
-            />
-          )}
-        </Field>
-      </div>
-
-      {isItem ? (
-        <Field label="Nama barang">
-          {(id) => (
-            <Input
-              id={id}
-              required
-              maxLength={200}
-              value={item}
-              onChange={(e) => setItem(e.target.value)}
-            />
-          )}
-        </Field>
-      ) : (
-        <Field
-          label="Nominal (Rp)"
-          hint={parsed ? formatRupiah(parsed) : "Angka saja, mis. 500000. Titik pemisah boleh."}
-        >
-          {(id) => (
-            <Input
-              id={id}
-              required
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          )}
-        </Field>
-      )}
-
-      <Field label="Catatan" hint="Opsional, mis. bank pengirim atau titipan siapa.">
-        {(id) => (
-          <Input id={id} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+        {isItem ? (
+          <Field label="Nama barang">
+            {(id) => (
+              <Input
+                id={id}
+                required
+                maxLength={200}
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+              />
+            )}
+          </Field>
+        ) : (
+          <Field
+            label="Nominal (Rp)"
+            hint={parsed ? formatRupiah(parsed) : "Angka saja, mis. 500000. Titik pemisah boleh."}
+          >
+            {(id) => (
+              <Input
+                id={id}
+                required
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            )}
+          </Field>
         )}
-      </Field>
+
+        <Field label="Catatan" hint="Opsional, mis. bank pengirim atau titipan siapa.">
+          {(id) => (
+            <Input id={id} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+          )}
+        </Field>
+      </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending || !valid}>
@@ -419,7 +519,7 @@ function DeleteDialog({ gift, onClose }: { gift: ReceivedGift | null; onClose: (
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

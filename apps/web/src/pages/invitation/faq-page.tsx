@@ -1,14 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Faq } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleHelp, Plus, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Textarea } from "../../components/ui/textarea.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormSection } from "@/components/kit/form-rows";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { faqsQuery, useRefresh } from "../../lib/queries.js";
 
@@ -39,63 +43,56 @@ export function FaqPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-ink-soft">
-          Pertanyaan yang sering diajukan tamu, mis. dress code, parkir, atau membawa anak.
-        </p>
-        <Button onClick={() => setEditing({ kind: "new" })}>
-          <Plus className="size-4" aria-hidden /> Tambah pertanyaan
-        </Button>
-      </div>
+      <Toolbar
+        summary={`${items.length} pertanyaan`}
+        addLabel="Tambah pertanyaan"
+        onAdd={() => setEditing({ kind: "new" })}
+      />
 
       {faqs.isError && <Alert tone="error">{faqs.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
       {faqs.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">Belum ada pertanyaan.</Card>
+        <EmptyState
+          icon={CircleHelp}
+          title="Belum ada pertanyaan"
+          description="Tulis hal yang sering ditanyakan tamu, mis. dress code, parkir, atau membawa anak."
+          addLabel="Tambah pertanyaan"
+          onAdd={() => setEditing({ kind: "new" })}
+        />
       ) : (
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-3">
           {items.map((item, index) => (
             <li key={item.id}>
-              <Card className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Naikkan"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0 || reorder.isPending}
-                  >
-                    <ArrowUp className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Turunkan"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1 || reorder.isPending}
-                  >
-                    <ArrowDown className="size-4" aria-hidden />
-                  </Button>
-                </div>
+              <Card className="flex-row flex-wrap items-start gap-4 p-4">
+                <ReorderButtons
+                  index={index}
+                  count={items.length}
+                  busy={reorder.isPending}
+                  onMove={move}
+                />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <p className="font-display text-lg font-bold">{item.question}</p>
+                  <p className="font-semibold">{item.question}</p>
                   <p className="line-clamp-3 break-words whitespace-pre-wrap text-sm">
                     {item.answer}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setEditing({ kind: "edit", item })}
-                  >
-                    Ubah
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(item)}>
-                    Hapus
-                  </Button>
-                </div>
+                <DataTableRowActions
+                  actions={[
+                    {
+                      label: "Ubah",
+                      icon: <SquarePen />,
+                      onSelect: () => setEditing({ kind: "edit", item }),
+                    },
+                    "separator",
+                    {
+                      label: "Hapus",
+                      icon: <Trash2 />,
+                      destructive: true,
+                      onSelect: () => setDeleting(item),
+                    },
+                  ]}
+                />
               </Card>
             </li>
           ))}
@@ -144,39 +141,41 @@ function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Field label="Pertanyaan">
-        {(id) => (
-          <Input
-            id={id}
-            required
-            maxLength={200}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-        )}
-      </Field>
-      <Field label="Jawaban" hint="Maksimal 1000 karakter.">
-        {(id) => (
-          <Textarea
-            id={id}
-            required
-            className="min-h-28"
-            maxLength={1000}
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-          />
-        )}
-      </Field>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection
+        title="Tanya jawab"
+        description="Tulis seperti Anda menjawab tamu secara langsung."
+      >
+        <Field label="Pertanyaan" hint={`${question.length}/200 karakter.`}>
+          {(id) => (
+            <Input
+              id={id}
+              required
+              maxLength={200}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Jawaban" hint={`${answer.length}/1000 karakter.`}>
+          {(id) => (
+            <Textarea
+              id={id}
+              required
+              className="min-h-28"
+              maxLength={1000}
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+            />
+          )}
+        </Field>
+      </FormSection>
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !question.trim() || !answer.trim()}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter
+        onCancel={onDone}
+        pending={save.isPending}
+        disabled={!(!question.trim() || !answer.trim())}
+      />
     </form>
   );
 }
@@ -197,8 +196,8 @@ function DeleteDialog({ item, onClose }: { item: Faq | null; onClose: () => void
         <>
           <p className="font-semibold">{item.question}</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

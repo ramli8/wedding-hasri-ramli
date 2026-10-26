@@ -1,11 +1,11 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { type FormEvent, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Select } from "../../components/ui/select.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { Select } from "@/components/kit/select";
+import { Input } from "@/components/ui/input";
 import { addWalkin, type Outcome } from "../../lib/scan/actions.js";
 import { db } from "../../lib/scan/db.js";
 
@@ -117,7 +117,7 @@ function WalkinForm({
       </div>
       {error && <Alert tone="error">{error}</Alert>}
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="outline" onClick={onClose}>
           Batal
         </Button>
         <Button type="submit" disabled={busy || !name.trim()}>

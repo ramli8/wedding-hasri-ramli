@@ -11,12 +11,20 @@ import { meQuery } from "./lib/queries.js";
 import { getMeta } from "./lib/scan/db.js";
 import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
+import {
+  CrashPage,
+  ForbiddenPage,
+  MaintenancePage,
+  NotFoundPage,
+  UnauthorizedPage,
+} from "./pages/error-page.js";
 import { EventsPage } from "./pages/events-page.js";
 import { GroupsPage } from "./pages/groups-page.js";
 import { GuestbookPage } from "./pages/guestbook-page.js";
 import { GuestsPage } from "./pages/guests/guests-page.js";
 import { ImportPage } from "./pages/guests/import-page.js";
 import { PrintPage } from "./pages/guests/print-page.js";
+import { GuidePage } from "./pages/guide-page.js";
 import { HomePage } from "./pages/home-page.js";
 import { CouplePage } from "./pages/invitation/couple-page.js";
 import { FaqPage } from "./pages/invitation/faq-page.js";
@@ -32,9 +40,15 @@ import { RsvpPage } from "./pages/rsvp-page.js";
 import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
-import { SettingsPage } from "./pages/settings-page.js";
+import { SeoSettings } from "./pages/settings/seo-settings.js";
+import { SettingsLayout } from "./pages/settings/settings-layout.js";
+import {
+  AppearanceSettings,
+  BackupSettings,
+  PasswordSettings,
+  WeddingSettings,
+} from "./pages/settings/settings-pages.js";
 import { InvitationPage } from "./pages/ticket/invitation-page.js";
-import { TicketPage } from "./pages/ticket/ticket-page.js";
 import { VendorsPage } from "./pages/vendors-page.js";
 
 type RouterContext = { queryClient: QueryClient };
@@ -76,9 +90,19 @@ const adminIndexRoute = createRoute({
   component: HomePage,
 });
 
+const guideRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/panduan",
+  component: GuidePage,
+});
+
 const guestsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/tamu",
+  // ?acara=<id> membuka daftar tamu yang sudah disaring ke satu acara (dari kartu Acara).
+  validateSearch: (search: Record<string, unknown>): { acara?: string } => ({
+    acara: typeof search.acara === "string" && search.acara ? search.acara : undefined,
+  }),
   component: GuestsPage,
 });
 
@@ -202,14 +226,42 @@ const devicesRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/pengaturan",
-  component: SettingsPage,
+  component: SettingsLayout,
 });
+const settingsChildren = [
+  createRoute({ getParentRoute: () => settingsRoute, path: "/", component: WeddingSettings }),
+  createRoute({ getParentRoute: () => settingsRoute, path: "pratinjau", component: SeoSettings }),
+  createRoute({ getParentRoute: () => settingsRoute, path: "sandi", component: PasswordSettings }),
+  createRoute({ getParentRoute: () => settingsRoute, path: "cadangan", component: BackupSettings }),
+  createRoute({
+    getParentRoute: () => settingsRoute,
+    path: "tampilan",
+    component: AppearanceSettings,
+  }),
+];
 
-// Halaman pribadi tamu (tiket QR, RSVP): terbuka tanpa login, dikenali dari kode di URL.
+const errorRoutes = [
+  ["/401", UnauthorizedPage],
+  ["/403", ForbiddenPage],
+  ["/404", NotFoundPage],
+  ["/500", CrashPage],
+  ["/503", MaintenancePage],
+].map(([path, component]) =>
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: path as string,
+    component: component as () => React.JSX.Element,
+  }),
+);
+
+// Halaman pribadi tamu: terbuka tanpa login, dikenali dari kode di URL. Tiket QR dan RSVP kini
+// menjadi bagian dari satu halaman undangan penuh, jadi alamat tanpa akhiran dialihkan ke sana.
 const ticketRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$code",
-  component: TicketPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: "/u/$code/undangan", params });
+  },
 });
 
 const guestInvitationRoute = createRoute({
@@ -253,6 +305,7 @@ const routeTree = rootRoute.addChildren([
   readinessRoute,
   appRoute.addChildren([
     adminIndexRoute,
+    guideRoute,
     guestsRoute,
     importRoute,
     printRoute,
@@ -274,13 +327,16 @@ const routeTree = rootRoute.addChildren([
     ]),
     checkinRoute,
     devicesRoute,
-    settingsRoute,
+    settingsRoute.addChildren(settingsChildren),
+    ...errorRoutes,
   ]),
 ]);
 
 export const router = createRouter({
   routeTree,
   context: { queryClient: undefined as unknown as QueryClient },
+  defaultNotFoundComponent: NotFoundPage,
+  defaultErrorComponent: CrashPage,
 });
 
 declare module "@tanstack/react-router" {

@@ -8,6 +8,7 @@ import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
 import { mediaPublicRoutes } from "./routes/media.js";
 import { publicRoutes } from "./routes/public.js";
+import { shareRoutes } from "./routes/share.js";
 
 export function createApp(deps: AppDeps) {
   const v1 = new Hono<AppEnv>()
@@ -23,6 +24,7 @@ export function createApp(deps: AppDeps) {
     .use("*", requestLogger(deps.logger))
     .route("/api", api)
     .route("/media", mediaPublicRoutes(deps))
+    .route("/u", shareRoutes(deps))
     .onError(errorHandler(deps.logger))
     .notFound(notFoundHandler);
 }

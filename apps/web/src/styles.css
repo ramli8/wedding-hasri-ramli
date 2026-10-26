@@ -1,108 +1,129 @@
 @import "tailwindcss";
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource/ibm-plex-mono/latin-400.css";
-@import "@fontsource/ibm-plex-mono/latin-500.css";
-@import "@fontsource/ibm-plex-mono/latin-600.css";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "./guest.css";
 
-/* Token desain: docs/design.md dan docs/design-tokens.json. Skala spacing Tailwind tidak ditimpa. */
-@theme {
-  --color-bone: #f6efe7;
-  --color-bone-2: #eadfd1;
-  --color-paper: #ffffff;
-  --color-ink: #1a1014;
-  --color-ink-soft: #5a4850;
-  --color-acid: #ffc2d1;
-  --color-electric: #7a1230;
-  --color-alert: #b3261e;
-  --color-ok: #1f6b45;
-  --color-tone-1: #ffb84d;
-  --color-tone-2: #7de0a6;
-  --color-tone-3: #8fd8f0;
-  --color-tone-4: #c4b5fd;
-  /* Hanya di dalam input putih: di atas bone kontrasnya 4,2:1. */
-  --color-placeholder: #76696f;
+@custom-variant dark (&:is(.dark *));
 
-  --font-display: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-
-  --tracking-h1: -0.04em;
-  --tracking-h2: -0.03em;
-  --tracking-h3: -0.02em;
-  --tracking-button: 0.06em;
-  --tracking-label: 0.14em;
-
-  --shadow-hard-sm: 3px 3px 0 var(--color-ink);
-  --shadow-hard: 4px 4px 0 var(--color-ink);
-  --shadow-hard-lg: 6px 6px 0 var(--color-ink);
-  --shadow-hard-xl: 9px 9px 0 var(--color-ink);
-  --shadow-hard-on-dark: 6px 6px 0 var(--color-acid);
+/* Tema shadcn-admin (shadcn/ui, netral): token CSS di :root, dipetakan ke utilitas Tailwind lewat @theme inline. */
+/* Token persis dari shadcn-admin (src/styles/theme.css), ditambah success dan warning untuk hasil scan. */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.527 0.154 150.069);
+  --warning: oklch(0.769 0.188 70.08);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
-/* Label kecil: IBM Plex Mono kapital dengan tracking lebar. */
-@utility tag {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.33;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+/* Mode gelap: kelas .dark dipasang di <html> oleh AppLayout (hanya panel admin). */
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.14 0.04 259.21);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.696 0.17 162.48);
+  --warning: oklch(0.769 0.188 70.08);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
 }
 
-/* Pola titik latar halaman. Jangan dipakai di balik data padat. */
-@utility bg-raster {
-  background-image: radial-gradient(var(--color-bone-2) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-
-/* Hover mengangkat, tekan menenggelamkan (bayangan hilang). */
-@utility lift {
-  transition-property: translate, box-shadow, background-color, color;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  &:hover:not(:disabled) {
-    translate: -2px -2px;
-    box-shadow: var(--shadow-hard-lg);
-  }
-  &:active:not(:disabled) {
-    translate: 2px 2px;
-    box-shadow: 0 0 0 var(--color-ink);
-  }
-}
-
-/* Kotak centang persegi: kosong = putih, tercentang = acid dengan tanda centang hitam. */
-@utility check-box {
-  appearance: none;
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-  cursor: pointer;
-  border: 2px solid var(--color-ink);
-  background-color: var(--color-paper);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100%;
-  &:checked {
-    background-color: var(--color-acid);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c0c0c' stroke-width='3.5' stroke-linecap='square'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E");
-  }
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
 }
 
 @layer base {
   :root {
     color-scheme: light;
   }
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--border);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
 
   body {
-    @apply bg-bone bg-raster font-sans text-sm text-ink antialiased;
+    @apply min-h-svh w-full bg-background font-sans text-sm text-foreground antialiased has-[div[data-variant='inset']]:bg-sidebar;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
@@ -125,81 +146,5 @@
   }
   to {
     width: 0;
-  }
-}
-
-/* Dialog di HP: lembar yang naik dari bawah. */
-@media (max-width: 767px) {
-  dialog.sheet[open] {
-    animation: sheet-up 180ms ease-out;
-  }
-  dialog.sheet[open]::backdrop {
-    animation: sheet-fade 180ms ease-out;
-  }
-}
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
-  }
-}
-@keyframes sheet-fade {
-  from {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  dialog.sheet[open],
-  dialog.sheet[open]::backdrop {
-    animation: none;
-  }
-}
-
-/* Tabel di HP: tiap baris menjadi kartu; label kolom diambil dari data-label. */
-@media (max-width: 767px) {
-  .table-cards thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-  .table-cards,
-  .table-cards tbody,
-  .table-cards tr,
-  .table-cards td {
-    display: block;
-  }
-  .table-cards tr {
-    padding: 0.5rem 0;
-    border-bottom: 2px solid var(--color-ink);
-  }
-  .table-cards tr:last-child {
-    border-bottom: 0;
-  }
-  .table-cards td {
-    padding: 0.25rem 1rem;
-  }
-  .table-cards td[data-label]::before {
-    content: attr(data-label);
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--color-ink-soft);
-  }
-}
-
-/* Baris tombol terakhir di formulir dalam lembar HP menempel di bawah, tanpa perlu menggulir. */
-@media (max-width: 767px) {
-  dialog.sheet form > .justify-end:last-child {
-    position: sticky;
-    bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom)));
-    margin-inline: -1.25rem;
-    margin-bottom: calc(-1 * max(1.25rem, env(safe-area-inset-bottom)));
-    padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
-    background: var(--color-paper);
-    border-top: 2px solid var(--color-ink);
   }
 }

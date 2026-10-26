@@ -1,15 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AdminWish, MediaRef } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, Gift, Plus, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { ImageField } from "../../components/image-field.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { ImageField } from "@/components/image-field";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormSection } from "@/components/kit/form-rows";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
 import { useRefresh, wishesQuery } from "../../lib/queries.js";
 
@@ -52,16 +56,15 @@ export function WishlistPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-ink-soft">
-          Ide hadiah untuk tamu yang ingin memberi barang. Isi jumlah yang dibutuhkan; tamu memilih
-          sendiri dari halaman undangan dan namanya tampil di sini. Bila sudah penuh, hadiah tetap
-          tampil tetapi diberi tanda.
-        </p>
-        <Button onClick={() => setEditing({ kind: "new" })}>
-          <Plus className="size-4" aria-hidden /> Tambah hadiah
-        </Button>
-      </div>
+      <Toolbar
+        summary={`${items.length} hadiah`}
+        addLabel="Tambah hadiah"
+        onAdd={() => setEditing({ kind: "new" })}
+      />
+      <Tip>
+        Isi jumlah yang dibutuhkan. Tamu memilih sendiri dari halaman undangan dan namanya tampil di
+        sini; hadiah yang sudah penuh tetap tampil dengan tanda.
+      </Tip>
 
       {wishes.isError && <Alert tone="error">{wishes.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
@@ -69,45 +72,37 @@ export function WishlistPage() {
       {receive.error && <Alert tone="error">{receive.error.message}</Alert>}
 
       {wishes.data && items.length === 0 ? (
-        <Card className="text-center text-ink-soft">Belum ada hadiah dalam wishlist.</Card>
+        <EmptyState
+          icon={Gift}
+          title="Wishlist masih kosong"
+          description="Tambahkan ide hadiah untuk tamu yang ingin memberi barang."
+          addLabel="Tambah hadiah"
+          onAdd={() => setEditing({ kind: "new" })}
+        />
       ) : (
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-3">
           {items.map((item, index) => (
             <li key={item.id}>
-              <Card className="flex flex-wrap items-start gap-4">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Naikkan"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0 || reorder.isPending}
-                  >
-                    <ArrowUp className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Turunkan"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1 || reorder.isPending}
-                  >
-                    <ArrowDown className="size-4" aria-hidden />
-                  </Button>
-                </div>
+              <Card className="flex-row flex-wrap items-start gap-4 p-4">
+                <ReorderButtons
+                  index={index}
+                  count={items.length}
+                  busy={reorder.isPending}
+                  onMove={move}
+                />
                 {item.photo && (
                   <img
                     src={item.photo.thumb}
                     alt=""
                     width={item.photo.width}
                     height={item.photo.height}
-                    className="size-24 shrink-0 border-2 border-ink object-cover"
+                    className="size-20 shrink-0 rounded-lg border object-cover"
                   />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-display text-lg font-bold">{item.name}</p>
-                    <Badge variant="pill">
+                    <p className="font-semibold">{item.name}</p>
+                    <Badge variant="outline">
                       {item.isFulfilled ? "Terpenuhi" : `${item.claimed}/${item.quantity}`}
                     </Badge>
                   </div>
@@ -121,7 +116,7 @@ export function WishlistPage() {
                             {item.quantity > 1 ? ` × ${claim.quantity}` : ""}
                           </span>
                           {claim.receivedGiftId ? (
-                            <Badge variant="pillAcid">Sudah diterima</Badge>
+                            <Badge variant="secondary">Sudah diterima</Badge>
                           ) : (
                             <button
                               type="button"
@@ -136,7 +131,7 @@ export function WishlistPage() {
                           )}
                           <button
                             type="button"
-                            className="underline hover:text-alert"
+                            className="underline hover:text-destructive"
                             disabled={unclaim.isPending}
                             onClick={() =>
                               unclaim.mutate({ wishId: item.id, guestId: claim.guestId })
@@ -159,18 +154,22 @@ export function WishlistPage() {
                     </a>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setEditing({ kind: "edit", item })}
-                  >
-                    Ubah
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleting(item)}>
-                    Hapus
-                  </Button>
-                </div>
+                <DataTableRowActions
+                  actions={[
+                    {
+                      label: "Ubah",
+                      icon: <SquarePen />,
+                      onSelect: () => setEditing({ kind: "edit", item }),
+                    },
+                    "separator",
+                    {
+                      label: "Hapus",
+                      icon: <Trash2 />,
+                      destructive: true,
+                      onSelect: () => setDeleting(item),
+                    },
+                  ]}
+                />
               </Card>
             </li>
           ))}
@@ -228,66 +227,64 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Field label="Nama hadiah">
-        {(id) => (
-          <Input
-            id={id}
-            required
-            maxLength={120}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        )}
-      </Field>
-      <Field label="Keterangan" hint="Opsional, mis. warna atau ukuran.">
-        {(id) => (
-          <Input id={id} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
-        )}
-      </Field>
-      <Field label="Tautan toko" hint="Opsional, diawali https://">
-        {(id) => (
-          <Input
-            id={id}
-            type="url"
-            inputMode="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-        )}
-      </Field>
-      <ImageField
-        label="Foto"
-        value={photo}
-        onChange={setPhoto}
-        recommendation="persegi 1:1, 800 × 800 px. Di undangan foto tampil kecil sebagai kotak, dan sisi yang tidak persegi dipotong dari tengah."
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Jumlah dibutuhkan" hint="Yang terpenuhi dihitung dari pilihan tamu.">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection title="Hadiah">
+        <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+          <Field label="Nama hadiah">
+            {(id) => (
+              <Input
+                id={id}
+                required
+                maxLength={120}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Jumlah dibutuhkan" hint="Yang terpenuhi dihitung dari pilihan tamu.">
+            {(id) => (
+              <Input
+                id={id}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                required
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+        <Field label="Keterangan" hint="Opsional, mis. warna atau ukuran.">
+          {(id) => (
+            <Input id={id} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+          )}
+        </Field>
+        <Field label="Tautan toko" hint="Opsional, diawali https://">
           {(id) => (
             <Input
               id={id}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={99}
-              required
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              type="url"
+              inputMode="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
             />
           )}
         </Field>
-      </div>
+      </FormSection>
+
+      <FormSection title="Foto" description="Opsional.">
+        <ImageField
+          label="Foto"
+          value={photo}
+          onChange={setPhoto}
+          recommendation="persegi 1:1, 800 × 800 px. Di undangan foto tampil kecil sebagai kotak, dan sisi yang tidak persegi dipotong dari tengah."
+        />
+      </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !name.trim()}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!!name.trim()} />
     </form>
   );
 }
@@ -308,8 +305,8 @@ function DeleteDialog({ item, onClose }: { item: AdminWish | null; onClose: () =
         <>
           <p>Hadiah ini dan fotonya dihapus dari wishlist.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

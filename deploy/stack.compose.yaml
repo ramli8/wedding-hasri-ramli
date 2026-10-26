@@ -38,6 +38,8 @@ services:
       APP_VERSION: ${APP_VERSION:-dev}
       LOG_LEVEL: info
       MEDIA_DIR: /data/media
+      # /u/KODE disajikan API agar WhatsApp dan Instagram melihat tag pratinjau tautan.
+      WEB_INDEX_URL: http://web/index.html
     volumes:
       - media:/data/media
     healthcheck:

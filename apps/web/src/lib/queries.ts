@@ -9,6 +9,11 @@ export const meQuery = queryOptions({
   retry: false,
 });
 
+export const seoQuery = queryOptions({
+  queryKey: ["seo"],
+  queryFn: async () => (await adminApi.seo.get()).seo,
+});
+
 export const settingsQuery = queryOptions({
   queryKey: ["settings"],
   queryFn: async () => (await adminApi.settings.get()).settings,
@@ -65,6 +70,7 @@ export function useRefresh() {
   return (
     ...keys: (
       | "settings"
+      | "seo"
       | "events"
       | "groups"
       | "guests"

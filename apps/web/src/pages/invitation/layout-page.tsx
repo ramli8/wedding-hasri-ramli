@@ -1,15 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type Live, type MediaRef, SECTION_LABEL, type Section } from "@wedding/shared";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { ImageField } from "../../components/image-field.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
-import { Checkbox } from "../../components/ui/checkbox.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Textarea } from "../../components/ui/textarea.js";
+import { ImageField } from "@/components/image-field";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Field } from "@/components/kit/field";
+import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { layoutQuery, useRefresh } from "../../lib/queries.js";
 
@@ -18,15 +18,13 @@ export function LayoutPage() {
 
   return (
     <>
-      <p className="max-w-prose text-ink-soft">
-        Atur sampul di bagian atas halaman undangan, lalu urutan dan tampil/sembunyi tiap bagian.
-        Bagian yang belum Anda isi tidak tampil di halaman tamu walau dicentang.
-      </p>
       {layout.isError && <Alert tone="error">{layout.error.message}</Alert>}
       {layout.data && (
         <>
-          <CoverForm greeting={layout.data.cover.greeting} photo={layout.data.cover.photo} />
-          <LiveForm live={layout.data.live} />
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <CoverForm greeting={layout.data.cover.greeting} photo={layout.data.cover.photo} />
+            <LiveForm live={layout.data.live} />
+          </div>
           <SectionList sections={layout.data.sections} />
         </>
       )}
@@ -61,12 +59,14 @@ function CoverForm({
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Sampul</h2>
-        <p className="text-sm text-ink-soft">
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>Sampul</CardTitle>
+        <CardDescription>
           Nama mempelai dan tanggal acara diambil otomatis dari Pengaturan dan Acara.
-        </p>
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4 px-6">
         <ImageField
           label="Foto sampul"
           value={photo}
@@ -95,7 +95,7 @@ function CoverForm({
         </Field>
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
         <div className="flex items-center justify-end gap-3">
-          {saved && <span className="text-sm font-semibold text-ok">Tersimpan</span>}
+          {saved && <span className="text-sm font-medium text-success">Tersimpan</span>}
           <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "Menyimpan…" : "Simpan sampul"}
           </Button>
@@ -125,46 +125,47 @@ function SectionList({ sections }: { sections: Section[] }) {
     save.mutate(sections.map((s, i) => (i === index ? { ...s, visible } : s)));
 
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Urutan bagian</h2>
-      {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <ol className="flex flex-col gap-3">
-        {sections.map((section, index) => (
-          <li key={section.key}>
-            <Card className="flex items-center gap-4 p-3">
-              <div className="flex flex-col gap-1">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  aria-label="Naikkan"
-                  onClick={() => move(index, -1)}
-                  disabled={index === 0 || save.isPending}
-                >
-                  <ArrowUp className="size-4" aria-hidden />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  aria-label="Turunkan"
-                  onClick={() => move(index, 1)}
-                  disabled={index === sections.length - 1 || save.isPending}
-                >
-                  <ArrowDown className="size-4" aria-hidden />
-                </Button>
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>Urutan bagian</CardTitle>
+        <CardDescription>
+          Atur urutan bagian di halaman undangan dan sembunyikan yang tidak dipakai. Bagian yang
+          belum Anda isi tidak tampil walau dicentang.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        {save.error && <Alert tone="error">{save.error.message}</Alert>}
+        <ol className="grid gap-2">
+          {sections.map((section, index) => (
+            <li
+              key={section.key}
+              className="flex items-center gap-3 rounded-lg border p-3 data-[hidden=true]:opacity-60"
+              data-hidden={!section.visible}
+            >
+              <ReorderButtons
+                index={index}
+                count={sections.length}
+                busy={save.isPending}
+                onMove={move}
+              />
+              <span className="grid size-7 place-items-center rounded-md bg-muted text-xs font-medium">
+                {index + 1}
+              </span>
+              <p className="flex-1 font-medium">{SECTION_LABEL[section.key]}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {section.visible ? "Tampil" : "Disembunyikan"}
+                <Switch
+                  checked={section.visible}
+                  disabled={save.isPending}
+                  onCheckedChange={(checked) => toggle(index, checked)}
+                  aria-label={`Tampilkan ${SECTION_LABEL[section.key]}`}
+                />
               </div>
-              <p className="flex-1 font-display text-lg font-bold">{SECTION_LABEL[section.key]}</p>
-              <Checkbox
-                checked={section.visible}
-                disabled={save.isPending}
-                onChange={(e) => toggle(index, e.target.checked)}
-              >
-                Tampil
-              </Checkbox>
-            </Card>
-          </li>
-        ))}
-      </ol>
-    </div>
+            </li>
+          ))}
+        </ol>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -189,13 +190,15 @@ function LiveForm({ live }: { live: Live | null }) {
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <h2 className="font-display text-xl font-bold tracking-h2 uppercase">Siaran langsung</h2>
-        <p className="text-sm text-ink-soft">
+    <Card className="gap-4">
+      <CardHeader>
+        <CardTitle>Siaran langsung</CardTitle>
+        <CardDescription>
           Untuk tamu yang tidak bisa hadir. Isi tautan YouTube, Instagram Live, atau Zoom bila sudah
           ada; kosongkan untuk menyembunyikan bagian ini.
-        </p>
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4 px-6">
         <Field label="Tautan siaran" hint="Harus diawali https://">
           {(id) => (
             <Input
@@ -225,7 +228,7 @@ function LiveForm({ live }: { live: Live | null }) {
         </Field>
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
         <div className="flex items-center justify-end gap-3">
-          {saved && <span className="text-sm font-semibold text-ok">Tersimpan</span>}
+          {saved && <span className="text-sm font-medium text-success">Tersimpan</span>}
           <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "Menyimpan…" : "Simpan siaran"}
           </Button>

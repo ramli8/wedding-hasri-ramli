@@ -2,9 +2,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { guestCodeSchema } from "@wedding/shared";
 import { SearchX, ShieldAlert, WifiOff } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Badge } from "../../components/ui/badge.js";
-import { Button } from "../../components/ui/button.js";
-import { Card } from "../../components/ui/card.js";
+import { Badge } from "../../components/guest-ui/badge.js";
+import { Button } from "../../components/guest-ui/button.js";
+import { Card } from "../../components/guest-ui/card.js";
 import { ApiError } from "../../lib/api.js";
 
 type Kind = "not-found" | "rate-limited" | "offline" | "other";

@@ -11,6 +11,7 @@ import { homeRoutes } from "./home.js";
 import { invitationAdminRoutes } from "./invitation.js";
 import { mediaAdminRoutes } from "./media.js";
 import { receivedGiftRoutes } from "./received-gifts.js";
+import { seoRoutes } from "./seo.js";
 import { settingsRoutes } from "./settings.js";
 import { vendorRoutes } from "./vendors.js";
 
@@ -21,6 +22,7 @@ export function adminRoutes(deps: AppDeps) {
     .route("/export", exportRoutes(deps))
     .route("/home", homeRoutes(deps))
     .route("/settings", settingsRoutes(deps))
+    .route("/seo", seoRoutes(deps))
     .route("/events", eventRoutes(deps))
     .route("/groups", groupRoutes(deps))
     .route("/guests", guestRoutes(deps))

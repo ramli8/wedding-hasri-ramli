@@ -20,6 +20,7 @@ Dua skrip yang menjalankan aplikasi sungguhan di Firefox tanpa tampilan (headles
 | Variabel | Fungsi |
 |---|---|
 | `E2E_DATABASE_URL` | Database uji (bawaan `postgres://wedding:wedding@localhost:5433/wedding_e2e`) |
+| `E2E_API_PORT` | Port API uji bila 3000 terpakai (mis. 3100) |
 | `E2E_SKIP_BUILD=1` | Lewati build web (memakai `apps/web/dist` yang ada) |
 | `E2E_OUT` | Folder tangkapan layar (bawaan `e2e/out`, tidak masuk git) |
 

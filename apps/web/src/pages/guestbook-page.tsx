@@ -1,13 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type AdminGuestbookEntry, GUESTBOOK_MAX_MESSAGE } from "@wedding/shared";
+import { Eye, EyeOff, MessagesSquare, Reply, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Alert } from "../components/ui/alert.js";
-import { Badge } from "../components/ui/badge.js";
-import { Button } from "../components/ui/button.js";
-import { Card } from "../components/ui/card.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Select } from "../components/ui/select.js";
-import { Textarea } from "../components/ui/textarea.js";
+import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Pagination } from "@/components/kit/pagination";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { getDisplayNameInitials } from "@/lib/utils";
 import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { guestbookQuery, useRefresh } from "../lib/queries.js";
@@ -29,32 +34,39 @@ export function GuestbookPage() {
 
   return (
     <>
-      <p className="max-w-prose text-ink-soft">
-        Ucapan dari tamu. Balasan Anda tampil di bawah ucapan itu; ucapan yang disembunyikan tidak
-        terlihat oleh tamu.
-      </p>
-      <div className="max-w-xs">
-        <Select
-          compact
-          aria-label="Tampilan"
-          value={visibility}
-          onChange={(e) => {
-            setVisibility(e.target.value as Visibility);
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-medium">{total} ucapan</p>
+        <Tabs
+          value={visibility === "" ? "semua" : visibility}
+          onValueChange={(value) => {
+            setVisibility(value === "semua" ? "" : (value as Visibility));
             setPage(1);
           }}
         >
-          <option value="">Semua ucapan</option>
-          <option value="shown">Yang tampil</option>
-          <option value="hidden">Yang disembunyikan</option>
-        </Select>
+          <TabsList>
+            <TabsTrigger value="semua">Semua</TabsTrigger>
+            <TabsTrigger value="shown">Tampil</TabsTrigger>
+            <TabsTrigger value="hidden">Disembunyikan</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {list.isError && <Alert tone="error">{list.error.message}</Alert>}
 
       {list.data && list.data.items.length === 0 ? (
-        <Card className="text-center text-ink-soft">Belum ada ucapan.</Card>
+        <Card className="items-center px-6 py-12 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-muted">
+            <MessagesSquare className="size-6" aria-hidden />
+          </span>
+          <div className="space-y-1">
+            <p className="font-semibold">Belum ada ucapan</p>
+            <p className="text-sm text-muted-foreground">
+              Ucapan muncul di sini setelah tamu menulisnya di halaman undangan.
+            </p>
+          </div>
+        </Card>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-3">
           {list.data?.items.map((entry) => (
             <li key={entry.id}>
               <EntryCard entry={entry} onDelete={() => setDeleting(entry)} />
@@ -63,31 +75,7 @@ export function GuestbookPage() {
         </ul>
       )}
 
-      {pageCount > 1 && (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-ink-soft">
-            Halaman {page} dari {pageCount} · {total} ucapan
-          </p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page <= 1}
-            >
-              Sebelumnya
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pageCount}
-            >
-              Berikutnya
-            </Button>
-          </div>
-        </div>
-      )}
+      {pageCount > 1 && <Pagination page={page} pageCount={pageCount} onPage={setPage} />}
 
       <DeleteDialog entry={deleting} onClose={() => setDeleting(null)} />
     </>
@@ -117,19 +105,44 @@ function EntryCard({ entry, onDelete }: { entry: AdminGuestbookEntry; onDelete: 
   }
 
   return (
-    <Card className={`flex flex-col gap-3 ${entry.isHidden ? "opacity-70" : ""}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="flex items-center gap-2 font-semibold">
-          {entry.name}
-          {entry.isHidden && <Badge variant="solid">Disembunyikan</Badge>}
-        </p>
-        <p className="text-xs text-ink-soft">{formatDateTime(entry.createdAt)}</p>
+    <Card className={`gap-3 p-4 ${entry.isHidden ? "opacity-70" : ""}`}>
+      <div className="flex items-start gap-3">
+        <Avatar className="size-9">
+          <AvatarFallback>{getDisplayNameInitials(entry.name)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-2 font-semibold">
+            {entry.name}
+            {entry.isHidden && <Badge variant="secondary">Disembunyikan</Badge>}
+          </p>
+          <p className="text-xs text-muted-foreground">{formatDateTime(entry.createdAt)}</p>
+        </div>
+        {!replying && (
+          <DataTableRowActions
+            actions={[
+              {
+                label: entry.reply ? "Ubah balasan" : "Balas",
+                icon: <Reply />,
+                onSelect: () => setReplying(true),
+              },
+              {
+                label: entry.isHidden ? "Tampilkan" : "Sembunyikan",
+                icon: entry.isHidden ? <Eye /> : <EyeOff />,
+                onSelect: () => toggleHidden.mutate(),
+              },
+              "separator",
+              { label: "Hapus", icon: <Trash2 />, destructive: true, onSelect: onDelete },
+            ]}
+          />
+        )}
       </div>
       <p className="break-words whitespace-pre-wrap">{entry.message}</p>
 
       {entry.reply && !replying && (
-        <div className="border-2 border-ink bg-acid p-3 text-sm">
-          <p className="tag mb-1">Balasan Anda · {formatDateTime(entry.repliedAt)}</p>
+        <div className="rounded-lg border-s-4 bg-muted/50 p-3 text-sm">
+          <p className="mb-1 text-xs font-medium text-muted-foreground">
+            Balasan Anda · {formatDateTime(entry.repliedAt)}
+          </p>
           <p className="break-words whitespace-pre-wrap">{entry.reply}</p>
         </div>
       )}
@@ -143,7 +156,9 @@ function EntryCard({ entry, onDelete }: { entry: AdminGuestbookEntry; onDelete: 
             value={reply}
             onChange={(e) => setReply(e.target.value)}
           />
-          <p className="text-xs text-ink-soft">Kosongkan lalu simpan untuk menghapus balasan.</p>
+          <p className="text-xs text-muted-foreground">
+            Kosongkan lalu simpan untuk menghapus balasan.
+          </p>
           {saveReply.error && <Alert tone="error">{saveReply.error.message}</Alert>}
           <div className="flex gap-2">
             <Button size="sm" type="submit" disabled={saveReply.isPending}>
@@ -151,7 +166,7 @@ function EntryCard({ entry, onDelete }: { entry: AdminGuestbookEntry; onDelete: 
             </Button>
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() => {
                 setReplying(false);
                 setReply(entry.reply ?? "");
@@ -164,21 +179,11 @@ function EntryCard({ entry, onDelete }: { entry: AdminGuestbookEntry; onDelete: 
       )}
 
       {toggleHidden.error && <Alert tone="error">{toggleHidden.error.message}</Alert>}
-      {!replying && (
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setReplying(true)}>
-            {entry.reply ? "Ubah balasan" : "Balas"}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => toggleHidden.mutate()}
-            disabled={toggleHidden.isPending}
-          >
-            {entry.isHidden ? "Tampilkan" : "Sembunyikan"}
-          </Button>
-          <Button size="sm" variant="destructive" onClick={onDelete}>
-            Hapus
+      {!replying && !entry.reply && (
+        <div>
+          <Button size="sm" variant="outline" onClick={() => setReplying(true)}>
+            <Reply aria-hidden />
+            Balas
           </Button>
         </div>
       )}
@@ -212,7 +217,7 @@ function DeleteDialog({
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
             <Button

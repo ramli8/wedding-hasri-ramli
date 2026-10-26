@@ -1,9 +1,14 @@
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Server API untuk proxy; uji e2e memakai port lain agar tidak bentrok dengan server pengembangan.
+const apiTarget = process.env.API_TARGET ?? "http://localhost:3000";
+
 export default defineConfig({
+  resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
   plugins: [
     react(),
     tailwindcss(),
@@ -22,8 +27,8 @@ export default defineConfig({
         scope: "/",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#f6efe7",
-        theme_color: "#ffc2d1",
+        background_color: "#ffffff",
+        theme_color: "#ffffff",
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png" },
@@ -52,10 +57,10 @@ export default defineConfig({
     // Untuk uji di HP lewat Cloudflare Quick Tunnel (cloudflared tunnel --url http://localhost:5173).
     allowedHosts: [".trycloudflare.com"],
     // Origin dibiarkan apa adanya (http://localhost:5173) agar lolos pemeriksaan Origin di API.
-    proxy: { "/api": "http://localhost:3000", "/media": "http://localhost:3000" },
+    proxy: { "/api": apiTarget, "/media": apiTarget },
   },
   preview: {
     port: 4173,
-    proxy: { "/api": "http://localhost:3000", "/media": "http://localhost:3000" },
+    proxy: { "/api": apiTarget, "/media": apiTarget },
   },
 });

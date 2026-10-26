@@ -11,6 +11,8 @@ const configSchema = z.object({
   MIGRATIONS_DIR: z.string().default("drizzle"),
   APP_VERSION: z.string().default("dev"),
   MEDIA_DIR: z.string().default("data/media"),
+  // Alamat index.html aplikasi web; dipakai /u/KODE untuk menyisipkan tag pratinjau tautan.
+  WEB_INDEX_URL: z.url().optional(),
 });
 
 export function loadConfig(source: Record<string, string | undefined> = process.env) {
@@ -35,6 +37,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     migrationsDir: v.MIGRATIONS_DIR,
     version: v.APP_VERSION,
     mediaDir: v.MEDIA_DIR,
+    webIndexUrl: v.WEB_INDEX_URL,
   };
 }
 

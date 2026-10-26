@@ -1,13 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import type { Event, Group, Guest } from "@wedding/shared";
 import { type FormEvent, useState } from "react";
-import { Alert } from "../../components/ui/alert.js";
-import { Button } from "../../components/ui/button.js";
-import { Checkbox } from "../../components/ui/checkbox.js";
-import { Dialog } from "../../components/ui/dialog.js";
-import { Field } from "../../components/ui/field.js";
-import { Input } from "../../components/ui/input.js";
-import { Select } from "../../components/ui/select.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { CheckCard, FormSection, SwitchRow } from "@/components/kit/form-rows";
+import { Select } from "@/components/kit/select";
+import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
 import { useRefresh } from "../../lib/queries.js";
 
@@ -91,35 +91,46 @@ function GuestForm({
     setEventIds((current) => (checked ? [...current, id] : current.filter((e) => e !== id)));
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nama undangan" hint='Seperti di pesan, mis. "Bpk. Budi & Keluarga".'>
-          {(id) => (
-            <Input
-              id={id}
-              required
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Nomor HP / WhatsApp" hint="Boleh diketik 0812-… atau +62 812-…">
-          {(id) => (
-            <Input
-              id={id}
-              type="tel"
-              inputMode="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Instagram" hint="Isi bila tidak ada nomor HP. Tanpa @.">
-          {(id) => (
-            <Input id={id} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-          )}
-        </Field>
-        <Field label="Kelompok">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormSection
+        title="Identitas"
+        description="Nama seperti yang akan tertulis di pesan undangan."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field label="Nama undangan" hint='Mis. "Bpk. Budi & Keluarga".'>
+              {(id) => (
+                <Input
+                  id={id}
+                  required
+                  autoFocus
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <Field label="Nomor HP / WhatsApp" hint="Boleh 0812-… atau +62 812-…">
+            {(id) => (
+              <Input
+                id={id}
+                type="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Instagram" hint="Isi bila tidak ada nomor HP. Tanpa @.">
+            {(id) => (
+              <Input id={id} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+            )}
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="Pengelompokan">
+        <Field label="Kelompok" hint="Menentukan warna, penanda VIP, dan jam sesi.">
           {(id) => (
             <Select id={id} value={groupId} onChange={(e) => setGroupId(e.target.value)}>
               <option value="">Tanpa kelompok</option>
@@ -131,36 +142,39 @@ function GuestForm({
             </Select>
           )}
         </Field>
-      </div>
-      <Checkbox checked={isRombongan} onChange={(e) => setIsRombongan(e.target.checked)}>
-        Rombongan (penjaga mengisi jumlah orang saat check-in; selain itu otomatis 1 orang)
-      </Checkbox>
+        <SwitchRow
+          title="Rombongan"
+          description="Penjaga mengisi jumlah orang saat check-in. Selain itu otomatis 1 orang."
+          checked={isRombongan}
+          onCheckedChange={setIsRombongan}
+        />
+      </FormSection>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">Diundang ke acara</legend>
+      <FormSection title="Diundang ke acara">
         {events.length === 0 ? (
-          <p className="text-ink-soft">Belum ada acara. Tambahkan di menu Acara.</p>
+          <p className="text-sm text-muted-foreground">Belum ada acara. Tambahkan di menu Acara.</p>
         ) : (
-          events.map((event) => (
-            <Checkbox
-              key={event.id}
-              checked={eventIds.includes(event.id)}
-              onChange={(e) => toggleEvent(event.id, e.target.checked)}
-            >
-              {event.name}
-            </Checkbox>
-          ))
+          <div className="grid gap-2 sm:grid-cols-2">
+            {events.map((event) => (
+              <CheckCard
+                key={event.id}
+                title={event.name}
+                checked={eventIds.includes(event.id)}
+                onCheckedChange={(checked) => toggleEvent(event.id, checked)}
+              />
+            ))}
+          </div>
         )}
-      </fieldset>
+      </FormSection>
 
       <Field label="Catatan untuk penjaga" hint="Tampil di layar scanner, mis. 'Pemain inti klub'.">
         {(id) => <Input id={id} value={usherNote} onChange={(e) => setUsherNote(e.target.value)} />}
       </Field>
 
-      {guest?.code && <p className="text-xs text-ink-soft">Kode tamu: {guest.code}</p>}
+      {guest?.code && <p className="text-xs text-muted-foreground">Kode tamu: {guest.code}</p>}
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDone}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending}>

@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { Guest } from "@wedding/shared";
 import { ArrowLeft, Printer } from "lucide-react";
-import { PageHeader } from "../../components/page-header.js";
-import { Alert } from "../../components/ui/alert.js";
-import { Button, buttonStyles } from "../../components/ui/button.js";
+import { Alert } from "@/components/kit/alert";
+import { Button, buttonVariants } from "@/components/kit/button";
+import { PageHeader } from "@/components/page-header";
 import { adminApi } from "../../lib/admin-api.js";
 import { eventsQuery, groupsQuery } from "../../lib/queries.js";
 
@@ -46,7 +46,7 @@ export function PrintPage() {
           description="Cetak sebelum acara dan simpan di meja penerima tamu. Dipakai bila semua perangkat bermasalah."
           actions={
             <>
-              <Link to="/admin/tamu" className={buttonStyles({ variant: "secondary" })}>
+              <Link to="/admin/tamu" className={buttonVariants({ variant: "outline" })}>
                 <ArrowLeft className="size-4" aria-hidden /> Kembali
               </Link>
               <Button onClick={() => window.print()} disabled={!guests.data?.length}>
@@ -60,19 +60,19 @@ export function PrintPage() {
       {events.isSuccess && !event && (
         <Alert tone="error">Belum ada acara dengan check-in aktif. Aktifkan di menu Acara.</Alert>
       )}
-      {guests.isPending && event && <p className="text-ink-soft">Memuat…</p>}
+      {guests.isPending && event && <p className="text-muted-foreground">Memuat…</p>}
       {guests.isError && <Alert tone="error">{guests.error.message}</Alert>}
 
       {guests.data && event && (
         <section className="flex flex-col gap-3">
           <div className="hidden print:block">
-            <h1 className="font-display text-2xl font-bold uppercase">{event.name}: daftar tamu</h1>
+            <h1 className="text-2xl font-bold">{event.name}: daftar tamu</h1>
           </div>
-          <p className="text-sm text-ink-soft print:text-ink">
+          <p className="text-sm text-muted-foreground print:text-foreground">
             {guests.data.length} undangan. Urut nama.
           </p>
-          <table className="w-full border-2 border-ink bg-paper text-left text-sm print:text-xs">
-            <thead className="tag border-b-2 border-ink">
+          <table className="w-full rounded-lg border bg-card text-left text-sm print:text-xs">
+            <thead className="text-xs font-medium border-b border-border">
               <tr>
                 <th className="w-10 px-2 py-2">✓</th>
                 <th className="px-2 py-2">Nama</th>
@@ -84,9 +84,9 @@ export function PrintPage() {
             </thead>
             <tbody>
               {guests.data.map((guest) => (
-                <tr key={guest.id} className="border-b border-ink break-inside-avoid">
+                <tr key={guest.id} className="border-b border-border break-inside-avoid">
                   <td className="px-2 py-2">
-                    <span className="block size-5 border-2 border-ink" />
+                    <span className="block size-5 border" />
                   </td>
                   <td className="px-2 py-2 font-semibold">{guest.displayName}</td>
                   <td className="px-2 py-2">
@@ -95,7 +95,7 @@ export function PrintPage() {
                   <td className="px-2 py-2">{guest.isRombongan ? "Ya" : ""}</td>
                   <td className="px-2 py-2 font-mono font-semibold">{guest.code}</td>
                   <td className="px-2 py-2">
-                    <span className="block h-5 w-16 border-b-2 border-ink" />
+                    <span className="block h-5 w-16 border-b border-border" />
                   </td>
                 </tr>
               ))}

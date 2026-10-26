@@ -6,12 +6,12 @@ import {
   whatsappUrl,
 } from "@wedding/shared";
 import { useState } from "react";
-import { Alert } from "../components/ui/alert.js";
-import { Badge } from "../components/ui/badge.js";
-import { Button } from "../components/ui/button.js";
-import { Checkbox } from "../components/ui/checkbox.js";
-import { Dialog } from "../components/ui/dialog.js";
-import { Textarea } from "../components/ui/textarea.js";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Checkbox } from "@/components/kit/checkbox";
+import { Dialog } from "@/components/kit/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { renderGuestText } from "../lib/message.js";
@@ -99,7 +99,7 @@ export function ReminderDialog({
       description={`${withPhone.length} tamu belum menjawab dan punya nomor HP; ${remindedCount} sudah diingatkan.`}
     >
       <div className="flex flex-col gap-2">
-        <label htmlFor="reminder-template" className="tag text-ink">
+        <label htmlFor="reminder-template" className="text-xs font-medium text-foreground">
           Isi pesan
         </label>
         <Textarea
@@ -109,7 +109,7 @@ export function ReminderDialog({
           value={template}
           onChange={(e) => changeTemplate(e.target.value)}
         />
-        <p className="text-xs text-ink-soft">
+        <p className="text-xs text-muted-foreground">
           Variabel: {MESSAGE_TEMPLATE_VARIABLES.map((v) => v.name).join(" ")}.{" "}
           <button
             type="button"
@@ -124,7 +124,7 @@ export function ReminderDialog({
             <summary className="cursor-pointer font-semibold">
               Contoh untuk {first.displayName}
             </summary>
-            <pre className="mt-2 border-2 border-ink bg-bone p-3 break-words whitespace-pre-wrap">
+            <pre className="mt-2 border bg-background p-3 break-words whitespace-pre-wrap">
               {textFor(first)}
             </pre>
           </details>
@@ -135,7 +135,7 @@ export function ReminderDialog({
         Sembunyikan yang sudah diingatkan
       </Checkbox>
       {noPhone > 0 && (
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-muted-foreground">
           {noPhone} tamu lain belum menjawab tetapi tidak punya nomor HP (hanya Instagram); kirim
           manual dari menu Tamu.
         </p>
@@ -146,24 +146,26 @@ export function ReminderDialog({
       )}
 
       {shown.length === 0 ? (
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-muted-foreground">
           {withPhone.length === 0
             ? "Semua tamu sudah menjawab."
             : "Semua tamu yang belum menjawab sudah diingatkan."}
         </p>
       ) : (
-        <ul className="flex max-h-80 flex-col overflow-y-auto border-2 border-ink">
+        <ul className="flex max-h-80 flex-col overflow-y-auto border">
           {shown.map((row) => (
             <li
               key={row.guestId}
-              className="flex flex-wrap items-center justify-between gap-2 border-b border-ink p-3 last:border-b-0"
+              className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3 last:border-b-0"
             >
               <div className="min-w-0">
                 <p className="font-semibold break-words">{row.displayName}</p>
                 {row.remindedAt ? (
-                  <Badge variant="pillAcid">Diingatkan {formatDateTime(row.remindedAt)}</Badge>
+                  <Badge variant="secondary">Diingatkan {formatDateTime(row.remindedAt)}</Badge>
                 ) : (
-                  <p className="text-xs text-ink-soft">{row.groupName ?? "Tanpa kelompok"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.groupName ?? "Tanpa kelompok"}
+                  </p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -173,7 +175,7 @@ export function ReminderDialog({
                 {row.remindedAt && (
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="outline"
                     disabled={mark.isPending}
                     onClick={() => mark.mutate({ guestId: row.guestId, reminded: false })}
                   >

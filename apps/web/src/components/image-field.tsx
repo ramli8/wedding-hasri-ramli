@@ -1,10 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
-import { MAX_UPLOAD_MB, type MediaRef } from "@wedding/shared";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, type MediaRef } from "@wedding/shared";
 import { ImagePlus, Trash2 } from "lucide-react";
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { adminApi } from "../lib/admin-api.js";
+
+/**
+ * Pesan galat bila berkas melebihi batas unggah server, supaya admin tidak menunggu unggahan besar
+ * yang pasti ditolak. Ukuran foto tidak diubah di peramban (kebijakan nyaris tanpa kompresi).
+ */
+export function uploadSizeError(file: File): string | null {
+  if (file.size <= MAX_UPLOAD_BYTES) return null;
+  const mb = (file.size / (1024 * 1024)).toFixed(1).replace(".", ",");
+  return `“${file.name}” berukuran ${mb} MB, melebihi batas ${MAX_UPLOAD_MB} MB. Pilih foto lain atau ekspor ulang dengan ukuran lebih kecil.`;
+}
 
 /**
  * Pilih dan unggah satu foto. Berkas dikirim langsung ke server dengan resolusi asli; yang
@@ -25,9 +35,12 @@ export function ImageField({
 }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
+  const [tooBig, setTooBig] = useState<string | null>(null);
 
   const upload = useMutation({
     mutationFn: (file: File) => adminApi.media.upload(file),
+    // Foto baru terpakai setelah formulirnya disimpan, jadi jangan beri tanda "Tersimpan" di sini.
+    meta: { toast: false },
     onSuccess: ({ media }) => onChange(media),
   });
 
@@ -60,7 +73,11 @@ export function ImageField({
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
-              if (file) upload.mutate(file);
+              if (!file) return;
+              const sizeError = uploadSizeError(file);
+              setTooBig(sizeError);
+              upload.reset();
+              if (!sizeError) upload.mutate(file);
             }}
           />
           <div className="flex gap-2">
@@ -91,6 +108,7 @@ export function ImageField({
           )}
         </div>
       </div>
+      {tooBig && <Alert tone="error">{tooBig}</Alert>}
       {upload.error && <Alert tone="error">{upload.error.message}</Alert>}
     </div>
   );

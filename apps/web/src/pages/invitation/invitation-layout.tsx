@@ -39,14 +39,14 @@ const SECTIONS: Record<string, { title: string; desc: string; shown: string; req
       title: "Wishlist",
       desc: "Daftar barang yang diharapkan. Tamu bisa menandai barang yang akan mereka berikan.",
       shown: "Wishlist",
-      required: "Opsional. Nama barang, harga acuan, dan tautan toko bila ada.",
+      required: "Opsional. Nama barang dan jumlahnya; keterangan, tautan toko, dan foto bila ada.",
     },
     susunan: {
       title: "Susunan",
       desc: "Sampul halaman undangan, tautan siaran langsung, serta urutan dan tampil/sembunyi tiap bagian.",
       shown: "Seluruh halaman",
       required:
-        "Sapaan sampul dan foto sampul. Bagian yang belum diisi tidak tampil walau dicentang.",
+        "Foto sampul (disarankan); kalimat pembuka opsional. Bagian yang belum diisi tidak tampil walau dicentang.",
     },
     ucapan: {
       title: "Ucapan",

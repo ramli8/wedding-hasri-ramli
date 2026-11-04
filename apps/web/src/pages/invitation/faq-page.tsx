@@ -1,14 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Faq } from "@wedding/shared";
-import { ArrowDown, ArrowUp, CircleHelp, Plus, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { CircleHelp, Plus, SquarePen, Trash2 } from "lucide-react";
+import { type FormEvent, useRef, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, isAgain, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
 import { faqsQuery, useRefresh } from "../../lib/queries.js";
 
-type Editing = { kind: "new" } | { kind: "edit"; item: Faq };
+type Editing = { kind: "new"; question?: string } | { kind: "edit"; item: Faq };
+
+/** Contoh pertanyaan di keadaan kosong; mengetuknya membuka formulir dengan pertanyaan terisi. */
+const EXAMPLE_QUESTIONS = [
+  "Apa dress code acaranya?",
+  "Di mana tempat parkir?",
+  "Bolehkah membawa anak?",
+  "Jam berapa sebaiknya datang?",
+  "Apakah ada siaran langsung?",
+];
 
 export function FaqPage() {
   const refresh = useRefresh();
@@ -53,13 +62,34 @@ export function FaqPage() {
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
       {faqs.data && items.length === 0 ? (
-        <EmptyState
-          icon={CircleHelp}
-          title="Belum ada pertanyaan"
-          description="Tulis hal yang sering ditanyakan tamu, mis. dress code, parkir, atau membawa anak."
-          addLabel="Tambah pertanyaan"
-          onAdd={() => setEditing({ kind: "new" })}
-        />
+        <>
+          <EmptyState
+            icon={CircleHelp}
+            title="Belum ada pertanyaan"
+            description="Tulis hal yang sering ditanyakan tamu, mis. dress code, parkir, atau membawa anak."
+            addLabel="Tambah pertanyaan"
+            onAdd={() => setEditing({ kind: "new" })}
+          />
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">
+              Atau mulai dari contoh, lalu tulis jawabannya:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {EXAMPLE_QUESTIONS.map((question) => (
+                <Button
+                  key={question}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => setEditing({ kind: "new", question })}
+                >
+                  <Plus aria-hidden />
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </>
       ) : (
         <ol className="flex flex-col gap-3">
           {items.map((item, index) => (
@@ -108,6 +138,7 @@ export function FaqPage() {
         {editing && (
           <FaqForm
             item={editing.kind === "edit" ? editing.item : null}
+            initialQuestion={editing.kind === "new" ? editing.question : undefined}
             onDone={() => setEditing(null)}
           />
         )}
@@ -117,27 +148,40 @@ export function FaqPage() {
   );
 }
 
-function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
+function FaqForm({
+  item,
+  initialQuestion,
+  onDone,
+}: {
+  item: Faq | null;
+  initialQuestion?: string;
+  onDone: () => void;
+}) {
   const refresh = useRefresh();
-  const [question, setQuestion] = useState(item?.question ?? "");
+  const [question, setQuestion] = useState(item?.question ?? initialQuestion ?? "");
   const [answer, setAnswer] = useState(item?.answer ?? "");
+  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (_again: boolean) => {
       const input = { question, answer };
       return item
         ? adminApi.invitation.updateFaq(item.id, input)
         : adminApi.invitation.createFaq(input);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, again) => {
       await refresh("invitation");
-      onDone();
+      if (!again) return onDone();
+      // "Simpan & tambah lagi": dialog tetap terbuka dengan isian kosong.
+      setQuestion("");
+      setAnswer("");
+      first.current?.focus();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate();
+    save.mutate(isAgain(event));
   }
 
   return (
@@ -146,10 +190,11 @@ function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
         title="Tanya jawab"
         description="Tulis seperti Anda menjawab tamu secara langsung."
       >
-        <Field label="Pertanyaan" hint={`${question.length}/200 karakter.`}>
+        <Field label="Pertanyaan" required hint={`${question.length}/200 karakter.`}>
           {(id) => (
             <Input
               id={id}
+              ref={first}
               required
               maxLength={200}
               value={question}
@@ -157,7 +202,7 @@ function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
             />
           )}
         </Field>
-        <Field label="Jawaban" hint={`${answer.length}/1000 karakter.`}>
+        <Field label="Jawaban" required hint={`${answer.length}/1000 karakter.`}>
           {(id) => (
             <Textarea
               id={id}
@@ -175,6 +220,7 @@ function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
         onCancel={onDone}
         pending={save.isPending}
         disabled={!question.trim() || !answer.trim()}
+        again={!item}
       />
     </form>
   );

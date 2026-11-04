@@ -217,7 +217,7 @@ function DeleteDialog({
             Sembunyikan.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>

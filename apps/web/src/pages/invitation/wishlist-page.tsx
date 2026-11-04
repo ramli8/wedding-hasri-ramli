@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AdminWish, MediaRef } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Gift, Plus, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Gift, SquarePen, Trash2 } from "lucide-react";
+import { type FormEvent, useRef, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
@@ -9,8 +9,18 @@ import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, isAgain, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,12 +28,14 @@ import { adminApi } from "../../lib/admin-api.js";
 import { useRefresh, wishesQuery } from "../../lib/queries.js";
 
 type Editing = { kind: "new" } | { kind: "edit"; item: AdminWish };
+type Releasing = { wish: AdminWish; guestId: string; guestName: string };
 
 export function WishlistPage() {
   const refresh = useRefresh();
   const wishes = useQuery(wishesQuery);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<AdminWish | null>(null);
+  const [releasing, setReleasing] = useState<Releasing | null>(null);
 
   const reorder = useMutation({
     mutationFn: (ids: string[]) => adminApi.invitation.reorderWishes(ids),
@@ -39,7 +51,11 @@ export function WishlistPage() {
   const unclaim = useMutation({
     mutationFn: (v: { wishId: string; guestId: string }) =>
       adminApi.invitation.removeWishClaim(v.wishId, v.guestId),
-    onSuccess: () => refresh("invitation"),
+    meta: { toast: "Pilihan tamu dilepas" },
+    onSuccess: async () => {
+      await refresh("invitation");
+      setReleasing(null);
+    },
   });
 
   const items = wishes.data ?? [];
@@ -68,7 +84,6 @@ export function WishlistPage() {
 
       {wishes.isError && <Alert tone="error">{wishes.error.message}</Alert>}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
-      {unclaim.error && <Alert tone="error">{unclaim.error.message}</Alert>}
       {receive.error && <Alert tone="error">{receive.error.message}</Alert>}
 
       {wishes.data && items.length === 0 ? (
@@ -108,37 +123,42 @@ export function WishlistPage() {
                   </div>
                   {item.note && <p className="text-sm break-words">{item.note}</p>}
                   {item.claims.length > 0 && (
-                    <ul className="mt-1 flex flex-col gap-1 text-sm">
+                    <ul className="mt-1 flex flex-col gap-2 text-sm">
                       {item.claims.map((claim) => (
                         <li key={claim.guestId} className="flex flex-wrap items-center gap-2">
-                          <span>
+                          <span className="me-auto">
                             Dipilih <strong>{claim.guestName}</strong>
                             {item.quantity > 1 ? ` × ${claim.quantity}` : ""}
                           </span>
                           {claim.receivedGiftId ? (
                             <Badge variant="secondary">Sudah diterima</Badge>
                           ) : (
-                            <button
-                              type="button"
-                              className="font-semibold underline"
+                            <Button
+                              size="sm"
+                              variant="outline"
                               disabled={receive.isPending}
                               onClick={() =>
                                 receive.mutate({ wishId: item.id, guestId: claim.guestId })
                               }
                             >
                               Tandai diterima
-                            </button>
+                            </Button>
                           )}
-                          <button
-                            type="button"
-                            className="underline hover:text-destructive"
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
                             disabled={unclaim.isPending}
                             onClick={() =>
-                              unclaim.mutate({ wishId: item.id, guestId: claim.guestId })
+                              setReleasing({
+                                wish: item,
+                                guestId: claim.guestId,
+                                guestName: claim.guestName,
+                              })
                             }
                           >
                             Lepas
-                          </button>
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -190,6 +210,34 @@ export function WishlistPage() {
         )}
       </Dialog>
       <DeleteDialog item={deleting} onClose={() => setDeleting(null)} />
+
+      <AlertDialog open={releasing !== null} onOpenChange={(open) => !open && setReleasing(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lepas pilihan {releasing?.guestName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{releasing?.wish.name}” tidak lagi tercatat dipilih oleh tamu ini, dan tamu lain bisa
+              memilihnya. Tamu tidak diberi tahu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {unclaim.error && <Alert tone="error">{unclaim.error.message}</Alert>}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={unclaim.isPending}
+              onClick={(event) => {
+                // Tetap terbuka sampai server menjawab; galat tampil di dialog.
+                event.preventDefault();
+                if (releasing)
+                  unclaim.mutate({ wishId: releasing.wish.id, guestId: releasing.guestId });
+              }}
+            >
+              Lepas pilihan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -201,9 +249,10 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
   const [url, setUrl] = useState(item?.url ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(item?.photo ?? null);
   const [quantity, setQuantity] = useState(String(item?.quantity ?? 1));
+  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (_again: boolean) => {
       const input = {
         name,
         note,
@@ -215,25 +264,33 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
         ? adminApi.invitation.updateWish(item.id, input)
         : adminApi.invitation.createWish(input);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, again) => {
       await refresh("invitation");
-      onDone();
+      if (!again) return onDone();
+      // "Simpan & tambah lagi": dialog tetap terbuka dengan isian kosong untuk hadiah berikutnya.
+      setName("");
+      setNote("");
+      setUrl("");
+      setPhoto(null);
+      setQuantity("1");
+      first.current?.focus();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate();
+    save.mutate(isAgain(event));
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <FormSection title="Hadiah">
         <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
-          <Field label="Nama hadiah">
+          <Field label="Nama hadiah" required>
             {(id) => (
               <Input
                 id={id}
+                ref={first}
                 required
                 maxLength={120}
                 value={name}
@@ -241,7 +298,11 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
               />
             )}
           </Field>
-          <Field label="Jumlah dibutuhkan" hint="Yang terpenuhi dihitung dari pilihan tamu.">
+          <Field
+            label="Jumlah dibutuhkan"
+            required
+            hint="Yang terpenuhi dihitung dari pilihan tamu."
+          >
             {(id) => (
               <Input
                 id={id}
@@ -284,7 +345,12 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!name.trim()} />
+      <FormFooter
+        onCancel={onDone}
+        pending={save.isPending}
+        disabled={!name.trim()}
+        again={!item}
+      />
     </form>
   );
 }

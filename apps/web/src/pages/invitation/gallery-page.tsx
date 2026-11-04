@@ -1,13 +1,23 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { GalleryItem } from "@wedding/shared";
-import { ArrowLeft, ArrowRight, Images, SquarePen, Trash2 } from "lucide-react";
+import { type GalleryItem, MAX_UPLOAD_MB } from "@wedding/shared";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpToLine,
+  Images,
+  Loader2,
+  SquarePen,
+  Trash2,
+} from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
+import { uploadSizeError } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
-import { EmptyState, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { toast } from "@/components/kit/toast";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,18 +31,41 @@ export function GalleryPage() {
   const [editing, setEditing] = useState<GalleryItem | null>(null);
   const [deleting, setDeleting] = useState<GalleryItem | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [failed, setFailed] = useState<{ name: string; reason: string }[]>([]);
 
   // Foto diunggah satu per satu (resolusi asli bisa besar), lalu langsung dipasang ke galeri.
+  // Satu berkas gagal tidak menghentikan sisanya; yang gagal dilaporkan di akhir.
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
-      let done = 0;
-      setProgress({ done, total: files.length });
-      for (const file of files) {
-        const { media } = await adminApi.media.upload(file);
-        await adminApi.invitation.addGallery({ mediaId: media.id });
-        done += 1;
-        setProgress({ done, total: files.length });
+      const failures: { name: string; reason: string }[] = [];
+      let added = 0;
+      setFailed([]);
+      for (const [index, file] of files.entries()) {
+        setProgress({ done: index, total: files.length });
+        // Berkas di atas batas server dilewati tanpa diunggah (ukuran tidak diubah di peramban).
+        if (uploadSizeError(file)) {
+          failures.push({ name: file.name, reason: `lebih dari ${MAX_UPLOAD_MB} MB` });
+          continue;
+        }
+        try {
+          const { media } = await adminApi.media.upload(file);
+          await adminApi.invitation.addGallery({ mediaId: media.id });
+          added += 1;
+          // Segarkan daftar tiap foto selesai, supaya foto muncul satu per satu.
+          await refresh("invitation");
+        } catch (error) {
+          failures.push({
+            name: file.name,
+            reason: error instanceof Error ? error.message : "gagal diunggah",
+          });
+        }
       }
+      setFailed(failures);
+      return added;
+    },
+    meta: { toast: false },
+    onSuccess: (added) => {
+      if (added > 0) toast(`${added} foto ditambahkan`);
     },
     onSettled: async () => {
       setProgress(null);
@@ -55,6 +88,13 @@ export function GalleryPage() {
     ids[index] = b;
     ids[target] = a;
     reorder.mutate(ids);
+  };
+  /** Pindahkan langsung ke urutan pertama (tanpa menggeser satu per satu). */
+  const moveFirst = (index: number) => {
+    const ids = items.map((item) => item.id);
+    const [id] = ids.splice(index, 1);
+    if (id === undefined) return;
+    reorder.mutate([id, ...ids]);
   };
 
   const uploadLabel = progress
@@ -94,14 +134,26 @@ export function GalleryPage() {
       </Tip>
 
       {gallery.isError && <Alert tone="error">{gallery.error.message}</Alert>}
-      {upload.error && (
+      {upload.error && <Alert tone="error">{upload.error.message}</Alert>}
+      {failed.length > 0 && (
         <Alert tone="error">
-          {upload.error.message} Foto sebelumnya yang sudah terunggah tetap tersimpan.
+          <p>
+            {failed.length} foto gagal ditambahkan; foto lain tetap tersimpan. Coba pilih ulang foto
+            berikut:
+          </p>
+          <ul className="mt-1 list-disc ps-5">
+            {failed.map((file, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: nama berkas boleh kembar
+              <li key={index} className="break-all">
+                {file.name}: {file.reason}
+              </li>
+            ))}
+          </ul>
         </Alert>
       )}
       {reorder.error && <Alert tone="error">{reorder.error.message}</Alert>}
 
-      {gallery.data && items.length === 0 ? (
+      {gallery.data && items.length === 0 && !upload.isPending ? (
         <EmptyState
           icon={Images}
           title="Galeri masih kosong"
@@ -127,9 +179,14 @@ export function GalleryPage() {
                   </Badge>
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-3">
-                  <p className="min-h-5 truncate text-sm text-muted-foreground">
+                  <button
+                    type="button"
+                    className="-mx-1 min-h-11 truncate rounded px-1 text-start text-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:min-h-5"
+                    aria-label={`Ubah keterangan foto ${index + 1}`}
+                    onClick={() => setEditing(item)}
+                  >
                     {item.caption ?? "Tanpa keterangan"}
-                  </p>
+                  </button>
                   <div className="mt-auto flex items-center gap-1">
                     <Button
                       size="icon"
@@ -159,6 +216,12 @@ export function GalleryPage() {
                             icon: <SquarePen />,
                             onSelect: () => setEditing(item),
                           },
+                          {
+                            label: "Jadikan pertama",
+                            icon: <ArrowUpToLine />,
+                            disabled: index === 0 || reorder.isPending,
+                            onSelect: () => moveFirst(index),
+                          },
                           "separator",
                           {
                             label: "Hapus",
@@ -174,6 +237,16 @@ export function GalleryPage() {
               </Card>
             </li>
           ))}
+          {progress && (
+            <li>
+              <Card className="grid aspect-square h-full place-items-center gap-2 p-4 text-center text-sm text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="size-6 animate-spin" aria-hidden />
+                  Mengunggah {progress.done + 1}/{progress.total}…
+                </div>
+              </Card>
+            </li>
+          )}
         </ul>
       )}
 
@@ -214,14 +287,7 @@ function CaptionForm({ item, onDone }: { item: GalleryItem; onDone: () => void }
         )}
       </Field>
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter onCancel={onDone} pending={save.isPending} />
     </form>
   );
 }

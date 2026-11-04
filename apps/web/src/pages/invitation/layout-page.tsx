@@ -42,19 +42,14 @@ function CoverForm({
   const refresh = useRefresh();
   const [greeting, setGreeting] = useState(initial ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(initialPhoto);
-  const [saved, setSaved] = useState(false);
 
   const save = useMutation({
     mutationFn: () => adminApi.invitation.saveCover({ greeting, photoMediaId: photo?.id ?? null }),
-    onSuccess: async () => {
-      await refresh("invitation");
-      setSaved(true);
-    },
+    onSuccess: () => refresh("invitation"),
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setSaved(false);
     save.mutate();
   }
 
@@ -70,10 +65,7 @@ function CoverForm({
         <ImageField
           label="Foto sampul"
           value={photo}
-          onChange={(value) => {
-            setSaved(false);
-            setPhoto(value);
-          }}
+          onChange={setPhoto}
           recommendation="potret 4:5, 1600 × 2000 px, atau lanskap 3:2, 2400 × 1600 px (minimal 1200 px lebar). Foto tampil utuh selebar layar tanpa dipotong."
         />
         <Field
@@ -86,16 +78,12 @@ function CoverForm({
               className="min-h-24"
               maxLength={400}
               value={greeting}
-              onChange={(e) => {
-                setSaved(false);
-                setGreeting(e.target.value);
-              }}
+              onChange={(e) => setGreeting(e.target.value)}
             />
           )}
         </Field>
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
-        <div className="flex items-center justify-end gap-3">
-          {saved && <span className="text-sm font-medium text-success">Tersimpan</span>}
+        <div className="flex justify-end">
           <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "Menyimpan…" : "Simpan sampul"}
           </Button>
@@ -173,19 +161,14 @@ function LiveForm({ live }: { live: Live | null }) {
   const refresh = useRefresh();
   const [url, setUrl] = useState(live?.url ?? "");
   const [note, setNote] = useState(live?.note ?? "");
-  const [saved, setSaved] = useState(false);
 
   const save = useMutation({
     mutationFn: () => adminApi.invitation.saveLive({ url, note }),
-    onSuccess: async () => {
-      await refresh("invitation");
-      setSaved(true);
-    },
+    onSuccess: () => refresh("invitation"),
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setSaved(false);
     save.mutate();
   }
 
@@ -206,29 +189,17 @@ function LiveForm({ live }: { live: Live | null }) {
               type="url"
               inputMode="url"
               value={url}
-              onChange={(e) => {
-                setSaved(false);
-                setUrl(e.target.value);
-              }}
+              onChange={(e) => setUrl(e.target.value)}
             />
           )}
         </Field>
         <Field label="Keterangan" hint="Opsional, mis. jam mulai siaran.">
           {(id) => (
-            <Input
-              id={id}
-              maxLength={300}
-              value={note}
-              onChange={(e) => {
-                setSaved(false);
-                setNote(e.target.value);
-              }}
-            />
+            <Input id={id} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
           )}
         </Field>
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
-        <div className="flex items-center justify-end gap-3">
-          {saved && <span className="text-sm font-medium text-success">Tersimpan</span>}
+        <div className="flex justify-end">
           <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "Menyimpan…" : "Simpan siaran"}
           </Button>

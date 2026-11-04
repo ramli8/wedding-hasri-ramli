@@ -6,15 +6,15 @@ import {
   type GiftKind,
   type MediaRef,
 } from "@wedding/shared";
-import { ArrowDown, ArrowUp, Plus, SquarePen, Trash2, Wallet } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { SquarePen, Trash2, Wallet } from "lucide-react";
+import { type FormEvent, useRef, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
-import { EmptyState, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, isAgain, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
 import { Select } from "@/components/kit/select";
 import { Badge } from "@/components/ui/badge";
@@ -145,23 +145,30 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
   const [accountName, setAccountName] = useState(item?.accountName ?? "");
   const [accountNumber, setAccountNumber] = useState(item?.accountNumber ?? "");
   const [qr, setQr] = useState<MediaRef | null>(item?.qr ?? null);
+  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (_again: boolean) => {
       const input = { kind, provider, accountName, accountNumber, qrMediaId: qr?.id ?? null };
       return item
         ? adminApi.invitation.updateGift(item.id, input)
         : adminApi.invitation.createGift(input);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, again) => {
       await refresh("invitation");
-      onDone();
+      if (!again) return onDone();
+      // "Simpan & tambah lagi": jenis dibiarkan (biasanya sama), isian lain dikosongkan.
+      setProvider("");
+      setAccountName("");
+      setAccountNumber("");
+      setQr(null);
+      first.current?.focus();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate();
+    save.mutate(isAgain(event));
   }
 
   const ready = provider.trim() && accountName.trim() && accountNumber.trim();
@@ -180,17 +187,22 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
             </Select>
           )}
         </Field>
-        <Field label={kind === "bank" ? "Nama bank" : "Nama e-wallet"} hint="Mis. BCA, DANA.">
+        <Field
+          label={kind === "bank" ? "Nama bank" : "Nama e-wallet"}
+          required
+          hint="Mis. BCA, DANA."
+        >
           {(id) => (
             <Input
               id={id}
+              ref={first}
               required
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
             />
           )}
         </Field>
-        <Field label={kind === "bank" ? "Nomor rekening" : "Nomor"}>
+        <Field label={kind === "bank" ? "Nomor rekening" : "Nomor"} required>
           {(id) => (
             <Input
               id={id}
@@ -201,7 +213,7 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
             />
           )}
         </Field>
-        <Field label="Atas nama">
+        <Field label="Atas nama" required>
           {(id) => (
             <Input
               id={id}
@@ -220,14 +232,7 @@ function GiftForm({ item, onDone }: { item: Gift | null; onDone: () => void }) {
       />
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !ready}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!ready} again={!item} />
     </form>
   );
 }

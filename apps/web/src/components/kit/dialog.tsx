@@ -61,6 +61,13 @@ export function Dialog({ open, onClose, title, description, wide, children }: Di
           onChangeCapture={() => {
             dirty.current = true;
           }}
+          // "Simpan & tambah lagi" mengosongkan formulir: anggap bersih sampai diketik lagi.
+          onSubmitCapture={(event) => {
+            const submitter = (event.nativeEvent as SubmitEvent).submitter;
+            if (submitter instanceof HTMLElement && submitter.dataset.again !== undefined) {
+              dirty.current = false;
+            }
+          }}
           className={cn(
             "max-h-[calc(100dvh-2rem)] overflow-y-auto",
             wide && "sm:max-w-2xl",

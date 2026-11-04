@@ -113,6 +113,17 @@
     scrollbar-color: var(--border) transparent;
   }
 
+  /* Target sentuh 44px di HP untuk tombol dan isian. Di layer base supaya kelas min-h-* milik
+     pemanggil (layer utilities) tetap menang; `h-9` dkk. mengatur height, jadi batas ini tetap
+     berlaku. Textarea tidak disertakan (sudah min-h-16 dari ui/). */
+  @media (width < 48rem) {
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"] {
+      min-height: 2.75rem;
+    }
+  }
+
   body {
     @apply min-h-svh w-full bg-background font-sans text-sm text-foreground antialiased has-[div[data-variant='inset']]:bg-sidebar;
   }
@@ -142,13 +153,7 @@
 /* --- HP (di bawah md, 768px) ------------------------------------------------------------------ */
 /* Ditulis di luar @layer agar menang atas utilitas Tailwind pada komponen ui/ (yang tidak diedit). */
 @media (width < 48rem) {
-  /* Target sentuh 44px untuk tombol dan isian (aturan proyek; berkas ui/ disalin apa adanya). */
-  [data-slot="button"],
-  [data-slot="input"],
-  [data-slot="select-trigger"],
-  [data-slot="textarea"] {
-    min-height: 2.75rem;
-  }
+  /* Tombol ikon (size-*) juga selebar 44px; tingginya diatur di layer base. */
   [data-slot="button"][class*="size-"] {
     min-width: 2.75rem;
   }

@@ -420,6 +420,7 @@ function DeleteGuestDialog({ guests, onClose }: { guests: Guest[]; onClose: () =
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map((id) => adminApi.guests.remove(id))),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("guests", "groups", "events");
       onClose();

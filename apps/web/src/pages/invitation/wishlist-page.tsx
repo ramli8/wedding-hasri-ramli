@@ -284,7 +284,7 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!!name.trim()} />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!name.trim()} />
     </form>
   );
 }
@@ -293,6 +293,7 @@ function DeleteDialog({ item, onClose }: { item: AdminWish | null; onClose: () =
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeWish(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("invitation");
       onClose();

@@ -139,6 +139,102 @@
   }
 }
 
+/* --- HP (di bawah md, 768px) ------------------------------------------------------------------ */
+/* Ditulis di luar @layer agar menang atas utilitas Tailwind pada komponen ui/ (yang tidak diedit). */
+@media (width < 48rem) {
+  /* Target sentuh 44px untuk tombol dan isian (aturan proyek; berkas ui/ disalin apa adanya). */
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"],
+  [data-slot="textarea"] {
+    min-height: 2.75rem;
+  }
+  [data-slot="button"][class*="size-"] {
+    min-width: 2.75rem;
+  }
+
+  /* Tabel data menjadi kartu: tiap baris satu kartu, tiap sel "label: nilai" (lihat DataTable). */
+  .table-cards thead {
+    display: none;
+  }
+  .table-cards,
+  .table-cards tbody {
+    display: block;
+  }
+  .table-cards tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  .table-cards td {
+    display: flex;
+    flex-basis: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    padding: 0;
+    white-space: normal;
+    text-align: end;
+    background: transparent;
+  }
+  .table-cards td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    text-align: start;
+  }
+  .table-cards td[data-label=""]::before,
+  .table-cards td[data-card="title"]::before,
+  .table-cards td[data-card="select"]::before,
+  .table-cards td[data-card="actions"]::before,
+  .table-cards td[data-card="empty"]::before {
+    content: none;
+  }
+  .table-cards td[data-card="select"] {
+    flex: 0 0 auto;
+    order: -2;
+  }
+  .table-cards td[data-card="title"] {
+    flex: 1 1 0;
+    order: -1;
+    justify-content: flex-start;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-align: start;
+  }
+  .table-cards td[data-card="actions"] {
+    flex: 0 0 auto;
+    order: -1;
+    justify-content: flex-end;
+  }
+  .table-cards td[data-card="hidden"] {
+    display: none;
+  }
+  .table-cards td[data-card="empty"] {
+    justify-content: center;
+    padding-block: 1.5rem;
+    text-align: center;
+  }
+
+  /* Formulir di lembar bawah: baris tombol terakhir (berisi tombol kirim) menempel di dasar lembar
+     supaya Simpan selalu terlihat walau formulirnya panjang. */
+  [data-slot="dialog-content"] form > :last-child:has(button[type="submit"]),
+  [data-slot="dialog-content"] [data-form-footer] {
+    position: sticky;
+    bottom: calc(-1 * max(1.5rem, env(safe-area-inset-bottom)));
+    z-index: 10;
+    margin-inline: -1.5rem;
+    margin-bottom: calc(-1 * max(1.5rem, env(safe-area-inset-bottom)));
+    padding: 0.75rem 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--background);
+  }
+}
+
 /* Garis sapu di bingkai bidik kamera scanner. */
 @keyframes scan-sweep {
   0%,

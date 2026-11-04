@@ -445,8 +445,18 @@ function LogSection() {
 }
 
 function PaxDialog({ row, onClose }: { row: Recent | null; onClose: () => void }) {
+  return (
+    <Dialog open={row !== null} onClose={onClose} title={`Ubah jumlah: ${row?.displayName ?? ""}`}>
+      {/* Formulir dibuat ulang per baris supaya isiannya selalu angka baris itu, bukan sisa
+          baris yang dibuka sebelumnya. */}
+      {row && <PaxForm key={row.checkinId} row={row} onClose={onClose} />}
+    </Dialog>
+  );
+}
+
+function PaxForm({ row, onClose }: { row: Recent; onClose: () => void }) {
   const refresh = useRefresh();
-  const [pax, setPax] = useState("");
+  const [pax, setPax] = useState(String(row.pax));
   const save = useMutation({
     mutationFn: (input: { id: string; pax: number }) =>
       adminApi.checkins.setPax(input.id, input.pax),
@@ -458,42 +468,39 @@ function PaxDialog({ row, onClose }: { row: Recent | null; onClose: () => void }
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (row) save.mutate({ id: row.checkinId, pax: Number(pax) });
+    save.mutate({ id: row.checkinId, pax: Number(pax) });
   }
 
   return (
-    <Dialog open={row !== null} onClose={onClose} title={`Ubah jumlah: ${row?.displayName ?? ""}`}>
-      {row && (
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <Field
-            label="Jumlah orang yang masuk"
-            hint="Admin bisa mengubah kapan saja, tanpa batas 2 menit."
-          >
-            {(id) => (
-              <Input
-                id={id}
-                type="number"
-                min={1}
-                max={500}
-                required
-                autoFocus
-                value={pax || String(row.pax)}
-                onChange={(e) => setPax(e.target.value)}
-              />
-            )}
-          </Field>
-          {save.error && <Alert tone="error">{save.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Batal
-            </Button>
-            <Button type="submit" disabled={save.isPending}>
-              Simpan
-            </Button>
-          </div>
-        </form>
-      )}
-    </Dialog>
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <Field
+        label="Jumlah orang yang masuk"
+        hint="Admin bisa mengubah kapan saja, tanpa batas 2 menit."
+      >
+        {(id) => (
+          <Input
+            id={id}
+            type="number"
+            min={1}
+            max={500}
+            required
+            autoFocus
+            inputMode="numeric"
+            value={pax}
+            onChange={(e) => setPax(e.target.value)}
+          />
+        )}
+      </Field>
+      {save.error && <Alert tone="error">{save.error.message}</Alert>}
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onClose}>
+          Batal
+        </Button>
+        <Button type="submit" disabled={save.isPending || !(Number(pax) >= 1)}>
+          Simpan
+        </Button>
+      </div>
+    </form>
   );
 }
 

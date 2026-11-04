@@ -369,6 +369,7 @@ function DeleteEventDialog({ event, onClose }: { event: Event | null; onClose: (
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.events.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("events", "guests", "groups");
       onClose();

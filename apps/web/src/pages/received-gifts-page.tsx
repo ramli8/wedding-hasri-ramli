@@ -503,6 +503,7 @@ function DeleteDialog({ gift, onClose }: { gift: ReceivedGift | null; onClose: (
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.receivedGifts.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("received-gifts");
       onClose();

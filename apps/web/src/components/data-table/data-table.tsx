@@ -15,7 +15,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -77,6 +77,35 @@ export function DataTable<TData>({
   const [pagination, onPaginationChange] = useState({ pageIndex: 0, pageSize: 10 });
 
   const { state: extraState, ...restOptions } = options ?? {};
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Mode kartu di HP: setiap sel diberi label dari judul kolomnya (data-label) dan perannya
+  // (data-card), sehingga CSS `table-cards` bisa menampilkan baris sebagai kartu tanpa pemanggil
+  // harus menulis apa pun. Dijalankan setiap render karena baris dan kolom bisa berubah.
+  useLayoutEffect(() => {
+    const el = tableRef.current;
+    if (!el) return;
+    const titles = [...el.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+    for (const tr of el.querySelectorAll<HTMLTableRowElement>("tbody tr")) {
+      const cells = [...tr.cells];
+      let titled = false;
+      cells.forEach((td, i) => {
+        const label = cells.length === 1 ? "" : (titles[i] ?? "");
+        td.dataset.label = label;
+        if (td.dataset.cardFixed) return;
+        let role: string;
+        if (cells.length === 1) role = "empty";
+        else if (!label && td.querySelector('[role="checkbox"], input[type="checkbox"]'))
+          role = "select";
+        else if (!label && i === cells.length - 1) role = "actions";
+        else if (label && !titled) {
+          role = "title";
+          titled = true;
+        } else role = "field";
+        td.dataset.card = role;
+      });
+    }
+  });
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable<TData>({
@@ -123,7 +152,7 @@ export function DataTable<TData>({
       )}
       {toolbarEnd}
       <div className="overflow-hidden rounded-md border">
-        <Table>
+        <Table ref={tableRef} className="table-cards">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="group/row">
@@ -156,6 +185,8 @@ export function DataTable<TData>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      data-card={cell.column.columnDef.meta?.card}
+                      data-card-fixed={cell.column.columnDef.meta?.card ? "" : undefined}
                       className={cn(
                         "bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted",
                         cell.column.columnDef.meta?.className,

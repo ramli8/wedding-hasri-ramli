@@ -21,6 +21,7 @@ export function useSignOut() {
   const navigate = useNavigate();
   const logout = useMutation({
     mutationFn: api.logout,
+    meta: { toast: false },
     onSuccess: async () => {
       queryClient.clear();
       queryClient.setQueryData(meQuery.queryKey, null);

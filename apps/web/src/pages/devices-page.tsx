@@ -262,6 +262,7 @@ function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () 
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.devices.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("devices");
       onClose();
@@ -300,6 +301,7 @@ function RevokeDialog({ device, onClose }: { device: Device | null; onClose: () 
   const refresh = useRefresh();
   const revoke = useMutation({
     mutationFn: (id: string) => adminApi.devices.revoke(id),
+    meta: { toast: "Perangkat dicabut" },
     onSuccess: async () => {
       await refresh("devices");
       onClose();

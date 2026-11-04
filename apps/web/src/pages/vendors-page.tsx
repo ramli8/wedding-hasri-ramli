@@ -632,6 +632,7 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
   });
   const remove = useMutation({
     mutationFn: (paymentId: string) => adminApi.vendors.removePayment(vendor.id, paymentId),
+    meta: { toast: "Terhapus" },
     onSuccess: () => refresh("vendors"),
   });
 
@@ -783,6 +784,7 @@ function CategoriesPanel({ overview }: { overview: VendorOverview }) {
   });
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.vendors.removeCategory(id),
+    meta: { toast: "Terhapus" },
     onSuccess: done,
   });
   const common = useMutation({
@@ -885,6 +887,7 @@ function DeleteDialog({ vendor, onClose }: { vendor: Vendor | null; onClose: () 
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.vendors.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("vendors");
       onClose();

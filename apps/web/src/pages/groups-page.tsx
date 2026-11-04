@@ -187,8 +187,19 @@ function GroupForm({
     },
   });
 
+  // Jam sesi harus diisi berpasangan; yang setengah diisi dulu hilang diam-diam saat disimpan.
+  const halfSession = events.find((e) => {
+    const range = sessions[e.id];
+    return range && !!range.start !== !!range.end;
+  });
+  const backwardSession = events.find((e) => {
+    const range = sessions[e.id];
+    return range?.start && range.end && range.end <= range.start;
+  });
+
   function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (halfSession || backwardSession) return;
     save.mutate();
   }
 
@@ -256,12 +267,21 @@ function GroupForm({
         )}
       </fieldset>
 
+      {halfSession && (
+        <Alert tone="error">
+          Jam sesi {halfSession.name} baru terisi sebagian. Isi jam mulai dan selesai, atau
+          kosongkan keduanya.
+        </Alert>
+      )}
+      {!halfSession && backwardSession && (
+        <Alert tone="error">Jam selesai sesi {backwardSession.name} harus setelah jam mulai.</Alert>
+      )}
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onDone}>
           Batal
         </Button>
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" disabled={save.isPending || !!halfSession || !!backwardSession}>
           {save.isPending ? "Menyimpan…" : "Simpan"}
         </Button>
       </div>
@@ -273,6 +293,7 @@ function DeleteGroupDialog({ group, onClose }: { group: Group | null; onClose: (
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.groups.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("groups");
       onClose();

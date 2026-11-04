@@ -201,6 +201,7 @@ function DeleteDialog({
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.guestbook.remove(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("guestbook");
       onClose();

@@ -41,5 +41,9 @@ Menu: ubah `navGroups` di `components/layout/sidebar-data.ts` (item biasa atau b
 - Pakai token semantik (`bg-card`, `text-muted-foreground`, `border`, `bg-destructive`); hasil scan memakai `bg-success`, `bg-warning`, `bg-destructive`.
 - Tombol: `variant` `default`, `outline`, `ghost`, `destructive`, `link`; ukuran `default`, `sm`, `icon`. Satu tombol default per area.
 - Tabel baru: buat `ColumnDef`, pakai `DataTable`; jangan menulis `<table>` sendiri.
+- Di HP `DataTable` otomatis menjadi kartu (kelas `table-cards` di `styles.css`): label tiap sel diambil dari teks judul kolom, kolom berjudul pertama jadi judul kartu, kotak centang dan kolom aksi terakhir di baris atas. Ubah perannya lewat `meta.card` (`title`, `field`, `actions`, `select`, `hidden`).
+- Formulir dalam `Dialog` (kit): baris tombol terakhir yang berisi tombol submit menempel di dasar lembar HP (CSS, tanpa kode per halaman). Menutup dialog lewat ketuk luar/Esc/X saat isian sudah berubah menanyakan "Buang perubahan?".
+- Setiap `useMutation` yang berhasil menampilkan "Tersimpan" (Toaster di AppLayout, `MutationCache` di `main.tsx`); ganti dengan `meta: { toast: "Terhapus" }` atau matikan dengan `meta: { toast: false }`.
+- Tombol dan isian minimal 44px di HP lewat CSS global (`[data-slot=button]`, `input`, `select-trigger`, `textarea`).
 - Teks UI berbahasa Indonesia; kelas tinggi sentuh 44px di HP (`max-md:h-11`) ditambahkan di adaptor, bukan di berkas `ui/`.
 - Tipe rute TanStack bersifat ketat: untuk tautan dari data gunakan `to={url as "/admin"}`.

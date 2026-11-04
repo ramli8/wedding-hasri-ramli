@@ -90,6 +90,8 @@ export function ImportPage() {
 
   async function onFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    // Dikosongkan supaya memilih berkas yang sama (setelah diperbaiki) tetap memicu pemeriksaan.
+    event.target.value = "";
     setResult(null);
     commit.reset();
     if (!file) return;

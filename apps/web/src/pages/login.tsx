@@ -29,6 +29,7 @@ function LoginForm() {
 
   const login = useMutation({
     mutationFn: api.login,
+    meta: { toast: false },
     onSuccess: async (data) => {
       queryClient.setQueryData(meQuery.queryKey, data);
       await navigate({ to: "/admin" });

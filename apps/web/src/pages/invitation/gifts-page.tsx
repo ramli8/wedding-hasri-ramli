@@ -236,6 +236,7 @@ function DeleteDialog({ item, onClose }: { item: Gift | null; onClose: () => voi
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeGift(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("invitation");
       onClose();

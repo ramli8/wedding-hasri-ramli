@@ -230,6 +230,7 @@ function DeleteDialog({ item, onClose }: { item: GalleryItem | null; onClose: ()
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeGallery(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("invitation");
       onClose();

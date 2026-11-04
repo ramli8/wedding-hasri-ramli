@@ -174,7 +174,7 @@ function FaqForm({ item, onDone }: { item: Faq | null; onDone: () => void }) {
       <FormFooter
         onCancel={onDone}
         pending={save.isPending}
-        disabled={!(!question.trim() || !answer.trim())}
+        disabled={!question.trim() || !answer.trim()}
       />
     </form>
   );
@@ -184,6 +184,7 @@ function DeleteDialog({ item, onClose }: { item: Faq | null; onClose: () => void
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeFaq(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("invitation");
       onClose();

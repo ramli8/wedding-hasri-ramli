@@ -199,7 +199,7 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!!title.trim()} />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!title.trim()} />
     </form>
   );
 }
@@ -208,6 +208,7 @@ function DeleteDialog({ item, onClose }: { item: StoryItem | null; onClose: () =
   const refresh = useRefresh();
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.invitation.removeStory(id),
+    meta: { toast: "Terhapus" },
     onSuccess: async () => {
       await refresh("invitation");
       onClose();

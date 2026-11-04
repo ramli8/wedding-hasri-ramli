@@ -9,6 +9,7 @@ import { getCookie } from "@/lib/cookies";
 import { meQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { ConfigDrawer } from "./config-drawer";
+import { Toaster } from "./kit/toast";
 import { AppSidebar } from "./layout/app-sidebar";
 import { Header } from "./layout/header";
 import { Main } from "./layout/main";
@@ -45,6 +46,7 @@ export function AppLayout() {
                   <Outlet />
                 </Main>
               </SidebarInset>
+              <Toaster />
             </SidebarProvider>
           </SearchProvider>
         </LayoutProvider>

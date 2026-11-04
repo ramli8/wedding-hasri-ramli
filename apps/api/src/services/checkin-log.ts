@@ -19,6 +19,16 @@ export async function lockCheckinLog(tx: Executor) {
   await tx.execute(sql`select pg_advisory_xact_lock(7301)`);
 }
 
+/**
+ * Kunci serupa untuk `guests.rev`: `nextval` juga tidak urut commit, jadi tamu yang diubah dalam
+ * transaksi lambat (mis. impor) bisa commit dengan `rev` lebih kecil dari yang sudah ditarik perangkat
+ * dan terlewat selamanya. Semua penulisan tamu yang menaikkan `rev` harus memanggil ini di awal
+ * transaksinya. Urutan kunci bila keduanya dipakai: `lockCheckinLog` dulu, lalu `lockGuestRev`.
+ */
+export async function lockGuestRev(tx: Executor) {
+  await tx.execute(sql`select pg_advisory_xact_lock(7302)`);
+}
+
 /** Acara dengan check-in aktif (yang paling awal mulainya), atau `preferredId` bila diberikan. */
 export async function getCheckinEvent(db: Executor, preferredId?: string): Promise<EventRow> {
   const rows = await db

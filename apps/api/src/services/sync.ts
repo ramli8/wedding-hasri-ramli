@@ -10,7 +10,7 @@ import {
   SYNC_PROTOCOL_VERSION,
   withinUndoWindow,
 } from "@wedding/shared";
-import { and, asc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
   checkinEvents,
@@ -26,6 +26,7 @@ import {
   findCheckin,
   getCheckinEvent,
   lockCheckinLog,
+  lockGuestRev,
   toStoredEvent,
 } from "./checkin-log.js";
 import type { DeviceRow } from "./devices.js";
@@ -43,6 +44,19 @@ export async function buildSnapshot(
     .from(groupSessions)
     .where(eq(groupSessions.eventId, event.id));
 
+  // Batas atas dibaca SEBELUM barisnya. Karena penulisan `rev` dan `seq` dikunci (lockGuestRev,
+  // lockCheckinLog), semua nilai <= batas ini sudah commit; yang commit sesudahnya pasti lebih besar
+  // dan ikut di tarikan berikutnya. Membaca batas sesudah baris (seperti dulu) bisa melompati baris
+  // yang commit di antara dua query, dan perangkat tidak akan pernah menerimanya.
+  const [revRow] = await db
+    .select({ rev: sql<number>`coalesce(max(${guests.rev}), 0)::float8` })
+    .from(guests);
+  const [seqRow] = await db
+    .select({ seq: sql<number>`coalesce(max(${checkinEvents.seq}), 0)::float8` })
+    .from(checkinEvents);
+  const maxRev = revRow?.rev ?? 0;
+  const maxSeq = seqRow?.seq ?? 0;
+
   // Unduhan penuh hanya memuat tamu yang diundang. Pembaruan (delta) juga memuat tamu yang
   // dihapus atau tidak lagi diundang, supaya perangkat bisa membuangnya.
   const guestRows = await db
@@ -58,23 +72,23 @@ export async function buildSnapshot(
     .where(
       and(
         gt(guests.rev, since.rev),
+        lte(guests.rev, maxRev),
         since.rev === 0 ? isNull(guests.deletedAt) : undefined,
         since.rev === 0 ? isNotNull(guestEvents.guestId) : undefined,
       ),
     )
     .orderBy(asc(guests.rev));
 
-  const [revRow] = await db
-    .select({ rev: sql<number>`coalesce(max(${guests.rev}), 0)::float8` })
-    .from(guests);
-  const [seqRow] = await db
-    .select({ seq: sql<number>`coalesce(max(${checkinEvents.seq}), 0)::float8` })
-    .from(checkinEvents);
-
   const eventRows = await db
     .select()
     .from(checkinEvents)
-    .where(and(eq(checkinEvents.eventId, event.id), gt(checkinEvents.seq, since.seq)))
+    .where(
+      and(
+        eq(checkinEvents.eventId, event.id),
+        gt(checkinEvents.seq, since.seq),
+        lte(checkinEvents.seq, maxSeq),
+      ),
+    )
     .orderBy(asc(checkinEvents.seq));
 
   const deviceIds = [
@@ -122,9 +136,9 @@ export async function buildSnapshot(
       endsAt: s.endsAt.toISOString(),
     })),
     guests: snapshotGuests,
-    guestRev: revRow?.rev ?? 0,
+    guestRev: maxRev,
     events: eventRows.map(toStoredEvent),
-    checkinSeq: seqRow?.seq ?? 0,
+    checkinSeq: maxSeq,
     devices: deviceRows,
   };
 }
@@ -223,6 +237,8 @@ export async function pushEvents(
 
   return db.transaction(async (tx) => {
     await lockCheckinLog(tx);
+    // Walk-in membuat tamu baru (menaikkan `rev`).
+    if (req.walkins.length) await lockGuestRev(tx);
     const now = new Date();
 
     await tx

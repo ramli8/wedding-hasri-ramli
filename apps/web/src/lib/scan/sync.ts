@@ -59,9 +59,14 @@ export class SyncEngine {
     if (this.started) return;
     this.started = true;
     await loadClockOffset();
+    // `outdated` sengaja tidak dibaca dari penyimpanan: tanda itu dari versi aplikasi sebelumnya,
+    // dan setelah aplikasi diperbarui sinkron harus dicoba lagi. Bila versi ini masih terlalu lama,
+    // server menjawab 426 di percobaan pertama dan tandanya muncul lagi. Dulu tanda ini menempel
+    // selamanya sehingga sinkron tidak pernah jalan lagi walau aplikasi sudah diperbarui.
+    await setMeta("outdated", false);
     this.update({
       lastSyncAt: (await getMeta("lastSyncAt")) ?? null,
-      outdated: (await getMeta("outdated")) ?? false,
+      outdated: false,
       revoked: (await getMeta("revoked")) ?? false,
     });
     window.addEventListener("online", this.trigger);

@@ -12,7 +12,9 @@ import {
 } from "@wedding/shared";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { devices } from "../src/db/schema.js";
+import { devices, guests } from "../src/db/schema.js";
+import { lockGuestRev } from "../src/services/checkin-log.js";
+import { guestTouch } from "../src/services/guests.js";
 import { type adminClient, createTestContext, loggedInClient } from "./helpers.js";
 
 const ctx = createTestContext();
@@ -634,5 +636,55 @@ describe("konkurensi", () => {
       expect(mine).toHaveLength(12);
       expect((mine.at(-1) ?? 0) - (mine[0] ?? 0)).toBe(11);
     }
+  });
+
+  it("tamu yang commit belakangan dengan rev lebih kecil tidak terlewat oleh perangkat", async () => {
+    const cursor = (await read<SnapshotResponse>(await world.gateA.client.snapshot())).guestRev;
+
+    // Transaksi lambat (mis. impor) memegang kunci rev dan mengubah Sari tanpa commit dulu.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let locked!: () => void;
+    const isLocked = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    const slow = ctx.db.transaction(async (tx) => {
+      await lockGuestRev(tx);
+      await tx
+        .update(guests)
+        .set({ displayName: "Sari (lambat)", ...guestTouch() })
+        .where(eq(guests.id, world.sari.id));
+      locked();
+      await held;
+    });
+    await isLocked;
+
+    // Sementara itu admin mengubah Joko. Tanpa kunci, Joko commit duluan dengan rev lebih besar
+    // dan perangkat melompati Sari selamanya.
+    const fast = api.put(`/guests/${world.joko.id}`, {
+      displayName: "Pak Joko (cepat)",
+      phone: "0813-0000-0002",
+      isRombongan: true,
+      eventIds: [world.event.id],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const mid = await read<SnapshotResponse>(
+      await world.gateA.client.snapshot(`?sinceRev=${cursor}&sinceSeq=0`),
+    );
+    release();
+    await slow;
+    expect((await fast).status).toBe(200);
+
+    const after = await read<SnapshotResponse>(
+      await world.gateA.client.snapshot(`?sinceRev=${mid.guestRev}&sinceSeq=0`),
+    );
+    const names = [...mid.guests, ...after.guests].map((g) => g.displayName);
+    expect(names).toContain("Sari (lambat)");
+    expect(names).toContain("Pak Joko (cepat)");
+    // Kursor tidak pernah melewati baris yang belum dikirim.
+    for (const g of mid.guests) expect(g.rev).toBeLessThanOrEqual(mid.guestRev);
   });
 });

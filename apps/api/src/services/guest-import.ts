@@ -12,6 +12,7 @@ import type { Db } from "../db/client.js";
 import { events, guestEvents, guestGroups, guests } from "../db/schema.js";
 import { generateUniqueCodes } from "../domain/guest-code.js";
 import { AppError } from "../http/errors.js";
+import { lockGuestRev } from "./checkin-log.js";
 import { getSettings } from "./settings.js";
 
 const MAX_ROWS = 2000;
@@ -203,6 +204,7 @@ export async function commitImport(
   const skipped = rows.length - chosen.length;
 
   await db.transaction(async (tx) => {
+    await lockGuestRev(tx);
     if (newGroups.length) {
       await tx
         .insert(guestGroups)

@@ -24,6 +24,7 @@ import { isUniqueViolation } from "../db/errors.js";
 import { events, guestEvents, guestGroups, guests } from "../db/schema.js";
 import { generateCode } from "../domain/guest-code.js";
 import { AppError } from "../http/errors.js";
+import { lockGuestRev } from "./checkin-log.js";
 
 type GuestRow = typeof guests.$inferSelect;
 type GuestEventRow = typeof guestEvents.$inferSelect;
@@ -172,6 +173,7 @@ export async function createGuest(
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const id = await db.transaction(async (tx) => {
+        await lockGuestRev(tx);
         const [row] = await tx
           .insert(guests)
           .values({ ...guestColumns(input), code: generateCode(), source })
@@ -198,6 +200,7 @@ export async function updateGuest(db: Db, id: string, input: GuestData): Promise
   const wanted = new Set(input.eventIds);
 
   await db.transaction(async (tx) => {
+    await lockGuestRev(tx);
     const updated = await tx
       .update(guests)
       .set({ ...guestColumns(input), ...guestTouch() })
@@ -223,20 +226,26 @@ export async function updateGuest(db: Db, id: string, input: GuestData): Promise
 }
 
 export async function deleteGuest(db: Db, id: string): Promise<void> {
-  const deleted = await db
-    .update(guests)
-    .set({ deletedAt: new Date(), ...guestTouch() })
-    .where(and(eq(guests.id, id), isNull(guests.deletedAt)))
-    .returning({ id: guests.id });
+  const deleted = await db.transaction(async (tx) => {
+    await lockGuestRev(tx);
+    return tx
+      .update(guests)
+      .set({ deletedAt: new Date(), ...guestTouch() })
+      .where(and(eq(guests.id, id), isNull(guests.deletedAt)))
+      .returning({ id: guests.id });
+  });
   if (deleted.length === 0) throw new AppError(404, "NOT_FOUND", "Tamu tidak ditemukan");
 }
 
 export async function restoreGuest(db: Db, id: string): Promise<Guest> {
-  const restored = await db
-    .update(guests)
-    .set({ deletedAt: null, ...guestTouch() })
-    .where(and(eq(guests.id, id), isNotNull(guests.deletedAt)))
-    .returning({ id: guests.id });
+  const restored = await db.transaction(async (tx) => {
+    await lockGuestRev(tx);
+    return tx
+      .update(guests)
+      .set({ deletedAt: null, ...guestTouch() })
+      .where(and(eq(guests.id, id), isNotNull(guests.deletedAt)))
+      .returning({ id: guests.id });
+  });
   if (restored.length === 0) throw new AppError(404, "NOT_FOUND", "Tamu tidak ditemukan");
   return getGuest(db, id);
 }

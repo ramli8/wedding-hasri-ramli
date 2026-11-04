@@ -1,11 +1,26 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 // Server API untuk proxy; uji e2e memakai port lain agar tidak bentrok dengan server pengembangan.
 const apiTarget = process.env.API_TARGET ?? "http://localhost:3000";
+
+// Lewat Cloudflare Quick Tunnel browser mengirim Origin https://xxx.trycloudflare.com, yang ditolak
+// pemeriksaan Origin di API (403 "Origin tidak diizinkan"). Khusus server pengembangan, Origin itu
+// ditulis ulang menjadi origin lokal; API dan produksi tetap memeriksa Origin apa adanya.
+const devProxy: ProxyOptions = {
+  target: apiTarget,
+  configure: (proxy) => {
+    proxy.on("proxyReq", (proxyReq) => {
+      const origin = proxyReq.getHeader("origin");
+      if (typeof origin === "string" && /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(origin)) {
+        proxyReq.setHeader("origin", "http://localhost:5173");
+      }
+    });
+  },
+};
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
@@ -56,8 +71,7 @@ export default defineConfig({
     port: 5173,
     // Untuk uji di HP lewat Cloudflare Quick Tunnel (cloudflared tunnel --url http://localhost:5173).
     allowedHosts: [".trycloudflare.com"],
-    // Origin dibiarkan apa adanya (http://localhost:5173) agar lolos pemeriksaan Origin di API.
-    proxy: { "/api": apiTarget, "/media": apiTarget },
+    proxy: { "/api": devProxy, "/media": apiTarget },
   },
   preview: {
     port: 4173,

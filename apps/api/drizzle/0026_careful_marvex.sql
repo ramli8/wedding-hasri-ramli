@@ -1,0 +1,1 @@
+ALTER TABLE "received_gifts" ADD COLUMN "phone" text;

@@ -52,6 +52,11 @@ async function makeGuest(overrides: Record<string, unknown> = {}) {
   return (await read<{ guest: Guest }>(res)).guest;
 }
 
+const revOf = async (id: string) => {
+  const [row] = await ctx.db.select({ rev: guests.rev }).from(guests).where(eq(guests.id, id));
+  return Number(row?.rev);
+};
+
 const listGuests = async (query = "") => read<GuestListResponse>(await api.get(`/guests${query}`));
 
 describe("akses", () => {
@@ -254,6 +259,39 @@ describe("kelompok", () => {
     // Memindahkan tamu keluar dari kelompok membuat kelompok bisa dihapus.
     await api.put(`/guests/${guest.id}`, { displayName: guest.displayName, phone: guest.phone });
     expect((await api.delete(`/groups/${group.id}`)).status).toBe(200);
+  });
+
+  it("menghapus kelompok sambil memindahkan tamunya (termasuk yang di tempat sampah)", async () => {
+    const group = await makeGroup();
+    const target = await makeGroup({ name: "Teman" });
+    const active = await makeGuest({ groupId: group.id });
+    const trashed = await makeGuest({
+      displayName: "Dihapus",
+      phone: "0813-1111-0000",
+      groupId: group.id,
+    });
+    await api.delete(`/guests/${trashed.id}`);
+    const before = await revOf(active.id);
+
+    expect((await api.delete(`/groups/${group.id}?moveTo=${group.id}`)).status).toBe(400);
+    expect((await api.delete(`/groups/${group.id}?moveTo=${crypto.randomUUID()}`)).status).toBe(
+      400,
+    );
+    expect((await api.delete(`/groups/${group.id}?moveTo=bukan`)).status).toBe(400);
+
+    expect((await api.delete(`/groups/${group.id}?moveTo=${target.id}`)).status).toBe(200);
+    expect(
+      (await read<{ guest: Guest }>(await api.get(`/guests/${active.id}`))).guest.groupId,
+    ).toBe(target.id);
+    expect(await revOf(active.id)).toBeGreaterThan(before);
+    const groups = (await read<{ items: Group[] }>(await api.get("/groups"))).items;
+    expect(groups.map((g) => g.name)).toEqual(["Teman"]);
+
+    expect((await api.delete(`/groups/${target.id}?moveTo=none`)).status).toBe(200);
+    expect(
+      (await read<{ guest: Guest }>(await api.get(`/guests/${active.id}`))).guest.groupId,
+    ).toBe(null);
+    expect((await api.delete(`/groups/${target.id}?moveTo=none`)).status).toBe(404);
   });
 });
 
@@ -477,6 +515,91 @@ describe("tamu: ubah, hapus, kirim", () => {
   });
 });
 
+describe("tamu: aksi massal", () => {
+  it("memindah kelompok, menambah dan menghapus acara, melewati tamu di tempat sampah", async () => {
+    const event = await makeEvent();
+    const group = await makeGroup();
+    const a = await makeGuest({ displayName: "A", phone: "0812-0000-0001" });
+    const b = await makeGuest({ displayName: "B", phone: "0812-0000-0002", eventIds: [event.id] });
+    const gone = await makeGuest({ displayName: "C", phone: "0812-0000-0003" });
+    await api.delete(`/guests/${gone.id}`);
+    const ids = [a.id, b.id, gone.id];
+    const revA = await revOf(a.id);
+
+    const moved = await api.post("/guests/bulk", { ids, action: "set_group", groupId: group.id });
+    expect(await read(moved)).toEqual({ updated: 2 });
+    expect(await revOf(a.id)).toBeGreaterThan(revA);
+    expect((await listGuests(`?groupId=${group.id}`)).total).toBe(2);
+    const goneRow = await read<{ guest: Guest }>(await api.get(`/guests/${gone.id}`));
+    expect(goneRow.guest.groupId).toBeNull();
+
+    // Hanya tamu yang belum diundang yang dihitung.
+    const added = await api.post("/guests/bulk", { ids, action: "add_event", eventId: event.id });
+    expect(await read(added)).toEqual({ updated: 1 });
+    expect((await listGuests(`?eventId=${event.id}`)).total).toBe(2);
+
+    const revB = await revOf(b.id);
+    const removed = await api.post("/guests/bulk", {
+      ids: [b.id],
+      action: "remove_event",
+      eventId: event.id,
+    });
+    expect(await read(removed)).toEqual({ updated: 1 });
+    expect(await revOf(b.id)).toBeGreaterThan(revB);
+    expect((await listGuests(`?eventId=${event.id}`)).total).toBe(1);
+
+    const ungrouped = await api.post("/guests/bulk", { ids, action: "set_group", groupId: null });
+    expect(await read(ungrouped)).toEqual({ updated: 2 });
+    expect((await listGuests(`?groupId=${group.id}`)).total).toBe(0);
+  });
+
+  it("menolak data yang tidak lengkap dan rujukan yang tidak ada", async () => {
+    const guest = await makeGuest();
+    const ids = [guest.id];
+    expect((await api.post("/guests/bulk", { ids: [], action: "set_group" })).status).toBe(400);
+    expect((await api.post("/guests/bulk", { ids, action: "set_group" })).status).toBe(400);
+    expect((await api.post("/guests/bulk", { ids, action: "add_event" })).status).toBe(400);
+    expect((await api.post("/guests/bulk", { ids, action: "hapus" })).status).toBe(400);
+    const missing = crypto.randomUUID();
+    expect(
+      (await api.post("/guests/bulk", { ids, action: "set_group", groupId: missing })).status,
+    ).toBe(404);
+    expect(
+      (await api.post("/guests/bulk", { ids, action: "add_event", eventId: missing })).status,
+    ).toBe(404);
+  });
+});
+
+describe("tamu: cek kontak ganda", () => {
+  const duplicates = async (query: string) =>
+    (
+      await read<{ guests: { id: string; displayName: string }[] }>(
+        await api.get(`/guests/duplicates?${query}`),
+      )
+    ).guests;
+
+  it("mencocokkan HP dan Instagram yang sudah dinormalisasi, kecuali tamu itu sendiri dan yang dihapus", async () => {
+    const budi = await makeGuest({ displayName: "Budi", phone: "0812-3456-7890" });
+    const sari = await makeGuest({ displayName: "Sari", phone: null, instagram: "@Sari.Rahma" });
+
+    expect(await duplicates("phone=%2B62%20812%203456%207890")).toEqual([
+      { id: budi.id, displayName: "Budi", code: budi.code },
+    ]);
+    expect((await duplicates("instagram=instagram.com/sari.rahma")).map((g) => g.id)).toEqual([
+      sari.id,
+    ]);
+    expect(
+      (await duplicates("phone=081234567890&instagram=sari.rahma")).map((g) => g.displayName),
+    ).toEqual(["Budi", "Sari"]);
+    expect(await duplicates(`phone=081234567890&excludeId=${budi.id}`)).toEqual([]);
+    expect(await duplicates("phone=abc")).toEqual([]);
+    expect(await duplicates("")).toEqual([]);
+
+    await api.delete(`/guests/${budi.id}`);
+    expect(await duplicates("phone=081234567890")).toEqual([]);
+  });
+});
+
 describe("impor CSV", () => {
   const CSV = [
     "nama_undangan,hp,instagram,kelompok,rombongan,acara",
@@ -534,6 +657,42 @@ describe("impor CSV", () => {
       phone: "6281211112222",
       groupName: "Keluarga",
       isRombongan: true,
+    });
+  });
+
+  it("menerima nama acara (huruf besar/kecil bebas) selain slug", async () => {
+    const result = await preview(
+      "nama_undangan,hp,acara\nBudi,0812-1111-2222,AKAD;resepsi\nSari,0812-1111-3333,Resepsi Besar\n",
+    );
+    expect(result.rows[0]?.status).toBe("ok");
+    expect(result.rows[1]?.messages.join(" ")).toContain("tidak dikenal");
+
+    await api.post("/guests/import/commit", {
+      csv: "nama_undangan,hp,acara\nBudi,0812-1111-2222,akad|RESEPSI",
+    });
+    const [budi] = (await listGuests()).items;
+    expect(budi?.events).toHaveLength(2);
+  });
+
+  it("menolak nama acara yang dipakai beberapa acara, tapi slug-nya tetap bisa dipakai", async () => {
+    await makeEvent({ slug: "unduh-1", name: "Ngunduh Mantu" });
+    await makeEvent({ slug: "unduh-2", name: "Ngunduh Mantu" });
+    const result = await preview(
+      "nama_undangan,hp,acara\nBudi,0812-1111-2222,ngunduh mantu\nSari,0812-1111-3333,UNDUH-2\n",
+    );
+    expect(result.rows[0]?.messages.join(" ")).toContain("dipakai beberapa acara");
+    expect(result.rows[1]?.status).toBe("ok");
+  });
+
+  it("membaca teks bertab hasil tempel dari spreadsheet, koma di dalam nama tetap utuh", async () => {
+    const result = await preview(
+      'Nama\tHP\tKelompok\tAcara\nBudi, Ani & "Anak"\t0812-1111-2222\tKeluarga\tResepsi\n',
+    );
+    expect(result.counts).toEqual({ ok: 1, duplicate: 0, error: 0 });
+    expect(result.rows[0]).toMatchObject({
+      displayName: 'Budi, Ani & "Anak"',
+      phone: "6281211112222",
+      groupName: "Keluarga",
     });
   });
 
@@ -650,6 +809,27 @@ describe("ekspor dan template CSV", () => {
     const result = await read<ImportPreview>(res);
     expect(result.counts).toEqual({ ok: 1, duplicate: 0, error: 0 });
     expect(result.rows[0]).toMatchObject({ displayName: "Budi, Ani & Anak", isRombongan: true });
+  });
+
+  it("template memakai acara yang ada, dan contoh lama bila belum ada acara", async () => {
+    expect(await (await api.get("/guests/template.csv")).text()).toContain(",resepsi");
+
+    await makeEvent({
+      slug: "akad-nikah",
+      name: "Akad Nikah",
+      startsAt: "2027-05-21T01:00:00Z",
+      endsAt: "2027-05-21T02:00:00Z",
+    });
+    await makeEvent({ slug: "pesta", name: "Pesta Kebun" });
+    const text = await (await api.get("/guests/template.csv")).text();
+    expect(text).toContain(",Pesta Kebun");
+    expect(text).toContain("Akad Nikah;Pesta Kebun");
+    expect(text).not.toContain("resepsi");
+
+    const preview = await read<ImportPreview>(
+      await api.post("/guests/import/preview", { csv: text }),
+    );
+    expect(preview.counts).toEqual({ ok: 3, duplicate: 0, error: 0 });
   });
 
   it("menyediakan template CSV yang valid untuk diimpor", async () => {

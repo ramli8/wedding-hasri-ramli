@@ -1,10 +1,15 @@
-import type {
-  Guest,
-  GuestData,
-  GuestListParams,
-  GuestListResponse,
-  MarkSentRequest,
-  SentVia,
+import {
+  type Guest,
+  type GuestBulkData,
+  type GuestBulkResponse,
+  type GuestData,
+  type GuestDuplicatesResponse,
+  type GuestListParams,
+  type GuestListResponse,
+  type MarkSentRequest,
+  normalizeInstagram,
+  normalizePhone,
+  type SentVia,
 } from "@wedding/shared";
 import {
   and,
@@ -16,6 +21,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  ne,
   or,
   sql,
 } from "drizzle-orm";
@@ -260,4 +266,96 @@ export async function markSent(db: Db, id: string, req: Required<MarkSentRequest
     throw new AppError(400, "VALIDATION_ERROR", "Tamu tidak diundang ke acara ini");
   }
   return getGuest(db, id);
+}
+
+/** Aksi massal pada tamu terpilih. Tamu di tempat sampah dilewati. Satu transaksi. */
+export async function bulkUpdateGuests(db: Db, input: GuestBulkData): Promise<GuestBulkResponse> {
+  const ids = [...new Set(input.ids)];
+  if (input.action === "set_group" && input.groupId) {
+    const [group] = await db
+      .select({ id: guestGroups.id })
+      .from(guestGroups)
+      .where(eq(guestGroups.id, input.groupId))
+      .limit(1);
+    if (!group) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
+  }
+  const eventId = input.eventId;
+  if (input.action !== "set_group" && eventId) {
+    const [event] = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.id, eventId))
+      .limit(1);
+    if (!event) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
+  }
+
+  return db.transaction(async (tx) => {
+    await lockGuestRev(tx);
+    const active = and(inArray(guests.id, ids), isNull(guests.deletedAt));
+
+    if (input.action === "set_group") {
+      const updated = await tx
+        .update(guests)
+        .set({ groupId: input.groupId ?? null, ...guestTouch() })
+        .where(active)
+        .returning({ id: guests.id });
+      return { updated: updated.length };
+    }
+
+    const targets = (await tx.select({ id: guests.id }).from(guests).where(active)).map(
+      (g) => g.id,
+    );
+    if (targets.length === 0 || !eventId) return { updated: 0 };
+
+    // Hanya tamu yang benar-benar berubah yang dihitung dan dinaikkan `rev`-nya.
+    const changed =
+      input.action === "add_event"
+        ? await tx
+            .insert(guestEvents)
+            .values(targets.map((guestId) => ({ guestId, eventId })))
+            .onConflictDoNothing()
+            .returning({ guestId: guestEvents.guestId })
+        : await tx
+            .delete(guestEvents)
+            .where(and(eq(guestEvents.eventId, eventId), inArray(guestEvents.guestId, targets)))
+            .returning({ guestId: guestEvents.guestId });
+    if (changed.length) {
+      await tx
+        .update(guests)
+        .set(guestTouch())
+        .where(
+          inArray(
+            guests.id,
+            changed.map((c) => c.guestId),
+          ),
+        );
+    }
+    return { updated: changed.length };
+  });
+}
+
+/** Tamu aktif lain yang memakai HP atau Instagram yang sama (peringatan di formulir tamu). */
+export async function findDuplicateContacts(
+  db: Db,
+  query: { phone?: string; instagram?: string; excludeId?: string },
+): Promise<GuestDuplicatesResponse> {
+  const phone = query.phone ? normalizePhone(query.phone) : null;
+  const instagram = query.instagram ? normalizeInstagram(query.instagram) : null;
+  if (!phone && !instagram) return { guests: [] };
+  const rows = await db
+    .select({ id: guests.id, displayName: guests.displayName, code: guests.code })
+    .from(guests)
+    .where(
+      and(
+        isNull(guests.deletedAt),
+        query.excludeId ? ne(guests.id, query.excludeId) : undefined,
+        or(
+          phone ? eq(guests.phone, phone) : undefined,
+          instagram ? eq(guests.instagram, instagram) : undefined,
+        ),
+      ),
+    )
+    .orderBy(asc(guests.displayName))
+    .limit(20);
+  return { guests: rows };
 }

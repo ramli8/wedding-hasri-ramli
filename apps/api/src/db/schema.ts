@@ -440,6 +440,8 @@ export const receivedGifts = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     guestId: uuid().references(() => guests.id, { onDelete: "set null" }),
     giverName: text().notNull(),
+    // HP pemberi yang bukan tamu terdaftar (tujuan ucapan terima kasih), sudah dinormalisasi.
+    phone: text(),
     kind: text().notNull(),
     amount: bigint({ mode: "number" }),
     itemDescription: text(),

@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import type { Device, PairResponse } from "@wedding/shared";
 import { PAIRING_CODE_LENGTH } from "@wedding/shared";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { checkinEvents, devices } from "../db/schema.js";
@@ -61,6 +61,50 @@ export async function createDevice(db: Db, name: string) {
         })
         .returning();
       if (!row) throw new Error("Gagal membuat perangkat");
+      return { device: toDevice(row), pairingCode: formatPairingCode(code) };
+    } catch (err) {
+      if (isUniqueViolation(err, "devices_pairing_code_hash_unique")) continue;
+      throw err;
+    }
+  }
+  throw new Error("Gagal membuat kode pairing yang unik");
+}
+
+/**
+ * Kode pairing baru untuk perangkat yang belum dipasang (mis. kode lama kedaluwarsa atau hilang).
+ * Kode lama langsung tidak berlaku karena hash-nya diganti.
+ */
+export async function renewPairingCode(db: Db, id: string) {
+  const [current] = await db
+    .select({ status: devices.status })
+    .from(devices)
+    .where(eq(devices.id, id))
+    .limit(1);
+  if (!current) throw new AppError(404, "NOT_FOUND", "Perangkat tidak ditemukan");
+  if (current.status !== "pending") {
+    throw new AppError(
+      409,
+      "CONFLICT",
+      current.status === "active"
+        ? "Perangkat sudah terpasang. Kode pairing baru hanya untuk perangkat yang belum dipasang."
+        : "Perangkat sudah dicabut. Tambahkan perangkat baru.",
+    );
+  }
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generatePairingCode();
+    try {
+      // Syarat status diulang di WHERE: bila perangkat terpasang di sela-sela, tidak ada yang diubah.
+      const [row] = await db
+        .update(devices)
+        .set({
+          pairingCodeHash: sha256(code),
+          pairingExpiresAt: new Date(Date.now() + PAIRING_TTL_MS),
+        })
+        .where(and(eq(devices.id, id), eq(devices.status, "pending")))
+        .returning();
+      if (!row) {
+        throw new AppError(409, "CONFLICT", "Perangkat sudah terpasang atau dicabut");
+      }
       return { device: toDevice(row), pairingCode: formatPairingCode(code) };
     } catch (err) {
       if (isUniqueViolation(err, "devices_pairing_code_hash_unique")) continue;

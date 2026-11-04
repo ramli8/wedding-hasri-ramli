@@ -49,9 +49,19 @@ type Candidate = {
   data: GuestData | null;
 };
 
+/**
+ * Teks yang ditempel dari Excel/Google Sheets dipisah tab; berkas CSV memakai koma atau titik koma.
+ * Pemisah ditentukan dari baris header, agar koma di dalam nama tidak memecah kolom pada teks bertab.
+ */
+function isTabSeparated(csv: string) {
+  const firstLine = csv.split(/\r?\n/, 1)[0] ?? "";
+  return firstLine.includes("\t");
+}
+
 function readRecords(csv: string): Record<string, string>[] {
   let header: string[] = [];
   let records: Record<string, string>[];
+  const tabbed = isTabSeparated(csv);
   try {
     records = parse(csv, {
       columns: (raw: string[]) => {
@@ -61,7 +71,9 @@ function readRecords(csv: string): Record<string, string>[] {
       bom: true,
       skip_empty_lines: true,
       trim: true,
-      delimiter: [",", ";"],
+      delimiter: tabbed ? "\t" : [",", ";"],
+      // Sel tempelan spreadsheet boleh berisi tanda kutip di tengah teks.
+      relax_quotes: tabbed,
       relax_column_count: true,
     });
   } catch (err) {
@@ -81,13 +93,38 @@ function readRecords(csv: string): Record<string, string>[] {
   return records;
 }
 
+type EventRef = { id: string; slug: string; name: string };
+
+/** Kolom acara boleh berisi slug atau nama acara, tanpa memedulikan huruf besar/kecil. */
+function eventLookup(rows: EventRef[]) {
+  const bySlug = new Map(rows.map((e) => [e.slug.toLowerCase(), e.id]));
+  const byName = new Map<string, string[]>();
+  for (const e of rows) {
+    const key = e.name.trim().toLowerCase();
+    byName.set(key, [...(byName.get(key) ?? []), e.id]);
+  }
+  return (value: string): { id: string } | { error: string } => {
+    const key = value.toLowerCase();
+    const slugId = bySlug.get(key);
+    if (slugId) return { id: slugId };
+    const named = byName.get(key) ?? [];
+    if (named.length === 1 && named[0]) return { id: named[0] };
+    if (named.length > 1) {
+      return { error: `Nama acara "${value}" dipakai beberapa acara; tulis slug-nya` };
+    }
+    return { error: `Acara "${key}" tidak dikenal` };
+  };
+}
+
 async function analyze(db: Db, csv: string) {
   const records = readRecords(csv);
 
   const groupRows = await db.select({ name: guestGroups.name }).from(guestGroups);
   const knownGroups = new Set(groupRows.map((g) => g.name.toLowerCase()));
-  const eventRows = await db.select({ id: events.id, slug: events.slug }).from(events);
-  const eventBySlug = new Map(eventRows.map((e) => [e.slug, e.id]));
+  const eventRows = await db
+    .select({ id: events.id, slug: events.slug, name: events.name })
+    .from(events);
+  const findEvent = eventLookup(eventRows);
   const existing = await db
     .select({ displayName: guests.displayName, phone: guests.phone, instagram: guests.instagram })
     .from(guests)
@@ -114,18 +151,18 @@ async function analyze(db: Db, csv: string) {
       fail('Kolom rombongan harus "ya" atau "tidak"');
     }
 
-    const slugs = (record.acara ?? "")
+    const wanted = (record.acara ?? "")
       .split(/[;|]/)
-      .map((s) => s.trim().toLowerCase())
+      .map((s) => s.trim())
       .filter(Boolean);
     const eventIds: string[] = [];
-    for (const slug of slugs) {
-      const id = eventBySlug.get(slug);
-      if (id) eventIds.push(id);
-      else fail(`Acara "${slug}" tidak dikenal`);
+    for (const value of wanted) {
+      const found = findEvent(value);
+      if ("id" in found) eventIds.push(found.id);
+      else fail(found.error);
     }
     // Kolom acara kosong berarti diundang ke semua acara.
-    const invited = slugs.length ? eventIds : eventRows.map((e) => e.id);
+    const invited = wanted.length ? eventIds : eventRows.map((e) => e.id);
 
     const parsed = guestInputSchema.safeParse({
       displayName: record.nama_undangan ?? "",
@@ -316,7 +353,8 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
   return `﻿${stringify(records, { header: true, columns: EXPORT_COLUMNS })}`;
 }
 
-export function importTemplateCsv(): string {
+/** Template impor. Contoh kolom acara diambil dari acara yang sudah ada (nama, atau slug bila nama ganda). */
+export async function importTemplateCsv(db: Db): Promise<string> {
   const columns = [
     "nama_undangan",
     "hp",
@@ -326,6 +364,21 @@ export function importTemplateCsv(): string {
     "catatan_penjaga",
     "acara",
   ];
+  const eventRows = await db
+    .select({ slug: events.slug, name: events.name })
+    .from(events)
+    .orderBy(asc(events.startsAt), asc(events.name));
+  const nameCount = new Map<string, number>();
+  for (const e of eventRows) {
+    const key = e.name.trim().toLowerCase();
+    nameCount.set(key, (nameCount.get(key) ?? 0) + 1);
+  }
+  const label = (e: { slug: string; name: string }) =>
+    nameCount.get(e.name.trim().toLowerCase()) === 1 ? e.name.trim() : e.slug;
+  // Contoh kedua: diundang ke acara terakhir saja (biasanya resepsi). Tanpa acara: contoh lama.
+  const last = eventRows.at(-1);
+  const exampleEvent = last ? label(last) : "resepsi";
+
   const examples = [
     {
       nama_undangan: "Bpk. Budi & Keluarga",
@@ -343,8 +396,20 @@ export function importTemplateCsv(): string {
       kelompok: "Teman Kuliah",
       rombongan: "tidak",
       catatan_penjaga: "",
-      acara: "resepsi",
+      acara: exampleEvent,
     },
   ];
-  return `﻿${stringify(examples, { header: true, columns })}`;
+  // Dengan dua acara atau lebih, tunjukkan juga cara menulis beberapa acara sekaligus.
+  if (eventRows.length > 1) {
+    examples.push({
+      nama_undangan: "Pak RT",
+      hp: "0813-1111-2222",
+      instagram: "",
+      kelompok: "Tetangga",
+      rombongan: "tidak",
+      catatan_penjaga: "",
+      acara: eventRows.map(label).join(";"),
+    });
+  }
+  return `\ufeff${stringify(examples, { header: true, columns })}`;
 }

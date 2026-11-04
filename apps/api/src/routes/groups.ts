@@ -1,4 +1,4 @@
-import { groupInputSchema } from "@wedding/shared";
+import { groupDeleteQuerySchema, groupInputSchema } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppDeps, AppEnv } from "../http/env.js";
@@ -20,8 +20,13 @@ export function groupRoutes({ db }: AppDeps) {
       const group = await updateGroup(db, c.req.valid("param").id, c.req.valid("json"));
       return c.json({ group });
     })
-    .delete("/:id", validate("param", idParam), async (c) => {
-      await deleteGroup(db, c.req.valid("param").id);
-      return c.json({ ok: true });
-    });
+    .delete(
+      "/:id",
+      validate("param", idParam),
+      validate("query", groupDeleteQuerySchema),
+      async (c) => {
+        await deleteGroup(db, c.req.valid("param").id, c.req.valid("query").moveTo);
+        return c.json({ ok: true });
+      },
+    );
 }

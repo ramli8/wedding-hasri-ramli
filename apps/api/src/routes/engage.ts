@@ -1,5 +1,6 @@
 import {
   adminGuestbookQuerySchema,
+  adminRsvpRequestSchema,
   guestbookHideRequestSchema,
   guestbookReplyRequestSchema,
   markRemindedRequestSchema,
@@ -15,6 +16,7 @@ import {
   listGuestbookAdmin,
   listRsvps,
   markReminded,
+  recordRsvp,
   replyGuestbook,
 } from "../services/engage.js";
 
@@ -24,6 +26,9 @@ export function rsvpAdminRoutes({ db }: AppDeps) {
   return new Hono<AppEnv>()
     .get("/", validate("query", rsvpListQuerySchema), async (c) => {
       return c.json(await listRsvps(db, c.req.valid("query").eventId));
+    })
+    .put("/", validate("json", adminRsvpRequestSchema), async (c) => {
+      return c.json({ rsvp: await recordRsvp(db, c.req.valid("json")) });
     })
     .post(
       "/:id/reminded",

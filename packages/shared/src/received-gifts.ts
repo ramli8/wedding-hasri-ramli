@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalPhoneField } from "./guests.js";
 
 const optionalText = (max: number, label: string) =>
   z
@@ -32,6 +33,8 @@ export const receivedGiftInputSchema = z
       .nullish()
       .transform((value) => value ?? null),
     giverName: z.string().trim().max(120, "Nama pemberi maksimal 120 karakter").default(""),
+    /** Nomor HP pemberi untuk ucapan terima kasih, bila pemberi bukan tamu terdaftar. */
+    giverPhone: optionalPhoneField,
     kind: receivedGiftKindSchema,
     amount: z
       .number()
@@ -100,8 +103,13 @@ export function giftPhrase(gift: {
 export const receivedGiftSchema = z.object({
   id: z.uuid(),
   guestId: z.uuid().nullable(),
-  /** Nomor HP tamu yang tertaut (untuk ucapan terima kasih); hanya untuk admin. */
+  /**
+   * Tujuan WhatsApp ucapan terima kasih: HP tamu yang tertaut, atau `giverPhone` bila tidak ada.
+   * Hanya untuk admin.
+   */
   phone: z.string().nullable(),
+  /** Nomor HP yang diisi sendiri pada catatan ini (untuk formulir ubah). */
+  giverPhone: z.string().nullable(),
   giverName: z.string(),
   kind: receivedGiftKindSchema,
   amount: z.number().nullable(),

@@ -2,8 +2,10 @@ import type { Group, GroupData } from "@wedding/shared";
 import { asc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
-import { events, groupSessions, guestGroups } from "../db/schema.js";
+import { events, groupSessions, guestGroups, guests } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
+import { lockGuestRev } from "./checkin-log.js";
+import { guestTouch } from "./guests.js";
 
 // Nama tabel ditulis eksplisit: Drizzle membuang awalan tabel pada query satu-tabel, dan
 // `id` polos di dalam subquery akan terbaca sebagai kolom `g.id`.
@@ -143,13 +145,44 @@ export async function updateGroup(db: Db, id: string, input: GroupData): Promise
   }
 }
 
-export async function deleteGroup(db: Db, id: string): Promise<void> {
+/**
+ * Menghapus kelompok. Dengan `moveTo` (id kelompok lain atau "none"), tamunya dipindah dulu dalam
+ * transaksi yang sama, termasuk tamu di tempat sampah (agar kunci asing tidak menahan penghapusan).
+ * Tanpa `moveTo`, kelompok yang masih dipakai tamu ditolak.
+ */
+export async function deleteGroup(db: Db, id: string, moveTo?: string): Promise<void> {
+  if (moveTo === id) {
+    throw new AppError(
+      400,
+      "VALIDATION_ERROR",
+      "Kelompok tujuan tidak boleh kelompok yang dihapus",
+    );
+  }
   try {
-    const deleted = await db
-      .delete(guestGroups)
-      .where(eq(guestGroups.id, id))
-      .returning({ id: guestGroups.id });
-    if (deleted.length === 0) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
+    await db.transaction(async (tx) => {
+      if (moveTo !== undefined) {
+        const target = moveTo === "none" ? null : moveTo;
+        if (target) {
+          const [group] = await tx
+            .select({ id: guestGroups.id })
+            .from(guestGroups)
+            .where(eq(guestGroups.id, target))
+            .limit(1);
+          if (!group)
+            throw new AppError(400, "VALIDATION_ERROR", "Kelompok tujuan tidak ditemukan");
+        }
+        await lockGuestRev(tx);
+        await tx
+          .update(guests)
+          .set({ groupId: target, ...guestTouch() })
+          .where(eq(guests.groupId, id));
+      }
+      const deleted = await tx
+        .delete(guestGroups)
+        .where(eq(guestGroups.id, id))
+        .returning({ id: guestGroups.id });
+      if (deleted.length === 0) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
+    });
   } catch (err) {
     if (isForeignKeyViolation(err)) {
       throw new AppError(

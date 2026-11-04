@@ -228,6 +228,40 @@ describe("pairing perangkat", () => {
   });
 });
 
+describe("kode pairing baru", () => {
+  it("mengganti kode perangkat yang belum dipasang; kode lama tidak berlaku lagi", async () => {
+    const created = await read<{ pairingCode: string; device: Device }>(
+      await api.post("/devices", { name: "HP Cadangan" }),
+    );
+    // Kode lama sudah kedaluwarsa; kode baru memperpanjang masa berlakunya.
+    await ctx.db
+      .update(devices)
+      .set({ pairingExpiresAt: new Date(Date.now() - 1000) })
+      .where(eq(devices.id, created.device.id));
+
+    const renewed = await api.post(`/devices/${created.device.id}/pairing-code`);
+    expect(renewed.status).toBe(200);
+    const body = await read<{ pairingCode: string; device: Device }>(renewed);
+    expect(body.pairingCode).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+    expect(body.pairingCode).not.toBe(created.pairingCode);
+    expect(body.device).toMatchObject({ id: created.device.id, status: "pending" });
+    expect(body.device.pairingExpiresAt).not.toBeNull();
+
+    expect((await pairRequest(app, created.pairingCode)).status).toBe(401);
+    expect((await pairRequest(app, body.pairingCode)).status).toBe(200);
+  });
+
+  it("menolak perangkat yang sudah aktif atau dicabut (409), dan yang tidak ada (404)", async () => {
+    const active = await api.post(`/devices/${world.gateA.id}/pairing-code`);
+    expect(active.status).toBe(409);
+    expect(await read(active)).toMatchObject({ error: { code: "CONFLICT" } });
+
+    await api.post(`/devices/${world.gateB.id}/revoke`);
+    expect((await api.post(`/devices/${world.gateB.id}/pairing-code`)).status).toBe(409);
+    expect((await api.post(`/devices/${crypto.randomUUID()}/pairing-code`)).status).toBe(404);
+  });
+});
+
 describe("akses sinkronisasi", () => {
   it("menolak tanpa token, dengan token asing, dan dengan versi protokol terlalu lama", async () => {
     const anonymous = await app.request("/api/v1/sync/snapshot", {

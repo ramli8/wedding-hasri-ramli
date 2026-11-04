@@ -17,7 +17,13 @@ import {
   resolveReview,
   reviewQueue,
 } from "../services/checkin-admin.js";
-import { createDevice, deleteDevice, listDevices, revokeDevice } from "../services/devices.js";
+import {
+  createDevice,
+  deleteDevice,
+  listDevices,
+  renewPairingCode,
+  revokeDevice,
+} from "../services/devices.js";
 
 const idParam = z.object({ id: z.uuid() });
 
@@ -26,6 +32,9 @@ export function deviceAdminRoutes({ db }: AppDeps) {
     .get("/", async (c) => c.json({ items: await listDevices(db) }))
     .post("/", validate("json", createDeviceRequestSchema), async (c) => {
       return c.json(await createDevice(db, c.req.valid("json").name), 201);
+    })
+    .post("/:id/pairing-code", validate("param", idParam), async (c) => {
+      return c.json(await renewPairingCode(db, c.req.valid("param").id));
     })
     .post("/:id/revoke", validate("param", idParam), async (c) => {
       return c.json({ device: await revokeDevice(db, c.req.valid("param").id) });

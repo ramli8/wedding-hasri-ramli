@@ -1,8 +1,14 @@
-import type { AdminGuestbookEntry, RsvpListResponse, RsvpStatus } from "@wedding/shared";
+import type {
+  AdminGuestbookEntry,
+  AdminRsvpRequest,
+  RsvpListResponse,
+  RsvpStatus,
+} from "@wedding/shared";
 import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { events, guestbook, guestEvents, guestGroups, guests, rsvps } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
+import { saveRsvp } from "./public.js";
 
 // --- RSVP ---------------------------------------------------------------------------------------
 
@@ -22,6 +28,17 @@ async function rsvpEvent(db: Db, eventId?: string) {
     );
   }
   return row;
+}
+
+/** Admin mencatat jawaban RSVP atas nama tamu, dengan aturan yang sama seperti halaman tamu. */
+export async function recordRsvp(db: Db, input: AdminRsvpRequest) {
+  const [guest] = await db
+    .select({ id: guests.id, isRombongan: guests.isRombongan })
+    .from(guests)
+    .where(and(eq(guests.id, input.guestId), isNull(guests.deletedAt)))
+    .limit(1);
+  if (!guest) throw new AppError(404, "NOT_FOUND", "Tamu tidak ditemukan");
+  return saveRsvp(db, guest, input, "Tamu tidak diundang ke acara ini");
 }
 
 export async function listRsvps(db: Db, eventId?: string): Promise<RsvpListResponse> {

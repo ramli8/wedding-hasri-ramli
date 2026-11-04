@@ -102,14 +102,26 @@ function rsvpPax(status: RsvpStatus, isRombongan: boolean, pax: number | undefin
 export async function submitRsvp(db: Db, input: RsvpRequest & { code: string }) {
   const guest = await findGuestByCode(db, input.code);
   if (!guest) throw notFound();
+  return saveRsvp(db, guest, input, "Anda tidak diundang ke acara ini");
+}
 
+/**
+ * Menyimpan jawaban RSVP seorang tamu aktif. Dipakai halaman tamu dan admin (yang mencatat
+ * jawaban atas nama tamu), jadi aturan dan hasilnya sama persis.
+ */
+export async function saveRsvp(
+  db: Db,
+  guest: { id: string; isRombongan: boolean },
+  input: Pick<RsvpRequest, "eventId" | "status" | "pax">,
+  notInvitedMessage: string,
+) {
   const [row] = await db
     .select({ event: events })
     .from(guestEvents)
     .innerJoin(events, eq(events.id, guestEvents.eventId))
     .where(and(eq(guestEvents.guestId, guest.id), eq(guestEvents.eventId, input.eventId)))
     .limit(1);
-  if (!row) throw new AppError(400, "VALIDATION_ERROR", "Anda tidak diundang ke acara ini");
+  if (!row) throw new AppError(400, "VALIDATION_ERROR", notInvitedMessage);
   if (!row.event.hasRsvp) {
     throw new AppError(400, "VALIDATION_ERROR", "Acara ini tidak memakai konfirmasi kehadiran");
   }

@@ -124,6 +124,64 @@ describe("hadiah masuk", () => {
     expect(archived.res.status).toBe(400);
   });
 
+  it("menyimpan HP pemberi bebas untuk ucapan terima kasih; HP tamu tertaut lebih diutamakan", async () => {
+    const free = await add({
+      giverName: "Pak Joko",
+      giverPhone: "0812-9999-0000",
+      kind: "amplop",
+      amount: 1000,
+    });
+    expect(free.res.status).toBe(201);
+    expect(free.gift).toMatchObject({ phone: "6281299990000", giverPhone: "6281299990000" });
+
+    const bad = await api.post("/received-gifts", {
+      giverName: "A",
+      giverPhone: "12ab",
+      kind: "amplop",
+      amount: 1000,
+    });
+    expect(bad.status).toBe(400);
+    expect(JSON.stringify(await read(bad))).toContain("Nomor HP tidak valid");
+
+    const cleared = await api.put(`/received-gifts/${free.gift?.id}`, {
+      giverName: "Pak Joko",
+      giverPhone: "",
+      kind: "amplop",
+      amount: 1000,
+    });
+    expect((await read<{ gift: ReceivedGift }>(cleared)).gift).toMatchObject({
+      phone: null,
+      giverPhone: null,
+    });
+
+    const guest = (
+      await read<{ guest: { id: string } }>(
+        await api.post("/guests", { displayName: "Budi", phone: "0813-1111-2222" }),
+      )
+    ).guest;
+    const linked = await add({
+      guestId: guest.id,
+      giverPhone: "0812-9999-0000",
+      kind: "amplop",
+      amount: 1000,
+    });
+    expect(linked.gift).toMatchObject({ phone: "6281311112222", giverPhone: "6281299990000" });
+
+    // Tamu tertaut tanpa HP (hanya Instagram): nomor pada catatan yang dipakai.
+    const igOnly = (
+      await read<{ guest: { id: string } }>(
+        await api.post("/guests", { displayName: "Sari", instagram: "@sari" }),
+      )
+    ).guest;
+    const fallback = await add({
+      guestId: igOnly.id,
+      giverPhone: "0812-7777-0000",
+      kind: "amplop",
+      amount: 1000,
+    });
+    expect(fallback.gift?.phone).toBe("6281277770000");
+  });
+
   it("menyaring menurut jenis, status terima kasih, dan pencarian; ringkasan tidak ikut tersaring", async () => {
     const a = (await add({ giverName: "Pak Joko", kind: "amplop", amount: 100_000 })).gift;
     await add({ giverName: "Bu Sari", kind: "transfer", amount: 200_000 });

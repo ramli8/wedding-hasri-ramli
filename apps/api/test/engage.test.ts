@@ -302,6 +302,54 @@ describe("admin: RSVP", () => {
     });
   });
 
+  it("admin mencatat jawaban atas nama tamu dengan aturan yang sama seperti halaman tamu", async () => {
+    const { budi, sari, outsider, akad, resepsi } = world;
+    const record = (body: Record<string, unknown>) => api.put("/rsvps", body);
+
+    const group = await record({ guestId: budi.id, eventId: resepsi.id, status: "hadir", pax: 4 });
+    expect(group.status).toBe(200);
+    expect(await read(group)).toEqual({ rsvp: { status: "hadir", pax: 4 } });
+    const single = await record({ guestId: sari.id, eventId: resepsi.id, status: "hadir", pax: 9 });
+    expect(await read(single)).toEqual({ rsvp: { status: "hadir", pax: 1 } });
+
+    // Terlihat sama seperti tamu yang menjawab sendiri: di rekap admin dan di tiket tamu.
+    const body = await read<RsvpListResponse>(await api.get(`/rsvps?eventId=${resepsi.id}`));
+    expect(body.totals).toMatchObject({ hadir: 2, hadirPax: 5 });
+    expect(body.items.find((r) => r.guestId === budi.id)?.submittedAt).not.toBeNull();
+    const ticket = await read<TicketResponse>(await pub.get(`/ticket/${budi.code}`));
+    expect(ticket.events.find((e) => e.id === resepsi.id)?.rsvp).toEqual({
+      status: "hadir",
+      pax: 4,
+    });
+
+    const declined = await record({ guestId: budi.id, eventId: resepsi.id, status: "tidak_hadir" });
+    expect(await read(declined)).toEqual({ rsvp: { status: "tidak_hadir", pax: 0 } });
+
+    // Acara tanpa RSVP, tamu tidak diundang, status/pax tidak sah, tamu tidak ada atau dihapus.
+    const akadRes = await record({ guestId: budi.id, eventId: akad.id, status: "hadir" });
+    expect(akadRes.status).toBe(400);
+    expect(JSON.stringify(await read(akadRes))).toContain("tidak memakai konfirmasi kehadiran");
+    const notInvited = await record({ guestId: outsider.id, eventId: resepsi.id, status: "hadir" });
+    expect(notInvited.status).toBe(400);
+    expect(JSON.stringify(await read(notInvited))).toContain("Tamu tidak diundang");
+    expect(
+      (await record({ guestId: sari.id, eventId: resepsi.id, status: "mungkin" })).status,
+    ).toBe(400);
+    expect(
+      (await record({ guestId: budi.id, eventId: resepsi.id, status: "hadir", pax: 0 })).status,
+    ).toBe(400);
+    expect(
+      (await record({ guestId: crypto.randomUUID(), eventId: resepsi.id, status: "hadir" })).status,
+    ).toBe(404);
+    await api.delete(`/guests/${sari.id}`);
+    expect((await record({ guestId: sari.id, eventId: resepsi.id, status: "ragu" })).status).toBe(
+      404,
+    );
+    expect(
+      (await adminClient(app, "").put("/rsvps", { guestId: budi.id, eventId: resepsi.id })).status,
+    ).toBe(401);
+  });
+
   it("tamu yang dihapus tidak ikut dihitung", async () => {
     await pub.post("/rsvp", {
       code: world.sari.code,

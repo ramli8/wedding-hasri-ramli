@@ -27,7 +27,9 @@ type Row = {
 const toGift = ({ gift, recordedBy, phone }: Row): ReceivedGift => ({
   id: gift.id,
   guestId: gift.guestId,
-  phone,
+  // HP tamu tertaut lebih diutamakan; nomor yang diisi pada catatan dipakai bila tidak ada.
+  phone: phone ?? gift.phone,
+  giverPhone: gift.phone,
   giverName: gift.giverName,
   kind: gift.kind as ReceivedGiftKind,
   amount: gift.amount,
@@ -146,6 +148,7 @@ function values(input: ReceivedGiftData, giverName: string) {
   return {
     guestId: input.guestId,
     giverName,
+    phone: input.giverPhone,
     kind: input.kind,
     // Barang tidak bernominal; amplop dan transfer tidak memakai nama barang.
     amount: isItem ? null : input.amount,

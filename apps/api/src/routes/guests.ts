@@ -1,4 +1,6 @@
 import {
+  guestBulkRequestSchema,
+  guestDuplicatesQuerySchema,
   guestInputSchema,
   guestListQuerySchema,
   importCommitRequestSchema,
@@ -16,8 +18,10 @@ import {
   previewImport,
 } from "../services/guest-import.js";
 import {
+  bulkUpdateGuests,
   createGuest,
   deleteGuest,
+  findDuplicateContacts,
   getGuest,
   listGuests,
   markSent,
@@ -46,9 +50,15 @@ export function guestRoutes({ db }: AppDeps) {
       .get("/export.csv", async (c) =>
         c.body(await exportGuestsCsv(db), 200, csvHeaders("tamu.csv")),
       )
-      .get("/template.csv", (c) =>
-        c.body(importTemplateCsv(), 200, csvHeaders("template-tamu.csv")),
+      .get("/template.csv", async (c) =>
+        c.body(await importTemplateCsv(db), 200, csvHeaders("template-tamu.csv")),
       )
+      .get("/duplicates", validate("query", guestDuplicatesQuerySchema), async (c) => {
+        return c.json(await findDuplicateContacts(db, c.req.valid("query")));
+      })
+      .post("/bulk", validate("json", guestBulkRequestSchema), async (c) => {
+        return c.json(await bulkUpdateGuests(db, c.req.valid("json")));
+      })
       .post("/import/preview", validate("json", importRequestSchema), async (c) => {
         return c.json(await previewImport(db, c.req.valid("json").csv));
       })

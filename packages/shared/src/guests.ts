@@ -7,7 +7,8 @@ const optionalText = z
   .nullish()
   .transform((value) => value || null);
 
-const phoneField = z
+/** Nomor HP opsional: dinormalisasi dengan `normalizePhone`, kosong = null, tidak sah = galat. */
+export const optionalPhoneField = z
   .string()
   .trim()
   .nullish()
@@ -38,7 +39,7 @@ const instagramField = z
 export const guestInputSchema = z
   .object({
     displayName: z.string().trim().min(1, "Nama undangan wajib diisi"),
-    phone: phoneField,
+    phone: optionalPhoneField,
     instagram: instagramField,
     groupId: z
       .uuid()
@@ -115,6 +116,57 @@ export const markSentRequestSchema = z.object({
   via: sentViaSchema.default("whatsapp"),
 });
 export type MarkSentRequest = z.input<typeof markSentRequestSchema>;
+
+// --- Aksi massal ------------------------------------------------------
+
+export const GUEST_BULK_ACTIONS = ["set_group", "add_event", "remove_event"] as const;
+
+export const guestBulkRequestSchema = z
+  .object({
+    ids: z
+      .array(z.uuid())
+      .min(1, "Pilih minimal satu tamu")
+      .max(1000, "Maksimal 1000 tamu sekaligus"),
+    action: z.enum(GUEST_BULK_ACTIONS),
+    /** Untuk `set_group`: kelompok tujuan; null = tanpa kelompok. */
+    groupId: z.uuid().nullable().optional(),
+    /** Untuk `add_event` dan `remove_event`. */
+    eventId: z.uuid().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.action === "set_group" && value.groupId === undefined) {
+      ctx.addIssue({ code: "custom", path: ["groupId"], message: "Pilih kelompok tujuan" });
+    }
+    if (value.action !== "set_group" && !value.eventId) {
+      ctx.addIssue({ code: "custom", path: ["eventId"], message: "Pilih acaranya" });
+    }
+  });
+export type GuestBulkRequest = z.input<typeof guestBulkRequestSchema>;
+export type GuestBulkData = z.output<typeof guestBulkRequestSchema>;
+
+export const guestBulkResponseSchema = z.object({ updated: z.number() });
+export type GuestBulkResponse = z.infer<typeof guestBulkResponseSchema>;
+
+// --- Cek kontak ganda --------------------------------------------------
+
+/** Nilai mentah dari formulir; server yang menormalkan. Nilai tidak sah dianggap tidak cocok. */
+export const guestDuplicatesQuerySchema = z.object({
+  phone: z.string().trim().optional(),
+  instagram: z.string().trim().optional(),
+  /** Tamu yang sedang diubah, agar tidak dianggap ganda dengan dirinya sendiri. */
+  excludeId: z.uuid().optional(),
+});
+export type GuestDuplicatesQuery = z.input<typeof guestDuplicatesQuerySchema>;
+
+export const guestDuplicateSchema = z.object({
+  id: z.uuid(),
+  displayName: z.string(),
+  code: z.string().nullable(),
+});
+export type GuestDuplicate = z.infer<typeof guestDuplicateSchema>;
+
+export const guestDuplicatesResponseSchema = z.object({ guests: z.array(guestDuplicateSchema) });
+export type GuestDuplicatesResponse = z.infer<typeof guestDuplicatesResponseSchema>;
 
 // --- Impor CSV ---------------------------------------------------------
 export const IMPORT_COLUMNS = [

@@ -1,4 +1,5 @@
 import {
+  type AdminRsvpRequest,
   adminGuestbookListResponseSchema,
   adminGuestbookResponseSchema,
   type CoupleProfileInput,
@@ -21,6 +22,8 @@ import {
   type GalleryInput,
   type GiftInput,
   type GroupInput,
+  type GuestBulkRequest,
+  type GuestDuplicatesQuery,
   type GuestInput,
   galleryItemResponseSchema,
   galleryListResponseSchema,
@@ -28,6 +31,8 @@ import {
   giftResponseSchema,
   groupListResponseSchema,
   groupResponseSchema,
+  guestBulkResponseSchema,
+  guestDuplicatesResponseSchema,
   guestListResponseSchema,
   guestResponseSchema,
   homeResponseSchema,
@@ -46,6 +51,7 @@ import {
   receivedGiftResponseSchema,
   reviewListResponseSchema,
   rsvpListResponseSchema,
+  rsvpResponseSchema,
   type Section,
   type SeoInput,
   type SettingsInput,
@@ -127,7 +133,9 @@ export const adminApi = {
       request(`${base}/groups`, groupResponseSchema, withBody("POST", input)),
     update: (id: string, input: GroupInput) =>
       request(`${base}/groups/${id}`, groupResponseSchema, withBody("PUT", input)),
-    remove: (id: string) => request(`${base}/groups/${id}`, okSchema, withBody("DELETE")),
+    /** `moveTo`: id kelompok tujuan atau "none" (tanpa kelompok); tanpa itu, kelompok berisi ditolak. */
+    remove: (id: string, moveTo?: string) =>
+      request(`${base}/groups/${id}${queryString({ moveTo })}`, okSchema, withBody("DELETE")),
   },
 
   guests: {
@@ -140,6 +148,11 @@ export const adminApi = {
     remove: (id: string) => request(`${base}/guests/${id}`, okSchema, withBody("DELETE")),
     restore: (id: string) =>
       request(`${base}/guests/${id}/restore`, guestResponseSchema, withBody("POST", {})),
+    bulk: (input: GuestBulkRequest) =>
+      request(`${base}/guests/bulk`, guestBulkResponseSchema, withBody("POST", input)),
+    /** Tamu lain dengan HP/Instagram yang sama (nilai mentah dari formulir). */
+    duplicates: (query: GuestDuplicatesQuery) =>
+      request(`${base}/guests/duplicates${queryString(query)}`, guestDuplicatesResponseSchema),
     markSent: (id: string, input: MarkSentRequest) =>
       request(`${base}/guests/${id}/sent`, guestResponseSchema, withBody("POST", input)),
     importPreview: (csv: string) =>
@@ -160,6 +173,13 @@ export const adminApi = {
     list: () => request(`${base}/devices`, deviceListResponseSchema),
     create: (name: string) =>
       request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name })),
+    /** Kode pairing baru untuk perangkat yang belum dipasang. */
+    newPairingCode: (id: string) =>
+      request(
+        `${base}/devices/${id}/pairing-code`,
+        createDeviceResponseSchema,
+        withBody("POST", {}),
+      ),
     revoke: (id: string) =>
       request(`${base}/devices/${id}/revoke`, deviceResponseSchema, withBody("POST", {})),
     remove: (id: string) => request(`${base}/devices/${id}`, okSchema, withBody("DELETE")),
@@ -168,6 +188,9 @@ export const adminApi = {
   rsvps: {
     list: (eventId?: string) =>
       request(`${base}/rsvps${queryString({ eventId })}`, rsvpListResponseSchema),
+    /** Admin mencatat jawaban atas nama tamu. */
+    record: (input: AdminRsvpRequest) =>
+      request(`${base}/rsvps`, rsvpResponseSchema, withBody("PUT", input)),
     markReminded: (guestId: string, eventId: string, reminded = true) =>
       request(
         `${base}/rsvps/${guestId}/reminded`,

@@ -57,6 +57,12 @@ export const rsvpRequestSchema = z.object({
 });
 export type RsvpRequest = z.input<typeof rsvpRequestSchema>;
 
+/** Admin mencatat jawaban atas nama tamu (mis. lewat telepon). Aturan sama dengan RSVP tamu. */
+export const adminRsvpRequestSchema = rsvpRequestSchema.omit({ code: true }).extend({
+  guestId: z.uuid(),
+});
+export type AdminRsvpRequest = z.input<typeof adminRsvpRequestSchema>;
+
 export const rsvpResponseSchema = z.object({
   rsvp: z.object({ status: rsvpStatusSchema, pax: z.number() }),
 });

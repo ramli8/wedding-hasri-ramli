@@ -17,6 +17,7 @@ import {
   isCheckedIn,
   undoCheckin,
 } from "./actions.js";
+import { facingFromLabel } from "./camera.js";
 import { clockOffset, correctedNow, updateClockOffset } from "./clock.js";
 import { db, getMeta, pendingCount, resetDevice, setMeta } from "./db.js";
 import { deviceApi } from "./device-api.js";
@@ -106,6 +107,20 @@ beforeEach(async () => {
   await updateClockOffset(new Date().toISOString(), Date.now(), Date.now()); // offset ~0
 });
 afterEach(() => vi.useRealTimers());
+
+describe("facingFromLabel", () => {
+  it("mengenali arah kamera dari label Android, iOS, dan Indonesia", () => {
+    expect(facingFromLabel("camera2 0, facing back")).toBe("environment");
+    expect(facingFromLabel("camera2 1, facing front")).toBe("user");
+    expect(facingFromLabel("Back Camera")).toBe("environment");
+    expect(facingFromLabel("Front Camera")).toBe("user");
+    expect(facingFromLabel("Kamera Belakang")).toBe("environment");
+    expect(facingFromLabel("Kamera Depan")).toBe("user");
+    expect(facingFromLabel("FaceTime HD Camera")).toBe("user");
+    expect(facingFromLabel("Integrated Webcam")).toBeNull();
+    expect(facingFromLabel("")).toBeNull();
+  });
+});
 
 describe("extractCode", () => {
   it.each([
@@ -575,6 +590,19 @@ describe("SyncEngine", () => {
       await engine.syncNow();
       expect(push).not.toHaveBeenCalled(); // tidak mengirim, tetapi data aman di outbox
       expect(await db.outbox.count()).toBe(1);
+    });
+
+    it("setelah aplikasi diperbarui, tanda 'terlalu lama' dari versi sebelumnya tidak menahan sinkron", async () => {
+      const engine = await engineWithAuth();
+      await setMeta("outdated", true);
+      push.mockImplementation(async (_token, body) => ok(body));
+      await engine.start();
+      engine.stop();
+      expect(engine.getSnapshot().outdated).toBe(false);
+
+      await engine.syncNow();
+      expect(push).toHaveBeenCalled();
+      expect(engine.getSnapshot()).toMatchObject({ outdated: false, online: true });
     });
 
     it("tanpa pairing, tidak ada yang dikirim", async () => {

@@ -78,7 +78,17 @@ async function viewOf(guest: SnapshotGuest): Promise<GuestView> {
 
 // Urutan outbox = urutan pengiriman. `createdAt` harus naik ketat: dua event di milidetik yang sama
 // (mis. check-in lalu undo) tidak boleh tertukar, sebab server menolak undo yang tiba sebelum targetnya.
+// Juga berlaku setelah halaman dimuat ulang atau jam HP mundur: lanjutkan dari outbox terakhir.
 let lastStamp = 0;
+let stampLoaded: Promise<void> | undefined;
+const loadStamp = () =>
+  (stampLoaded ??= (async () => {
+    const [event, walkin] = await Promise.all([
+      db.outbox.orderBy("createdAt").last(),
+      db.walkins.orderBy("createdAt").last(),
+    ]);
+    lastStamp = Math.max(lastStamp, event?.createdAt ?? 0, walkin?.createdAt ?? 0);
+  })());
 const stamp = () => {
   lastStamp = Math.max(Date.now(), lastStamp + 1);
   return lastStamp;
@@ -104,6 +114,7 @@ export async function checkIn(
   method: CheckinMethod,
   pax?: number,
 ): Promise<Outcome> {
+  await loadStamp();
   const event = await getMeta("event");
   if (!event) throw new Error("Data acara belum diunduh. Hubungkan ke internet sekali.");
 
@@ -173,6 +184,7 @@ async function correctableTarget(checkinId: string) {
 }
 
 export async function undoCheckin(checkinId: string): Promise<void> {
+  await loadStamp();
   const target = await correctableTarget(checkinId);
   await db.outbox.add({
     id: uuid7(),
@@ -187,6 +199,7 @@ export async function undoCheckin(checkinId: string): Promise<void> {
 }
 
 export async function changePax(checkinId: string, pax: number): Promise<void> {
+  await loadStamp();
   if (!Number.isInteger(pax) || pax < 1 || pax > MAX_PAX) {
     throw new Error(`Jumlah orang harus 1 sampai ${MAX_PAX}.`);
   }
@@ -223,6 +236,7 @@ export type WalkinInput = {
 
 /** Tamu yang tidak ada di daftar: dibuat di perangkat, langsung check-in, dikirim saat sinkron. */
 export async function addWalkin(input: WalkinInput): Promise<Outcome> {
+  await loadStamp();
   const event = await getMeta("event");
   if (!event) throw new Error("Data acara belum diunduh. Hubungkan ke internet sekali.");
 
@@ -248,4 +262,58 @@ export async function addWalkin(input: WalkinInput): Promise<Outcome> {
 export async function isCheckedIn(guestId: string): Promise<boolean> {
   const event = await getMeta("event");
   return event ? (await currentState(guestId, event.id)) !== null : false;
+}
+
+export type RecentCheckin = GuestView & {
+  checkinId: string;
+  pax: number;
+  scannedAt: string;
+  /** Dicatat oleh perangkat ini. */
+  mine: boolean;
+};
+
+export type DoorSummary = {
+  /** Tamu (bukan orang) yang sudah tercatat masuk di acara ini. */
+  checkedIn: number;
+  /** Jumlah orang yang masuk, termasuk anggota rombongan. */
+  pax: number;
+  /** Check-in terbaru, paling baru di depan. */
+  recent: RecentCheckin[];
+};
+
+/** Ringkasan pintu masuk menurut data yang diketahui perangkat ini (server + outbox sendiri). */
+export async function doorSummary(limit = 8): Promise<DoorSummary> {
+  const event = await getMeta("event");
+  if (!event) return { checkedIn: 0, pax: 0, recent: [] };
+  const auth = await getMeta("auth");
+  const [known, mine] = await Promise.all([db.events.toArray(), db.outbox.toArray()]);
+  const mineIds = new Set(mine.map((e) => e.id));
+  const all = [
+    ...known.map((e) => ({
+      ...toResolver(e),
+      mine: mineIds.has(e.id) || (!!e.deviceId && e.deviceId === auth?.deviceId),
+    })),
+    ...mine.map((e) => ({ ...toResolver(e), mine: true })),
+  ];
+  const states = resolveCheckins(all).filter((s) => s.eventId === event.id);
+  const latest = [...states]
+    .sort((a, b) => Date.parse(b.primary.scannedAt) - Date.parse(a.primary.scannedAt))
+    .slice(0, limit);
+  const recent: RecentCheckin[] = [];
+  for (const state of latest) {
+    const guest = await db.guests.get(state.guestId);
+    if (!guest) continue;
+    recent.push({
+      ...(await viewOf(guest)),
+      checkinId: state.primary.id,
+      pax: state.pax,
+      scannedAt: state.primary.scannedAt,
+      mine: state.primary.mine,
+    });
+  }
+  return {
+    checkedIn: states.length,
+    pax: states.reduce((sum, s) => sum + s.pax, 0),
+    recent,
+  };
 }

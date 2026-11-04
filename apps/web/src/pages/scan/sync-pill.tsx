@@ -10,23 +10,17 @@ export function SyncPill() {
   const pending = useLiveQuery(() => pendingCount(), [], 0);
 
   return (
-    <div className="flex items-center gap-2">
-      <Badge
-        variant={status.revoked ? "destructive" : "outline"}
-        className="gap-1.5 whitespace-nowrap"
-      >
-        <span
-          className={`size-1.5 rounded-full ${status.revoked ? "bg-white" : status.online ? "bg-success" : "bg-warning"}`}
-          aria-hidden
-        />
-        {status.revoked ? "Dicabut" : status.online ? "Online" : "Offline"}
-        {pending > 0 && <span className="font-mono">· {pending} antre</span>}
-      </Badge>
-      {status.lastSyncAt && (
-        <span className="hidden text-xs text-muted-foreground sm:inline">
-          sinkron {formatAgo(status.lastSyncAt)}
-        </span>
-      )}
-    </div>
+    <Badge
+      variant={status.revoked ? "destructive" : "outline"}
+      className="h-7 gap-1.5 rounded-full px-2.5 whitespace-nowrap"
+      title={status.lastSyncAt ? `Sinkron ${formatAgo(status.lastSyncAt)}` : undefined}
+    >
+      <span
+        className={`size-1.5 rounded-full ${status.revoked ? "bg-white" : status.online ? "bg-success" : "bg-warning"}`}
+        aria-hidden
+      />
+      {status.revoked ? "Dicabut" : status.online ? "Online" : "Offline"}
+      {pending > 0 && <span className="font-mono">· {pending} antre</span>}
+    </Badge>
   );
 }

@@ -1,13 +1,22 @@
-export type FeedbackKind = "ok" | "already" | "invalid";
+export type FeedbackKind = "ok" | "vip" | "already" | "invalid";
 
 // Pola getar dan nada dibedakan agar penjaga bisa tahu hasilnya tanpa melihat layar.
+// VIP: tiga nada naik (do-mi-sol) seperti lonceng, jelas berbeda dari satu "bip" tamu biasa.
+type Tone = { hz: number; ms: number; type?: OscillatorType; fade?: boolean };
+
 const VIBRATION: Record<FeedbackKind, number[]> = {
   ok: [60],
+  vip: [60, 60, 60, 60, 180],
   already: [80, 60, 80],
   invalid: [300],
 };
-const TONE: Record<FeedbackKind, { hz: number; ms: number }[]> = {
+const TONE: Record<FeedbackKind, Tone[]> = {
   ok: [{ hz: 880, ms: 110 }],
+  vip: [
+    { hz: 1047, ms: 110, type: "triangle", fade: true },
+    { hz: 1319, ms: 110, type: "triangle", fade: true },
+    { hz: 1568, ms: 320, type: "triangle", fade: true },
+  ],
   already: [
     { hz: 660, ms: 90 },
     { hz: 660, ms: 90 },
@@ -17,7 +26,7 @@ const TONE: Record<FeedbackKind, { hz: number; ms: number }[]> = {
 
 let audio: AudioContext | undefined;
 
-function beep(tones: { hz: number; ms: number }[]) {
+function beep(tones: Tone[]) {
   try {
     audio ??= new AudioContext();
     let start = audio.currentTime;
@@ -25,7 +34,14 @@ function beep(tones: { hz: number; ms: number }[]) {
       const oscillator = audio.createOscillator();
       const gain = audio.createGain();
       oscillator.frequency.value = tone.hz;
-      gain.gain.value = 0.15;
+      if (tone.type) oscillator.type = tone.type;
+      if (tone.fade) {
+        // Meredup di ujung nada supaya berbunyi seperti lonceng, bukan bip yang terpotong.
+        gain.gain.setValueAtTime(0.22, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + tone.ms / 1000);
+      } else {
+        gain.gain.value = 0.15;
+      }
       oscillator.connect(gain).connect(audio.destination);
       oscillator.start(start);
       oscillator.stop(start + tone.ms / 1000);

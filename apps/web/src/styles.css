@@ -139,6 +139,19 @@
   }
 }
 
+/* Garis sapu di bingkai bidik kamera scanner. */
+@keyframes scan-sweep {
+  0%,
+  100% {
+    top: 4%;
+    opacity: 0.4;
+  }
+  50% {
+    top: 96%;
+    opacity: 1;
+  }
+}
+
 /* Bilah hitung mundur pada hasil scan. */
 @keyframes shrink {
   from {

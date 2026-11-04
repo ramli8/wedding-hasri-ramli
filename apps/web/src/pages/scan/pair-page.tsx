@@ -1,13 +1,14 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { PAIRING_CODE_LENGTH } from "@wedding/shared";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2, LogIn, ScanLine, Smartphone, Unlink } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Field } from "@/components/kit/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ThemeProvider } from "@/context/theme-provider";
 import { getMeta, pendingCount, resetDevice, setMeta } from "../../lib/scan/db.js";
 import { deviceApi } from "../../lib/scan/device-api.js";
 import { syncEngine } from "../../lib/scan/sync.js";
@@ -29,6 +30,7 @@ export function PairPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -53,79 +55,151 @@ export function PairPage() {
 
   async function release() {
     if (pending > 0) {
+      setConfirming(false);
       setError(
         `Masih ada ${pending} check-in yang belum terkirim. Hubungkan internet dan tunggu sinkron dulu.`,
       );
       return;
     }
     await resetDevice();
+    setConfirming(false);
     setError(null);
   }
 
   return (
-    <main className="grid min-h-dvh items-center justify-center bg-muted/30 px-4">
-      <div className="mx-auto flex w-full flex-col justify-center gap-2 py-8">
-        <div className="mb-4 flex items-center justify-center">
-          <span className="me-2 grid size-6 place-items-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
-            H&amp;R
-          </span>
-          <h1 className="text-xl font-medium">Scanner tamu</h1>
-        </div>
-        <Card className="w-full max-w-sm gap-4 self-center">
-          <CardHeader>
-            <CardTitle className="text-lg tracking-tight">Pasang perangkat</CardTitle>
-            <CardDescription>
-              Minta admin membuat perangkat di menu Perangkat, lalu masukkan kode 8 karakternya.
-              Lakukan saat internet masih menyala.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            {auth ? (
-              <div className="flex flex-col gap-3">
-                <Alert>Perangkat ini sudah terpasang sebagai “{auth.deviceName}”.</Alert>
-                {error && <Alert tone="error">{error}</Alert>}
-                <Button onClick={() => void navigate({ to: "/scan" })}>Buka scanner</Button>
-                <Button variant="destructive" onClick={() => void release()}>
-                  Lepas perangkat ini
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={onSubmit} className="flex flex-col gap-4">
-                <Field label="Kode pairing">
-                  {(id) => (
-                    <Input
-                      id={id}
-                      required
-                      autoFocus
-                      autoComplete="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                      inputMode="text"
-                      className="text-center font-mono text-2xl"
-                      placeholder="XXXX-XXXX"
-                      value={code}
-                      onChange={(e) => setCode(formatCode(e.target.value))}
-                    />
-                  )}
-                </Field>
+    <ThemeProvider>
+      <main className="grid min-h-svh place-items-center bg-muted/40 px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        <div className="flex w-full max-w-sm flex-col gap-6 py-10">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="grid size-11 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+              H&amp;R
+            </span>
+            <p className="text-lg font-semibold">Hasri &amp; Ramli</p>
+          </div>
+
+          {auth ? (
+            <Card className="gap-6">
+              <CardHeader className="text-center">
+                <span className="mx-auto mb-2 grid size-12 place-items-center rounded-full bg-success/15 text-success">
+                  <Smartphone className="size-6" aria-hidden />
+                </span>
+                <CardTitle className="text-xl tracking-tight">Perangkat sudah terpasang</CardTitle>
+                <CardDescription>
+                  Terdaftar sebagai <b className="text-foreground">{auth.deviceName}</b>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
                 {error && <Alert tone="error">{error}</Alert>}
                 <Button
-                  type="submit"
-                  disabled={busy || code.replace("-", "").length < PAIRING_CODE_LENGTH}
+                  className="h-11 w-full md:h-10"
+                  onClick={() => void navigate({ to: "/scan" })}
                 >
-                  {busy ? (
-                    "Memasangkan…"
-                  ) : (
-                    <>
-                      Pasangkan <ArrowRight className="size-4" aria-hidden />
-                    </>
-                  )}
+                  <ScanLine aria-hidden /> Buka scanner
                 </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+                {confirming ? (
+                  <div className="grid gap-3 rounded-lg border border-destructive/40 p-3">
+                    <p className="text-sm">
+                      Data tamu dan riwayat di perangkat ini akan dihapus, dan perangkat harus
+                      dipasangkan ulang dengan kode baru.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        className="h-11 md:h-10"
+                        onClick={() => setConfirming(false)}
+                      >
+                        Batal
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="h-11 md:h-10"
+                        onClick={() => void release()}
+                      >
+                        Ya, lepas
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full text-destructive hover:text-destructive md:h-10"
+                    onClick={() => setConfirming(true)}
+                  >
+                    <Unlink aria-hidden /> Lepas perangkat ini
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="gap-6">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl tracking-tight">Pasang scanner</CardTitle>
+                <CardDescription>
+                  Masukkan kode pairing 8 karakter dari admin. Cukup sekali, saat internet menyala.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={onSubmit} className="grid gap-4">
+                  <Field label="Kode pairing">
+                    {(id) => (
+                      <Input
+                        id={id}
+                        required
+                        autoFocus
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        inputMode="text"
+                        className="h-14 text-center font-mono text-2xl tracking-[0.2em] uppercase placeholder:tracking-[0.2em] md:text-2xl"
+                        placeholder="XXXX-XXXX"
+                        value={code}
+                        onChange={(e) => setCode(formatCode(e.target.value))}
+                      />
+                    )}
+                  </Field>
+                  {error && <Alert tone="error">{error}</Alert>}
+                  <Button
+                    type="submit"
+                    className="h-11 w-full md:h-10"
+                    disabled={busy || code.replace("-", "").length < PAIRING_CODE_LENGTH}
+                  >
+                    {busy ? (
+                      <>
+                        <Loader2 className="animate-spin" aria-hidden /> Memasangkan…
+                      </>
+                    ) : (
+                      <>
+                        Pasangkan <ArrowRight aria-hidden />
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                <ol className="mt-6 grid gap-2 border-t pt-4 text-sm text-muted-foreground">
+                  {[
+                    "Admin membuka menu Perangkat, lalu Tambah perangkat.",
+                    "Kode 8 karakter muncul di layar admin.",
+                    "Ketik kode itu di sini. Kodenya hanya bisa dipakai sekali.",
+                  ].map((step, i) => (
+                    <li key={step} className="flex gap-3">
+                      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
+
+          <Button variant="outline" asChild className="h-11 w-full bg-background md:h-10">
+            <Link to="/admin/masuk">
+              <LogIn aria-hidden /> Masuk sebagai admin
+            </Link>
+          </Button>
+        </div>
+      </main>
+    </ThemeProvider>
   );
 }

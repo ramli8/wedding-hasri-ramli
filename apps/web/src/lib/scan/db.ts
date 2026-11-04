@@ -45,6 +45,10 @@ export type MetaMap = {
   revoked: boolean;
   outdated: boolean;
   sound: boolean;
+  /** Kamera pilihan penjaga: belakang (bawaan) atau depan (mis. tablet di dudukan menghadap tamu). */
+  cameraFacing: "environment" | "user";
+  /** Id kamera terakhir yang dipilih lewat tombol ganti kamera. */
+  cameraDeviceId: string;
 };
 
 type MetaRow = { key: string; value: unknown };

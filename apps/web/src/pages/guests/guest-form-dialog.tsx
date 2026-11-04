@@ -1,11 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import type { Event, Group, Guest } from "@wedding/shared";
-import { type FormEvent, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { type Event, type Group, type Guest, guestInputSchema } from "@wedding/shared";
+import { TriangleAlert } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/kit/alert";
-import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { CheckCard, FormSection, SwitchRow } from "@/components/kit/form-rows";
+import { FormFooter, isAgain } from "@/components/kit/invitation-kit";
 import { Select } from "@/components/kit/select";
 import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
@@ -40,6 +41,59 @@ export function GuestFormDialog({ editing, groups, events, onClose }: Props) {
   );
 }
 
+type FieldName = "displayName" | "phone" | "instagram";
+type FieldErrors = Partial<Record<FieldName, string>>;
+
+/** Aturan dari server ("Isi nomor HP atau Instagram") ditulis lebih jelas untuk admin. */
+const EITHER_CONTACT = "Isi salah satu: nomor HP atau Instagram.";
+
+/** Pesan galat server yang dikenali dipetakan ke kolomnya, supaya tampil tepat di bawah isian. */
+function fieldOfMessage(message: string): FieldName | null {
+  if (message.startsWith("Nama undangan")) return "displayName";
+  if (message.startsWith("Username Instagram")) return "instagram";
+  if (message.startsWith("Nomor HP") || message === "Isi nomor HP atau Instagram") return "phone";
+  return null;
+}
+
+function friendly(message: string) {
+  return message === "Isi nomor HP atau Instagram" ? EITHER_CONTACT : message;
+}
+
+function useDebounced<T>(value: T, ms: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms]);
+  return debounced;
+}
+
+/** Tamu lain yang memakai HP/Instagram yang sama. Hanya peringatan; menyimpan tetap boleh. */
+function useDuplicates(kind: "phone" | "instagram", raw: string, excludeId: string | undefined) {
+  const value = useDebounced(raw.trim(), 400);
+  const query = useQuery({
+    queryKey: ["guests", "duplicates", kind, value, excludeId ?? null],
+    queryFn: () => adminApi.guests.duplicates({ [kind]: value, excludeId }),
+    enabled: value.length >= 3,
+    staleTime: 10_000,
+  });
+  // Hasil lama tidak ditampilkan selagi admin masih mengetik nilai lain.
+  if (value !== raw.trim() || value.length < 3) return [];
+  return query.data?.guests ?? [];
+}
+
+function DuplicateWarning({ label, names }: { label: string; names: string[] }) {
+  if (names.length === 0) return null;
+  return (
+    <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-400">
+      <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span>
+        {label} sudah dipakai: {names.join(", ")}
+      </span>
+    </p>
+  );
+}
+
 function GuestForm({
   guest,
   groups,
@@ -52,6 +106,7 @@ function GuestForm({
   onDone: () => void;
 }) {
   const refresh = useRefresh();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState(guest?.displayName ?? "");
   const [phone, setPhone] = useState(guest?.phone ? `+${guest.phone}` : "");
   const [instagram, setInstagram] = useState(guest?.instagram ?? "");
@@ -62,70 +117,160 @@ function GuestForm({
   const [eventIds, setEventIds] = useState<string[]>(
     guest ? guest.events.map((e) => e.eventId) : events.map((e) => e.id),
   );
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  const phoneDuplicates = useDuplicates("phone", phone, guest?.id);
+  const instagramDuplicates = useDuplicates("instagram", instagram, guest?.id);
+
+  const input = () => ({
+    displayName,
+    phone,
+    instagram,
+    groupId: groupId || null,
+    isRombongan,
+    usherNote,
+    eventIds,
+  });
 
   const save = useMutation({
-    mutationFn: () => {
-      const input = {
-        displayName,
-        phone,
-        instagram,
-        groupId: groupId || null,
-        isRombongan,
-        usherNote,
-        eventIds,
-      };
-      return guest ? adminApi.guests.update(guest.id, input) : adminApi.guests.create(input);
+    mutationFn: (again: boolean) => {
+      const body = input();
+      const request = guest ? adminApi.guests.update(guest.id, body) : adminApi.guests.create(body);
+      return request.then((result) => ({ result, again }));
     },
-    onSuccess: async () => {
+    onSuccess: async ({ result, again }) => {
       await refresh("guests", "groups", "events");
-      onDone();
+      if (!again) {
+        onDone();
+        return;
+      }
+      // Kelompok, rombongan, dan acara sengaja dipertahankan: tamu berikutnya biasanya serupa.
+      setLastSaved(result.guest.displayName);
+      setDisplayName("");
+      setPhone("");
+      setInstagram("");
+      setUsherNote("");
+      setErrors({});
+      nameRef.current?.focus();
+    },
+    onError: (error) => {
+      const field = fieldOfMessage(error.message);
+      if (field) setErrors({ [field]: friendly(error.message) });
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate();
+    // Aturan yang sama dengan server, dicek dulu di sini agar pesannya tampil di kolom yang tepat.
+    const parsed = guestInputSchema.safeParse(input());
+    if (!parsed.success) {
+      const next: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if ((field === "displayName" || field === "phone" || field === "instagram") && !next[field])
+          next[field] = friendly(issue.message);
+      }
+      setErrors(next);
+      if (next.displayName) nameRef.current?.focus();
+      return;
+    }
+    setErrors({});
+    save.mutate(isAgain(event));
   }
+
+  const clearError = (field: FieldName) =>
+    setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
 
   const toggleEvent = (id: string, checked: boolean) =>
     setEventIds((current) => (checked ? [...current, id] : current.filter((e) => e !== id)));
 
+  const serverError = save.error && !fieldOfMessage(save.error.message) ? save.error.message : null;
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
+      {lastSaved && (
+        <Alert>
+          “{lastSaved}” tersimpan. Isi tamu berikutnya; kelompok dan acara tetap seperti tadi.
+        </Alert>
+      )}
       <FormSection
         title="Identitas"
-        description="Nama seperti yang akan tertulis di pesan undangan."
+        description="Nama seperti yang akan tertulis di pesan undangan. Isi salah satu: nomor HP atau Instagram."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field label="Nama undangan" hint='Mis. "Bpk. Budi & Keluarga".'>
+            <Field
+              label="Nama undangan"
+              required
+              hint='Mis. "Bpk. Budi & Keluarga".'
+              error={errors.displayName}
+            >
               {(id) => (
                 <Input
                   id={id}
-                  required
+                  ref={nameRef}
                   autoFocus
+                  aria-invalid={!!errors.displayName}
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    clearError("displayName");
+                  }}
                 />
               )}
             </Field>
           </div>
-          <Field label="Nomor HP / WhatsApp" hint="Boleh 0812-… atau +62 812-…">
-            {(id) => (
-              <Input
-                id={id}
-                type="tel"
-                inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Instagram" hint="Isi bila tidak ada nomor HP. Tanpa @.">
-            {(id) => (
-              <Input id={id} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-            )}
-          </Field>
+          <div className="grid content-start gap-2">
+            <Field
+              label="Nomor HP / WhatsApp"
+              hint="Boleh 0812-… atau +62 812-…"
+              error={errors.phone}
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="off"
+                  aria-invalid={!!errors.phone}
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    clearError("phone");
+                  }}
+                />
+              )}
+            </Field>
+            <DuplicateWarning label="Nomor ini" names={phoneDuplicates.map((g) => g.displayName)} />
+          </div>
+          <div className="grid content-start gap-2">
+            <Field
+              label="Instagram"
+              hint="Isi bila tidak ada nomor HP. Tanpa @."
+              error={errors.instagram}
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  aria-invalid={!!errors.instagram}
+                  value={instagram}
+                  onChange={(e) => {
+                    setInstagram(e.target.value);
+                    clearError("instagram");
+                    // Aturan "salah satu" juga terpenuhi dari kolom ini.
+                    if (errors.phone === EITHER_CONTACT) clearError("phone");
+                  }}
+                />
+              )}
+            </Field>
+            <DuplicateWarning
+              label="Instagram ini"
+              names={instagramDuplicates.map((g) => g.displayName)}
+            />
+          </div>
         </div>
       </FormSection>
 
@@ -172,15 +317,8 @@ function GuestForm({
       </Field>
 
       {guest?.code && <p className="text-xs text-muted-foreground">Kode tamu: {guest.code}</p>}
-      {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      {serverError && <Alert tone="error">{serverError}</Alert>}
+      <FormFooter onCancel={onDone} pending={save.isPending} again={!guest} />
     </form>
   );
 }

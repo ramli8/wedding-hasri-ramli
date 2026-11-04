@@ -1,18 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { RSVP_LABEL, type RsvpRow } from "@wedding/shared";
-import { Bell } from "lucide-react";
-import { useState } from "react";
+import { MAX_PAX, RSVP_LABEL, RSVP_STATUSES, type RsvpRow, type RsvpStatus } from "@wedding/shared";
+import { Bell, CalendarCheck, PencilLine } from "lucide-react";
+import { type FormEvent, useState } from "react";
 import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
-import { Button } from "@/components/kit/button";
+import { Button, buttonVariants } from "@/components/kit/button";
+import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormFooter } from "@/components/kit/invitation-kit";
 import { Select } from "@/components/kit/select";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { eventsQuery, rsvpQuery } from "../lib/queries.js";
 import { ReminderDialog } from "./rsvp-reminder-dialog.js";
@@ -38,7 +45,7 @@ const STATUS_OPTIONS = [
   { label: "Belum menjawab", value: "belum" },
 ];
 
-const columns: ColumnDef<RsvpRow, unknown>[] = [
+const baseColumns: ColumnDef<RsvpRow, unknown>[] = [
   selectColumn<RsvpRow>(),
   {
     id: "nama",
@@ -95,8 +102,30 @@ export function RsvpPage() {
   const rsvpEvents = (events.data ?? []).filter((e) => e.hasRsvp);
   const [eventId, setEventId] = useState("");
   const [reminding, setReminding] = useState<RsvpRow[] | null>(null);
+  const [recording, setRecording] = useState<RsvpRow | null>(null);
+  const noRsvpEvent = events.isSuccess && rsvpEvents.length === 0;
 
-  const rsvp = useQuery({ ...rsvpQuery(eventId || undefined), enabled: events.isSuccess });
+  const columns: ColumnDef<RsvpRow, unknown>[] = [
+    ...baseColumns,
+    {
+      id: "aksi",
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => setRecording(row.original)}>
+            <PencilLine aria-hidden />
+            Catat jawaban
+          </Button>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
+  const rsvp = useQuery({
+    ...rsvpQuery(eventId || undefined),
+    enabled: events.isSuccess && rsvpEvents.length > 0,
+  });
   const totals = rsvp.data?.totals;
 
   return (
@@ -140,7 +169,24 @@ export function RsvpPage() {
         />
       )}
 
+      {events.isError && <Alert tone="error">{events.error.message}</Alert>}
       {rsvp.isError && <Alert tone="error">{rsvp.error.message}</Alert>}
+      {noRsvpEvent && (
+        <Card className="items-center px-6 py-12 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-muted">
+            <CalendarCheck className="size-6" aria-hidden />
+          </span>
+          <div className="max-w-sm space-y-1">
+            <p className="font-semibold">Belum ada acara dengan RSVP</p>
+            <p className="text-sm text-muted-foreground">
+              Buka menu Acara, ubah acara yang perlu konfirmasi kehadiran, lalu nyalakan RSVP.
+            </p>
+          </div>
+          <Link to="/admin/acara" className={buttonVariants()}>
+            Buka Acara
+          </Link>
+        </Card>
+      )}
 
       {totals && rsvp.data && (
         <>
@@ -177,8 +223,125 @@ export function RsvpPage() {
               </DataTableBulkActions>
             )}
           />
+          <RecordDialog
+            row={recording}
+            eventId={rsvp.data.event.id}
+            eventName={rsvp.data.event.name}
+            onClose={() => setRecording(null)}
+          />
         </>
       )}
     </>
+  );
+}
+
+/** Admin mencatat jawaban atas nama tamu, mis. setelah ditanya lewat telepon. */
+function RecordDialog({
+  row,
+  eventId,
+  eventName,
+  onClose,
+}: {
+  row: RsvpRow | null;
+  eventId: string;
+  eventName: string;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog
+      open={row !== null}
+      onClose={onClose}
+      title={`Catat jawaban: ${row?.displayName ?? ""}`}
+      description={`RSVP untuk ${eventName}.`}
+    >
+      {row && <RecordForm row={row} eventId={eventId} onDone={onClose} />}
+    </Dialog>
+  );
+}
+
+function RecordForm({
+  row,
+  eventId,
+  onDone,
+}: {
+  row: RsvpRow;
+  eventId: string;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<RsvpStatus>(row.status ?? "hadir");
+  const [pax, setPax] = useState(String(row.pax ?? 1));
+  // Jumlah orang hanya berarti untuk tamu rombongan yang hadir; tamu biasa selalu 1 orang.
+  const askPax = row.isRombongan && status === "hadir";
+
+  const save = useMutation({
+    mutationFn: () =>
+      adminApi.rsvps.record({
+        guestId: row.guestId,
+        eventId,
+        status,
+        pax: askPax ? Number(pax) : undefined,
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["rsvp"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+      ]);
+      onDone();
+    },
+  });
+
+  const paxNumber = Number(pax);
+  const paxError =
+    askPax && (!Number.isInteger(paxNumber) || paxNumber < 1 || paxNumber > MAX_PAX)
+      ? `Isi angka 1–${MAX_PAX}.`
+      : null;
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (paxError) return;
+    save.mutate();
+  }
+
+  return (
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <div role="radiogroup" aria-label="Jawaban" className="grid gap-2 sm:grid-cols-3">
+        {RSVP_STATUSES.map((value) => (
+          // biome-ignore lint/a11y/useSemanticElements: tombol besar lebih mudah diketuk di HP
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={status === value}
+            onClick={() => setStatus(value)}
+            className={cn(
+              "h-11 rounded-md border px-3 text-sm font-medium transition-colors",
+              status === value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "hover:bg-accent",
+            )}
+          >
+            {RSVP_LABEL[value]}
+          </button>
+        ))}
+      </div>
+      {askPax && (
+        <Field label="Jumlah orang yang hadir" error={paxError}>
+          {(id) => (
+            <Input
+              id={id}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={MAX_PAX}
+              value={pax}
+              onChange={(e) => setPax(e.target.value)}
+            />
+          )}
+        </Field>
+      )}
+      {save.error && <Alert tone="error">{save.error.message}</Alert>}
+      <FormFooter onCancel={onDone} pending={save.isPending} />
+    </form>
   );
 }

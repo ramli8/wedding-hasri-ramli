@@ -1,9 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useSearch } from "@tanstack/react-router";
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import type { Group, Guest } from "@wedding/shared";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import type { ColumnDef, PaginationState, Table } from "@tanstack/react-table";
+import type { Event, Group, Guest } from "@wedding/shared";
 import {
+  CalendarMinus,
+  CalendarPlus,
+  ChevronDown,
   Download,
+  FolderInput,
+  ListChecks,
   Plus,
   Printer,
   QrCode,
@@ -24,8 +29,18 @@ import { DataTableViewOptions } from "@/components/data-table/view-options";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
+import { Field } from "@/components/kit/field";
+import { FormFooter } from "@/components/kit/invitation-kit";
+import { Select } from "@/components/kit/select";
+import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { adminApi, downloads } from "../../lib/admin-api.js";
 import {
@@ -38,6 +53,7 @@ import {
 import { type GuestEditing, GuestFormDialog } from "./guest-form-dialog.js";
 import { QrDialog } from "./qr-dialog.js";
 import { SendDialog } from "./send-dialog.js";
+import { SendQueueDialog } from "./send-queue-dialog.js";
 
 function useDebounced<T>(value: T, ms: number) {
   const [debounced, setDebounced] = useState(value);
@@ -54,16 +70,37 @@ const EXTRA_OPTIONS = [
   { label: "Tempat sampah", value: "sampah" },
 ];
 
+type BulkAction = "set_group" | "add_event" | "remove_event";
+type Bulk = { action: BulkAction; ids: string[]; done: () => void } | null;
+
 export function GuestsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [groupId, setGroupId] = useState("");
-  const { acara } = useSearch({ from: "/app/admin/tamu" as never, strict: false }) as {
-    acara?: string;
-  };
+  // Parameter URL (divalidasi di router.tsx): ?acara=<id> (dari kartu Acara), ?kelompok=<id>
+  // (dari halaman Kelompok), ?kirim=antre (dari Beranda: buka antrean kirim undangan).
+  const { acara, kelompok, kirim } = useSearch({ from: "/app/admin/tamu" });
+  const urlGroup = kelompok ?? "";
+  const [groupId, setGroupId] = useState(urlGroup);
   const [eventId, setEventId] = useState(acara ?? "");
-  // Tautan dari kartu Acara mengganti ?acara= tanpa memuat ulang halaman.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hanya parameter URL yang menyetel filter
+  // Tautan dari kartu Acara/Kelompok mengganti parameter URL tanpa memuat ulang halaman.
   useEffect(() => setEventId(acara ?? ""), [acara]);
+  useEffect(() => setGroupId(urlGroup), [urlGroup]);
+  const [queueOpen, setQueueOpen] = useState(kirim === "antre");
+  useEffect(() => {
+    if (kirim === "antre") setQueueOpen(true);
+  }, [kirim]);
+  const closeQueue = () => {
+    setQueueOpen(false);
+    // Parameter ?kirim dihapus agar antrean tidak terbuka lagi saat halaman dimuat ulang.
+    if (kirim !== undefined) {
+      void navigate({
+        to: "/admin/tamu",
+        search: (prev) => ({ ...prev, kirim: undefined }),
+        replace: true,
+      });
+    }
+  };
+  const [bulk, setBulk] = useState<Bulk>(null);
   const [sent, setSent] = useState<"" | "sent" | "unsent">("");
   const [extras, setExtras] = useState<string[]>([]);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -124,7 +161,19 @@ export function GuestsPage() {
       id: "nama",
       accessorFn: (guest) => guest.displayName,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
-      cell: ({ row }) => <span className="font-medium">{row.original.displayName}</span>,
+      // Mengetuk nama membuka formulir Ubah (lebih cepat daripada lewat menu …, terutama di HP).
+      cell: ({ row }) =>
+        trash ? (
+          <span className="font-medium">{row.original.displayName}</span>
+        ) : (
+          <button
+            type="button"
+            className="text-start font-medium underline-offset-4 hover:underline"
+            onClick={() => setEditing({ kind: "edit", guest: row.original })}
+          >
+            {row.original.displayName}
+          </button>
+        ),
       enableSorting: false,
       meta: { className: "ps-3" },
     },
@@ -273,6 +322,10 @@ export function GuestsPage() {
               <Upload aria-hidden />
               Impor
             </Link>
+            <Button variant="outline" onClick={() => setQueueOpen(true)}>
+              <ListChecks aria-hidden />
+              Kirim beruntun
+            </Button>
             <Button onClick={() => setEditing({ kind: "new" })}>
               Tambah tamu
               <Plus aria-hidden />
@@ -304,14 +357,14 @@ export function GuestsPage() {
         }}
         renderToolbar={(table) => (
           <div className="flex items-center justify-between">
-            <div className="flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
+            <div className="flex min-w-0 flex-1 flex-col-reverse items-stretch gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
               <Input
                 type="search"
                 aria-label="Cari tamu"
                 placeholder="Cari nama, HP, Instagram, atau kode"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8 w-37.5 lg:w-62.5"
+                className="h-8 w-full sm:w-37.5 lg:w-62.5"
               />
               <div className="flex flex-wrap gap-2">
                 <FacetedFilter
@@ -378,16 +431,22 @@ export function GuestsPage() {
                 Pulihkan
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() =>
-                  setDeleting(table.getFilteredSelectedRowModel().rows.map((row) => row.original))
-                }
-              >
-                <Trash2 aria-hidden />
-                Hapus
-              </Button>
+              <>
+                <BulkMenu
+                  onSelect={(action) => setBulk(bulkOf(table, action))}
+                  hasEvents={(events.data?.length ?? 0) > 0}
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() =>
+                    setDeleting(table.getFilteredSelectedRowModel().rows.map((row) => row.original))
+                  }
+                >
+                  <Trash2 aria-hidden />
+                  Hapus
+                </Button>
+              </>
             )}
           </DataTableBulkActions>
         )}
@@ -412,7 +471,164 @@ export function GuestsPage() {
         onClose={() => setQrId(null)}
       />
       <DeleteGuestDialog guests={deleting} onClose={() => setDeleting([])} />
+      <BulkDialog
+        bulk={bulk}
+        groups={groups.data ?? []}
+        events={events.data ?? []}
+        onClose={() => setBulk(null)}
+      />
+      <SendQueueDialog
+        open={queueOpen}
+        onClose={closeQueue}
+        events={events.data ?? []}
+        groups={groups.data ?? []}
+        settings={settings.data}
+        initialEventId={eventId || undefined}
+      />
     </>
+  );
+}
+
+function bulkOf(table: Table<Guest>, action: BulkAction): Bulk {
+  return {
+    action,
+    ids: table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
+    done: () => table.resetRowSelection(),
+  };
+}
+
+/** Satu tombol "Ubah" berisi aksi massal, agar bilah melayang tetap muat di layar HP. */
+function BulkMenu({
+  onSelect,
+  hasEvents,
+}: {
+  onSelect: (action: BulkAction) => void;
+  hasEvents: boolean;
+}) {
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="outline">
+          Ubah
+          <ChevronDown aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" side="top" className="w-56">
+        <DropdownMenuItem onSelect={() => onSelect("set_group")}>
+          <FolderInput />
+          Pindah kelompok
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!hasEvents} onSelect={() => onSelect("add_event")}>
+          <CalendarPlus />
+          Undang ke acara
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!hasEvents} onSelect={() => onSelect("remove_event")}>
+          <CalendarMinus />
+          Batalkan undangan acara
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const BULK_TEXT: Record<BulkAction, { title: string; label: string; submit: string }> = {
+  set_group: { title: "Pindah kelompok", label: "Kelompok tujuan", submit: "Pindahkan" },
+  add_event: { title: "Undang ke acara", label: "Acara", submit: "Undang" },
+  remove_event: { title: "Batalkan undangan acara", label: "Acara", submit: "Batalkan undangan" },
+};
+
+function BulkDialog({
+  bulk,
+  groups,
+  events,
+  onClose,
+}: {
+  bulk: Bulk;
+  groups: Group[];
+  events: Event[];
+  onClose: () => void;
+}) {
+  const text = bulk ? BULK_TEXT[bulk.action] : null;
+  return (
+    <Dialog
+      open={bulk !== null}
+      onClose={onClose}
+      title={text ? `${text.title} (${bulk?.ids.length} tamu)` : ""}
+    >
+      {bulk && <BulkForm bulk={bulk} groups={groups} events={events} onDone={onClose} />}
+    </Dialog>
+  );
+}
+
+function BulkForm({
+  bulk,
+  groups,
+  events,
+  onDone,
+}: {
+  bulk: NonNullable<Bulk>;
+  groups: Group[];
+  events: Event[];
+  onDone: () => void;
+}) {
+  const refresh = useRefresh();
+  const isGroup = bulk.action === "set_group";
+  const [target, setTarget] = useState(isGroup ? "" : (events[0]?.id ?? ""));
+  const text = BULK_TEXT[bulk.action];
+
+  const run = useMutation({
+    mutationFn: () =>
+      adminApi.guests.bulk(
+        isGroup
+          ? { ids: bulk.ids, action: "set_group", groupId: target || null }
+          : { ids: bulk.ids, action: bulk.action, eventId: target },
+      ),
+    meta: { toast: false },
+    onSuccess: async ({ updated }) => {
+      toast(`${updated} tamu diperbarui`);
+      await refresh("guests", "groups", "events");
+      bulk.done();
+      onDone();
+    },
+  });
+
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        run.mutate();
+      }}
+    >
+      <Field
+        label={text.label}
+        hint={
+          bulk.action === "remove_event"
+            ? "Undangan dan status kirim untuk acara ini dihapus dari tamu terpilih; tamunya tetap ada."
+            : bulk.action === "add_event"
+              ? "Tamu yang sudah diundang ke acara ini tidak berubah."
+              : undefined
+        }
+      >
+        {(id) => (
+          <Select id={id} value={target} onChange={(e) => setTarget(e.target.value)}>
+            {isGroup && <option value="">Tanpa kelompok</option>}
+            {(isGroup ? groups : events).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+      {run.error && <Alert tone="error">{run.error.message}</Alert>}
+      <FormFooter
+        onCancel={onDone}
+        pending={run.isPending}
+        disabled={!isGroup && !target}
+        submitLabel={text.submit}
+      />
+    </form>
   );
 }
 

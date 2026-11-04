@@ -24,7 +24,6 @@ import {
   YAxis,
 } from "recharts";
 import { Alert } from "@/components/kit/alert";
-import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +40,14 @@ export function daysUntil(iso: string, now = Date.now()) {
   return wibDay(Date.parse(iso)) - wibDay(now);
 }
 
-type Task = { key: string; text: string; to: string; urgent?: boolean };
+type Task = {
+  key: string;
+  text: string;
+  to: string;
+  /** Parameter URL tambahan, mis. `{ kirim: "antre" }` membuka antrean kirim undangan. */
+  search?: Record<string, string>;
+  urgent?: boolean;
+};
 
 /** Hal yang perlu dikerjakan, hanya yang jumlahnya lebih dari nol. */
 export function buildTasks(home: HomeResponse, now = Date.now()): Task[] {
@@ -67,7 +73,10 @@ export function buildTasks(home: HomeResponse, now = Date.now()): Task[] {
     home.guests.neverSent > 0 && {
       key: "unsent",
       text: `${home.guests.neverSent} tamu belum dikirimi undangan`,
+      // Daftar tamu hanya bisa menyaring "belum dikirim" per acara, sedangkan angka ini lintas
+      // acara; jadi langsung buka antrean kirim beruntun.
       to: "/admin/tamu",
+      search: { kirim: "antre" },
     },
     (home.rsvp?.belum ?? 0) > 0 && {
       key: "rsvp",
@@ -202,7 +211,7 @@ export function HomePage() {
   return (
     <>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Dasbor</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Beranda</h1>
         {data && <Countdown eventDate={data.eventDate} />}
       </div>
 
@@ -301,17 +310,35 @@ export function HomePage() {
               />
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
-              <Card className="col-span-1 lg:col-span-4">
-                <CardHeader>
-                  <CardTitle>Jawaban RSVP</CardTitle>
-                  <CardDescription>
-                    {data.rsvp ? data.rsvp.eventName : "Belum ada acara dengan RSVP."}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="ps-2">
-                  <BarsChart data={rsvpBars} />
-                </CardContent>
-              </Card>
+              {data.rsvp ? (
+                <Card className="col-span-1 lg:col-span-4">
+                  <CardHeader>
+                    <CardTitle>Jawaban RSVP</CardTitle>
+                    <CardDescription>{data.rsvp.eventName}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="ps-2">
+                    <BarsChart data={rsvpBars} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="col-span-1 self-start lg:col-span-4">
+                  <CardContent className="flex flex-wrap items-center gap-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted">
+                      <CalendarCheck className="size-5" aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold">Jawaban RSVP</p>
+                      <p className="text-sm text-muted-foreground">
+                        Belum ada acara dengan RSVP. Nyalakan RSVP di acara agar tamu bisa menjawab
+                        dari undangannya.
+                      </p>
+                    </div>
+                    <Link to="/admin/acara" className={buttonVariants({ variant: "outline" })}>
+                      Buka Acara
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
               <Card className="col-span-1 lg:col-span-3">
                 <CardHeader>
                   <CardTitle>Perlu dikerjakan</CardTitle>
@@ -434,7 +461,11 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     <ul className="space-y-6">
       {tasks.map((task) => (
         <li key={task.key}>
-          <Link to={task.to} className="flex items-center gap-4 hover:opacity-80">
+          <Link
+            to={task.to}
+            search={task.search as never}
+            className="flex items-center gap-4 hover:opacity-80"
+          >
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted">
               {task.urgent ? (
                 <AlertTriangle className="size-4 text-destructive" aria-label="Mendesak" />

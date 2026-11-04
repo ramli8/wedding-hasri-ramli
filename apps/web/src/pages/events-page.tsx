@@ -3,11 +3,12 @@ import { Link } from "@tanstack/react-router";
 import {
   DEFAULT_MESSAGE_TEMPLATE,
   type Event,
+  eventInputSchema,
   formatEventDate,
   MESSAGE_TEMPLATE_VARIABLES,
   renderTemplate,
 } from "@wedding/shared";
-import { CalendarDays, Plus, SquarePen, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, Plus, SquarePen, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
@@ -15,6 +16,8 @@ import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection, SwitchRow } from "@/components/kit/form-rows";
+import { FormFooter } from "@/components/kit/invitation-kit";
+import { useCaretInsert, VariableChips } from "@/components/kit/variable-chips";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +81,14 @@ export function EventsPage() {
                       {event.startsAt ? formatDateTime(event.startsAt) : "Waktu belum diatur"}
                     </CardDescription>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditing({ kind: "edit", event })}
+                  >
+                    <SquarePen aria-hidden />
+                    Ubah
+                  </Button>
                   <DataTableRowActions
                     actions={[
                       {
@@ -149,6 +160,14 @@ export function EventsPage() {
   );
 }
 
+const TWO_HOURS_MS = 2 * 3600_000;
+
+/** Nilai datetime-local WIB ditambah dua jam (perkiraan lama acara). */
+function plusTwoHours(local: string): string {
+  const iso = wibInputToIso(local);
+  return iso ? isoToWibInput(new Date(Date.parse(iso) + TWO_HOURS_MS).toISOString()) : "";
+}
+
 const slugify = (text: string) =>
   text
     .toLowerCase()
@@ -183,6 +202,22 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
   const [checkinEnabled, setCheckinEnabled] = useState(event?.checkinEnabled ?? false);
   const [hasRsvp, setHasRsvp] = useState(event?.hasRsvp ?? false);
   const [messageTemplate, setMessageTemplate] = useState(event?.messageTemplate ?? "");
+  // Jam selesai yang diisi otomatis (mulai + 2 jam) ikut bergeser selama admin belum mengubahnya.
+  const [endAuto, setEndAuto] = useState(false);
+  const [advanced, setAdvanced] = useState(event !== null);
+  const [errors, setErrors] = useState<
+    Partial<Record<"name" | "slug" | "endsAt" | "mapsUrl", string>>
+  >({});
+  const template = useCaretInsert(messageTemplate, setMessageTemplate);
+
+  function changeStart(value: string) {
+    setStartsAt(value);
+    if (value && (!endsAt || endAuto)) {
+      setEndsAt(plusTwoHours(value));
+      setEndAuto(true);
+    }
+    setErrors((current) => ({ ...current, endsAt: undefined }));
+  }
 
   const save = useMutation({
     mutationFn: () => {
@@ -204,10 +239,42 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
       await refresh("events");
       onDone();
     },
+    onError: (error) => {
+      if (error.message.startsWith("Slug")) {
+        setErrors({ slug: "Kode singkat ini sudah dipakai acara lain." });
+        setAdvanced(true);
+      }
+    },
   });
 
   function onSubmit(submitEvent: FormEvent) {
     submitEvent.preventDefault();
+    // Aturan yang sama dengan server dicek di sini agar pesannya tampil di bawah kolomnya.
+    const next: typeof errors = {};
+    const parsed = eventInputSchema.safeParse({
+      slug,
+      name,
+      startsAt: wibInputToIso(startsAt),
+      endsAt: wibInputToIso(endsAt),
+      mapsUrl,
+    });
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === "name" || field === "slug" || field === "mapsUrl" || field === "endsAt")
+          next[field] ??= issue.message;
+      }
+    }
+    if (startsAt && endsAt && endsAt <= startsAt)
+      next.endsAt = "Jam selesai harus setelah jam mulai.";
+    if (next.slug) {
+      next.slug = slug
+        ? "Kode singkat hanya huruf kecil, angka, dan tanda hubung (mis. resepsi)."
+        : "Kode singkat wajib diisi.";
+      setAdvanced(true);
+    }
+    setErrors(next);
+    if (Object.values(next).some(Boolean)) return;
     save.mutate();
   }
 
@@ -220,39 +287,71 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
       <FormSection title="Informasi dasar">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nama acara" hint='Mis. "Akad Nikah" atau "Resepsi".'>
+          <Field
+            label="Nama acara"
+            required
+            hint='Mis. "Akad Nikah" atau "Resepsi".'
+            error={errors.name}
+          >
             {(id) => (
               <Input
                 id={id}
-                required
+                autoFocus={!event}
                 value={name}
+                aria-invalid={!!errors.name}
                 onChange={(e) => {
                   setName(e.target.value);
                   if (!slugTouched) setSlug(slugify(e.target.value));
+                  setErrors((current) => ({ ...current, name: undefined, slug: undefined }));
                 }}
               />
             )}
           </Field>
-          <Field label="Slug" hint="Singkatan untuk impor CSV, mis. resepsi.">
-            {(id) => (
-              <Input
-                id={id}
-                required
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(e.target.value);
-                }}
-              />
-            )}
-          </Field>
+          {advanced && (
+            <Field
+              label="Kode singkat (dipakai di impor)"
+              hint="Terisi otomatis dari nama. Boleh ditulis di kolom acara saat impor, mis. resepsi."
+              error={errors.slug}
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  value={slug}
+                  autoCapitalize="none"
+                  aria-invalid={!!errors.slug}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    setSlug(e.target.value);
+                    setErrors((current) => ({ ...current, slug: undefined }));
+                  }}
+                />
+              )}
+            </Field>
+          )}
         </div>
+        {!advanced && (
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ms-2 text-muted-foreground"
+              aria-expanded={false}
+              onClick={() => setAdvanced(true)}
+            >
+              Lanjutan
+              <ChevronDown aria-hidden />
+            </Button>
+          </div>
+        )}
       </FormSection>
 
-      <FormSection title="Waktu" description="Jam ditulis dalam WIB.">
+      <FormSection
+        title="Waktu"
+        description="Jam ditulis dalam WIB. Jam selesai terisi otomatis 2 jam setelah mulai; ubah bila perlu."
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Mulai">
             {(id) => (
@@ -260,17 +359,23 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
                 id={id}
                 type="datetime-local"
                 value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
+                onChange={(e) => changeStart(e.target.value)}
               />
             )}
           </Field>
-          <Field label="Selesai">
+          <Field label="Selesai" error={errors.endsAt}>
             {(id) => (
               <Input
                 id={id}
                 type="datetime-local"
                 value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
+                min={startsAt || undefined}
+                aria-invalid={!!errors.endsAt}
+                onChange={(e) => {
+                  setEndsAt(e.target.value);
+                  setEndAuto(false);
+                  setErrors((current) => ({ ...current, endsAt: undefined }));
+                }}
               />
             )}
           </Field>
@@ -284,20 +389,31 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
               <Input id={id} value={venueName} onChange={(e) => setVenueName(e.target.value)} />
             )}
           </Field>
-          <Field label="Link peta">
+          <Field label="Link peta" error={errors.mapsUrl}>
             {(id) => (
               <Input
                 id={id}
                 type="url"
+                inputMode="url"
                 placeholder="https://maps.google.com/…"
                 value={mapsUrl}
-                onChange={(e) => setMapsUrl(e.target.value)}
+                onChange={(e) => {
+                  setMapsUrl(e.target.value);
+                  setErrors((current) => ({ ...current, mapsUrl: undefined }));
+                }}
               />
             )}
           </Field>
         </div>
         <Field label="Alamat">
-          {(id) => <Input id={id} value={address} onChange={(e) => setAddress(e.target.value)} />}
+          {(id) => (
+            <Textarea
+              id={id}
+              rows={3}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          )}
         </Field>
       </FormSection>
 
@@ -318,49 +434,31 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
 
       <FormSection
         title="Pesan undangan"
-        description="Kosong berarti memakai template bawaan. Klik variabel untuk menyisipkannya."
+        description="Kosong berarti memakai template bawaan. Ketuk variabel untuk menyisipkannya di posisi kursor."
       >
         <Field label="Template">
           {(id) => (
             <Textarea
               id={id}
+              ref={template.ref}
               value={messageTemplate}
               placeholder={DEFAULT_MESSAGE_TEMPLATE}
               spellCheck={false}
               className="min-h-32 font-mono text-sm"
               onChange={(e) => setMessageTemplate(e.target.value)}
+              onSelect={template.trackCaret}
             />
           )}
         </Field>
-        <div className="flex flex-wrap gap-1.5">
-          {MESSAGE_TEMPLATE_VARIABLES.map((variable) => (
-            <button
-              key={variable.name}
-              type="button"
-              title={variable.description}
-              onClick={() => setMessageTemplate((text) => `${text}${variable.name}`)}
-            >
-              <Badge variant="outline" className="font-mono hover:bg-accent">
-                {variable.name}
-              </Badge>
-            </button>
-          ))}
-        </div>
+        <VariableChips variables={MESSAGE_TEMPLATE_VARIABLES} onInsert={template.insert} />
         <div className="rounded-lg border bg-muted/40 p-3">
           <p className="mb-1 text-xs font-medium text-muted-foreground">Pratinjau</p>
           <p className="text-sm whitespace-pre-wrap">{preview}</p>
         </div>
       </FormSection>
 
-      {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      {save.error && !errors.slug && <Alert tone="error">{save.error.message}</Alert>}
+      <FormFooter onCancel={onDone} pending={save.isPending} />
     </form>
   );
 }

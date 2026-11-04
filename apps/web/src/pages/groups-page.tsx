@@ -1,21 +1,24 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { type Event, formatTimeRange, type Group } from "@wedding/shared";
-import { Plus, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Check, Palette, Plus, SquarePen, Trash2, Users } from "lucide-react";
+import { type FormEvent, useRef, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Checkbox } from "@/components/kit/checkbox";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
+import { SwitchRow } from "@/components/kit/form-rows";
+import { EmptyState, FormFooter, isAgain } from "@/components/kit/invitation-kit";
+import { Select } from "@/components/kit/select";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { adminApi } from "../lib/admin-api.js";
 import { isoToWibDate, isoToWibTime, wibTimeToIso } from "../lib/datetime.js";
 import { eventsQuery, groupsQuery, useRefresh } from "../lib/queries.js";
@@ -51,6 +54,16 @@ export function GroupsPage() {
       id: "tamu",
       accessorFn: (group) => group.guestCount,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tamu" />,
+      // Membuka daftar tamu yang sudah disaring ke kelompok ini.
+      cell: ({ row }) => (
+        <Link
+          to="/admin/tamu"
+          search={{ kelompok: row.original.id }}
+          className="font-medium underline underline-offset-4 hover:opacity-80"
+        >
+          {row.original.guestCount} tamu
+        </Link>
+      ),
     },
     {
       id: "sesi",
@@ -104,18 +117,24 @@ export function GroupsPage() {
       />
 
       {groups.isError && <Alert tone="error">{groups.error.message}</Alert>}
-      <DataTable
-        columns={columns}
-        data={groups.data ?? []}
-        getRowId={(group) => group.id}
-        searchPlaceholder="Cari kelompok"
-        searchKey="nama"
-        emptyText={
-          groups.isPending
-            ? "Memuat…"
-            : "Belum ada kelompok, misalnya Keluarga, Teman Kuliah, atau Tim Klub."
-        }
-      />
+      {groups.isSuccess && groups.data.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="Belum ada kelompok"
+          description="Misalnya Keluarga, Teman Kuliah, atau Tim Klub. Kelompok memberi warna, penanda VIP, dan jam sesi."
+          addLabel="Tambah kelompok pertama"
+          onAdd={() => setEditing({ kind: "new" })}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={groups.data ?? []}
+          getRowId={(group) => group.id}
+          searchPlaceholder="Cari kelompok"
+          searchKey="nama"
+          emptyText={groups.isPending ? "Memuat…" : "Tidak ada kelompok yang cocok."}
+        />
+      )}
 
       <Dialog
         open={editing !== null}
@@ -131,8 +150,72 @@ export function GroupsPage() {
           />
         )}
       </Dialog>
-      <DeleteGroupDialog group={deleting} onClose={() => setDeleting(null)} />
+      <DeleteGroupDialog
+        group={deleting}
+        groups={groups.data ?? []}
+        onClose={() => setDeleting(null)}
+      />
     </>
+  );
+}
+
+/** Warna siap pakai: cukup diketuk, tanpa membuka pemilih warna. */
+const PRESET_COLORS = [
+  { value: "#e11d48", name: "Merah" },
+  { value: "#f97316", name: "Oranye" },
+  { value: "#eab308", name: "Kuning" },
+  { value: "#16a34a", name: "Hijau" },
+  { value: "#0d9488", name: "Toska" },
+  { value: "#2563eb", name: "Biru" },
+  { value: "#7c3aed", name: "Ungu" },
+  { value: "#737373", name: "Abu-abu" },
+];
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  const current = value.toLowerCase();
+  const custom = !PRESET_COLORS.some((c) => c.value === current);
+  return (
+    <div role="radiogroup" aria-label="Warna" className="flex flex-wrap gap-2">
+      {PRESET_COLORS.map((color) => {
+        const selected = color.value === current;
+        return (
+          // biome-ignore lint/a11y/useSemanticElements: tombol bulat lebih mudah diketuk daripada radio bawaan
+          <button
+            key={color.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={color.name}
+            title={color.name}
+            onClick={() => onChange(color.value)}
+            className={cn(
+              "grid size-11 place-items-center rounded-full border-2 text-white transition-shadow",
+              selected ? "border-foreground ring-2 ring-ring/40" : "border-transparent",
+            )}
+            style={{ backgroundColor: color.value }}
+          >
+            {selected && <Check className="size-5 drop-shadow" aria-hidden />}
+          </button>
+        );
+      })}
+      <label
+        title="Warna lain"
+        className={cn(
+          "relative grid size-11 cursor-pointer place-items-center rounded-full border-2",
+          custom ? "border-foreground ring-2 ring-ring/40" : "border-dashed border-border",
+        )}
+        style={custom ? { backgroundColor: value } : undefined}
+      >
+        <Palette className={cn("size-5", custom && "text-white drop-shadow")} aria-hidden />
+        <span className="sr-only">Warna lain</span>
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 size-full cursor-pointer opacity-0"
+        />
+      </label>
+    </div>
   );
 }
 
@@ -146,6 +229,7 @@ function GroupForm({
   onDone: () => void;
 }) {
   const refresh = useRefresh();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(group?.name ?? "");
   const [color, setColor] = useState(group?.color ?? "#737373");
   const [isVip, setIsVip] = useState(group?.isVip ?? false);
@@ -167,7 +251,7 @@ function GroupForm({
     }));
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (_again: boolean) => {
       const input = {
         name,
         color,
@@ -181,9 +265,17 @@ function GroupForm({
       };
       return group ? adminApi.groups.update(group.id, input) : adminApi.groups.create(input);
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, again) => {
       await refresh("groups", "guests");
-      onDone();
+      if (!again) {
+        onDone();
+        return;
+      }
+      // Warna dan VIP dikosongkan juga: kelompok berikutnya biasanya berbeda.
+      setName("");
+      setIsVip(false);
+      setSessions({});
+      nameRef.current?.focus();
     },
   });
 
@@ -200,32 +292,35 @@ function GroupForm({
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (halfSession || backwardSession) return;
-    save.mutate();
+    save.mutate(isAgain(event));
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nama kelompok">
+        <Field label="Nama kelompok" required>
           {(id) => (
-            <Input id={id} required value={name} onChange={(e) => setName(e.target.value)} />
-          )}
-        </Field>
-        <Field label="Warna">
-          {(id) => (
-            <input
+            <Input
               id={id}
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="h-9 w-16 cursor-pointer border bg-background p-1"
+              ref={nameRef}
+              required
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           )}
         </Field>
+        <div className="grid content-start gap-2">
+          <span className="text-sm leading-none font-medium">Warna</span>
+          <ColorPicker value={color} onChange={setColor} />
+        </div>
       </div>
-      <Checkbox checked={isVip} onChange={(e) => setIsVip(e.target.checked)}>
-        VIP (tampil berbeda di layar penjaga)
-      </Checkbox>
+      <SwitchRow
+        title="VIP"
+        description="Tamu kelompok ini tampil berbeda di layar penjaga."
+        checked={isVip}
+        onCheckedChange={setIsVip}
+      />
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-medium">Jam sesi per acara</legend>
@@ -277,56 +372,85 @@ function GroupForm({
         <Alert tone="error">Jam selesai sesi {backwardSession.name} harus setelah jam mulai.</Alert>
       )}
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !!halfSession || !!backwardSession}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      <FormFooter
+        onCancel={onDone}
+        pending={save.isPending}
+        disabled={!!halfSession || !!backwardSession}
+        again={!group}
+      />
     </form>
   );
 }
 
-function DeleteGroupDialog({ group, onClose }: { group: Group | null; onClose: () => void }) {
+function DeleteGroupDialog({
+  group,
+  groups,
+  onClose,
+}: {
+  group: Group | null;
+  groups: Group[];
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open={group !== null} onClose={onClose} title={`Hapus kelompok "${group?.name}"?`}>
+      {group && <DeleteGroupBody group={group} groups={groups} onClose={onClose} />}
+    </Dialog>
+  );
+}
+
+function DeleteGroupBody({
+  group,
+  groups,
+  onClose,
+}: {
+  group: Group;
+  groups: Group[];
+  onClose: () => void;
+}) {
   const refresh = useRefresh();
+  const others = groups.filter((g) => g.id !== group.id);
+  // Tamu kelompok ini dipindahkan dulu (ke kelompok lain atau tanpa kelompok), lalu kelompok dihapus.
+  const [moveTo, setMoveTo] = useState("none");
+  const hasGuests = group.guestCount > 0;
   const remove = useMutation({
-    mutationFn: (id: string) => adminApi.groups.remove(id),
+    mutationFn: () => adminApi.groups.remove(group.id, hasGuests ? moveTo : undefined),
     meta: { toast: "Terhapus" },
     onSuccess: async () => {
-      await refresh("groups");
+      await refresh("groups", "guests");
       onClose();
     },
   });
 
   return (
-    <Dialog open={group !== null} onClose={onClose} title={`Hapus kelompok "${group?.name}"?`}>
-      {group && (
-        <>
-          {group.guestCount > 0 ? (
-            <Alert>
-              Kelompok ini masih dipakai {group.guestCount} tamu. Pindahkan tamunya ke kelompok lain
-              dulu, baru kelompok bisa dihapus.
-            </Alert>
-          ) : (
-            <p>Jam sesi kelompok ini ikut terhapus.</p>
+    <>
+      {hasGuests ? (
+        <Field
+          label={`Pindahkan ${group.guestCount} tamu ke`}
+          hint="Tamunya tetap ada; hanya kelompoknya yang diganti. Jam sesi kelompok ini ikut terhapus."
+        >
+          {(id) => (
+            <Select id={id} value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+              <option value="none">Tanpa kelompok</option>
+              {others.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </Select>
           )}
-          {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Batal
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => remove.mutate(group.id)}
-              disabled={remove.isPending || group.guestCount > 0}
-            >
-              Hapus kelompok
-            </Button>
-          </div>
-        </>
+        </Field>
+      ) : (
+        <p>Jam sesi kelompok ini ikut terhapus.</p>
       )}
-    </Dialog>
+      {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
+      <div data-form-footer className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" onClick={onClose}>
+          Batal
+        </Button>
+        <Button variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
+          {hasGuests ? "Pindahkan & hapus" : "Hapus kelompok"}
+        </Button>
+      </div>
+    </>
   );
 }

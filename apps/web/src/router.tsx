@@ -99,9 +99,14 @@ const guideRoute = createRoute({
 const guestsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/tamu",
-  // ?acara=<id> membuka daftar tamu yang sudah disaring ke satu acara (dari kartu Acara).
-  validateSearch: (search: Record<string, unknown>): { acara?: string } => ({
+  // ?acara=<id> dan ?kelompok=<id> membuka daftar tamu yang sudah disaring (dari kartu Acara /
+  // halaman Kelompok); ?kirim=antre membuka antrean kirim undangan (dari Beranda).
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { acara?: string; kelompok?: string; kirim?: "antre" } => ({
     acara: typeof search.acara === "string" && search.acara ? search.acara : undefined,
+    kelompok: typeof search.kelompok === "string" && search.kelompok ? search.kelompok : undefined,
+    kirim: search.kirim === "antre" ? "antre" : undefined,
   }),
   component: GuestsPage,
 });

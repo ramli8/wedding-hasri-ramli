@@ -10,6 +10,7 @@ import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Checkbox } from "@/components/kit/checkbox";
 import { Dialog } from "@/components/kit/dialog";
+import { useCaretInsert, VariableChips } from "@/components/kit/variable-chips";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
@@ -48,6 +49,7 @@ export function ReminderDialog({
   const settings = useQuery(settingsQuery);
   const [template, setTemplate] = useState(loadTemplate);
   const [hideReminded, setHideReminded] = useState(true);
+  const chips = useCaretInsert(template, changeTemplate);
 
   const event = events.data?.find((e) => e.id === eventId);
   const pending = rows.filter((row) => row.status === null);
@@ -104,13 +106,16 @@ export function ReminderDialog({
         </label>
         <Textarea
           id="reminder-template"
+          ref={chips.ref}
           spellCheck={false}
           className="min-h-36"
           value={template}
           onChange={(e) => changeTemplate(e.target.value)}
+          onSelect={chips.trackCaret}
         />
+        <VariableChips variables={MESSAGE_TEMPLATE_VARIABLES} onInsert={chips.insert} />
         <p className="text-xs text-muted-foreground">
-          Variabel: {MESSAGE_TEMPLATE_VARIABLES.map((v) => v.name).join(" ")}.{" "}
+          Ketuk variabel untuk menyisipkannya di posisi kursor.{" "}
           <button
             type="button"
             className="underline"

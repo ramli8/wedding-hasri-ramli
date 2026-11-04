@@ -125,8 +125,9 @@ export function useGuideSteps() {
       title: "Kirim undangan ke tamu",
       why: "Aplikasi menyiapkan pesan; Anda yang menekan kirim di WhatsApp atau Instagram.",
       todo: [
-        "Di daftar tamu, buka menu … pada baris tamu lalu pilih Kirim",
+        "Di daftar tamu, tekan tombol Kirim di baris tamu",
         "Sunting pesan bila perlu, lalu Buka WhatsApp",
+        "Banyak tamu sekaligus: tekan Kirim beruntun di atas daftar, lalu buka WhatsApp satu per satu dari atas",
         "Status “Terkirim” tercatat otomatis",
       ],
       to: "/admin/tamu",

@@ -1,19 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Device } from "@wedding/shared";
-import { Ban, Plus, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Ban, Copy, KeyRound, Link2, Plus, Trash2 } from "lucide-react";
+import QRCode from "qrcode";
+import { type FormEvent, useEffect, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
-import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
+import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { adminApi } from "../lib/admin-api.js";
 import { devicesQuery, useRefresh } from "../lib/queries.js";
@@ -25,17 +25,31 @@ const STATUS = {
   revoked: { label: "Dicabut", variant: "outline" },
 } as const;
 
+type PairingCode = { name: string; code: string; expires: string | null };
+
 export function DevicesPage() {
+  const refresh = useRefresh();
   const devices = useQuery(devicesQuery);
   const [creating, setCreating] = useState(false);
-  const [code, setCode] = useState<{ name: string; code: string; expires: string | null } | null>(
-    null,
-  );
+  const [code, setCode] = useState<PairingCode | null>(null);
   const [revoking, setRevoking] = useState<Device | null>(null);
   const [deleting, setDeleting] = useState<Device | null>(null);
 
+  // Kode lama hilang atau kedaluwarsa: buat kode baru untuk perangkat yang belum dipasang.
+  const renew = useMutation({
+    mutationFn: (id: string) => adminApi.devices.newPairingCode(id),
+    meta: { toast: "Kode baru dibuat" },
+    onSuccess: async (data) => {
+      await refresh("devices");
+      setCode({
+        name: data.device.name,
+        code: data.pairingCode,
+        expires: data.device.pairingExpiresAt,
+      });
+    },
+  });
+
   const columns: ColumnDef<Device, unknown>[] = [
-    selectColumn<Device>(),
     {
       id: "nama",
       accessorFn: (device) => device.name,
@@ -89,6 +103,17 @@ export function DevicesPage() {
         return (
           <DataTableRowActions
             actions={[
+              ...(device.status === "pending"
+                ? [
+                    {
+                      label: "Buat kode baru",
+                      icon: <KeyRound />,
+                      disabled: renew.isPending,
+                      onSelect: () => renew.mutate(device.id),
+                    },
+                    "separator" as const,
+                  ]
+                : []),
               device.status !== "revoked"
                 ? {
                     label: "Cabut",
@@ -118,13 +143,14 @@ export function DevicesPage() {
         description="HP atau laptop yang dipakai di pintu. Tiap perangkat dipasangkan dengan kode sekali pakai dan bisa dicabut kapan saja."
         actions={
           <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" aria-hidden />
             Tambah perangkat
+            <Plus aria-hidden />
           </Button>
         }
       />
 
       {devices.isError && <Alert tone="error">{devices.error.message}</Alert>}
+      {renew.error && <Alert tone="error">{renew.error.message}</Alert>}
       <DataTable
         columns={columns}
         data={devices.data ?? []}
@@ -171,7 +197,7 @@ function CreateDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: (result: { name: string; code: string; expires: string | null }) => void;
+  onCreated: (result: PairingCode) => void;
 }) {
   const refresh = useRefresh();
   const [name, setName] = useState("");
@@ -211,7 +237,7 @@ function CreateDialog({
           )}
         </Field>
         {create.error && <Alert tone="error">{create.error.message}</Alert>}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onClose}>
             Batal
           </Button>
@@ -224,37 +250,86 @@ function CreateDialog({
   );
 }
 
-function CodeDialog({
-  code,
-  onClose,
-}: {
-  code: { name: string; code: string; expires: string | null } | null;
-  onClose: () => void;
-}) {
+/** Tautan yang membuka halaman pasang dengan kode sudah terisi. */
+const pairingUrl = (code: string) =>
+  `${window.location.origin}/scan/pasang?kode=${encodeURIComponent(code)}`;
+
+async function copy(text: string, what: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(`${what} disalin`);
+  } catch {
+    toast(`Gagal menyalin ${what.toLowerCase()}; salin manual saja`, "error");
+  }
+}
+
+function CodeDialog({ code, onClose }: { code: PairingCode | null; onClose: () => void }) {
   return (
     <Dialog open={code !== null} onClose={onClose} title={`Pasangkan ${code?.name ?? ""}`}>
-      {code && (
-        <div className="flex flex-col gap-4">
-          <p>
-            Di perangkat itu, buka <b className="font-mono">{window.location.origin}/scan/pasang</b>{" "}
-            dan masukkan kode ini. Lakukan saat internet masih menyala.
-          </p>
-          <p
-            className="border bg-accent py-4 text-center font-mono text-4xl font-bold"
-            data-testid="pairing-code"
-          >
-            {code.code}
-          </p>
-          <Alert>
-            Kode ini hanya tampil sekarang, berlaku 24 jam, dan hangus setelah dipakai. Kalau
-            hilang, cabut perangkat ini lalu buat yang baru.
-          </Alert>
-          <div className="flex justify-end max-md:justify-start">
-            <Button onClick={onClose}>Selesai</Button>
-          </div>
-        </div>
-      )}
+      {code && <CodeBody code={code} onClose={onClose} />}
     </Dialog>
+  );
+}
+
+function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void }) {
+  const url = pairingUrl(code.code);
+  const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(url, { width: 480, margin: 2, errorCorrectionLevel: "M" })
+      .then((data) => !cancelled && setImage(data))
+      .catch(() => !cancelled && setImage(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p>
+        Pindai QR ini dengan kamera perangkat itu, lalu ketuk <b>Pasangkan</b>. Atau buka{" "}
+        <b className="font-mono break-all">{window.location.origin}/scan/pasang</b> dan ketik
+        kodenya. Lakukan saat internet masih menyala.
+      </p>
+      <div className="flex justify-center">
+        {image ? (
+          <img
+            src={image}
+            alt={`QR tautan pasang dengan kode ${code.code}`}
+            className="size-56 max-w-full rounded-md border bg-white"
+          />
+        ) : (
+          <div className="grid size-56 max-w-full place-items-center rounded-md border text-sm text-muted-foreground">
+            Membuat QR…
+          </div>
+        )}
+      </div>
+      <p
+        className="border bg-accent py-4 text-center font-mono text-4xl font-bold"
+        data-testid="pairing-code"
+      >
+        {code.code}
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={() => void copy(code.code, "Kode")}>
+          Salin kode
+          <Copy aria-hidden />
+        </Button>
+        <Button variant="outline" onClick={() => void copy(url, "Tautan")}>
+          Salin tautan
+          <Link2 aria-hidden />
+        </Button>
+      </div>
+      <Alert>
+        Kode ini hanya tampil sekarang
+        {code.expires ? `, berlaku sampai ${new Date(code.expires).toLocaleString("id-ID")}` : ""},
+        dan hangus setelah dipakai. Kalau hilang, pilih “Buat kode baru” di menu perangkat ini.
+      </Alert>
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <Button onClick={onClose}>Selesai</Button>
+      </div>
+    </div>
   );
 }
 
@@ -279,7 +354,7 @@ function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () 
             perangkat baru dan pasangkan ulang.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -318,7 +393,7 @@ function RevokeDialog({ device, onClose }: { device: Device | null; onClose: () 
             online.
           </p>
           {revoke.error && <Alert tone="error">{revoke.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>

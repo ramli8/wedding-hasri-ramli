@@ -22,12 +22,23 @@ function formatCode(raw: string) {
   return clean.length > 4 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : clean;
 }
 
+/**
+ * Kode dari tautan/QR di halaman Perangkat admin (`/scan/pasang?kode=XXXX-XXXX`). Dibaca dari
+ * `window.location` karena rute ini tidak punya `validateSearch`.
+ */
+function codeFromUrl() {
+  if (typeof window === "undefined") return "";
+  return formatCode(new URLSearchParams(window.location.search).get("kode") ?? "");
+}
+
 export function PairPage() {
   const navigate = useNavigate();
   const auth = useLiveQuery(() => getMeta("auth"), []);
   const pending = useLiveQuery(() => pendingCount(), [], 0);
 
-  const [code, setCode] = useState("");
+  // Terisi dari tautan bila ada; penjaga tetap harus mengetuk "Pasangkan".
+  const [fromLink] = useState(codeFromUrl);
+  const [code, setCode] = useState(fromLink);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -140,12 +151,20 @@ export function PairPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={onSubmit} className="grid gap-4">
-                  <Field label="Kode pairing">
+                  <Field
+                    label="Kode pairing"
+                    hint={
+                      fromLink && code === fromLink
+                        ? "Terisi dari tautan admin. Ketuk Pasangkan untuk melanjutkan."
+                        : undefined
+                    }
+                  >
                     {(id) => (
                       <Input
                         id={id}
                         required
-                        autoFocus
+                        // Kode dari tautan sudah terisi: jangan munculkan papan ketik.
+                        autoFocus={!fromLink}
                         autoComplete="off"
                         autoCapitalize="characters"
                         spellCheck={false}
@@ -178,8 +197,8 @@ export function PairPage() {
                 <ol className="mt-6 grid gap-2 border-t pt-4 text-sm text-muted-foreground">
                   {[
                     "Admin membuka menu Perangkat, lalu Tambah perangkat.",
-                    "Kode 8 karakter muncul di layar admin.",
-                    "Ketik kode itu di sini. Kodenya hanya bisa dipakai sekali.",
+                    "Kode 8 karakter dan QR muncul di layar admin.",
+                    "Pindai QR itu dengan kamera HP ini, atau ketik kodenya di sini. Kodenya hanya bisa dipakai sekali.",
                   ].map((step, i) => (
                     <li key={step} className="flex gap-3">
                       <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground">

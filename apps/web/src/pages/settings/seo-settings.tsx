@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   DEFAULT_SEO_DESCRIPTION,
   DEFAULT_SEO_TITLE,
@@ -8,13 +9,12 @@ import {
   SEO_TITLE_MAX,
   SEO_VARIABLES,
 } from "@wedding/shared";
-import { Link2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { ArrowRight, Link2 } from "lucide-react";
+import { type FormEvent, useRef, useState } from "react";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
-import { Button } from "@/components/kit/button";
+import { Button, buttonVariants } from "@/components/kit/button";
 import { Field } from "@/components/kit/field";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../../lib/admin-api.js";
@@ -72,7 +72,13 @@ export function SeoSettings() {
           host={new URL(settings.data.publicBaseUrl).host}
         />
       ) : (
-        <Alert>Isi dulu data pernikahan di Pengaturan → Pernikahan, lalu kembali ke sini.</Alert>
+        <div className="flex flex-col items-start gap-3">
+          <Alert>Isi dulu data pernikahan di Pengaturan → Pernikahan, lalu kembali ke sini.</Alert>
+          <Link to="/admin/pengaturan" className={buttonVariants({ variant: "outline" })}>
+            Isi data pernikahan
+            <ArrowRight aria-hidden />
+          </Link>
+        </div>
       )}
     </ContentSection>
   );
@@ -91,27 +97,20 @@ function SeoForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [image, setImage] = useState<MediaRef | null>(initial?.image ?? null);
-  const [saved, setSaved] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
+  // "Tersimpan" ditampilkan toast global (MutationCache di main.tsx).
   const save = useMutation({
     mutationFn: () => adminApi.seo.save({ title, description, imageMediaId: image?.id ?? null }),
     onSuccess: async ({ seo }) => {
       setImage(seo.image);
-      setSaved(true);
       await refresh("seo");
     },
   });
 
-  const touch =
-    <T,>(set: (value: T) => void) =>
-    (value: T) => {
-      setSaved(false);
-      set(value);
-    };
-
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setSaved(false);
     save.mutate();
   }
 
@@ -119,8 +118,25 @@ function SeoForm({
   const shownTitle = renderSeoText(title.trim() || DEFAULT_SEO_TITLE, values);
   const shownDescription = renderSeoText(description.trim() || DEFAULT_SEO_DESCRIPTION, values);
 
-  const addVariable = (setter: (value: (text: string) => string) => void, name: string) =>
-    setter((text) => `${text}${name}`);
+  /** Sisipkan variabel di posisi kursor terakhir kolom itu (di akhir bila belum pernah diketuk). */
+  function insertVariable(
+    field: HTMLInputElement | HTMLTextAreaElement | null,
+    text: string,
+    set: (value: string) => void,
+    max: number,
+    name: string,
+  ) {
+    const start = field?.selectionStart ?? text.length;
+    const end = field?.selectionEnd ?? start;
+    const next = `${text.slice(0, start)}${name}${text.slice(end)}`;
+    if (next.length > max) return;
+    set(next);
+    const caret = start + name.length;
+    requestAnimationFrame(() => {
+      field?.focus();
+      field?.setSelectionRange(caret, caret);
+    });
+  }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
@@ -151,7 +167,8 @@ function SeoForm({
             maxLength={SEO_TITLE_MAX}
             value={title}
             placeholder={DEFAULT_SEO_TITLE}
-            onChange={(e) => touch(setTitle)(e.target.value)}
+            ref={titleRef}
+            onChange={(e) => setTitle(e.target.value)}
           />
         )}
       </Field>
@@ -166,7 +183,8 @@ function SeoForm({
             maxLength={SEO_DESCRIPTION_MAX}
             value={description}
             placeholder={DEFAULT_SEO_DESCRIPTION}
-            onChange={(e) => touch(setDescription)(e.target.value)}
+            ref={descriptionRef}
+            onChange={(e) => setDescription(e.target.value)}
           />
         )}
       </Field>
@@ -174,32 +192,40 @@ function SeoForm({
       <div className="grid gap-2">
         <p className="text-sm font-medium">Variabel</p>
         <p className="text-sm text-muted-foreground">
-          Klik untuk menambahkan ke judul atau deskripsi. Diganti otomatis per tamu saat tautannya
-          dibuka.
+          Ketuk untuk menyisipkan di posisi kursor pada judul atau deskripsi. Diganti otomatis per
+          tamu saat tautannya dibuka.
         </p>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {SEO_VARIABLES.map((variable) => (
-            <span key={variable.name} className="inline-flex gap-1">
-              <button
-                type="button"
+            <span key={variable.name} className="inline-flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="font-mono"
                 title={`${variable.description} (ke judul)`}
-                onClick={() => addVariable((fn) => touch(setTitle)(fn(title)), variable.name)}
-              >
-                <Badge variant="outline" className="font-mono hover:bg-accent">
-                  {variable.name} → judul
-                </Badge>
-              </button>
-              <button
-                type="button"
-                title={`${variable.description} (ke deskripsi)`}
                 onClick={() =>
-                  addVariable((fn) => touch(setDescription)(fn(description)), variable.name)
+                  insertVariable(titleRef.current, title, setTitle, SEO_TITLE_MAX, variable.name)
                 }
               >
-                <Badge variant="outline" className="font-mono hover:bg-accent">
-                  {variable.name} → deskripsi
-                </Badge>
-              </button>
+                {variable.name} → judul
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="font-mono"
+                title={`${variable.description} (ke deskripsi)`}
+                onClick={() =>
+                  insertVariable(
+                    descriptionRef.current,
+                    description,
+                    setDescription,
+                    SEO_DESCRIPTION_MAX,
+                    variable.name,
+                  )
+                }
+              >
+                {variable.name} → deskripsi
+              </Button>
             </span>
           ))}
         </div>
@@ -208,12 +234,11 @@ function SeoForm({
       <ImageField
         label="Gambar pratinjau"
         value={image}
-        onChange={touch(setImage)}
+        onChange={setImage}
         recommendation="lanskap 1,91:1, 1200 × 630 px. Pratinjau memakai versi 480 px agar ringan di WhatsApp; wajah dan teks penting di tengah."
       />
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      {saved && !save.error && <Alert>Tersimpan.</Alert>}
       <div>
         <Button type="submit" disabled={save.isPending}>
           {save.isPending ? "Menyimpan…" : "Simpan"}

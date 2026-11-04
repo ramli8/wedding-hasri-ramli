@@ -3,11 +3,13 @@ import {
   PAYMENT_STATUS_LABEL,
   type Vendor,
   type VendorCategory,
+  type VendorInput,
   type VendorOverview,
   type VendorPayment,
 } from "@wedding/shared";
 import {
   Check,
+  ChevronDown,
   CircleDollarSign,
   type LucideIcon,
   Pencil,
@@ -26,15 +28,26 @@ import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
+import { MoneyInput } from "@/components/kit/money-input";
 import { Select } from "@/components/kit/select";
 import { PageHeader } from "@/components/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
-import { formatRupiah, parseAmount } from "../lib/format.js";
+import { formatRupiah } from "../lib/format.js";
 import { useRefresh, vendorsQuery } from "../lib/queries.js";
 
 const todayWib = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
@@ -92,13 +105,16 @@ export function VendorsPage() {
         actions={
           <>
             <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
-              <Tags className="size-4" aria-hidden /> Kategori
+              Kategori
+              <Tags aria-hidden />
             </Button>
+            {/* Kandidat baru langsung masuk ke kategori yang sedang dibuka. */}
             <Button
-              onClick={() => setForm({ kind: "new" })}
+              onClick={() => setForm({ kind: "new", categoryId: activeCategory?.id })}
               disabled={!data || data.categories.length === 0}
             >
-              <Plus className="size-4" aria-hidden /> Tambah vendor
+              Tambah vendor
+              <Plus aria-hidden />
             </Button>
           </>
         }
@@ -109,7 +125,7 @@ export function VendorsPage() {
 
       {data && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Stat
               icon={Store}
               label="Vendor terpilih"
@@ -250,16 +266,11 @@ function CategorySection(props: {
   const { category, vendors } = props;
   return (
     <section className="flex flex-col gap-4" aria-label={category.name}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">{category.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            Tambahkan beberapa kandidat, bandingkan harganya, lalu pilih satu.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={props.onAdd}>
-          <Plus aria-hidden /> Kandidat
-        </Button>
+      <div>
+        <h2 className="text-lg font-semibold">{category.name}</h2>
+        <p className="text-sm text-muted-foreground">
+          Tambahkan beberapa kandidat lewat “Tambah vendor”, bandingkan harganya, lalu pilih satu.
+        </p>
       </div>
       {vendors.length === 0 ? (
         <Card className="items-center px-6 py-10 text-center">
@@ -391,13 +402,21 @@ function VendorCard({
         >
           {vendor.isSelected ? "Batalkan pilihan" : "Pilih vendor ini"}
         </Button>
-        <Button size="sm" variant="outline" onClick={() => onPay(vendor)}>
-          Pembayaran
-        </Button>
+        {/* Pembayaran hanya relevan untuk vendor terpilih (atau yang sudah telanjur dibayar). */}
+        {(vendor.isSelected || vendor.payments.length > 0) && (
+          <Button size="sm" variant="outline" onClick={() => onPay(vendor)}>
+            Pembayaran
+            <Wallet aria-hidden />
+          </Button>
+        )}
       </div>
     </Card>
   );
 }
+
+/** Layar HP (di bawah `md`), dibaca sekali saat formulir dibuka. */
+const isPhone = () =>
+  typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
 
 function VendorForm({
   categories,
@@ -419,19 +438,15 @@ function VendorForm({
   const [phone, setPhone] = useState(vendor?.phone ?? "");
   const [instagram, setInstagram] = useState(vendor?.instagram ?? "");
   const [address, setAddress] = useState(vendor?.address ?? "");
-  const [reference, setReference] = useState(vendor?.referencePrice?.toString() ?? "");
-  const [contract, setContract] = useState(vendor?.contractAmount?.toString() ?? "");
+  const [reference, setReference] = useState<number | null>(vendor?.referencePrice ?? null);
+  const [contract, setContract] = useState<number | null>(vendor?.contractAmount ?? null);
   const [dueOn, setDueOn] = useState(vendor?.dueOn ?? "");
-  const [due, setDue] = useState(vendor?.dueAmount?.toString() ?? "");
+  const [due, setDue] = useState<number | null>(vendor?.dueAmount ?? null);
   const [note, setNote] = useState(vendor?.note ?? "");
-
-  const referenceValue = reference.trim() ? parseAmount(reference) : null;
-  const contractValue = contract.trim() ? parseAmount(contract) : null;
-  const dueValue = due.trim() ? parseAmount(due) : null;
-  const amountsOk =
-    (!due.trim() || (dueValue ?? 0) > 0) &&
-    (!reference.trim() || (referenceValue ?? 0) > 0) &&
-    (!contract.trim() || (contractValue ?? 0) > 0);
+  // Kandidat baru di HP: cukup nama dulu; kontak dan biaya dibuka bila perlu.
+  const [showMore, setShowMore] = useState(() => vendor !== null || !isPhone());
+  // Rp 0 tidak diterima server; kosongkan saja bila tidak ada.
+  const amountsOk = [reference, contract, due].every((value) => value === null || value > 0);
 
   const save = useMutation({
     mutationFn: () => {
@@ -442,10 +457,10 @@ function VendorForm({
         phone,
         instagram,
         address,
-        referencePrice: referenceValue,
-        contractAmount: contractValue,
+        referencePrice: reference,
+        contractAmount: contract,
         dueOn: dueOn || null,
-        dueAmount: dueValue,
+        dueAmount: due,
         note,
       };
       return vendor ? adminApi.vendors.update(vendor.id, input) : adminApi.vendors.create(input);
@@ -465,6 +480,18 @@ function VendorForm({
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <FormSection title="Vendor">
         <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nama vendor" required>
+            {(id) => (
+              <Input
+                id={id}
+                required
+                autoFocus
+                maxLength={120}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            )}
+          </Field>
           <Field label="Kategori">
             {(id) => (
               <Select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -476,111 +503,84 @@ function VendorForm({
               </Select>
             )}
           </Field>
-          <Field label="Nama vendor">
-            {(id) => (
-              <Input
-                id={id}
-                required
-                maxLength={120}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            )}
-          </Field>
         </div>
       </FormSection>
 
-      <FormSection title="Kontak" description="Opsional, untuk menghubungi vendor dengan cepat.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nama kontak">
-            {(id) => (
-              <Input
-                id={id}
-                value={contactPerson}
-                onChange={(e) => setContactPerson(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Nomor HP">
-            {(id) => (
-              <Input
-                id={id}
-                inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Instagram">
-            {(id) => (
-              <Input id={id} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-            )}
-          </Field>
-          <Field label="Alamat">
-            {(id) => <Input id={id} value={address} onChange={(e) => setAddress(e.target.value)} />}
-          </Field>
-        </div>
-      </FormSection>
+      {!showMore ? (
+        <Button variant="outline" onClick={() => setShowMore(true)}>
+          Isi kontak dan biaya (opsional)
+          <ChevronDown aria-hidden />
+        </Button>
+      ) : (
+        <>
+          <FormSection
+            title="Kontak"
+            description="Opsional, untuk menghubungi vendor dengan cepat."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Nama kontak">
+                {(id) => (
+                  <Input
+                    id={id}
+                    value={contactPerson}
+                    onChange={(e) => setContactPerson(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label="Nomor HP">
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label="Instagram">
+                {(id) => (
+                  <Input id={id} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+                )}
+              </Field>
+              <Field label="Alamat">
+                {(id) => (
+                  <Input id={id} value={address} onChange={(e) => setAddress(e.target.value)} />
+                )}
+              </Field>
+            </div>
+          </FormSection>
 
-      <FormSection
-        title="Biaya dan jatuh tempo"
-        description="Harga acuan untuk membandingkan kandidat; nilai kontrak menjadi dasar status pembayaran."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Harga acuan (Rp)"
-            hint={
-              referenceValue ? formatRupiah(referenceValue) : "Penawaran awal, untuk membandingkan."
-            }
+          <FormSection
+            title="Biaya dan jatuh tempo"
+            description="Harga acuan untuk membandingkan kandidat; nilai kontrak menjadi dasar status pembayaran."
           >
-            {(id) => (
-              <Input
-                id={id}
-                inputMode="numeric"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field
-            label="Nilai kontrak (Rp)"
-            hint={
-              contractValue
-                ? formatRupiah(contractValue)
-                : "Yang disepakati; dasar status pembayaran."
-            }
-          >
-            {(id) => (
-              <Input
-                id={id}
-                inputMode="numeric"
-                value={contract}
-                onChange={(e) => setContract(e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Jatuh tempo berikutnya" hint="Perbarui setelah tiap pembayaran.">
-            {(id) => (
-              <Input id={id} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-            )}
-          </Field>
-          <Field
-            label="Nominal jatuh tempo (Rp)"
-            hint={dueValue ? formatRupiah(dueValue) : "Opsional."}
-          >
-            {(id) => (
-              <Input
-                id={id}
-                inputMode="numeric"
-                value={due}
-                onChange={(e) => setDue(e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-      </FormSection>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Harga acuan" hint="Penawaran awal, untuk membandingkan.">
+                {(id) => <MoneyInput id={id} value={reference} onValueChange={setReference} />}
+              </Field>
+              <Field label="Nilai kontrak" hint="Yang disepakati; dasar status pembayaran.">
+                {(id) => <MoneyInput id={id} value={contract} onValueChange={setContract} />}
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Jatuh tempo berikutnya" hint="Perbarui setelah tiap pembayaran.">
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="date"
+                    value={dueOn}
+                    onChange={(e) => setDueOn(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label="Nominal jatuh tempo" hint="Opsional.">
+                {(id) => <MoneyInput id={id} value={due} onValueChange={setDue} />}
+              </Field>
+            </div>
+          </FormSection>
+        </>
+      )}
 
       <Field label="Catatan" hint="Mis. paket yang ditawarkan, syarat, atau kesan saat bertemu.">
         {(id) => (
@@ -594,6 +594,11 @@ function VendorForm({
         )}
       </Field>
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
+      {(!name.trim() || !amountsOk) && (
+        <p className="text-sm text-muted-foreground">
+          {!name.trim() ? "Isi nama vendor dulu." : "Nominal tidak boleh Rp 0; kosongkan saja."}
+        </p>
+      )}
       <FormFooter
         onCancel={onDone}
         pending={save.isPending}
@@ -603,37 +608,126 @@ function VendorForm({
   );
 }
 
+/** Isian vendor dari data yang ada, untuk memperbarui sebagian (mis. hanya jatuh tempo). */
+function vendorInput(vendor: Vendor): VendorInput {
+  return {
+    categoryId: vendor.categoryId,
+    name: vendor.name,
+    contactPerson: vendor.contactPerson,
+    phone: vendor.phone,
+    instagram: vendor.instagram,
+    address: vendor.address,
+    referencePrice: vendor.referencePrice,
+    contractAmount: vendor.contractAmount,
+    dueOn: vendor.dueOn,
+    dueAmount: vendor.dueAmount,
+    note: vendor.note,
+  };
+}
+
+/** Saran nominal pembayaran: yang jatuh tempo bila ada, selain itu sisa kontrak. */
+function suggestedAmount(vendor: Vendor): number | null {
+  if (vendor.dueAmount !== null) return vendor.dueAmount;
+  if (vendor.contractAmount === null) return null;
+  const rest = vendor.contractAmount - vendor.paidTotal;
+  return rest > 0 ? rest : null;
+}
+
+/** Konfirmasi hapus kecil (AlertDialog) untuk baris di dalam dialog lain. */
+function ConfirmDelete({
+  open,
+  title,
+  description,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-white hover:bg-destructive/90"
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function PaymentsPanel({ vendor }: { vendor: Vendor }) {
   const refresh = useRefresh();
   const [editing, setEditing] = useState<VendorPayment | null>(null);
   const [paidOn, setPaidOn] = useState(todayWib());
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | null>(() => suggestedAmount(vendor));
   const [note, setNote] = useState("");
+  const [deleting, setDeleting] = useState<VendorPayment | null>(null);
+  // Setelah pembayaran baru tercatat: tawarkan memperbarui jatuh tempo yang masih tercatat.
+  const [askDue, setAskDue] = useState(false);
+  const [nextDueOn, setNextDueOn] = useState("");
+  const [nextDue, setNextDue] = useState<number | null>(null);
 
-  const parsed = parseAmount(amount);
-  const reset = () => {
+  const reset = (current: Vendor) => {
     setEditing(null);
     setPaidOn(todayWib());
-    setAmount("");
+    setAmount(suggestedAmount(current));
     setNote("");
   };
 
   const save = useMutation({
     mutationFn: () => {
-      const input = { paidOn, amount: parsed ?? 0, note };
+      const input = { paidOn, amount: amount ?? 0, note };
       return editing
         ? adminApi.vendors.updatePayment(vendor.id, editing.id, input)
         : adminApi.vendors.addPayment(vendor.id, input);
     },
-    onSuccess: async () => {
+    onSuccess: async ({ vendor: saved }) => {
+      const wasNew = !editing;
       await refresh("vendors");
-      reset();
+      reset(saved);
+      if (wasNew && saved.dueOn && saved.paymentStatus !== "lunas") {
+        setNextDueOn("");
+        setNextDue(null);
+        setAskDue(true);
+      }
+    },
+  });
+  const updateDue = useMutation({
+    mutationFn: () =>
+      adminApi.vendors.update(vendor.id, {
+        ...vendorInput(vendor),
+        dueOn: nextDueOn || null,
+        dueAmount: nextDueOn ? nextDue : null,
+      }),
+    meta: { toast: "Jatuh tempo diperbarui" },
+    onSuccess: async ({ vendor: saved }) => {
+      await refresh("vendors");
+      setAskDue(false);
+      setAmount(suggestedAmount(saved));
     },
   });
   const remove = useMutation({
     mutationFn: (paymentId: string) => adminApi.vendors.removePayment(vendor.id, paymentId),
     meta: { toast: "Terhapus" },
-    onSuccess: () => refresh("vendors"),
+    onSuccess: async ({ vendor: saved }) => {
+      await refresh("vendors");
+      if (!editing) setAmount(suggestedAmount(saved));
+    },
   });
 
   function onSubmit(event: FormEvent) {
@@ -667,6 +761,48 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
         </div>
       )}
 
+      {askDue && (
+        <div className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">Perbarui jatuh tempo?</h3>
+            <p className="text-sm text-muted-foreground">
+              Jatuh tempo {vendor.dueOn}
+              {vendor.dueAmount !== null && ` (${formatRupiah(vendor.dueAmount)})`} masih tercatat.
+              Isi jatuh tempo berikutnya, atau kosongkan untuk menghapusnya.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Jatuh tempo berikutnya">
+              {(id) => (
+                <Input
+                  id={id}
+                  type="date"
+                  value={nextDueOn}
+                  onChange={(e) => setNextDueOn(e.target.value)}
+                />
+              )}
+            </Field>
+            {nextDueOn && (
+              <Field label="Nominal jatuh tempo" hint="Opsional.">
+                {(id) => <MoneyInput id={id} value={nextDue} onValueChange={setNextDue} />}
+              </Field>
+            )}
+          </div>
+          {updateDue.error && <Alert tone="error">{updateDue.error.message}</Alert>}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setAskDue(false)}>
+              Biarkan
+            </Button>
+            <Button
+              onClick={() => updateDue.mutate()}
+              disabled={updateDue.isPending || nextDue === 0}
+            >
+              {nextDueOn ? "Simpan jatuh tempo" : "Hapus jatuh tempo"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <section className="grid gap-2">
         <h3 className="text-sm font-semibold">Riwayat pembayaran</h3>
         {vendor.payments.length === 0 ? (
@@ -692,7 +828,7 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
                       onSelect: () => {
                         setEditing(payment);
                         setPaidOn(payment.paidOn);
-                        setAmount(String(payment.amount));
+                        setAmount(payment.amount);
                         setNote(payment.note ?? "");
                       },
                     },
@@ -702,7 +838,7 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
                       icon: <Trash2 />,
                       destructive: true,
                       disabled: remove.isPending,
-                      onSelect: () => remove.mutate(payment.id),
+                      onSelect: () => setDeleting(payment),
                     },
                   ]}
                 />
@@ -718,6 +854,21 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
           {editing ? "Ubah pembayaran" : "Catat pembayaran"}
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Nominal"
+            required
+            hint={
+              editing
+                ? undefined
+                : vendor.dueAmount !== null
+                  ? "Terisi dari nominal jatuh tempo; ubah bila berbeda."
+                  : remaining
+                    ? "Terisi dari sisa kontrak; ubah bila membayar sebagian."
+                    : undefined
+            }
+          >
+            {(id) => <MoneyInput id={id} required value={amount} onValueChange={setAmount} />}
+          </Field>
           <Field label="Tanggal">
             {(id) => (
               <Input
@@ -729,17 +880,6 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
               />
             )}
           </Field>
-          <Field label="Nominal (Rp)" hint={parsed ? formatRupiah(parsed) : undefined}>
-            {(id) => (
-              <Input
-                id={id}
-                required
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            )}
-          </Field>
         </div>
         <Field label="Catatan" hint="Mis. DP, termin 2, pelunasan.">
           {(id) => (
@@ -747,17 +887,34 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
           )}
         </Field>
         {save.error && <Alert tone="error">{save.error.message}</Alert>}
+        {!amount && <p className="text-sm text-muted-foreground">Isi nominal pembayaran dulu.</p>}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {editing && (
-            <Button variant="outline" onClick={reset}>
+            <Button variant="outline" onClick={() => reset(vendor)}>
               Batal ubah
             </Button>
           )}
-          <Button type="submit" disabled={save.isPending || !parsed}>
+          <Button type="submit" disabled={save.isPending || !amount}>
             {save.isPending ? "Menyimpan…" : editing ? "Simpan perubahan" : "Catat pembayaran"}
           </Button>
         </div>
       </form>
+
+      <ConfirmDelete
+        open={deleting !== null}
+        title="Hapus pembayaran?"
+        description={
+          deleting
+            ? `Pembayaran ${formatRupiah(deleting.amount)} tanggal ${deleting.paidOn} dihapus permanen dan sisa pembayaran bertambah.`
+            : ""
+        }
+        confirmLabel="Hapus pembayaran"
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) remove.mutate(deleting.id);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 }
@@ -766,6 +923,7 @@ function CategoriesPanel({ overview }: { overview: VendorOverview }) {
   const refresh = useRefresh();
   const [name, setName] = useState("");
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState<VendorCategory | null>(null);
 
   const done = () => refresh("vendors");
   const create = useMutation({
@@ -844,7 +1002,7 @@ function CategoriesPanel({ overview }: { overview: VendorOverview }) {
                       icon: <Trash2 />,
                       destructive: true,
                       disabled: remove.isPending,
-                      onSelect: () => remove.mutate(category.id),
+                      onSelect: () => setDeleting(category),
                     },
                   ]}
                 />
@@ -879,6 +1037,22 @@ function CategoriesPanel({ overview }: { overview: VendorOverview }) {
         Tambah kategori umum
       </Button>
       {error && <Alert tone="error">{error.message}</Alert>}
+
+      <ConfirmDelete
+        open={deleting !== null}
+        title={`Hapus kategori ${deleting?.name ?? ""}?`}
+        description={
+          deleting && count(deleting.id) > 0
+            ? `Kategori ini masih berisi ${count(deleting.id)} kandidat. Hapus atau pindahkan kandidatnya dulu, kalau tidak penghapusan ditolak.`
+            : "Kategori dihapus dari daftar."
+        }
+        confirmLabel="Hapus kategori"
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) remove.mutate(deleting.id);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 }

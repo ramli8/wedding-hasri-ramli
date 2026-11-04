@@ -22,7 +22,8 @@ type DataTablePaginationProps<TData> = {
 
 export function DataTablePagination<TData>({ table, className }: DataTablePaginationProps<TData>) {
   const currentPage = table.getState().pagination.pageIndex + 1;
-  const totalPages = table.getPageCount();
+  // Tabel kosong punya 0 halaman; tetap tampilkan "Halaman 1 dari 1".
+  const totalPages = Math.max(1, table.getPageCount());
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (

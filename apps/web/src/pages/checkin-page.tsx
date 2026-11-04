@@ -7,7 +7,6 @@ import { type FormEvent, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
-import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
@@ -55,7 +54,6 @@ export function CheckinPage() {
   const items = review.data ?? [];
 
   const recentColumns: ColumnDef<Recent, unknown>[] = [
-    selectColumn<Recent>(),
     {
       id: "jam",
       accessorFn: (row) => row.scannedAt,
@@ -304,16 +302,29 @@ function Stat({
   );
 }
 
+type Resolving = { item: ReviewItem; resolution: "keep_first" | "merge_pax" };
+
+/** Jumlah orang yang dihitung bila duplikat digabung: semua check-in dijumlahkan. */
+const mergedPax = (item: ReviewItem) =>
+  item.duplicates.reduce((sum, dup) => sum + dup.pax, item.primary.pax);
+
 function ReviewSection({ items }: { items: ReviewItem[] }) {
   const refresh = useRefresh();
+  const [confirming, setConfirming] = useState<Resolving | null>(null);
   const resolve = useMutation({
     mutationFn: (input: {
       guestId: string;
       eventId: string;
       resolution: "keep_first" | "merge_pax";
     }) => adminApi.checkins.resolve(input),
-    onSuccess: () => refresh("checkin"),
+    onSuccess: async () => {
+      await refresh("checkin");
+      setConfirming(null);
+    },
   });
+
+  const target = confirming?.item;
+  const merge = confirming?.resolution === "merge_pax";
 
   return (
     <section className="flex flex-col gap-3">
@@ -323,7 +334,6 @@ function ReviewSection({ items }: { items: ReviewItem[] }) {
         saat offline). Yang paling awal dihitung; pilih apakah sisanya diabaikan atau jumlahnya
         digabung.
       </p>
-      {resolve.error && <Alert tone="error">{resolve.error.message}</Alert>}
       {items.map((item) => (
         <Card key={item.guestId} className="flex flex-col gap-3 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -342,38 +352,58 @@ function ReviewSection({ items }: { items: ReviewItem[] }) {
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               size="sm"
               variant="outline"
-              disabled={resolve.isPending}
-              onClick={() =>
-                resolve.mutate({
-                  guestId: item.guestId,
-                  eventId: item.eventId,
-                  resolution: "keep_first",
-                })
-              }
+              onClick={() => setConfirming({ item, resolution: "keep_first" })}
             >
-              Abaikan duplikat
+              Abaikan duplikat → {item.primary.pax} orang
             </Button>
             <Button
               size="sm"
               variant="outline"
-              disabled={resolve.isPending}
-              onClick={() =>
-                resolve.mutate({
-                  guestId: item.guestId,
-                  eventId: item.eventId,
-                  resolution: "merge_pax",
-                })
-              }
+              onClick={() => setConfirming({ item, resolution: "merge_pax" })}
             >
-              Gabungkan jumlah
+              Gabungkan → {mergedPax(item)} orang
             </Button>
           </div>
         </Card>
       ))}
+
+      <Dialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        title={merge ? "Gabungkan jumlah orang?" : "Abaikan duplikat?"}
+      >
+        {target && (
+          <>
+            <p>
+              {merge
+                ? `Semua check-in ${target.displayName} dijumlahkan: dihitung ${mergedPax(target)} orang.`
+                : `Hanya check-in paling awal ${target.displayName} yang dihitung: ${target.primary.pax} orang. Duplikatnya tetap tersimpan di riwayat.`}
+            </p>
+            {resolve.error && <Alert tone="error">{resolve.error.message}</Alert>}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setConfirming(null)}>
+                Kembali
+              </Button>
+              <Button
+                disabled={resolve.isPending}
+                onClick={() =>
+                  resolve.mutate({
+                    guestId: target.guestId,
+                    eventId: target.eventId,
+                    resolution: confirming.resolution,
+                  })
+                }
+              >
+                {merge ? `Gabungkan jadi ${mergedPax(target)} orang` : "Abaikan duplikat"}
+              </Button>
+            </div>
+          </>
+        )}
+      </Dialog>
     </section>
   );
 }
@@ -524,7 +554,7 @@ function UndoDialog({ row, onClose }: { row: Recent | null; onClose: () => void 
         <>
           <p>Tamu ini kembali dianggap belum masuk. Riwayatnya tetap tersimpan di log.</p>
           {undo.error && <Alert tone="error">{undo.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={onClose}>
               Kembali
             </Button>

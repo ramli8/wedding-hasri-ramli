@@ -20,7 +20,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -31,7 +31,9 @@ import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { Select } from "@/components/kit/select";
+import { FormFooter, isAgain } from "@/components/kit/invitation-kit";
+import { MoneyInput } from "@/components/kit/money-input";
+import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,11 +47,10 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { adminApi, downloads } from "../lib/admin-api.js";
-import { formatRupiah, parseAmount } from "../lib/format.js";
+import { formatRupiah } from "../lib/format.js";
 import { receivedGiftsQuery, useRefresh } from "../lib/queries.js";
 import { ThanksDialog } from "./received-gifts-thanks-dialog.js";
 
-type Thanked = "" | "yes" | "no";
 type Editing = { kind: "new" } | { kind: "edit"; gift: ReceivedGift };
 
 function Stat({
@@ -216,7 +217,7 @@ export function ReceivedGiftsPage() {
       />
 
       {summary && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Stat
             icon={Wallet}
             label="Total uang"
@@ -300,12 +301,21 @@ export function ReceivedGiftsPage() {
   );
 }
 
+/** Urutan tombol Jenis: yang paling sering dicatat di hari H dulu. */
+const KIND_SHORT_LABEL: Record<ReceivedGiftKind, string> = {
+  amplop: "Amplop",
+  transfer: "Transfer",
+  barang: "Barang",
+};
+
 function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => void }) {
   const refresh = useRefresh();
+  const formRef = useRef<HTMLFormElement>(null);
   const [guestId, setGuestId] = useState<string | null>(gift?.guestId ?? null);
   const [giverName, setGiverName] = useState(gift?.giverName ?? "");
+  const [giverPhone, setGiverPhone] = useState(gift?.giverPhone ?? "");
   const [kind, setKind] = useState<ReceivedGiftKind>(gift?.kind ?? "amplop");
-  const [amount, setAmount] = useState(gift?.amount ? String(gift.amount) : "");
+  const [amount, setAmount] = useState<number | null>(gift?.amount ?? null);
   const [item, setItem] = useState(gift?.itemDescription ?? "");
   const [note, setNote] = useState(gift?.note ?? "");
   const [receivedOn, setReceivedOn] = useState(gift?.receivedOn ?? todayWib());
@@ -317,18 +327,22 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
     enabled: guestSearch.trim().length >= 2,
   });
 
-  const parsed = parseAmount(amount);
   const isItem = kind === "barang";
-  const valid =
-    (giverName.trim() || guestId) && (isItem ? item.trim() : parsed !== null && parsed > 0);
+  // Alasan tombol Simpan belum aktif, ditampilkan di atas tombol agar admin tahu apa yang kurang.
+  const missing = [
+    !giverName.trim() && !guestId && "nama pemberi (atau pilih tamu)",
+    isItem ? !item.trim() && "nama barang" : !(amount && amount > 0) && "nominal",
+  ].filter((reason): reason is string => Boolean(reason));
+  const valid = missing.length === 0;
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (_again: boolean) => {
       const input = {
         guestId,
         giverName,
+        giverPhone: guestId ? (gift?.giverPhone ?? null) : giverPhone,
         kind,
-        amount: isItem ? null : parsed,
+        amount: isItem ? null : amount,
         itemDescription: isItem ? item : null,
         note,
         receivedOn,
@@ -337,106 +351,180 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
         ? adminApi.receivedGifts.update(gift.id, input)
         : adminApi.receivedGifts.create(input);
     },
-    onSuccess: async () => {
+    // Pesan berisi apa yang baru dicatat, supaya pencatatan beruntun bisa dicek sekilas.
+    meta: { toast: false },
+    onSuccess: async ({ gift: saved }, again) => {
+      const what =
+        saved.kind === "barang"
+          ? (saved.itemDescription ?? "Barang")
+          : formatRupiah(saved.amount ?? 0);
+      toast(`Tersimpan: ${what} dari ${saved.giverName}`);
       await refresh("received-gifts");
-      onDone();
+      if (!again) {
+        onDone();
+        return;
+      }
+      // Catat lagi: jenis dan tanggal tetap, pemberi dan nilai dikosongkan.
+      setGuestId(null);
+      setGiverName("");
+      setGiverPhone("");
+      setAmount(null);
+      setItem("");
+      setNote("");
+      setGuestSearch("");
+      requestAnimationFrame(() =>
+        formRef.current?.querySelector<HTMLInputElement>("input")?.focus(),
+      );
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate();
+    if (!valid) return;
+    save.mutate(!gift && isAgain(event));
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-6">
       <FormSection title="Pemberi">
-        <Field label="Nama pemberi" hint="Tulis bebas, mis. “Keluarga Pak Hadi”.">
-          {(id) => (
-            <Input
-              id={id}
-              value={giverName}
-              maxLength={120}
-              onChange={(e) => setGiverName(e.target.value)}
-            />
-          )}
-        </Field>
-        <div className="grid gap-2">
-          <p className="text-sm leading-none font-medium">
-            Tamu undangan <span className="font-normal text-muted-foreground">(opsional)</span>
-          </p>
-          {guestId ? (
+        {guestId ? (
+          <div className="grid gap-2">
+            <p className="text-sm leading-none font-medium">Tamu undangan</p>
             <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-              <p className="flex items-center gap-2 text-sm">
-                <Link2 className="size-4 text-muted-foreground" aria-hidden />
-                Tertaut ke tamu terdaftar
+              <p className="flex min-w-0 items-center gap-2 text-sm">
+                <Link2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="truncate">
+                  Tertaut ke <strong>{giverName || "tamu terdaftar"}</strong>
+                </span>
               </p>
               <Button size="sm" variant="ghost" onClick={() => setGuestId(null)}>
-                <X aria-hidden />
                 Lepas
+                <X aria-hidden />
               </Button>
             </div>
-          ) : (
-            <Command shouldFilter={false} className="rounded-lg border">
-              <CommandInput
-                placeholder="Cari tamu undangan…"
-                value={guestSearch}
-                onValueChange={setGuestSearch}
-              />
-              <CommandList className="max-h-44">
-                {guestSearch.trim().length < 2 ? (
-                  <p className="p-4 text-center text-sm text-muted-foreground">
-                    Ketik minimal 2 huruf untuk mencari.
-                  </p>
-                ) : guests.isFetching ? (
-                  <p className="p-4 text-center text-sm text-muted-foreground">Mencari…</p>
-                ) : (
-                  <>
-                    <CommandEmpty>Tidak ada tamu yang cocok.</CommandEmpty>
-                    <CommandGroup>
-                      {guests.data?.items.map((guest) => (
-                        <CommandItem
-                          key={guest.id}
-                          value={guest.id}
-                          onSelect={() => {
-                            setGuestId(guest.id);
-                            setGiverName(guest.displayName);
-                            setGuestSearch("");
-                          }}
-                        >
-                          {guest.displayName}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
+          </div>
+        ) : (
+          <Field
+            label="Cari tamu undangan"
+            hint="Pilih tamu agar ucapan terima kasih langsung ke nomornya. Tidak ada? Tulis nama di bawah."
+          >
+            {(id) => (
+              <Command shouldFilter={false} className="rounded-lg border">
+                <CommandInput
+                  id={id}
+                  autoFocus
+                  placeholder="Ketik nama tamu…"
+                  value={guestSearch}
+                  onValueChange={setGuestSearch}
+                />
+                {guestSearch.trim().length >= 2 && (
+                  <CommandList className="max-h-44">
+                    {guests.isFetching ? (
+                      <p className="p-4 text-center text-sm text-muted-foreground">Mencari…</p>
+                    ) : (
+                      <>
+                        <CommandEmpty>Tidak ada tamu yang cocok.</CommandEmpty>
+                        <CommandGroup>
+                          {guests.data?.items.map((guest) => (
+                            <CommandItem
+                              key={guest.id}
+                              value={guest.id}
+                              onSelect={() => {
+                                setGuestId(guest.id);
+                                setGiverName(guest.displayName);
+                                setGuestSearch("");
+                              }}
+                            >
+                              {guest.displayName}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </>
+                    )}
+                  </CommandList>
                 )}
-              </CommandList>
-            </Command>
+              </Command>
+            )}
+          </Field>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label={guestId ? "Nama pemberi" : "Atau tulis nama pemberi"}
+            hint={guestId ? "Terisi dari nama tamu; boleh diubah." : "Mis. “Keluarga Pak Hadi”."}
+          >
+            {(id) => (
+              <Input
+                id={id}
+                value={giverName}
+                maxLength={120}
+                autoComplete="off"
+                onChange={(e) => setGiverName(e.target.value)}
+              />
+            )}
+          </Field>
+          {!guestId && (
+            <Field
+              label="Nomor HP pemberi"
+              hint="Opsional. Dipakai untuk kirim ucapan terima kasih lewat WhatsApp."
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="off"
+                  placeholder="08…"
+                  maxLength={30}
+                  value={giverPhone}
+                  onChange={(e) => setGiverPhone(e.target.value)}
+                />
+              )}
+            </Field>
           )}
-          <p className="text-sm text-muted-foreground">
-            Menautkan membuat hadiah ini tercatat atas nama tamu itu dan memudahkan ucapan terima
-            kasih.
-          </p>
         </div>
       </FormSection>
 
       <FormSection title="Hadiah">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Jenis">
-            {(id) => (
-              <Select
-                id={id}
-                value={kind}
-                onChange={(e) => setKind(e.target.value as ReceivedGiftKind)}
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm leading-none font-medium">Jenis</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {RECEIVED_GIFT_KINDS.map((value) => (
+              <Button
+                key={value}
+                variant={kind === value ? "default" : "outline"}
+                aria-pressed={kind === value}
+                onClick={() => setKind(value)}
               >
-                {RECEIVED_GIFT_KINDS.map((value) => (
-                  <option key={value} value={value}>
-                    {RECEIVED_GIFT_KIND_LABEL[value]}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
+                {KIND_SHORT_LABEL[value]}
+              </Button>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {isItem ? (
+            <Field label="Nama barang" required>
+              {(id) => (
+                <Input
+                  id={id}
+                  maxLength={200}
+                  value={item}
+                  onChange={(e) => setItem(e.target.value)}
+                />
+              )}
+            </Field>
+          ) : (
+            <Field label="Nominal" required>
+              {(id) => (
+                <MoneyInput
+                  id={id}
+                  placeholder="500.000"
+                  value={amount}
+                  onValueChange={setAmount}
+                />
+              )}
+            </Field>
+          )}
           <Field label="Tanggal diterima">
             {(id) => (
               <Input
@@ -450,35 +538,6 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
           </Field>
         </div>
 
-        {isItem ? (
-          <Field label="Nama barang">
-            {(id) => (
-              <Input
-                id={id}
-                required
-                maxLength={200}
-                value={item}
-                onChange={(e) => setItem(e.target.value)}
-              />
-            )}
-          </Field>
-        ) : (
-          <Field
-            label="Nominal (Rp)"
-            hint={parsed ? formatRupiah(parsed) : "Angka saja, mis. 500000. Titik pemisah boleh."}
-          >
-            {(id) => (
-              <Input
-                id={id}
-                required
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            )}
-          </Field>
-        )}
-
         <Field label="Catatan" hint="Opsional, mis. bank pengirim atau titipan siapa.">
           {(id) => (
             <Input id={id} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
@@ -487,14 +546,18 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onDone}>
-          Batal
-        </Button>
-        <Button type="submit" disabled={save.isPending || !valid}>
-          {save.isPending ? "Menyimpan…" : "Simpan"}
-        </Button>
-      </div>
+      {!valid && (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          Lengkapi dulu: {missing.join(", ")}.
+        </p>
+      )}
+      <FormFooter
+        onCancel={onDone}
+        pending={save.isPending}
+        disabled={!valid}
+        again={!gift}
+        againLabel="Simpan & catat lagi"
+      />
     </form>
   );
 }

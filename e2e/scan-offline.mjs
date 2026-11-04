@@ -111,9 +111,20 @@ const pendingCount = async (page) => {
 };
 const dashboard = async () => (await admin("GET", "/checkins/dashboard")).json;
 
+/** Tombol "Sinkron sekarang" nonaktif selama sinkron berjalan; tunggu sampai bisa ditekan. */
+const waitSyncButton = (page) =>
+  page.waitForFunction(
+    () =>
+      [...document.querySelectorAll("button")].some(
+        (b) => b.textContent.trim() === "Sinkron sekarang" && !b.disabled,
+      ),
+    { timeout: 15000 },
+  );
+
 async function syncFromReadiness(page) {
   await page.goto(`${WEB}/scan/siap`, { waitUntil: "networkidle0" });
   await waitText(page, "Antrean kirim");
+  await waitSyncButton(page);
   await clickButton(page, "Sinkron sekarang");
   await sleep(3500);
 }
@@ -354,6 +365,13 @@ try {
   await adminPage.goto(`${WEB}/admin/checkin`, { waitUntil: "networkidle0" });
   await waitText(adminPage, "Perlu diperiksa");
   await adminPage.screenshot({ path: `${OUT}/7-dashboard.png`, fullPage: true });
+  // Tombol review menyebut hasilnya ("Abaikan duplikat → N orang") lalu minta konfirmasi.
+  await adminPage.evaluate(() =>
+    [...document.querySelectorAll("button")]
+      .find((b) => b.textContent.trim().startsWith("Abaikan duplikat →"))
+      .click(),
+  );
+  await waitText(adminPage, "Abaikan duplikat?");
   await clickButton(adminPage, "Abaikan duplikat");
   await sleep(1500);
   dash = await dashboard();
@@ -451,6 +469,7 @@ try {
   await admin("POST", `/devices/${devB.id}/revoke`, {});
   await B.goto(`${WEB}/scan/siap`, { waitUntil: "networkidle0" });
   await waitText(B, "Perangkat aktif");
+  await waitSyncButton(B);
   await clickButton(B, "Sinkron sekarang");
   await waitText(B, "dicabut", 20000);
   check(true, "perangkat B tahu dirinya dicabut setelah online");

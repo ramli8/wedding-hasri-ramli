@@ -116,8 +116,8 @@ export function ThanksDialog({ open, onClose }: { open: boolean; onClose: () => 
 
       {noPhone > 0 && (
         <p className="text-sm text-muted-foreground">
-          {noPhone} pemberi lain belum dibalas tetapi tidak punya nomor HP (bukan tamu terdaftar
-          atau hanya Instagram); balas manual lalu tandai "Sudah dibalas" di daftar.
+          {noPhone} pemberi lain belum dibalas tetapi tidak punya nomor HP. Isi “Nomor HP pemberi”
+          lewat Ubah di daftar, atau balas manual lalu tandai "Sudah dibalas".
         </p>
       )}
       {thank.error && <Alert tone="error">{thank.error.message}</Alert>}

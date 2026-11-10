@@ -47,9 +47,14 @@ export function publicRoutes({ db, config }: AppDeps) {
     return guest;
   }
 
-  function countWrite(ip: string) {
-    if (writeLimiter.isBlocked(ip)) throw tooMany();
-    writeLimiter.recordFailure(ip);
+  /**
+   * Kiriman dihitung per kode tamu, bukan per IP: operator seluler di Indonesia memakai CGNAT dan
+   * tamu di gedung berbagi Wi-Fi yang sama, jadi batas per IP bisa memblokir banyak tamu sekaligus.
+   * Menulis selalu butuh kode yang valid, jadi spam tetap terbatas per tamu.
+   */
+  function countWrite(code: string) {
+    if (writeLimiter.isBlocked(code)) throw tooMany();
+    writeLimiter.recordFailure(code);
   }
 
   return (
@@ -67,9 +72,8 @@ export function publicRoutes({ db, config }: AppDeps) {
       })
       .post("/rsvp", validate("json", rsvpRequestSchema), async (c) => {
         const input = c.req.valid("json");
-        const ip = clientIp(c, config.trustProxy);
-        await knownCode(ip, input.code);
-        countWrite(ip);
+        await knownCode(clientIp(c, config.trustProxy), input.code);
+        countWrite(input.code);
         return c.json({ rsvp: await submitRsvp(db, input) });
       })
       // Hadiah wishlist yang dipilih tamu ini (hanya miliknya sendiri).
@@ -80,9 +84,8 @@ export function publicRoutes({ db, config }: AppDeps) {
       })
       .post("/claims", validate("json", wishClaimRequestSchema), async (c) => {
         const input = c.req.valid("json");
-        const ip = clientIp(c, config.trustProxy);
-        const guest = await knownCode(ip, input.code);
-        countWrite(ip);
+        const guest = await knownCode(clientIp(c, config.trustProxy), input.code);
+        countWrite(input.code);
         return c.json(await setClaim(db, guest.id, input.wishId, input.quantity));
       })
       .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
@@ -91,9 +94,8 @@ export function publicRoutes({ db, config }: AppDeps) {
       })
       .post("/guestbook", validate("json", guestbookPostRequestSchema), async (c) => {
         const input = c.req.valid("json");
-        const ip = clientIp(c, config.trustProxy);
-        await knownCode(ip, input.code);
-        countWrite(ip);
+        await knownCode(clientIp(c, config.trustProxy), input.code);
+        countWrite(input.code);
         return c.json({ entry: await postGuestbook(db, input) }, 201);
       })
   );

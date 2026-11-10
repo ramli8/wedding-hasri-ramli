@@ -34,7 +34,8 @@ describe("buildIcs", () => {
       { ...base, location: "Gedung A, Jl. Mawar; Surabaya", description: "Baris 1\nBaris 2 \\ ok" },
       NOW,
     );
-    expect(ics).toContain("LOCATION:Gedung A\\, Jl. Mawar; Surabaya\r\n");
+    // RFC 5545 §3.3.11: titik koma di nilai TEXT wajib di-escape.
+    expect(ics).toContain("LOCATION:Gedung A\\, Jl. Mawar\\; Surabaya\r\n");
     expect(ics).toContain("DESCRIPTION:Baris 1\\nBaris 2 \\\\ ok\r\n");
   });
 

@@ -13,6 +13,11 @@ export class FailureLimiter {
 
   recordFailure(key: string) {
     this.failures.set(key, [...this.recent(key), this.now()]);
+    // Kunci yang tidak pernah ditanya lagi tidak terhapus oleh `recent`; bersihkan sesekali agar
+    // memori tidak tumbuh terus selama berbulan-bulan.
+    if (this.failures.size > 10_000) {
+      for (const k of [...this.failures.keys()]) this.recent(k);
+    }
   }
 
   reset(key: string) {

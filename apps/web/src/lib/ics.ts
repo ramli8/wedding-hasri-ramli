@@ -27,7 +27,7 @@ function icsDate(date: Date) {
 function escapeText(value: string) {
   return value
     .replace(/\\/g, "\\\\")
-    .replace(/;/g, ";")
+    .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
 }

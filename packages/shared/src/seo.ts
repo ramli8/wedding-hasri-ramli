@@ -40,7 +40,8 @@ export function renderSeoText(
   template: string,
   values: { panggilan: string; mempelai: string },
 ): string {
+  // Pengganti berupa fungsi: nama yang memuat "$&" atau "$'" tidak boleh dibaca sebagai pola.
   return template
-    .replaceAll("{panggilan}", values.panggilan)
-    .replaceAll("{mempelai}", values.mempelai);
+    .replaceAll("{panggilan}", () => values.panggilan)
+    .replaceAll("{mempelai}", () => values.mempelai);
 }

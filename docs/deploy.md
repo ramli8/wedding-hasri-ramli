@@ -22,6 +22,11 @@ Edge dan stack berbicara lewat jaringan Docker `edge`. Stack tidak membuka port 
 - Pasang Docker Engine + plugin Compose, dan aktifkan pembaruan keamanan otomatis.
 - DNS: arahkan `contoh.com` dan `staging.contoh.com` ke IP VPS (lewat Cloudflare, mode proxy
   aktif, SSL/TLS mode **Full (strict)**). Aturan cache Cloudflare: lewati `/api/*`.
+- IP pengunjung (untuk pembatas percobaan login, tebakan kode tamu, dan pairing) ditentukan edge
+  Caddy dan diteruskan ke API sebagai `X-Client-Ip`. `Cf-Connecting-Ip` hanya dipercaya dari daftar
+  IP Cloudflare di `deploy/edge.Caddyfile`; perbarui daftar itu bila Cloudflare mengubahnya
+  (https://www.cloudflare.com/ips/). Jangan membuka port stack `prod`/`staging` ke internet:
+  header itu hanya aman bila semua lalu lintas lewat edge.
 
 ## 2. Konfigurasi
 

@@ -140,4 +140,24 @@ describe("halaman tamu dengan tag Open Graph", () => {
     expect(html).toContain("<title>Hasri & Ramli</title>");
     expect(html).not.toContain("og:title");
   });
+
+  it("nama tamu berisi pola $ tidak menyalin potongan HTML ke dalam tag", async () => {
+    await saveSettings();
+    await ctx.db
+      .insert(guests)
+      .values({ displayName: "Budi $' $& $`", code: "ABC234", phone: "6281234567890" });
+    const html = await (await app.request("/u/ABC234")).text();
+    expect(html).toContain('property="og:description" content="');
+    expect(html).toContain("Budi $' $&amp; $`");
+    expect(html.match(/<div id="root">/g)).toHaveLength(1);
+  });
+
+  it("tebakan kode berulang dari satu IP tidak lagi membocorkan nama tamu", async () => {
+    await saveSettings();
+    await addGuest();
+    for (let i = 0; i < 30; i++) await app.request("/u/ZZZZZZ");
+    const html = await (await app.request("/u/ABC234")).text();
+    expect(html).not.toContain("Bpk. Budi");
+    expect(html).toContain('<div id="root">');
+  });
 });

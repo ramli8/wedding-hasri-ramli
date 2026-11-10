@@ -568,25 +568,38 @@ export async function updateWish(db: Db, dir: string, id: string, input: WishDat
   const [existing] = await db.select().from(wishlistItems).where(eq(wishlistItems.id, id)).limit(1);
   if (!existing) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
   await assertPhotoUsable(db, input.photoMediaId, existing.photoMediaId);
-  const claimed = (await claimedTotals(db, id)).get(id) ?? 0;
-  if (input.quantity < claimed) {
-    throw new AppError(
-      409,
-      "CONFLICT",
-      `Jumlah dibutuhkan tidak boleh kurang dari yang sudah terpenuhi (${claimed}).`,
-    );
-  }
 
-  await db
-    .update(wishlistItems)
-    .set({
-      name: input.name,
-      note: input.note,
-      url: input.url,
-      photoMediaId: input.photoMediaId,
-      quantity: input.quantity,
-    })
-    .where(eq(wishlistItems.id, id));
+  await db.transaction(async (tx) => {
+    // Baris hadiah dikunci seperti di setClaim, supaya tamu yang memilih bersamaan tidak membuat
+    // jumlah terpilih melebihi jumlah baru.
+    await tx
+      .select({ id: wishlistItems.id })
+      .from(wishlistItems)
+      .where(eq(wishlistItems.id, id))
+      .for("update");
+    const [row] = await tx
+      .select({ total: sql<number>`coalesce(sum(${wishlistClaims.quantity}), 0)::int` })
+      .from(wishlistClaims)
+      .where(eq(wishlistClaims.wishId, id));
+    const claimed = row?.total ?? 0;
+    if (input.quantity < claimed) {
+      throw new AppError(
+        409,
+        "CONFLICT",
+        `Jumlah dibutuhkan tidak boleh kurang dari yang sudah terpenuhi (${claimed}).`,
+      );
+    }
+    await tx
+      .update(wishlistItems)
+      .set({
+        name: input.name,
+        note: input.note,
+        url: input.url,
+        photoMediaId: input.photoMediaId,
+        quantity: input.quantity,
+      })
+      .where(eq(wishlistItems.id, id));
+  });
   if (existing.photoMediaId && existing.photoMediaId !== input.photoMediaId) {
     await discardMedia(db, dir, existing.photoMediaId);
   }

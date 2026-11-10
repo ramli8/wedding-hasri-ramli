@@ -120,6 +120,16 @@ export async function setClaim(
       .for("update");
     if (!wish) throw new AppError(404, "NOT_FOUND", "Hadiah tidak ditemukan");
 
+    // Barang yang sudah dicatat diterima tidak boleh diubah atau dilepas tamu: catatan hadiah
+    // masuk dan jumlahnya akan tidak cocok lagi dengan pilihan.
+    const [mine] = await tx
+      .select({ receivedGiftId: wishlistClaims.receivedGiftId })
+      .from(wishlistClaims)
+      .where(and(eq(wishlistClaims.wishId, wishId), eq(wishlistClaims.guestId, guestId)));
+    if (mine?.receivedGiftId) {
+      throw new AppError(409, "CONFLICT", "Hadiah ini sudah kami terima. Terima kasih!");
+    }
+
     if (quantity === 0) {
       await tx
         .delete(wishlistClaims)

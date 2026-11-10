@@ -1,5 +1,7 @@
 import { Hono } from "hono";
+import { FailureLimiter } from "../auth/rate-limit.js";
 import type { AppDeps, AppEnv } from "../http/env.js";
+import { clientIp } from "../http/middleware.js";
 import { findGuestByCode } from "../services/public.js";
 import { buildPreview, type LinkPreview } from "../services/seo.js";
 
@@ -39,9 +41,10 @@ export function renderHead(preview: LinkPreview): string {
 
 /** Mengganti <title> bawaan dan menyisipkan tag pratinjau sebelum </head>. */
 export function injectHead(html: string, preview: LinkPreview): string {
-  return html
-    .replace(/<title>[\s\S]*?<\/title>/i, "")
-    .replace(/<\/head>/i, `    ${renderHead(preview)}\n  </head>`);
+  // Pengganti berupa fungsi: nama tamu bisa memuat "$&" / "$'" yang pada string pengganti biasa
+  // dibaca sebagai pola khusus dan menyalin potongan HTML ke dalam tag.
+  const head = `    ${renderHead(preview)}\n  </head>`;
+  return html.replace(/<title>[\s\S]*?<\/title>/i, () => "").replace(/<\/head>/i, () => head);
 }
 
 const CACHE_MS = 30_000;
@@ -52,6 +55,10 @@ const CACHE_MS = 30_000;
  */
 export function shareRoutes({ db, config, logger }: AppDeps) {
   let cached: { html: string; at: number } | null = null;
+  // Halaman ini membedakan kode valid (ada tag nama tamu) dari yang tidak, jadi tebakan kode yang
+  // salah dibatasi per IP seperti di /api/v1/public. Yang diblokir tetap mendapat halaman, hanya
+  // tanpa pratinjau (crawler WhatsApp tidak pernah menebak, jadi tidak terkena).
+  const guessLimiter = new FailureLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
 
   async function loadIndex(): Promise<string | null> {
     if (!config.webIndexUrl) return null;
@@ -72,7 +79,9 @@ export function shareRoutes({ db, config, logger }: AppDeps) {
     const html = await loadIndex();
     if (!html) return c.text("Halaman belum tersedia.", 503);
     const code = (c.req.param("code") ?? "").toUpperCase();
-    const guest = code ? await findGuestByCode(db, code) : null;
+    const ip = clientIp(c, config.trustProxy);
+    const guest = code && !guessLimiter.isBlocked(ip) ? await findGuestByCode(db, code) : null;
+    if (code && !guest) guessLimiter.recordFailure(ip);
     const preview = guest
       ? await buildPreview(db, { panggilan: guest.displayName, path: `/u/${code}${suffix}` })
       : null;

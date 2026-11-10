@@ -198,16 +198,18 @@ describe("RSVP", () => {
     expect((await rsvp(budi.code, resepsi.id, { status: "hadir", pax: 0 })).status).toBe(400);
   });
 
-  it("membatasi jumlah kiriman per IP", async () => {
-    const spammer = ctx.makeApp();
-    const send = () =>
-      publicCall(spammer, "POST", "/rsvp", {
-        code: world.sari.code,
+  it("membatasi jumlah kiriman per kode tamu, tidak per IP (CGNAT, Wi-Fi gedung)", async () => {
+    const shared = ctx.makeApp();
+    const send = (code: string) =>
+      publicCall(shared, "POST", "/rsvp", {
+        code,
         eventId: world.resepsi.id,
         status: "hadir",
       });
-    for (let i = 0; i < 20; i++) expect((await send()).status).toBe(200);
-    expect((await send()).status).toBe(429);
+    for (let i = 0; i < 20; i++) expect((await send(world.sari.code)).status).toBe(200);
+    expect((await send(world.sari.code)).status).toBe(429);
+    // Tamu lain dari IP yang sama tetap bisa mengirim.
+    expect((await send(world.budi.code)).status).toBe(200);
   });
 });
 
@@ -598,6 +600,14 @@ describe("wishlist: tamu memilih hadiah", () => {
     // Kedua kalinya ditolak dan tidak menggandakan catatan.
     expect((await api.post(path, {})).status).toBe(409);
     expect((await read<{ items: Gift[] }>(await api.get("/received-gifts"))).items).toHaveLength(1);
+
+    // Tamu tidak bisa lagi mengubah atau melepas barang yang sudah diterima.
+    expect((await claim(world.sari.code, gelas.id, 0)).status).toBe(409);
+    expect((await claim(world.sari.code, gelas.id, 5)).status).toBe(409);
+    expect(
+      (await read<{ claims: { quantity: number }[] }>(await pub.get(`/claims/${world.sari.code}`)))
+        .claims[0]?.quantity,
+    ).toBe(2);
 
     // Menghapus catatan hadiah membuka kembali kemungkinan mencatat ulang.
     await api.delete(`/received-gifts/${gifts[0]?.id}`);

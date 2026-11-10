@@ -181,6 +181,8 @@ export const devices = pgTable(
     pairingExpiresAt: timestamp({ withTimezone: true }),
     tokenHash: text().unique("devices_token_hash_unique"),
     status: text().notNull().default("pending"),
+    // Ditentukan saat pairing: HP scanner hanya boleh /sync, laptop booth hanya /booth.
+    kind: text().notNull().default("scanner"),
     appVersion: text(),
     protocolVersion: integer(),
     lastSeenAt: timestamp({ withTimezone: true }),
@@ -190,6 +192,7 @@ export const devices = pgTable(
   },
   (table) => [
     check("devices_status_valid", sql`${table.status} in ('pending', 'active', 'revoked')`),
+    check("devices_kind_valid", sql`${table.kind} in ('scanner', 'booth')`),
   ],
 );
 
@@ -516,4 +519,39 @@ export const vendorPayments = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("vendor_payments_amount_valid", sql`${table.amount} > 0`)],
+);
+
+// Pengaturan photobooth (satu baris): bingkai bawaan mana yang boleh dipilih tamu di booth.
+export const boothConfig = pgTable(
+  "booth_config",
+  {
+    id: smallint().primaryKey().default(1),
+    frames: text().array().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("booth_config_singleton", sql`${table.id} = 1`),
+    check("booth_config_frames_not_empty", sql`cardinality(${table.frames}) > 0`),
+  ],
+);
+
+// Foto hasil photobooth (sudah berbingkai). `id` dibuat oleh perangkat booth sehingga unggah ulang
+// setelah koneksi putus tidak menggandakan foto.
+export const boothPhotos = pgTable(
+  "booth_photos",
+  {
+    id: uuid().primaryKey(),
+    mediaId: uuid()
+      .notNull()
+      .unique()
+      .references(() => media.id),
+    frame: text().notNull(),
+    deviceId: uuid().references(() => devices.id, { onDelete: "set null" }),
+    takenAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("booth_photos_frame_valid", sql`${table.frame} in ('poster', 'strip', 'tiket')`),
+    index("booth_photos_taken_at_idx").on(table.takenAt),
+  ],
 );

@@ -23,7 +23,8 @@ export function deviceRoutes({ db, config }: AppDeps) {
       if (limiter.isBlocked(ip)) {
         throw new AppError(429, "RATE_LIMITED", "Terlalu banyak percobaan. Coba lagi nanti.");
       }
-      const result = await pairDevice(db, c.req.valid("json").code);
+      const { code, kind } = c.req.valid("json");
+      const result = await pairDevice(db, code, kind);
       if (!result) {
         limiter.recordFailure(ip);
         throw new AppError(
@@ -41,7 +42,7 @@ export function deviceRoutes({ db, config }: AppDeps) {
 export function syncRoutes(deps: AppDeps) {
   const { db } = deps;
   return new Hono<AppEnv>()
-    .use("*", requireSyncVersion, requireDevice(deps))
+    .use("*", requireSyncVersion, requireDevice(deps, "scanner"))
     .get("/snapshot", validate("query", snapshotQuerySchema), async (c) => {
       const { sinceRev, sinceSeq } = c.req.valid("query");
       return c.json(await buildSnapshot(db, c.get("device"), { rev: sinceRev, seq: sinceSeq }));

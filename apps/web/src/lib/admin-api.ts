@@ -2,6 +2,9 @@ import {
   type AdminRsvpRequest,
   adminGuestbookListResponseSchema,
   adminGuestbookResponseSchema,
+  type BoothConfigInput,
+  boothConfigResponseSchema,
+  boothPhotoListResponseSchema,
   type CoupleProfileInput,
   type CoupleRole,
   type CoverInput,
@@ -384,6 +387,18 @@ export const adminApi = {
     remove: (id: string) => request(`${base}/guestbook/${id}`, okSchema, withBody("DELETE")),
   },
 
+  booth: {
+    config: () => request(`${base}/booth/config`, boothConfigResponseSchema),
+    saveConfig: (input: BoothConfigInput) =>
+      request(`${base}/booth/config`, boothConfigResponseSchema, withBody("PUT", input)),
+    photos: (page: number) =>
+      request(
+        `${base}/booth/photos${queryString({ page, pageSize: 24 })}`,
+        boothPhotoListResponseSchema,
+      ),
+    remove: (id: string) => request(`${base}/booth/photos/${id}`, okSchema, withBody("DELETE")),
+  },
+
   checkins: {
     dashboard: () => request(`${base}/checkins/dashboard`, dashboardResponseSchema),
     review: () => request(`${base}/checkins/review`, reviewListResponseSchema),
@@ -403,6 +418,7 @@ export const downloads = {
   templateCsv: `/api${base}/guests/template.csv`,
   dataJson: `/api${base}/export/data.json`,
   mediaZip: `/api${base}/export/media.zip`,
+  boothPhotosZip: `/api${base}/booth/photos.zip`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
   receivedGiftsCsv: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { MIN_SUPPORTED_SYNC_VERSION, SYNC_VERSION_HEADER } from "@wedding/shared";
+import { type DeviceKind, MIN_SUPPORTED_SYNC_VERSION, SYNC_VERSION_HEADER } from "@wedding/shared";
 import type { Context, MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { resolveSession } from "../auth/session.js";
@@ -34,12 +34,16 @@ function readSessionToken(c: Context, config: Config) {
   return config.cookieSecure ? getCookie(c, SESSION_COOKIE, "host") : getCookie(c, SESSION_COOKIE);
 }
 
+/**
+ * IP pengunjung untuk pembatas percobaan. Di produksi (TRUST_PROXY) dibaca dari `X-Client-Ip` yang
+ * selalu ditimpa edge Caddy (lihat deploy/edge.Caddyfile): di sana Cf-Connecting-Ip hanya dipercaya
+ * dari jaringan Cloudflare. `Cf-Connecting-Ip`/`X-Forwarded-For` tidak dibaca langsung karena bisa
+ * dikirim sendiri oleh siapa pun yang menembak IP VPS tanpa lewat Cloudflare.
+ */
 export function clientIp(c: Context, trustProxy: boolean) {
   if (trustProxy) {
-    const cloudflare = c.req.header("cf-connecting-ip");
-    if (cloudflare) return cloudflare.trim();
-    const forwarded = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
-    if (forwarded) return forwarded;
+    const ip = c.req.header("x-client-ip")?.trim();
+    if (ip) return ip;
   }
   try {
     return getConnInfo(c).remote.address ?? "unknown";
@@ -113,12 +117,23 @@ export const requireSyncVersion: MiddlewareHandler<AppEnv> = async (c, next) => 
 };
 
 /** Token perangkat di header `Authorization: Bearer ...`. */
+const KIND_LABEL: Record<DeviceKind, string> = { scanner: "scanner", booth: "photobooth" };
+
+/** Token perangkat; `kind` membatasi jenisnya (booth tidak boleh menarik data tamu, dan sebaliknya). */
 export const requireDevice =
-  ({ db }: Pick<AppDeps, "db">): MiddlewareHandler<AppEnv> =>
+  ({ db }: Pick<AppDeps, "db">, kind: DeviceKind): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
     const header = c.req.header("authorization") ?? "";
     const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
     if (!token) throw new AppError(401, "UNAUTHENTICATED", "Perangkat belum dipasangkan");
-    c.set("device", await authenticateDevice(db, token));
+    const device = await authenticateDevice(db, token);
+    if (device.kind !== kind) {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        `Perangkat ini dipasangkan sebagai ${KIND_LABEL[device.kind as DeviceKind]}, bukan ${KIND_LABEL[kind]}. Pasangkan ulang dengan kode baru.`,
+      );
+    }
+    c.set("device", device);
     await next();
   };

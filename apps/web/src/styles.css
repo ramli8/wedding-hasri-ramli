@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
 @import "./guest.css";
+@import "./booth.css";
 
 @custom-variant dark (&:is(.dark *));
 

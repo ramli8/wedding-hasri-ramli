@@ -8,7 +8,7 @@ import {
   mediaUrl,
   THUMB_SIDE,
 } from "@wedding/shared";
-import { desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import sharp from "sharp";
 import type { Db } from "../db/client.js";
 import { media } from "../db/schema.js";
@@ -29,6 +29,7 @@ export const MEDIA_USERS: { table: string; column: string }[] = [
   { table: "wishlist_items", column: "photo_media_id" },
   { table: "invitation_cover", column: "photo_media_id" },
   { table: "settings", column: "seo_image_media_id" },
+  { table: "booth_photos", column: "media_id" },
 ];
 
 const toMedia = (row: typeof media.$inferSelect): Media => ({
@@ -145,12 +146,21 @@ const ORPHAN_TTL_MS = 60 * 60 * 1000;
  * tidak pernah disentuh (dicek lewat isMediaReferenced).
  */
 export async function sweepOrphanMedia(db: Db, dir: string, now = Date.now()): Promise<number> {
+  // Satu kueri untuk semua kandidat: tanpa ini setiap gambar lama (mis. ratusan foto booth) dicek
+  // ke setiap tabel pemakai satu per satu pada setiap unggahan.
+  const unused = and(
+    ...MEDIA_USERS.map(
+      ({ table, column }) =>
+        sql`not exists (select 1 from ${sql.identifier(table)} where ${sql.identifier(column)} = ${media.id})`,
+    ),
+  );
   const old = await db
     .select({ id: media.id })
     .from(media)
-    .where(lt(media.createdAt, new Date(now - ORPHAN_TTL_MS)));
+    .where(and(lt(media.createdAt, new Date(now - ORPHAN_TTL_MS)), unused));
   let removed = 0;
   for (const { id } of old) {
+    // Cek ulang per gambar: bisa saja baru dipakai di antara kueri di atas dan penghapusan.
     if (await isMediaReferenced(db, id)) continue;
     await db.delete(media).where(eq(media.id, id));
     await rm(join(dir, id), { recursive: true, force: true });

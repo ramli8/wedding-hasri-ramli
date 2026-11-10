@@ -54,7 +54,14 @@ export function DevicesPage() {
       id: "nama",
       accessorFn: (device) => device.name,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
-      cell: ({ row }) => <span className="font-semibold">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <span className="font-semibold">
+          {row.original.name}
+          {row.original.kind === "booth" && row.original.status !== "pending" && (
+            <span className="ms-2 text-xs font-normal text-muted-foreground">· photobooth</span>
+          )}
+        </span>
+      ),
     },
     {
       id: "status",

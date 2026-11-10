@@ -4,7 +4,16 @@ import { deviceEventSchema, storedEventSchema } from "./checkin.js";
 /** Kode pairing tampil sebagai "K7M2-9QXA" (8 karakter, alfabet yang sama dengan kode tamu). */
 export const PAIRING_CODE_LENGTH = 8;
 
+/**
+ * Jenis perangkat, ditentukan saat pairing. HP scanner hanya boleh memakai /sync (data tamu),
+ * laptop photobooth hanya /booth, sehingga token booth di area umum tidak bisa mengambil daftar tamu.
+ */
+export const deviceKindSchema = z.enum(["scanner", "booth"]);
+export type DeviceKind = z.infer<typeof deviceKindSchema>;
+
 export const pairRequestSchema = z.object({
+  /** Tidak diisi = scanner (klien lama). */
+  kind: deviceKindSchema.default("scanner"),
   code: z
     .string()
     .trim()

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
-import type { Device, PairResponse } from "@wedding/shared";
+import type { Device, DeviceKind, PairResponse } from "@wedding/shared";
 import { PAIRING_CODE_LENGTH } from "@wedding/shared";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -29,6 +29,7 @@ export function toDevice(row: DeviceRow, now = new Date()): Device {
   return {
     id: row.id,
     name: row.name,
+    kind: row.kind as Device["kind"],
     status: row.status as Device["status"],
     appVersion: row.appVersion,
     protocolVersion: row.protocolVersion,
@@ -144,8 +145,12 @@ export async function deleteDevice(db: Db, id: string): Promise<void> {
   });
 }
 
-/** Menukar kode pairing sekali pakai dengan token perangkat. */
-export async function pairDevice(db: Db, code: string): Promise<PairResponse | null> {
+/** Menukar kode pairing sekali pakai dengan token perangkat; jenis perangkat ditetapkan di sini. */
+export async function pairDevice(
+  db: Db,
+  code: string,
+  kind: DeviceKind = "scanner",
+): Promise<PairResponse | null> {
   const token = randomBytes(32).toString("base64url");
   const [row] = await db.transaction(async (tx) => {
     const [pending] = await tx
@@ -160,6 +165,7 @@ export async function pairDevice(db: Db, code: string): Promise<PairResponse | n
       .update(devices)
       .set({
         status: "active",
+        kind,
         tokenHash: sha256(token),
         // kode hangus: tidak bisa dipakai di perangkat lain
         pairingCodeHash: null,

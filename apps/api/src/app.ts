@@ -4,6 +4,7 @@ import { errorHandler, notFoundHandler } from "./http/errors.js";
 import { requestLogger } from "./http/middleware.js";
 import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
+import { boothRoutes } from "./routes/booth.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
 import { mediaPublicRoutes } from "./routes/media.js";
@@ -16,7 +17,8 @@ export function createApp(deps: AppDeps) {
     .route("/admin", adminRoutes(deps))
     .route("/public", publicRoutes(deps))
     .route("/device", deviceRoutes(deps))
-    .route("/sync", syncRoutes(deps));
+    .route("/sync", syncRoutes(deps))
+    .route("/booth", boothRoutes(deps));
 
   const api = new Hono<AppEnv>().route("/", healthRoutes(deps)).route("/v1", v1);
 

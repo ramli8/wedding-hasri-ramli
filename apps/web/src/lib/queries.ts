@@ -70,6 +70,7 @@ export function useRefresh() {
   return (
     ...keys: (
       | "settings"
+      | "booth"
       | "seo"
       | "events"
       | "groups"
@@ -90,6 +91,20 @@ export const rsvpQuery = (eventId?: string) =>
     queryFn: () => adminApi.rsvps.list(eventId),
     refetchInterval: 15_000,
     retry: false,
+  });
+
+export const boothConfigQuery = queryOptions({
+  queryKey: ["booth", "config"],
+  queryFn: () => adminApi.booth.config(),
+});
+
+export const boothPhotosQuery = (page: number) =>
+  queryOptions({
+    queryKey: ["booth", "photos", page],
+    queryFn: () => adminApi.booth.photos(page),
+    placeholderData: (previous) => previous,
+    // Foto masuk dari booth selama acara berlangsung.
+    refetchInterval: 30_000,
   });
 
 export const guestbookQuery = (query: { page: number; hidden?: boolean }) =>

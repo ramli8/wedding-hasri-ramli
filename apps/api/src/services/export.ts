@@ -52,7 +52,24 @@ export async function mediaZipStream(dir: string): Promise<ReadableStream<Uint8A
   } catch {
     // Folder belum ada: ZIP kosong.
   }
-  const queue = ids.flatMap((id) => ["large", "thumb"].map((variant) => ({ id, variant })));
+  return zipFilesStream(
+    ids.flatMap((id) =>
+      ["large", "thumb"].map((variant) => ({
+        name: `${id}/${variant}.webp`,
+        source: join(dir, id, `${variant}.webp`),
+      })),
+    ),
+  );
+}
+
+/**
+ * ZIP berkas di disk sebagai aliran, satu berkas per tarikan (memori tetap kecil). Isi disimpan
+ * tanpa kompresi ulang; berkas yang hilang saat ZIP dibuat dilewati.
+ */
+export function zipFilesStream(
+  files: { name: string; source: string }[],
+): ReadableStream<Uint8Array> {
+  const queue = [...files];
 
   let controllerRef: ReadableStreamDefaultController<Uint8Array>;
   let finished = false;
@@ -78,10 +95,9 @@ export async function mediaZipStream(dir: string): Promise<ReadableStream<Uint8A
         zip.end();
         return;
       }
-      const path = `${next.id}/${next.variant}.webp`;
       try {
-        const data = await readFile(join(dir, next.id, `${next.variant}.webp`));
-        const entry = new ZipPassThrough(path);
+        const data = await readFile(next.source);
+        const entry = new ZipPassThrough(next.name);
         zip.add(entry);
         entry.push(data, true);
       } catch {

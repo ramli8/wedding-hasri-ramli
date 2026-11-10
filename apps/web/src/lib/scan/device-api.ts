@@ -1,4 +1,5 @@
 import {
+  type DeviceKind,
   errorResponseSchema,
   type PairResponse,
   type PushRequest,
@@ -47,10 +48,10 @@ async function call<T>(
 }
 
 export const deviceApi = {
-  pair: (code: string): Promise<PairResponse> =>
+  pair: (code: string, kind: DeviceKind = "scanner"): Promise<PairResponse> =>
     call("/v1/device/pair", pairResponseSchema, {
       method: "POST",
-      body: JSON.stringify({ code, userAgent: navigator.userAgent.slice(0, 300) }),
+      body: JSON.stringify({ code, kind, userAgent: navigator.userAgent.slice(0, 300) }),
     }),
 
   snapshot: (token: string, since: { rev: number; seq: number }): Promise<SnapshotResponse> =>

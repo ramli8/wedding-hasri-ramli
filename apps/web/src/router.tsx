@@ -7,8 +7,12 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppLayout } from "./components/app-layout.js";
+import { getBoothMeta } from "./lib/booth/db.js";
 import { meQuery } from "./lib/queries.js";
 import { getMeta } from "./lib/scan/db.js";
+import { BoothAdminPage } from "./pages/booth/booth-admin-page.js";
+import { BoothPage } from "./pages/booth/booth-page.js";
+import { BoothPairPage } from "./pages/booth/booth-pair-page.js";
 import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
 import {
@@ -300,6 +304,28 @@ const readinessRoute = createRoute({
   component: ReadinessPage,
 });
 
+// Photobooth (laptop di hari-H): token perangkat sendiri, terpisah dari scanner.
+const boothRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/booth",
+  beforeLoad: async () => {
+    if (!(await getBoothMeta("auth"))) throw redirect({ to: "/booth/pasang" });
+  },
+  component: BoothPage,
+});
+
+const boothPairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/booth/pasang",
+  component: BoothPairPage,
+});
+
+const boothAdminRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/photobooth",
+  component: BoothAdminPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -308,6 +334,8 @@ const routeTree = rootRoute.addChildren([
   scanRoute,
   pairRoute,
   readinessRoute,
+  boothRoute,
+  boothPairRoute,
   appRoute.addChildren([
     adminIndexRoute,
     guideRoute,
@@ -332,6 +360,7 @@ const routeTree = rootRoute.addChildren([
     ]),
     checkinRoute,
     devicesRoute,
+    boothAdminRoute,
     settingsRoute.addChildren(settingsChildren),
     ...errorRoutes,
   ]),

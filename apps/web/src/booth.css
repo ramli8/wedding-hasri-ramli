@@ -1,0 +1,38 @@
+/* Layar photobooth (/booth). Ukuran kertas cetak (@page) dipasang oleh halaman booth sendiri
+   agar tidak memengaruhi halaman cetak admin. */
+.booth .booth-count {
+  animation: booth-count 1s ease-out both;
+}
+.booth .booth-flash {
+  animation: booth-flash 350ms ease-out both;
+}
+/* Lubang sproket di tepi layar "Sedang dicetak". */
+.booth .booth-holes {
+  background-image: radial-gradient(circle at center, #ebe3d5 0 6px, transparent 6.5px);
+  background-size: 34px 100%;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+@keyframes booth-count {
+  from {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes booth-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .booth .booth-count {
+    animation: none;
+  }
+}

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { checkinMethodSchema, MAX_PAX } from "./checkin.js";
+import { deviceKindSchema } from "./sync.js";
 
 export const deviceStatusSchema = z.enum(["pending", "active", "revoked"]);
 
 export const deviceSchema = z.object({
   id: z.uuid(),
   name: z.string(),
+  kind: deviceKindSchema,
   status: deviceStatusSchema,
   appVersion: z.string().nullable(),
   protocolVersion: z.number().nullable(),

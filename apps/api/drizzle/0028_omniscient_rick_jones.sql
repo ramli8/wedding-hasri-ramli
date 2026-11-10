@@ -1,0 +1,2 @@
+ALTER TABLE "devices" ADD COLUMN "kind" text DEFAULT 'scanner' NOT NULL;--> statement-breakpoint
+ALTER TABLE "devices" ADD CONSTRAINT "devices_kind_valid" CHECK ("devices"."kind" in ('scanner', 'booth'));

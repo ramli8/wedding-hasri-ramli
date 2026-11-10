@@ -597,6 +597,46 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - **Cadangan otomatis:** layanan compose `backup` (profile `backup`; image `postgres:17-alpine` + rclone, `deploy/backup/`). Tiap `BACKUP_INTERVAL_HOURS` (6): `pg_dump --format=custom`, verifikasi `pg_restore --list`, unggah ke `BACKUP_DEST` (R2 lewat remote rclone dari variabel lingkungan, atau folder lokal untuk uji), salin folder foto dengan `rclone copy` (bukan `sync`), lalu hapus dump lebih tua dari `BACKUP_RETENTION_DAYS` tetapi 10 terbaru selalu disimpan. Ping opsional (`BACKUP_PING_URL`, `/fail` saat gagal) dan healthcheck berbasis berkas penanda. Diuji lokal: dump, verifikasi, retensi, jalur gagal (kode keluar non-nol), dan pemulihan ke database baru dengan jumlah baris sama. Belum diuji ke R2 sungguhan.
 - **Ekspor dari admin** (Pengaturan → Cadangan & ekspor): `GET /api/v1/admin/export/data.json` (semua tabel kecuali `admins` dan `admin_sessions`, tanpa hash token perangkat) dan `GET /export/media.zip` (aliran ZIP tanpa kompresi ulang, satu berkas per tarikan agar memori kecil). Pelengkap, bukan pengganti pg_dump. Panduan lengkap: `docs/backup.md`.
 
+### Photobooth (rancangan, 10 Nov 2026)
+
+Status: **sudah dibangun (belum di-commit per 10 Nov 2026)**; kamera X-A7 sudah teruji di Linux, cetak ke L3110 belum.
+
+- **Tujuan:** tamu berfoto di booth hari-H, hasilnya langsung tercetak 4R (102×152 mm) dengan bingkai, satu foto per lembar. Booth harus tetap jalan tanpa internet.
+- **Perangkat keras:** laptop (Linux atau Windows) + Fujifilm X-A7 + printer Epson L3110.
+  - **Kamera:** X-A7 dipakai lewat mode webcam bawaan (firmware 1.30 ke atas), dibaca peramban dengan `getUserMedia` seperti webcam biasa. Tethering (memicu rana dan mengambil JPEG resolusi penuh) tidak didukung X-A7, jadi foto diambil dari bingkai video. Webcam laptop tetap bisa dipakai sebagai cadangan.
+  - **Teruji di Linux (10 Nov 2026, X-A7 firmware 1.33, CachyOS):** mode webcam adalah UVC standar, tanpa driver atau gphoto2. Hasilnya MJPG **1280×720 @ 30 fps** (satu-satunya format). Untuk 4R mendatar, potongan 3:2 berukuran ±1080×720 px, jadi **±180 dpi**, bukan 270 dpi seperti perkiraan awal. Kanvas 1800×1200 tetap dipakai (foto diperbesar). Hasilnya cukup untuk photobooth, tapi tidak setajam foto kamera. Kalau perlu lebih tajam, pakai capture card HDMI dari HDMI-out kamera (1080p).
+  - **Cara mengaktifkan:** cabut kabel USB lebih dulu, karena selama tersambung layar kamera terkunci di tampilan "USB" dan menu tidak bisa dibuka. Lalu buka MENU → SET UP (ikon kunci) → CONNECTION SETTING → USB MODE → **USB WEBCAM**, lalu colok ulang kabel. Hasil yang benar: `lsusb` menampilkan `04cb:02ec FUJIFILM X-A7` (mode biasa `04cb:02e1 USB PTP` tidak memberi video), dan `v4l2-ctl --list-devices` menampilkan "FUJIFILM X-A7". Label ini cocok dengan pilihan otomatis di `lib/booth/camera.ts`. Jalur gphoto2 + v4l2loopback tidak bisa: dalam mode PTP, X-A7 tidak memberi live view (`--capture-movie` menghasilkan 0 frame).
+  - **Daya:** dalam mode webcam, kamera tidak mendapat daya dari USB. Baterai penuh tahan sekitar 2 jam, jadi hari-H wajib memakai dummy battery dengan adaptor AC dan auto power off dimatikan. **Belum diuji:** ketahanan menyala berjam-jam (panas).
+  - **Printer:** Epson L3110 mendukung cetak tanpa tepi sampai 4R. Linux memakai driver Epson `epson-inkjet-printer-escpr` lewat CUPS; Windows memakai driver resmi Epson. Ukuran kertas 4R tanpa tepi dan kertas foto glossy diatur sebagai bawaan di driver. Satu lembar 4R tanpa tepi butuh sekitar satu menit lebih, jadi layar booth memberi tahu tamu bahwa foto sedang dicetak dan booth tidak menunggu printer selesai.
+- **Cetak tanpa dialog:** Chrome dijalankan dengan `--kiosk --kiosk-printing` (mencetak langsung ke printer bawaan). Halaman cetak memakai `@page { size: 102mm 152mm; margin: 0 }` dan satu gambar selebar halaman. Perintah peluncuran untuk Linux dan Windows ditulis di `docs/`.
+- **Alur di booth** (`/booth`, layar penuh, bagian dari PWA yang sama sehingga terbuka tanpa internet):
+  1. Layar siaga dengan pratinjau kamera dan bingkai aktif ("Tekan tombol untuk berfoto").
+  2. Tombol besar di layar, atau tombol keyboard Spasi/Enter. Presenter/remote USB (yang mengirim PageDown/panah) juga bisa dipakai sebagai tombol rana.
+  3. Hitung mundur 3 detik, kilat putih, bunyi rana.
+  4. Tinjau hasil yang sudah berbingkai: **Cetak** atau **Ulangi**. Tanpa pilihan dalam 20 detik, booth kembali ke layar siaga tanpa mencetak.
+  5. Setelah Cetak: "Sedang dicetak, ambil di printer", lalu kembali siaga. Admin booth bisa mencetak ulang dari daftar foto di booth.
+  - Pratinjau dicerminkan seperti cermin; hasil dan cetakan tidak dicerminkan. Wake Lock menjaga layar tetap menyala.
+- **Komposisi:** canvas **1800×1200 px (4R mendatar, 300 dpi)**; pemilik memilih hasil landscape. Video webcam 16:9 hanya terpotong sedikit menjadi 3:2 (X-A7: 1280×720 → ±1080×720, diperbesar ke jendela foto). Bingkai adalah PNG transparan seukuran canvas dengan satu jendela foto persegi panjang (x, y, lebar, tinggi dalam piksel canvas). Foto dipotong menutupi jendela (seperti `object-fit: cover`) lalu bingkai ditumpuk di atasnya. Hasil disimpan sebagai JPEG kualitas tinggi.
+- **Offline dan unggah:** Dexie terpisah `wedding-booth` (tidak menyentuh `wedding-scan` sehingga tidak ikut pembekuan check-in):
+  - `frames`: bingkai yang diunduh saat online (gambar sebagai Blob + jendela foto), sehingga booth tetap punya bingkai tanpa internet.
+  - `photos`: hasil berbingkai (id UUID dari perangkat, Blob, waktu, bingkai, jumlah dicetak, `uploadedAt`). Foto dihapus dari perangkat hanya setelah server mengonfirmasi dan admin menghapusnya dari booth; bawaan tetap disimpan.
+  - Unggah berjalan di latar saat online, satu per satu, dengan id dari perangkat sehingga kirim ulang aman (`ON CONFLICT (id) DO NOTHING`).
+- **Server:** booth dipasangkan seperti perangkat scanner (kode pairing sekali pakai, token Bearer, bisa dicabut). Endpoint baru di luar `/sync/*` sehingga kontrak sinkronisasi check-in tidak berubah:
+  - `GET /api/v1/booth/frames`: daftar bingkai aktif.
+  - `POST /api/v1/booth/photos` (multipart, id dari perangkat): disimpan lewat sistem media (`booth_photos.media_id`, didaftarkan di `MEDIA_USERS`). Varian `large` mengikuti aturan media yang ada (resolusi asli, near-lossless).
+  - Tabel baru `booth_frames` (media bingkai, orientasi, jendela foto, aktif, urutan) dan `booth_photos` (id, media, bingkai, perangkat, `taken_at`, jumlah cetak). Aditif, tidak menyentuh tabel yang dibekukan.
+- **Bingkai bawaan (dipilih 10 Nov 2026):** tiga bingkai dari mockup tersedia semua: **A poster film** (latar hitam, foto hitam putih), **B film strip** (pita sproket, foto hangat), **C tiket bioskop** (foto kiri, sobekan tiket kanan dengan nomor foto). Ketiganya digambar oleh kode di canvas (huruf Bebas Neue, Cormorant Garamond, Courier Prime yang ikut di-precache), bukan PNG, sehingga nomor foto bisa berubah per cetakan. Admin memilih bingkai mana yang aktif; bila lebih dari satu aktif, tamu memilih di layar siaga booth. Unggah bingkai PNG sendiri menyusul setelah bingkai bawaan jalan.
+- **Admin, menu "Photobooth" (grup Hari-H):** tab **Bingkai** (unggah PNG, atur jendela foto dengan menyeret kotak di atas pratinjau, pilih bingkai aktif) dan tab **Hasil** (galeri foto booth, unduh satu atau semua).
+- **Belum termasuk (bisa menyusul):** QR di layar agar tamu mengunduh fotonya (butuh internet), galeri foto booth di halaman undangan, strip beberapa foto, dan GIF/boomerang.
+- **Hasil audit (10 Nov 2026), sudah diperbaiki:**
+  - **Jenis perangkat:** `devices.kind` (`scanner`/`booth`) ditetapkan saat pairing. `/sync/*` hanya menerima scanner dan `/booth/*` hanya booth (403 bila salah jenis), sehingga token laptop booth di area umum tidak bisa menarik daftar tamu.
+  - **Pairing ulang tidak menghapus foto:** foto dan nomor foto tetap ada, dan foto tertunda terunggah dengan token baru. "Lepas perangkat" ditolak di dalam transaksi selama masih ada foto yang belum terunggah.
+  - **Kamera terputus** (baterai habis, kabel tercabut) ditandai di layar dan disambung ulang otomatis lewat `devicechange`. Booth tidak pernah diam-diam pindah ke webcam laptop. Hitung mundur dibatalkan, dan tidak ada foto hitam yang tersimpan.
+  - **Satu cetakan per tekan:** CETAK ganda atau remote yang mengirim tombol dua kali tidak mencetak dua lembar, dan tidak berbalapan dengan batas waktu tinjau.
+  - **Halaman cetak** dipasang langsung di bawah `<body>`; elemen lain `display: none`, jadi dokumen tepat satu lembar. Tetap wajib diuji dengan L3110 asli.
+  - **Penyimpanan permanen** diminta (`navigator.storage.persist()`); statusnya tampil di panel petugas. Gagal menyimpan foto ditampilkan ke petugas, tidak lagi hilang diam-diam.
+  - **Admin:** unduh semua foto booth (`GET /admin/booth/photos.zip`, nama berkas memakai waktu WIB). Penyapuan gambar yatim memakai satu kueri, tidak lagi memeriksa setiap foto booth ke setiap tabel pada setiap unggahan.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

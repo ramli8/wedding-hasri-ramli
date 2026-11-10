@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { originCheck, requireAdmin } from "../http/middleware.js";
+import { boothAdminRoutes } from "./booth.js";
 import { checkinAdminRoutes, deviceAdminRoutes } from "./checkin-admin.js";
 import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
@@ -20,6 +21,7 @@ export function adminRoutes(deps: AppDeps) {
   return new Hono<AppEnv>()
     .use("*", originCheck(deps.config.allowedOrigins), requireAdmin(deps))
     .route("/export", exportRoutes(deps))
+    .route("/booth", boothAdminRoutes(deps))
     .route("/home", homeRoutes(deps))
     .route("/settings", settingsRoutes(deps))
     .route("/seo", seoRoutes(deps))

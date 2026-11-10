@@ -2,89 +2,102 @@ import { RSVP_LABEL, RSVP_STATUSES, type RsvpStatus } from "@wedding/shared";
 import { useState } from "react";
 import { Barcode } from "../mag.js";
 import { TicketQr } from "../ticket-qr.js";
-import { ISSUE, pageOf } from "./content.js";
-import { IssueHead, Sheet, Stamp } from "./parts.js";
+import { ISSUE } from "./content.js";
+import { PRIMARY, Scene } from "./parts.js";
 
-/** Tiket masuk (QR sungguhan dari kode di alamat) dan konfirmasi kehadiran, di halaman yang sama. */
+/**
+ * Tiket bioskop sungguhan: QR dari kode di alamat, dengan potongan tiket berlubang berisi nama tamu
+ * dan jam tayang. Di sebelahnya konfirmasi kehadiran.
+ */
 export function Tiket({ code }: { code: string }) {
   const [status, setStatus] = useState<RsvpStatus | null>(null);
   const [saved, setSaved] = useState(false);
+  const first = ISSUE.events[0];
 
   return (
-    <Sheet id="tiket" page={pageOf("tiket")}>
-      <IssueHead
-        eyebrow="Rubrik 03 · Tiket & RSVP"
-        title="Tiket masuk & RSVP"
-        deck="Tunjukkan QR kepada petugas di pintu masuk. Simpan gambarnya agar tetap bisa dibuka tanpa sinyal."
-      />
-      <div className="grid gap-14 lg:grid-cols-12">
-        <div className="relative lg:col-span-5">
-          <div className="wobble -rotate-1 border-[3px] border-dashed border-ink/70 bg-[#fbf8ef] p-6 shadow-[0_18px_36px_-22px_rgba(20,14,6,0.6)] md:p-8">
-            <p className="tag text-ink-soft">Tiket masuk · Edisi pernikahan No. 1</p>
-            <p className="mt-2 font-display text-4xl leading-tight font-black md:text-5xl">
-              {ISSUE.guest.name}
+    <Scene id="tiket" label="Tiket & konfirmasi" title="Tiket masuk Anda" tone="sand">
+      <div className="grid gap-16 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-20">
+        <div className="mx-auto flex w-full max-w-md flex-col bg-reel text-screen shadow-[0_24px_40px_-28px_rgb(14_12_10/0.8)]">
+          <div className="flex flex-col gap-1 border-b border-screen/15 px-6 pt-6 pb-5">
+            <p className="tag text-ember">Pemutaran perdana · Undangan</p>
+            <p className="poster-font text-5xl leading-none">
+              {ISSUE.bride.short} &amp; {ISSUE.groom.short}
             </p>
-            <p className="tag mt-1 text-ink-soft">
-              {ISSUE.guest.group} · {ISSUE.dateLabel}
-            </p>
-            <div className="my-6 border-y border-ink/40 py-6">
-              <TicketQr code={code} />
-            </div>
-            <Barcode value={code} className="h-10" />
           </div>
-          <Stamp className="absolute -top-5 right-4 rotate-[6deg] bg-paper/80">Tanda masuk</Stamp>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 px-6 py-5">
+            {[
+              ["Penonton", ISSUE.guest.name],
+              ["Kelompok", ISSUE.guest.group],
+              ["Tanggal", ISSUE.dateParts.join(".")],
+              ["Jam tayang", first ? `${first.time} WIB` : "-"],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col">
+                <dt className="tag text-screen/55">{label}</dt>
+                <dd className="text-lg leading-tight">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div aria-hidden className="perforation h-4 border-y border-dashed border-screen/25" />
+          <div className="flex flex-col items-center gap-3 px-6 py-6 [&_a]:border-screen/60 [&_a]:bg-transparent [&_a]:text-screen [&_img]:border-0 [&_img]:bg-white [&_p]:text-screen">
+            <TicketQr code={code} />
+            <Barcode value={code} className="h-8 text-screen/70" />
+            <p className="tag text-center text-screen/60">
+              Tunjukkan QR ini kepada petugas. Simpan gambarnya agar tetap bisa dibuka tanpa sinyal.
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-6 lg:col-span-7">
-          <p className="tag text-ink-soft">
-            Apakah Anda akan hadir? Jawaban bisa diubah kapan saja.
+        <div className="flex flex-col gap-8">
+          <p className="max-w-md text-2xl leading-snug">
+            Apakah Anda akan hadir di pemutaran perdana kami? Jawaban bisa diubah kapan saja.
           </p>
-          <fieldset className="m-0 flex flex-col border-0 border-t-[3px] border-double border-ink/60 p-0">
+          <fieldset className="m-0 flex flex-col border-0 border-t border-umber/25 p-0">
             <legend className="sr-only">Konfirmasi kehadiran</legend>
-            {RSVP_STATUSES.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={status === option}
-                onClick={() => {
-                  setStatus(option);
-                  setSaved(false);
-                }}
-                className={`flex min-h-20 items-center justify-between gap-4 border-b border-ink/40 py-4 text-left transition-[padding] duration-200 hover:pl-3 ${
-                  status === option ? "pl-3" : ""
-                }`}
-              >
-                <span
-                  className={`font-display text-4xl leading-none md:text-6xl ${status === option ? "font-black" : "font-normal italic"}`}
+            {RSVP_STATUSES.map((option) => {
+              const on = status === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    setStatus(option);
+                    setSaved(false);
+                  }}
+                  className="flex min-h-20 items-center justify-between gap-4 border-b border-umber/25 text-left"
                 >
-                  {RSVP_LABEL[option]}
-                </span>
-                <span
-                  aria-hidden
-                  className={`grid size-10 shrink-0 place-items-center rounded-full border-2 ${status === option ? "border-stamp bg-stamp text-paper" : "border-ink/50"}`}
-                >
-                  {status === option ? "✓" : ""}
-                </span>
-              </button>
-            ))}
+                  <span
+                    className={`poster-font text-5xl leading-none transition-colors ${on ? "text-ember" : "text-umber/45"}`}
+                  >
+                    {RSVP_LABEL[option]}
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`grid size-8 place-items-center rounded-full border-2 text-sm ${on ? "border-ember bg-ember text-screen" : "border-umber/35"}`}
+                  >
+                    {on ? "✓" : ""}
+                  </span>
+                </button>
+              );
+            })}
           </fieldset>
-          <div className="flex flex-wrap items-center gap-5">
+          <div className="flex flex-col items-start gap-4">
             <button
               type="button"
               disabled={!status}
               onClick={() => setSaved(true)}
-              className="tag h-12 bg-ink px-8 text-paper disabled:opacity-40"
+              className={PRIMARY}
             >
               Kirim jawaban
             </button>
             {saved && (
-              <p role="status" className="font-display text-xl text-stamp italic">
+              <p role="status" className="text-xl text-ember italic">
                 Terima kasih, jawaban Anda sudah kami catat.
               </p>
             )}
           </div>
         </div>
       </div>
-    </Sheet>
+    </Scene>
   );
 }

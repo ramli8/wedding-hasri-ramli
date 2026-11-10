@@ -26,3 +26,7 @@ apps/api/data/
 
 # Hasil uji menyeluruh (tangkapan layar)
 e2e/out/
+
+# Foto acuan gaya dan foto contoh halaman undangan (foto pasangan lain, bukan untuk dibagikan)
+reference-foto/
+apps/web/src/assets/contoh/

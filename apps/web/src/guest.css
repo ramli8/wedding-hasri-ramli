@@ -1,9 +1,11 @@
 @import "@fontsource-variable/bodoni-moda/wght.css";
 @import "@fontsource-variable/bodoni-moda/wght-italic.css";
 @import "@fontsource-variable/archivo";
-@import "@fontsource-variable/newsreader/wght.css";
-@import "@fontsource-variable/newsreader/wght-italic.css";
-@import "@fontsource/special-elite";
+@import "@fontsource/bebas-neue/400.css";
+@import "@fontsource/cormorant-garamond/400.css";
+@import "@fontsource/cormorant-garamond/400-italic.css";
+@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/courier-prime/400.css";
 @import "@fontsource/ibm-plex-mono/latin-400.css";
 @import "@fontsource/ibm-plex-mono/latin-500.css";
 @import "@fontsource/ibm-plex-mono/latin-600.css";
@@ -26,9 +28,19 @@
   --color-tone-4: #c4b5fd;
   /* Hanya di dalam input putih: di atas bone kontrasnya 4,2:1. */
   --color-placeholder: #76696f;
+  /* Palet halaman undangan "pemutaran perdana" (.film): poster hitam putih dan kertas program bioskop. */
+  --color-reel: #0e0c0a;
+  --color-reel-2: #1a1612;
+  --color-screen: #efe6d6;
+  --color-sand: #ebe3d5;
+  --color-sand-2: #e0d6c5;
+  --color-umber: #221c17;
+  --color-dim: #6f6458;
+  --color-ember: #a5532f;
 
   --font-display: ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-script: "Courier Prime", "Courier New", monospace;
   --font-sans: ui-sans-serif, system-ui, sans-serif;
 
   --tracking-h1: -0.04em;
@@ -207,114 +219,116 @@
   rotate: 180deg;
 }
 
-/* Halaman undangan tamu: edisi majalah vintage. Dipasang bersama .mag (kelas .vin menimpa token-nya),
-   jadi kartu, input, dan garis tipis dari .mag ikut, hanya warna, huruf, dan hiasannya yang berganti. */
-.vin {
-  --color-bone: #14110e;
-  --color-bone-2: #2b251e;
-  --color-paper: #f5f1e8;
-  --color-ink: #1a1612;
-  --color-ink-soft: #5c554a;
-  --color-acid: #e9e2d0;
-  --color-electric: #1c1712;
-  --color-placeholder: #7d7260;
-  --font-sans: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
-  --font-typewriter: "Special Elite", "Courier New", monospace;
-  font-size: 17px;
+/* Halaman undangan tamu (/u/KODE/undangan): "pemutaran perdana", undangan sebagai film. Pembuka
+   berupa poster hitam putih selayar penuh dengan blok kredit; bagian lain berselang antara layar
+   gelap (.reel) dan kertas program bioskop yang terang (.sand), supaya halaman tidak suram.
+   Huruf: Bebas Neue (poster), Cormorant Garamond (teks), Courier Prime (naskah, tiket, kredit).
+   Dipasang bersama .mag, jadi komponen bersama tetap memakai token ink/paper. */
+.film {
+  --font-display: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
+  --font-sans: "Cormorant Garamond", Georgia, serif;
+  --font-script: "Courier Prime", "Courier New", monospace;
+  --color-bone: var(--color-sand);
+  --color-bone-2: var(--color-sand-2);
+  --color-paper: var(--color-sand);
+  --color-ink: var(--color-umber);
+  --color-ink-soft: var(--color-dim);
+  --color-stamp: var(--color-ember);
+  background-color: var(--color-reel);
+  font-size: 19px;
 }
-/* Butiran kertas dan film di seluruh layar. */
-.vin::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  pointer-events: none;
-  opacity: 0.16;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .14  0 0 0 0 .08  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-}
-.vin .tag {
-  font-family: var(--font-typewriter);
-  font-size: 11px;
+.film .tag {
+  font-family: var(--font-script);
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.08em;
-}
-/* Nuansa film: foto yang gelap dan sinematik dibuat sedikit pudar dan hangat, warna aslinya muncul saat disentuh. */
-.vin .mag-photo img {
-  filter: saturate(0.72) sepia(0.2) contrast(1.04) brightness(0.98);
-}
-.vin .mag-photo[aria-pressed="true"] img,
-.vin .mag-photo:hover img {
-  filter: none;
-}
-.vin .sheet {
-  background-color: var(--color-paper);
-  background-image:
-    radial-gradient(120% 100% at 50% 0%, transparent 55%, rgba(140, 100, 40, 0.16)),
-    linear-gradient(
-      90deg,
-      rgba(120, 90, 40, 0.1),
-      transparent 6%,
-      transparent 94%,
-      rgba(120, 90, 40, 0.1)
-    );
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 2px 3px rgba(60, 40, 10, 0.25),
-    0 30px 50px -28px rgba(50, 30, 5, 0.55);
-}
-.vin .stamp {
-  display: inline-block;
-  border: 3px double var(--color-stamp);
-  color: var(--color-stamp);
-  padding: 0.35rem 0.9rem;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.95rem;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
-  mix-blend-mode: multiply;
-  opacity: 0.9;
 }
-.vin .leader {
-  flex: 1;
-  min-width: 1rem;
-  border-bottom: 2px dotted currentColor;
-  opacity: 0.4;
-  translate: 0 -0.35em;
+/* Layar gelap: token dibalik supaya teks, garis, dan input bersama ikut terang. */
+.film .reel {
+  --color-paper: var(--color-reel);
+  --color-ink: var(--color-screen);
+  --color-ink-soft: #a89a8a;
+  --color-placeholder: #8c8073;
+  background-color: var(--color-reel);
+  color: var(--color-screen);
 }
-.vin .vert {
-  writing-mode: vertical-rl;
-  rotate: 180deg;
+.film .sand {
+  background-color: var(--color-sand);
+  color: var(--color-umber);
 }
+.film .poster-font {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+/* Blok kredit poster: huruf poster yang dipadatkan tinggi, seperti billing block. */
+.film .billing {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  transform: scaleY(1.3);
+  transform-origin: bottom;
+}
+.film .bw :where(img),
+.film :where(img).bw {
+  filter: grayscale(1) contrast(1.15) brightness(0.95);
+}
+.film .warm :where(img),
+.film :where(img).warm {
+  filter: saturate(0.85) contrast(1.05) sepia(0.12);
+}
+/* Butiran film di atas foto poster. */
+.film .grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+/* Lubang sproket di tepi film strip galeri. */
+.film .sprockets {
+  height: 18px;
+  background-image: radial-gradient(circle at center, var(--color-sand) 0 3.5px, transparent 4px);
+  background-size: 22px 18px;
+  background-repeat: repeat-x;
+  opacity: 0.55;
+}
+/* Tiket bioskop: sobekan berlubang antara badan tiket dan potongannya. */
+.film .perforation {
+  background-image: radial-gradient(circle, var(--color-sand) 0 4px, transparent 4.5px);
+  background-size: 100% 16px;
+  background-repeat: repeat-y;
+  background-position: center;
+}
+/* Pembuka: foto poster mendekat pelan, judul naik saat halaman dibuka. */
 @media (prefers-reduced-motion: no-preference) {
-  .vin .wobble {
-    transition:
-      rotate 0.3s ease,
-      translate 0.3s ease;
+  .film .poster-img {
+    animation: film-drift 20s ease-out both;
   }
-  .vin .wobble:hover {
-    rotate: 0deg;
-    translate: 0 -6px;
+  .film .poster-rise {
+    animation: film-rise 1.2s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
-}
-
-/* Kartu foto dikipas: --x geser mendatar (dalam langkah), --r sudut putar (derajat). */
-.vin .fan-card {
-  --step: 4.6rem;
-  transform-origin: 50% 120%;
-  transform: translateX(calc(-50% + var(--x) * var(--step))) rotate(calc(var(--r) * 1deg));
-  box-shadow: 0 12px 24px -12px rgba(30, 20, 8, 0.65);
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-@media (min-width: 768px) {
-  .vin .fan-card {
-    --step: 9.5rem;
+  .film .poster-rise-late {
+    animation: film-rise 1.2s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 }
-.vin .fan-card:hover,
-.vin .fan-card:focus-visible {
-  z-index: 20 !important;
-  transform: translateX(calc(-50% + var(--x) * var(--step))) translateY(-2.5rem) rotate(0deg)
-    scale(1.06);
+@keyframes film-drift {
+  from {
+    scale: 1.08;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes film-rise {
+  from {
+    opacity: 0.001;
+    translate: 0 1.25rem;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }

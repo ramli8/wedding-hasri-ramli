@@ -1,10 +1,10 @@
-import type { PhotoKind } from "./photos.js";
+import type { PhotoId } from "./photos.js";
 
 /**
  * Isi contoh untuk halaman undangan (belum dari database). Bentuknya dibuat sedekat mungkin dengan
  * yang nanti disediakan server, supaya penyambungan data tinggal mengganti sumbernya.
  */
-export type Pic = { kind: PhotoKind; tone: number };
+export type Pic = PhotoId;
 
 export const ISSUE = {
   bride: {
@@ -12,25 +12,38 @@ export const ISSUE = {
     full: "Hasri Wiji Aqsari",
     parents: "Putri dari Bpk. Buasan & Ibu Nasu'ah",
     instagram: "hasriwiji",
-    pic: { kind: "portrait", tone: 2 } as Pic,
+    pic: 4 as Pic,
   },
   groom: {
     short: "Ramli",
     full: "Mohamad Rizal Ramli",
     parents: "Putra dari Bpk. Ngatmari & Ibu Khotimah",
     instagram: "rizzal_ramli",
-    pic: { kind: "stand", tone: 1 } as Pic,
+    pic: 5 as Pic,
   },
   guest: { name: "Bpk. Andi Saputra", group: "Keluarga" },
   dateLabel: "Jumat, 21 Mei 2027",
-  dateParts: ["21", "05", "27"],
+  dateParts: ["21", "05", "2027"],
   target: "2027-05-21T08:00:00+07:00",
   city: "Jakarta",
-  cover: { pic: { kind: "pair", tone: 0 } as Pic },
+  cover: { pic: 1 as Pic },
+  /** Sinopsis: surat singkat dari mempelai. */
   letter: [
-    "Dengan penuh rasa syukur, kami membuka edisi pertama dan satu-satunya ini. Tidak ada rubrik mode atau resep di dalamnya, hanya cerita dua orang yang memutuskan untuk berjalan bersama, dan hari ketika kami ingin Anda ada di sana.",
-    "Kami menyusunnya seperti majalah yang biasa kami baca sambil menunggu hujan reda: pelan, penuh foto, dan boleh dibuka dari halaman mana saja. Silakan mulai dari daftar isi, lompat ke agenda, atau langsung menulis ucapan di surat pembaca.",
-    "Kehadiran dan doa Anda adalah hadiah terbaik bagi kami. Terima kasih sudah menjadi bagian dari bab-bab sebelumnya, dan semoga berkenan menemani bab yang ini.",
+    "Dengan memohon rahmat dan ridha Allah SWT, kami bermaksud menyelenggarakan pernikahan kami. Ini kisah dua orang yang bertemu di ruang kuliah yang terlalu dingin, lalu memutuskan untuk berjalan bersama.",
+    "Kehadiran dan doa Anda adalah hadiah terbaik bagi kami. Semoga berkenan menyaksikan bab yang ini.",
+  ],
+  /** Kredit akhir: peran di kiri, nama di kanan. */
+  credits: [
+    { role: "Mempelai wanita", names: ["Hasri Wiji Aqsari"] },
+    { role: "Mempelai pria", names: ["Mohamad Rizal Ramli"] },
+    { role: "Orang tua mempelai wanita", names: ["Bpk. Buasan", "Ibu Nasu'ah"] },
+    { role: "Orang tua mempelai pria", names: ["Bpk. Ngatmari", "Ibu Khotimah"] },
+    {
+      role: "Turut mengundang",
+      names: ["Keluarga besar Bpk. Buasan", "Keluarga besar Bpk. Ngatmari"],
+    },
+    { role: "Lokasi", names: ["Masjid Al-Ikhlas", "Gedung Graha Bunga, Jakarta"] },
+    { role: "Disutradarai oleh", names: ["Takdir"] },
   ],
   events: [
     {
@@ -61,8 +74,9 @@ export const ISSUE = {
   story: [
     {
       year: "2019",
+      place: "Ruang kuliah",
       title: "Bertemu",
-      pic: { kind: "portrait", tone: 3 } as Pic,
+      pic: 5 as Pic,
       body: [
         "Kami bertemu di ruang kuliah yang terlalu dingin, dalam satu kelompok tugas yang tidak pernah selesai tepat waktu. Hasri membawa catatan paling rapi, Ramli membawa camilan paling banyak.",
         "Tidak ada kilat atau musik latar. Hanya dua orang yang diam-diam senang karena kelompok itu tidak kunjung bubar.",
@@ -71,8 +85,9 @@ export const ISSUE = {
     },
     {
       year: "2022",
+      place: "Kedai kopi",
       title: "Mulai mengenal",
-      pic: { kind: "sit", tone: 5 } as Pic,
+      pic: 4 as Pic,
       body: [
         "Percakapan kecil di sela hari yang panjang pelan-pelan jadi kebiasaan. Kopi sore, pesan singkat sebelum tidur, dan pulang lewat jalan yang lebih jauh.",
         "Di tahun itu kami belajar bahwa saling mengenal bukan soal tahu semua hal, tetapi soal mau terus bertanya.",
@@ -81,8 +96,9 @@ export const ISSUE = {
     },
     {
       year: "2023",
+      place: "Puncak gunung",
       title: "Memutuskan",
-      pic: { kind: "land", tone: 6 } as Pic,
+      pic: 2 as Pic,
       body: [
         "Satu perjalanan panjang ke pegunungan membuat semuanya jelas. Di puncak yang berangin itu, tanpa sinyal dan tanpa rencana, kami sepakat untuk melangkah bersama.",
         "Keputusannya sederhana. Menjalaninya yang ternyata penuh kejutan.",
@@ -91,8 +107,9 @@ export const ISSUE = {
     },
     {
       year: "2026",
+      place: "Rumah keluarga",
       title: "Melamar",
-      pic: { kind: "pair", tone: 4 } as Pic,
+      pic: 3 as Pic,
       body: [
         "Dua keluarga duduk di satu meja yang sama, ditemani teh hangat dan cerita lama yang diulang-ulang. Hari itu kami tahu bahwa rumah yang kami cari ternyata sudah ada.",
         "Kini tinggal satu bab lagi sebelum bab yang baru dimulai.",
@@ -101,17 +118,13 @@ export const ISSUE = {
     },
   ],
   gallery: [
-    { cap: "Pagi di dermaga", pic: { kind: "pair", tone: 6 } as Pic },
-    { cap: "Sore di pantai, 2024", pic: { kind: "pair", tone: 0 } as Pic },
-    { cap: "Kopi pertama", pic: { kind: "portrait", tone: 1 } as Pic },
-    { cap: "Stasiun, hujan", pic: { kind: "stand", tone: 4 } as Pic },
-    { cap: "Rumah nenek", pic: { kind: "sit", tone: 5 } as Pic },
-    { cap: "Gunung, 2023", pic: { kind: "land", tone: 6 } as Pic },
-    { cap: "Foto keluarga", pic: { kind: "pair", tone: 2 } as Pic },
-    { cap: "Hari lamaran", pic: { kind: "portrait", tone: 3 } as Pic },
-    { cap: "Jalan pulang", pic: { kind: "detail", tone: 1 } as Pic },
-    { cap: "Tawa yang tidak direncanakan", pic: { kind: "pair", tone: 5 } as Pic },
+    { cap: "Senja di lereng", pic: 2 as Pic },
+    { cap: "Kabut pagi", pic: 3 as Pic },
+    { cap: "Di dekat jendela", pic: 4 as Pic },
+    { cap: "Kabar pagi", pic: 5 as Pic },
+    { cap: "Lereng hitam", pic: 1 as Pic },
   ],
+
   gifts: [
     { provider: "BCA", number: "9121 212", holder: "Hasri Wiji Aqsari" },
     { provider: "Mandiri", number: "9812 1212 77", holder: "Mohamad Rizal Ramli" },
@@ -168,7 +181,7 @@ export const ISSUE = {
     },
     {
       q: "Apa pakaian yang sebaiknya dikenakan?",
-      a: "Kami menyukai warna monokrom: hitam, putih, abu-abu, atau krem. Tidak wajib, tetapi akan membuat foto bersama terlihat seperti halaman majalah.",
+      a: "Kami menyukai warna monokrom: hitam, putih, abu-abu, atau krem. Tidak wajib, tetapi akan membuat foto bersama terlihat seperti adegan film.",
     },
     {
       q: "Bolehkah membawa anak-anak?",
@@ -197,20 +210,3 @@ export const ISSUE = {
     },
   ],
 } as const;
-
-/** Halaman bernomor di daftar isi (01 sampul). */
-export const TOC = [
-  { id: "redaksi", title: "Dari redaksi", blurb: "Sepatah kata sebelum membuka halaman." },
-  { id: "agenda", title: "Agenda", blurb: "Jam, tempat, dan hitung mundur." },
-  { id: "tiket", title: "Tiket & RSVP", blurb: "QR masuk dan konfirmasi kehadiran." },
-  { id: "profil", title: "Dua mempelai", blurb: "Siapa kami, dan siapa keluarga kami." },
-  { id: "kisah", title: "Kisah kami", blurb: "Empat bab dari 2019 sampai hari ini." },
-  { id: "foto", title: "Esai foto", blurb: "Sepuluh potret yang kami simpan." },
-  { id: "kupon", title: "Kupon amplop", blurb: "Bila ingin berbagi kebahagiaan." },
-  { id: "iklan", title: "Iklan baris", blurb: "Wishlist hadiah, silakan memilih." },
-  { id: "tanya", title: "Tanya redaksi", blurb: "Parkir, pakaian, dan lain-lain." },
-  { id: "surat", title: "Surat pembaca", blurb: "Tulis doa dan harapan Anda." },
-] as const;
-
-export const pageOf = (id: string) =>
-  String(TOC.findIndex((item) => item.id === id) + 2).padStart(2, "0");

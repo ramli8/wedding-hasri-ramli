@@ -1,32 +1,31 @@
 import { useParams } from "@tanstack/react-router";
 import { IssueCover } from "./issue/cover.js";
-import { Iklan, Kolofon, Kupon, Surat, Tanya } from "./issue/extras.js";
-import { Foto } from "./issue/gallery.js";
-import { Agenda, Kisah, Profil, Redaksi } from "./issue/sections.js";
+import { InfoPenonton, Kredit, TandaKasih, Ulasan } from "./issue/extras.js";
+import { Cuplikan } from "./issue/gallery.js";
+import { Adegan, Jadwal, Pemeran, Sinopsis } from "./issue/sections.js";
 import { Tiket } from "./issue/tiket.js";
 
 /**
- * Satu halaman penuh untuk tamu: sebuah "edisi" majalah vintage yang memuat sampul, agenda, tiket
- * QR dan RSVP, profil, kisah, galeri, amplop, wishlist, tanya jawab, dan ucapan. Tanpa bilah
- * navigasi; daftar isi di sampul menjadi penunjuk arah. Isinya masih contoh statis
- * (issue/content.ts), belum dari database.
+ * Satu halaman penuh untuk tamu, disusun seperti sebuah film: poster hitam putih selayar penuh,
+ * sinopsis, jadwal tayang, tiket bioskop (QR) dan RSVP, pemeran utama, kisah sebagai adegan, cuplikan
+ * galeri, tanda kasih, info penonton, ucapan, dan kredit akhir. Bagian gelap dan terang berselang.
+ * Isinya masih contoh statis (issue/content.ts), belum dari database.
  */
 export function InvitationPage() {
   const { code = "" } = useParams({ strict: false });
   return (
-    <div className="mag vin flex min-h-dvh flex-col gap-2 md:gap-3">
-      <IssueCover code={code} />
-      <Redaksi />
-      <Agenda />
+    <div className="mag film min-h-dvh">
+      <IssueCover />
+      <Sinopsis />
+      <Jadwal />
       <Tiket code={code} />
-      <Profil />
-      <Kisah />
-      <Foto />
-      <Kupon />
-      <Iklan />
-      <Tanya />
-      <Surat />
-      <Kolofon code={code} />
+      <Pemeran />
+      <Adegan />
+      <Cuplikan />
+      <TandaKasih />
+      <InfoPenonton />
+      <Ulasan />
+      <Kredit />
     </div>
   );
 }

@@ -60,10 +60,10 @@ export const groupListResponseSchema = z.object({ items: z.array(groupSchema) })
 export const groupResponseSchema = z.object({ group: groupSchema });
 
 /**
- * Hapus kelompok: `moveTo` = id kelompok tujuan atau "none" (tanpa kelompok); tamunya dipindah
- * dulu. Tanpa `moveTo`, kelompok yang masih punya tamu ditolak.
+ * Hapus kelompok: `moveTo` = id kelompok tujuan; tamunya dipindah dulu (tamu wajib berkelompok).
+ * Tanpa `moveTo`, kelompok yang masih punya tamu ditolak.
  */
 export const groupDeleteQuerySchema = z.object({
-  moveTo: z.union([z.literal("none"), z.uuid()]).optional(),
+  moveTo: z.uuid().optional(),
 });
 export type GroupDeleteQuery = z.input<typeof groupDeleteQuerySchema>;

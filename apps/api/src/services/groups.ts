@@ -2,17 +2,10 @@ import type { Group, GroupData } from "@wedding/shared";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
-import {
-  events,
-  groupEvents,
-  groupSessions,
-  guestEvents,
-  guestGroups,
-  guests,
-} from "../db/schema.js";
+import { events, groupEvents, groupSessions, guestGroups, guests } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { type Executor, lockGuestRev } from "./checkin-log.js";
-import { guestTouch } from "./guests.js";
+import { guestTouch, syncGuestEvents } from "./guests.js";
 
 // Nama tabel ditulis eksplisit: Drizzle membuang awalan tabel pada query satu-tabel, dan
 // `id` polos di dalam subquery akan terbaca sebagai kolom `g.id`.
@@ -106,9 +99,8 @@ function replaceSessions(tx: Pick<Db, "delete" | "insert">, groupId: string, inp
 }
 
 /**
- * Menyimpan acara yang diundang untuk kelompok, lalu menyamakan undangan tamu kelompok itu:
- * acara yang baru dicentang ditambahkan ke semua tamunya, acara yang dilepas dicabut.
- * Undangan lain milik tamu (pengecualian per tamu) tidak disentuh.
+ * Menyimpan acara yang diundang untuk kelompok, lalu menyamakan undangan semua tamu kelompok itu
+ * (acara tamu selalu = acara kelompoknya).
  */
 async function replaceInvitedEvents(tx: Executor, groupId: string, wanted: string[]) {
   const before = await tx
@@ -136,19 +128,10 @@ async function replaceInvitedEvents(tx: Executor, groupId: string, wanted: strin
     .set(guestTouch())
     .where(eq(guests.groupId, groupId))
     .returning({ id: guests.id });
-  const memberIds = members.map((m) => m.id);
-  if (!memberIds.length) return;
-  if (removed.length) {
-    await tx
-      .delete(guestEvents)
-      .where(and(inArray(guestEvents.guestId, memberIds), inArray(guestEvents.eventId, removed)));
-  }
-  if (added.length) {
-    await tx
-      .insert(guestEvents)
-      .values(memberIds.flatMap((guestId) => added.map((eventId) => ({ guestId, eventId }))))
-      .onConflictDoNothing();
-  }
+  await syncGuestEvents(
+    tx,
+    members.map((m) => m.id),
+  );
 }
 
 export async function createGroup(db: Db, input: GroupData): Promise<Group> {
@@ -200,7 +183,7 @@ export async function updateGroup(db: Db, id: string, input: GroupData): Promise
 }
 
 /**
- * Menghapus kelompok. Dengan `moveTo` (id kelompok lain atau "none"), tamunya dipindah dulu dalam
+ * Menghapus kelompok. Dengan `moveTo` (id kelompok lain), tamunya dipindah dulu dalam
  * transaksi yang sama, termasuk tamu di tempat sampah (agar kunci asing tidak menahan penghapusan).
  * Tanpa `moveTo`, kelompok yang masih dipakai tamu ditolak.
  */
@@ -215,21 +198,23 @@ export async function deleteGroup(db: Db, id: string, moveTo?: string): Promise<
   try {
     await db.transaction(async (tx) => {
       if (moveTo !== undefined) {
-        const target = moveTo === "none" ? null : moveTo;
-        if (target) {
-          const [group] = await tx
-            .select({ id: guestGroups.id })
-            .from(guestGroups)
-            .where(eq(guestGroups.id, target))
-            .limit(1);
-          if (!group)
-            throw new AppError(400, "VALIDATION_ERROR", "Kelompok tujuan tidak ditemukan");
-        }
+        const [group] = await tx
+          .select({ id: guestGroups.id })
+          .from(guestGroups)
+          .where(eq(guestGroups.id, moveTo))
+          .limit(1);
+        if (!group) throw new AppError(400, "VALIDATION_ERROR", "Kelompok tujuan tidak ditemukan");
         await lockGuestRev(tx);
-        await tx
+        const moved = await tx
           .update(guests)
-          .set({ groupId: target, ...guestTouch() })
-          .where(eq(guests.groupId, id));
+          .set({ groupId: moveTo, ...guestTouch() })
+          .where(eq(guests.groupId, id))
+          .returning({ id: guests.id });
+        // Tamu yang dipindah diundang ke acara kelompok tujuannya.
+        await syncGuestEvents(
+          tx,
+          moved.map((g) => g.id),
+        );
       }
       const deleted = await tx
         .delete(guestGroups)

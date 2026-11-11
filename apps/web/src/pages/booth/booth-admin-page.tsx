@@ -10,7 +10,7 @@ import { Camera, Download, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Pagination } from "@/components/kit/pagination";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -264,7 +264,7 @@ function DeleteDialog({ photo, onClose }: { photo: BoothPhoto | null; onClose: (
             tidak akan diunggah ulang.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -275,7 +275,7 @@ function DeleteDialog({ photo, onClose }: { photo: BoothPhoto | null; onClose: (
             >
               Hapus foto
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

@@ -12,6 +12,7 @@ import type { Db } from "../db/client.js";
 import { admins, guests, receivedGifts } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { safeCell } from "./guest-import.js";
+import { buildXlsx } from "./xlsx-template.js";
 
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 export const todayWib = () => new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
@@ -88,26 +89,58 @@ const CSV_COLUMNS = [
 ];
 
 /** Ekspor sesuai filter yang sama dengan daftar. Nominal berupa angka polos agar bisa dijumlah. */
-export async function exportReceivedGiftsCsv(
-  db: Db,
-  query: ReceivedGiftListParams,
-): Promise<string> {
+/** Baris ekspor hadiah (dipakai CSV dan Excel). Nilai mentah; pengaman rumus per format. */
+async function exportRows(db: Db, query: ReceivedGiftListParams) {
   const rows = await queryGifts(db, query);
-  const records = rows.map((gift) => ({
+  return rows.map((gift) => ({
     tanggal_diterima: gift.receivedOn,
-    pemberi: safeCell(gift.giverName),
+    pemberi: gift.giverName,
     jenis: RECEIVED_GIFT_KIND_LABEL[gift.kind],
-    nominal: gift.amount ?? "",
-    barang: safeCell(gift.itemDescription),
-    catatan: safeCell(gift.note),
+    nominal: gift.amount,
+    barang: gift.itemDescription ?? "",
+    catatan: gift.note ?? "",
     sudah_dibalas: gift.thankedAt ? "ya" : "tidak",
     tanggal_dibalas: gift.thankedAt
       ? new Date(new Date(gift.thankedAt).getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10)
       : "",
-    dicatat_oleh: safeCell(gift.recordedBy),
+    dicatat_oleh: gift.recordedBy ?? "",
+  }));
+}
+
+export async function exportReceivedGiftsCsv(
+  db: Db,
+  query: ReceivedGiftListParams,
+): Promise<string> {
+  const records = (await exportRows(db, query)).map((r) => ({
+    ...r,
+    pemberi: safeCell(r.pemberi),
+    nominal: r.nominal ?? "",
+    barang: safeCell(r.barang),
+    catatan: safeCell(r.catatan),
+    dicatat_oleh: safeCell(r.dicatat_oleh),
   }));
   // BOM agar Excel membaca UTF-8 dengan benar.
   return `\ufeff${stringify(records, { header: true, columns: CSV_COLUMNS })}`;
+}
+
+/** Ekspor hadiah sebagai Excel: nominal berupa angka (bisa dijumlah), sisanya teks. */
+export async function exportReceivedGiftsXlsx(
+  db: Db,
+  query: ReceivedGiftListParams,
+): Promise<Uint8Array> {
+  const rows = await exportRows(db, query);
+  const widths: Record<string, number> = { pemberi: 28, barang: 24, catatan: 32, nominal: 14 };
+  return buildXlsx([
+    {
+      name: "Hadiah",
+      columns: CSV_COLUMNS.map((header) => ({
+        header,
+        width: widths[header] ?? 16,
+        ...(header === "nominal" ? { type: "number" as const } : {}),
+      })),
+      rows: rows.map((r) => CSV_COLUMNS.map((c) => r[c as keyof typeof r] ?? "")),
+    },
+  ]);
 }
 
 export async function receivedGiftSummary(db: Db): Promise<ReceivedGiftSummary> {

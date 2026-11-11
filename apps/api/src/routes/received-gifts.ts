@@ -11,6 +11,7 @@ import {
   createReceivedGift,
   deleteReceivedGift,
   exportReceivedGiftsCsv,
+  exportReceivedGiftsXlsx,
   listReceivedGifts,
   setThanked,
   updateReceivedGift,
@@ -30,6 +31,18 @@ export function receivedGiftRoutes({ db }: AppDeps) {
         c.header("content-type", "text/csv; charset=utf-8");
         c.header("content-disposition", 'attachment; filename="hadiah-masuk.csv"');
         return c.body(await exportReceivedGiftsCsv(db, c.req.valid("query")));
+      })
+      .get("/export.xlsx", validate("query", receivedGiftListQuerySchema), async (c) => {
+        const today = new Date().toISOString().slice(0, 10);
+        c.header(
+          "content-type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        c.header("content-disposition", `attachment; filename="hadiah-masuk-${today}.xlsx"`);
+        c.header("cache-control", "no-store");
+        return c.body(
+          new Uint8Array(await exportReceivedGiftsXlsx(db, c.req.valid("query"))).buffer,
+        );
       })
       .post("/", validate("json", receivedGiftInputSchema), async (c) => {
         const gift = await createReceivedGift(db, c.get("admin").id, c.req.valid("json"));

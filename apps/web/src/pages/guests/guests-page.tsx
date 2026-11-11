@@ -1,12 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, Table } from "@tanstack/react-table";
-import type { Event, Group, Guest } from "@wedding/shared";
+import type { Group, Guest } from "@wedding/shared";
 import {
-  CalendarMinus,
-  CalendarPlus,
-  ChevronDown,
+  Check,
   Download,
+  Ellipsis,
   FolderInput,
   ListChecks,
   Plus,
@@ -17,6 +16,7 @@ import {
   Trash2,
   Undo2,
   Upload,
+  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
@@ -25,12 +25,11 @@ import { DataTable } from "@/components/data-table/data-table";
 import { FacetedFilter } from "@/components/data-table/faceted-filter";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { selectColumn } from "@/components/data-table/select-column";
-import { DataTableViewOptions } from "@/components/data-table/view-options";
 import { Alert } from "@/components/kit/alert";
-import { Button, buttonVariants } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Button } from "@/components/kit/button";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
-import { FormFooter } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter } from "@/components/kit/invitation-kit";
 import { Select } from "@/components/kit/select";
 import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
@@ -43,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { adminApi, downloads } from "../../lib/admin-api.js";
+import { formatPhone } from "../../lib/format.js";
 import {
   eventsQuery,
   groupsQuery,
@@ -70,8 +70,7 @@ const EXTRA_OPTIONS = [
   { label: "Tempat sampah", value: "sampah" },
 ];
 
-type BulkAction = "set_group" | "add_event" | "remove_event";
-type Bulk = { action: BulkAction; ids: string[]; done: () => void } | null;
+type Bulk = { ids: string[]; done: () => void } | null;
 
 export function GuestsPage() {
   const navigate = useNavigate();
@@ -161,34 +160,44 @@ export function GuestsPage() {
       id: "nama",
       accessorFn: (guest) => guest.displayName,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
-      // Mengetuk nama membuka formulir Ubah (lebih cepat daripada lewat menu …, terutama di HP).
-      cell: ({ row }) =>
-        trash ? (
-          <span className="font-medium">{row.original.displayName}</span>
-        ) : (
-          <button
-            type="button"
-            className="text-start font-medium underline-offset-4 hover:underline"
-            onClick={() => setEditing({ kind: "edit", guest: row.original })}
-          >
-            {row.original.displayName}
-          </button>
-        ),
+      // Nama, lalu kontak di baris kecil di bawahnya. Mengetuk nama membuka formulir Ubah (lebih
+      // cepat daripada lewat menu …, terutama di HP).
+      cell: ({ row }) => {
+        const guest = row.original;
+        const contact = [
+          guest.phone && formatPhone(guest.phone),
+          guest.instagram && `@${guest.instagram}`,
+        ].filter(Boolean);
+        return (
+          <div className="grid min-w-0 gap-0.5 text-start">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {trash ? (
+                <span className="font-medium">{guest.displayName}</span>
+              ) : (
+                <button
+                  type="button"
+                  className="text-start font-medium underline-offset-4 hover:underline"
+                  onClick={() => setEditing({ kind: "edit", guest })}
+                >
+                  {guest.displayName}
+                </button>
+              )}
+              {guest.isRombongan && (
+                <Badge variant="secondary" className="font-normal">
+                  Rombongan
+                </Badge>
+              )}
+            </span>
+            {contact.length > 0 && (
+              <span className="text-xs font-normal text-muted-foreground">
+                {contact.join(" · ")}
+              </span>
+            )}
+          </div>
+        );
+      },
       enableSorting: false,
-      meta: { className: "ps-3" },
-    },
-    {
-      id: "kontak",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Kontak" />,
-      cell: ({ row }) => (
-        <div>
-          {row.original.phone && <p>+{row.original.phone}</p>}
-          {row.original.instagram && (
-            <p className="text-muted-foreground">@{row.original.instagram}</p>
-          )}
-        </div>
-      ),
-      enableSorting: false,
+      meta: { className: "ps-3", card: "title" },
     },
     {
       id: "kelompok",
@@ -212,12 +221,6 @@ export function GuestsPage() {
       enableSorting: false,
     },
     {
-      id: "rombongan",
-      accessorFn: (guest) => (guest.isRombongan ? "Ya" : "—"),
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Rombongan" />,
-      enableSorting: false,
-    },
-    {
       id: "kode",
       accessorFn: (guest) => guest.code ?? "—",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
@@ -231,10 +234,15 @@ export function GuestsPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Undangan" />,
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
+          {row.original.events.length === 0 && <span className="text-muted-foreground">—</span>}
           {row.original.events.map((invitation) => (
-            <Badge key={invitation.eventId} variant={invitation.sentAt ? "secondary" : "outline"}>
+            <Badge
+              key={invitation.eventId}
+              variant={invitation.sentAt ? "secondary" : "outline"}
+              title={invitation.sentAt ? "Undangan sudah dikirim" : "Undangan belum dikirim"}
+            >
+              {invitation.sentAt && <Check aria-hidden />}
               {eventName(invitation.eventId)}
-              {invitation.sentAt ? " ✓" : ""}
             </Badge>
           ))}
         </div>
@@ -260,21 +268,37 @@ export function GuestsPage() {
         }
         return (
           <div className="flex items-center justify-end gap-1">
+            {/* Tablet/desktop: QR sebagai tombol di samping Kirim; di HP cukup lewat menu …. */}
             <Button
               size="sm"
               variant="outline"
               disabled={!guest.code}
               onClick={() => setQrId(guest.id)}
+              className="max-md:hidden"
+              title="QR tiket"
             >
               <QrCode aria-hidden />
-              QR
+              {/* Tablet: ikon saja agar kolom aksi tidak terpotong; teks muncul di layar lebar. */}
+              <span className="md:max-xl:sr-only">QR</span>
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setSendingId(guest.id)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSendingId(guest.id)}
+              title="Kirim undangan"
+            >
               <Send aria-hidden />
-              Kirim
+              <span className="md:max-xl:sr-only">Kirim</span>
             </Button>
             <DataTableRowActions
               actions={[
+                {
+                  label: "QR tiket",
+                  icon: <QrCode />,
+                  disabled: !guest.code,
+                  onSelect: () => setQrId(guest.id),
+                  className: "md:hidden",
+                },
                 {
                   label: "Ubah",
                   icon: <SquarePen />,
@@ -294,6 +318,7 @@ export function GuestsPage() {
       },
       enableSorting: false,
       enableHiding: false,
+      meta: { card: "actions" },
     },
   ];
 
@@ -305,157 +330,175 @@ export function GuestsPage() {
     setExtras([]);
   };
   const isFiltered = search || groupId || eventId || sent || extras.length > 0;
+  // Belum ada tamu sama sekali: cukup satu ajakan, seperti menu Acara dan Kelompok.
+  const empty = guests.isSuccess && total === 0 && !isFiltered;
 
   return (
     <>
       <PageHeader
         title="Daftar tamu"
-        description={`${total} undangan${trash ? " di tempat sampah" : ""}.`}
+        description={empty ? undefined : `${total} tamu${trash ? " di tempat sampah" : ""}.`}
         actions={
-          <>
-            <a href={downloads.guestsCsv} className={buttonVariants({ variant: "outline" })}>
-              <Download aria-hidden />
-              Ekspor
-            </a>
-            <Link to="/admin/tamu/cetak" className={buttonVariants({ variant: "outline" })}>
-              <Printer aria-hidden />
-              Cetak
-            </Link>
-            <Link to="/admin/tamu/impor" className={buttonVariants({ variant: "outline" })}>
-              <Upload aria-hidden />
-              Impor
-            </Link>
-            <Button variant="outline" onClick={() => setQueueOpen(true)}>
-              <ListChecks aria-hidden />
-              Kirim beruntun
-            </Button>
-            <Button onClick={() => setEditing({ kind: "new" })}>
-              Tambah tamu
-              <Plus aria-hidden />
-            </Button>
-          </>
+          empty ? undefined : (
+            <>
+              <Button variant="outline" onClick={() => setQueueOpen(true)}>
+                <ListChecks aria-hidden />
+                Kirim beruntun
+              </Button>
+              <Button onClick={() => setEditing({ kind: "new" })}>
+                <Plus aria-hidden />
+                Tambah tamu
+              </Button>
+              <MoreMenu />
+            </>
+          )
         }
       />
 
       {guests.isError && <Alert tone="error">{guests.error.message}</Alert>}
       {restore.error && <Alert tone="error">{restore.error.message}</Alert>}
 
-      <DataTable
-        columns={columns}
-        data={items}
-        getRowId={(guest) => guest.id}
-        emptyText={
-          guests.isPending
-            ? "Memuat…"
-            : !isFiltered && total === 0
-              ? "Belum ada tamu. Tambahkan satu per satu atau impor dari CSV."
+      {empty && groups.isSuccess && groups.data.length === 0 ? (
+        // Tamu wajib berkelompok: tanpa kelompok, tamu belum bisa ditambahkan.
+        <EmptyState
+          icon={Users}
+          title="Buat kelompok dulu"
+          description="Setiap tamu masuk satu kelompok, dan kelompok menentukan acara yang diundang. Buat kelompoknya dulu, lalu kembali ke sini."
+          addLabel="Buat kelompok"
+          onAdd={() => void navigate({ to: "/admin/kelompok" })}
+        />
+      ) : empty ? (
+        <EmptyState
+          icon={Users}
+          title="Belum ada tamu"
+          description="Tambahkan tamu satu per satu, atau impor sekaligus dari spreadsheet."
+          addLabel="Tambah tamu pertama"
+          onAdd={() => setEditing({ kind: "new" })}
+        >
+          <Link
+            to="/admin/tamu/impor"
+            className="text-sm font-medium underline underline-offset-4 hover:opacity-80"
+          >
+            atau impor dari spreadsheet
+          </Link>
+        </EmptyState>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          getRowId={(guest) => guest.id}
+          emptyText={
+            guests.isPending
+              ? "Memuat…"
               : eventId && !search && !groupId && !sent && extras.length === 0
                 ? `Belum ada tamu yang diundang ke ${eventName(eventId)}. Tambah tamu dan centang acara ini, atau tekan Atur ulang untuk melihat semua tamu.`
                 : "Tidak ada tamu yang cocok dengan filter."
-        }
-        options={{
-          manualPagination: true,
-          manualFiltering: true,
-          pageCount: Math.max(1, Math.ceil(total / pagination.pageSize)),
-          state: { pagination },
-          onPaginationChange: setPagination,
-        }}
-        renderToolbar={(table) => (
-          <div className="flex items-center justify-between">
-            <div className="flex min-w-0 flex-1 flex-col-reverse items-stretch gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
-              <Input
-                type="search"
-                aria-label="Cari tamu"
-                placeholder="Cari nama, HP, Instagram, atau kode"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 w-full sm:w-37.5 lg:w-62.5"
-              />
-              <div className="flex flex-wrap gap-2">
-                <FacetedFilter
-                  title="Kelompok"
-                  multiple={false}
-                  options={(groups.data ?? []).map((g) => ({ label: g.name, value: g.id }))}
-                  selected={new Set(groupId ? [groupId] : [])}
-                  onChange={(values) => setGroupId(values[0] ?? "")}
+          }
+          options={{
+            manualPagination: true,
+            manualFiltering: true,
+            pageCount: Math.max(1, Math.ceil(total / pagination.pageSize)),
+            state: { pagination },
+            onPaginationChange: setPagination,
+          }}
+          renderToolbar={() => (
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 flex-1 flex-col-reverse items-stretch gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
+                <Input
+                  type="search"
+                  aria-label="Cari tamu"
+                  placeholder="Cari nama, HP, Instagram, atau kode"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-8 w-full sm:w-37.5 lg:w-62.5"
                 />
-                <FacetedFilter
-                  title="Acara"
-                  multiple={false}
-                  options={(events.data ?? []).map((e) => ({ label: e.name, value: e.id }))}
-                  selected={new Set(eventId ? [eventId] : [])}
-                  onChange={(values) => {
-                    setEventId(values[0] ?? "");
-                    setSent("");
-                  }}
-                />
-                {eventId && (
+                <div className="flex flex-wrap gap-2">
                   <FacetedFilter
-                    title="Status kirim"
+                    title="Kelompok"
                     multiple={false}
-                    options={[
-                      { label: "Belum dikirim", value: "unsent" },
-                      { label: "Sudah dikirim", value: "sent" },
-                    ]}
-                    selected={new Set(sent ? [sent] : [])}
-                    onChange={(values) => setSent((values[0] ?? "") as typeof sent)}
+                    options={(groups.data ?? []).map((g) => ({ label: g.name, value: g.id }))}
+                    selected={new Set(groupId ? [groupId] : [])}
+                    onChange={(values) => setGroupId(values[0] ?? "")}
                   />
+                  <FacetedFilter
+                    title="Acara"
+                    multiple={false}
+                    options={(events.data ?? []).map((e) => ({ label: e.name, value: e.id }))}
+                    selected={new Set(eventId ? [eventId] : [])}
+                    onChange={(values) => {
+                      setEventId(values[0] ?? "");
+                      setSent("");
+                    }}
+                  />
+                  {eventId && (
+                    <FacetedFilter
+                      title="Status kirim"
+                      multiple={false}
+                      options={[
+                        { label: "Belum dikirim", value: "unsent" },
+                        { label: "Sudah dikirim", value: "sent" },
+                      ]}
+                      selected={new Set(sent ? [sent] : [])}
+                      onChange={(values) => setSent((values[0] ?? "") as typeof sent)}
+                    />
+                  )}
+                  <FacetedFilter
+                    title="Lainnya"
+                    options={EXTRA_OPTIONS}
+                    selected={new Set(extras)}
+                    onChange={setExtras}
+                  />
+                </div>
+                {isFiltered && (
+                  <Button variant="ghost" onClick={resetFilters} className="h-8 px-2 lg:px-3">
+                    Atur ulang
+                  </Button>
                 )}
-                <FacetedFilter
-                  title="Lainnya"
-                  options={EXTRA_OPTIONS}
-                  selected={new Set(extras)}
-                  onChange={setExtras}
-                />
               </div>
-              {isFiltered && (
-                <Button variant="ghost" onClick={resetFilters} className="h-8 px-2 lg:px-3">
-                  Atur ulang
-                </Button>
-              )}
             </div>
-            <DataTableViewOptions table={table} />
-          </div>
-        )}
-        bulkActions={(table) => (
-          <DataTableBulkActions table={table} entityName="tamu">
-            {trash ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  await Promise.all(
-                    table
-                      .getFilteredSelectedRowModel()
-                      .rows.map((row) => restore.mutateAsync(row.original.id)),
-                  );
-                  table.resetRowSelection();
-                }}
-              >
-                <Undo2 aria-hidden />
-                Pulihkan
-              </Button>
-            ) : (
-              <>
-                <BulkMenu
-                  onSelect={(action) => setBulk(bulkOf(table, action))}
-                  hasEvents={(events.data?.length ?? 0) > 0}
-                />
+          )}
+          bulkActions={(table) => (
+            <DataTableBulkActions table={table} entityName="tamu">
+              {trash ? (
                 <Button
                   size="sm"
-                  variant="destructive"
-                  onClick={() =>
-                    setDeleting(table.getFilteredSelectedRowModel().rows.map((row) => row.original))
-                  }
+                  variant="outline"
+                  onClick={async () => {
+                    await Promise.all(
+                      table
+                        .getFilteredSelectedRowModel()
+                        .rows.map((row) => restore.mutateAsync(row.original.id)),
+                    );
+                    table.resetRowSelection();
+                  }}
                 >
-                  <Trash2 aria-hidden />
-                  Hapus
+                  <Undo2 aria-hidden />
+                  Pulihkan
                 </Button>
-              </>
-            )}
-          </DataTableBulkActions>
-        )}
-      />
+              ) : (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => setBulk(bulkOf(table))}>
+                    <FolderInput aria-hidden />
+                    Pindah kelompok
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() =>
+                      setDeleting(
+                        table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+                      )
+                    }
+                  >
+                    <Trash2 aria-hidden />
+                    Hapus
+                  </Button>
+                </>
+              )}
+            </DataTableBulkActions>
+          )}
+        />
+      )}
 
       <GuestFormDialog
         editing={editing}
@@ -476,12 +519,7 @@ export function GuestsPage() {
         onClose={() => setQrId(null)}
       />
       <DeleteGuestDialog guests={deleting} onClose={() => setDeleting([])} />
-      <BulkDialog
-        bulk={bulk}
-        groups={groups.data ?? []}
-        events={events.data ?? []}
-        onClose={() => setBulk(null)}
-      />
+      <BulkDialog bulk={bulk} groups={groups.data ?? []} onClose={() => setBulk(null)} />
       <SendQueueDialog
         open={queueOpen}
         onClose={closeQueue}
@@ -494,73 +532,63 @@ export function GuestsPage() {
   );
 }
 
-function bulkOf(table: Table<Guest>, action: BulkAction): Bulk {
-  return {
-    action,
-    ids: table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
-    done: () => table.resetRowSelection(),
-  };
-}
-
-/** Satu tombol "Ubah" berisi aksi massal, agar bilah melayang tetap muat di layar HP. */
-function BulkMenu({
-  onSelect,
-  hasEvents,
-}: {
-  onSelect: (action: BulkAction) => void;
-  hasEvents: boolean;
-}) {
+/** Aksi yang jarang dipakai (impor, ekspor, cetak QR) dikumpulkan di satu menu agar header ringkas. */
+function MoreMenu() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline">
-          Ubah
-          <ChevronDown aria-hidden />
+        <Button variant="outline" size="icon" aria-label="Lainnya">
+          <Ellipsis aria-hidden />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" side="top" className="w-56">
-        <DropdownMenuItem onSelect={() => onSelect("set_group")}>
-          <FolderInput />
-          Pindah kelompok
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem asChild>
+          <Link to="/admin/tamu/impor">
+            <Upload />
+            Impor dari spreadsheet
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasEvents} onSelect={() => onSelect("add_event")}>
-          <CalendarPlus />
-          Undang ke acara
+        <DropdownMenuItem asChild>
+          <a href={downloads.guestsXlsx}>
+            <Download />
+            Ekspor Excel
+          </a>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasEvents} onSelect={() => onSelect("remove_event")}>
-          <CalendarMinus />
-          Batalkan undangan acara
+        <DropdownMenuItem asChild>
+          <Link to="/admin/tamu/cetak">
+            <Printer />
+            Cetak kartu QR
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-const BULK_TEXT: Record<BulkAction, { title: string; label: string; submit: string }> = {
-  set_group: { title: "Pindah kelompok", label: "Kelompok tujuan", submit: "Pindahkan" },
-  add_event: { title: "Undang ke acara", label: "Acara", submit: "Undang" },
-  remove_event: { title: "Batalkan undangan acara", label: "Acara", submit: "Batalkan undangan" },
-};
+function bulkOf(table: Table<Guest>): Bulk {
+  return {
+    ids: table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
+    done: () => table.resetRowSelection(),
+  };
+}
 
+/** Pindah kelompok massal. Acara yang diundang ikut berganti ke acara kelompok tujuan. */
 function BulkDialog({
   bulk,
   groups,
-  events,
   onClose,
 }: {
   bulk: Bulk;
   groups: Group[];
-  events: Event[];
   onClose: () => void;
 }) {
-  const text = bulk ? BULK_TEXT[bulk.action] : null;
   return (
     <Dialog
       open={bulk !== null}
       onClose={onClose}
-      title={text ? `${text.title} (${bulk?.ids.length} tamu)` : ""}
+      title={`Pindah kelompok (${bulk?.ids.length ?? 0} tamu)`}
     >
-      {bulk && <BulkForm bulk={bulk} groups={groups} events={events} onDone={onClose} />}
+      {bulk && <BulkForm bulk={bulk} groups={groups} onDone={onClose} />}
     </Dialog>
   );
 }
@@ -568,29 +596,20 @@ function BulkDialog({
 function BulkForm({
   bulk,
   groups,
-  events,
   onDone,
 }: {
   bulk: NonNullable<Bulk>;
   groups: Group[];
-  events: Event[];
   onDone: () => void;
 }) {
   const refresh = useRefresh();
-  const isGroup = bulk.action === "set_group";
-  const [target, setTarget] = useState(isGroup ? "" : (events[0]?.id ?? ""));
-  const text = BULK_TEXT[bulk.action];
+  const [target, setTarget] = useState("");
 
   const run = useMutation({
-    mutationFn: () =>
-      adminApi.guests.bulk(
-        isGroup
-          ? { ids: bulk.ids, action: "set_group", groupId: target || null }
-          : { ids: bulk.ids, action: bulk.action, eventId: target },
-      ),
+    mutationFn: () => adminApi.guests.bulk({ ids: bulk.ids, action: "set_group", groupId: target }),
     meta: { toast: false },
     onSuccess: async ({ updated }) => {
-      toast(`${updated} tamu diperbarui`);
+      toast(`${updated} tamu dipindahkan`);
       await refresh("guests", "groups", "events");
       bulk.done();
       onDone();
@@ -606,21 +625,17 @@ function BulkForm({
       }}
     >
       <Field
-        label={text.label}
-        hint={
-          bulk.action === "remove_event"
-            ? "Undangan dan status kirim untuk acara ini dihapus dari tamu terpilih; tamunya tetap ada."
-            : bulk.action === "add_event"
-              ? "Tamu yang sudah diundang ke acara ini tidak berubah."
-              : undefined
-        }
+        label="Kelompok tujuan"
+        hint="Acara yang diundang ikut berganti ke acara kelompok tujuan."
       >
         {(id) => (
           <Select id={id} value={target} onChange={(e) => setTarget(e.target.value)}>
-            {isGroup && <option value="">Tanpa kelompok</option>}
-            {(isGroup ? groups : events).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
+            <option value="" disabled>
+              Pilih kelompok
+            </option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
               </option>
             ))}
           </Select>
@@ -630,8 +645,8 @@ function BulkForm({
       <FormFooter
         onCancel={onDone}
         pending={run.isPending}
-        disabled={!isGroup && !target}
-        submitLabel={text.submit}
+        disabled={!target}
+        submitLabel="Pindahkan"
       />
     </form>
   );
@@ -661,7 +676,7 @@ function DeleteGuestDialog({ guests, onClose }: { guests: Guest[]; onClose: () =
         <>
           <p>Tamu dipindahkan ke tempat sampah dan bisa dipulihkan kapan saja.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -672,7 +687,7 @@ function DeleteGuestDialog({ guests, onClose }: { guests: Guest[]; onClose: () =
             >
               Hapus
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

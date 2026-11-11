@@ -229,9 +229,9 @@ export function ExportCard() {
             <Download className="size-4" aria-hidden />
             Semua foto (ZIP)
           </a>
-          <a href={downloads.guestsCsv} className={buttonVariants({ variant: "outline" })}>
+          <a href={downloads.guestsXlsx} className={buttonVariants({ variant: "outline" })}>
             <Download className="size-4" aria-hidden />
-            Daftar tamu (CSV)
+            Daftar tamu (Excel)
           </a>
         </div>
         <p className="text-xs text-muted-foreground">

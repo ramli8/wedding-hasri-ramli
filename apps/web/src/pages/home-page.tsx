@@ -55,7 +55,7 @@ export function buildTasks(home: HomeResponse, now = Date.now()): Task[] {
   const tasks: (Task | false)[] = [
     home.guests.total === 0 && {
       key: "no-guests",
-      text: "Belum ada tamu. Tambahkan atau impor dari CSV.",
+      text: "Belum ada tamu. Tambahkan atau impor dari Excel.",
       to: "/admin/tamu",
     },
     home.vendors.summary.overdueCount > 0 && {

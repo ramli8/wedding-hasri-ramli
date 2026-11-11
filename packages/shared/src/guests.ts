@@ -41,14 +41,12 @@ export const guestInputSchema = z
     displayName: z.string().trim().min(1, "Nama undangan wajib diisi"),
     phone: optionalPhoneField,
     instagram: instagramField,
-    groupId: z
-      .uuid()
-      .nullish()
-      .transform((value) => value ?? null),
+    /** Wajib: setiap tamu masuk satu kelompok (hanya tamu walk-in dari pintu yang boleh tanpa). */
+    groupId: z.uuid({ error: "Pilih kelompok" }),
     /** Rombongan: penjaga mengisi jumlah orang saat check-in. Selain itu, otomatis 1 orang. */
     isRombongan: z.boolean().default(false),
     usherNote: optionalText,
-    eventIds: z.array(z.uuid()).default([]),
+    // Acara yang diundang tidak diisi per tamu: selalu mengikuti acara kelompoknya.
   })
   .refine((g) => g.phone !== null || g.instagram !== null, {
     message: "Isi nomor HP atau Instagram",
@@ -119,28 +117,20 @@ export type MarkSentRequest = z.input<typeof markSentRequestSchema>;
 
 // --- Aksi massal ------------------------------------------------------
 
-export const GUEST_BULK_ACTIONS = ["set_group", "add_event", "remove_event"] as const;
+/**
+ * Satu-satunya aksi massal: pindah kelompok. Acara yang diundang ikut kelompok tujuan, jadi tidak
+ * ada aksi undang/batalkan acara per tamu.
+ */
+export const GUEST_BULK_ACTIONS = ["set_group"] as const;
 
-export const guestBulkRequestSchema = z
-  .object({
-    ids: z
-      .array(z.uuid())
-      .min(1, "Pilih minimal satu tamu")
-      .max(1000, "Maksimal 1000 tamu sekaligus"),
-    action: z.enum(GUEST_BULK_ACTIONS),
-    /** Untuk `set_group`: kelompok tujuan; null = tanpa kelompok. */
-    groupId: z.uuid().nullable().optional(),
-    /** Untuk `add_event` dan `remove_event`. */
-    eventId: z.uuid().optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (value.action === "set_group" && value.groupId === undefined) {
-      ctx.addIssue({ code: "custom", path: ["groupId"], message: "Pilih kelompok tujuan" });
-    }
-    if (value.action !== "set_group" && !value.eventId) {
-      ctx.addIssue({ code: "custom", path: ["eventId"], message: "Pilih acaranya" });
-    }
-  });
+export const guestBulkRequestSchema = z.object({
+  ids: z
+    .array(z.uuid())
+    .min(1, "Pilih minimal satu tamu")
+    .max(1000, "Maksimal 1000 tamu sekaligus"),
+  action: z.enum(GUEST_BULK_ACTIONS),
+  groupId: z.uuid({ error: "Pilih kelompok tujuan" }),
+});
 export type GuestBulkRequest = z.input<typeof guestBulkRequestSchema>;
 export type GuestBulkData = z.output<typeof guestBulkRequestSchema>;
 
@@ -176,7 +166,6 @@ export const IMPORT_COLUMNS = [
   "kelompok",
   "rombongan",
   "catatan_penjaga",
-  "acara",
 ] as const;
 
 export const importRequestSchema = z.object({
@@ -198,6 +187,8 @@ export const importPreviewResponseSchema = z.object({
   rows: z.array(importRowSchema),
   newGroups: z.array(z.string()),
   counts: z.object({ ok: z.number(), duplicate: z.number(), error: z.number() }),
+  /** Baris contoh template Excel yang dilewati (tidak ikut dihitung atau diimpor). */
+  examplesSkipped: z.number(),
 });
 export type ImportPreview = z.infer<typeof importPreviewResponseSchema>;
 

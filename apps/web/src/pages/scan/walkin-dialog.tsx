@@ -2,7 +2,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { type FormEvent, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { Select } from "@/components/kit/select";
 import { Input } from "@/components/ui/input";
@@ -116,14 +116,14 @@ function WalkinForm({
         </Field>
       </div>
       {error && <Alert tone="error">{error}</Alert>}
-      <div className="flex justify-end gap-2">
+      <DialogActions>
         <Button variant="outline" onClick={onClose}>
           Batal
         </Button>
         <Button type="submit" disabled={busy || !name.trim()}>
           Catat masuk
         </Button>
-      </div>
+      </DialogActions>
     </form>
   );
 }

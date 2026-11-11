@@ -28,7 +28,7 @@ import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
@@ -202,11 +202,11 @@ export function ReceivedGiftsPage() {
               </Button>
             )}
             <a
-              href={downloads.receivedGiftsCsv({})}
+              href={downloads.receivedGiftsXlsx({})}
               className={buttonVariants({ variant: "outline" })}
             >
               <Download aria-hidden />
-              Ekspor
+              Ekspor Excel
             </a>
             <Button onClick={() => setEditing({ kind: "new" })}>
               Catat hadiah
@@ -561,7 +561,7 @@ function DeleteDialog({ gift, onClose }: { gift: ReceivedGift | null; onClose: (
             berkurang.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -572,7 +572,7 @@ function DeleteDialog({ gift, onClose }: { gift: ReceivedGift | null; onClose: (
             >
               Hapus catatan
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

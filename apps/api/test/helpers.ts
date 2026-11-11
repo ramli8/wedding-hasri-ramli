@@ -89,10 +89,38 @@ export function adminClient(app: App, cookie: string) {
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
+
+  /**
+   * Tamu wajib berkelompok dan acaranya mengikuti kelompok. Agar tes cukup menulis `eventIds`
+   * seperti dulu, tamu tanpa `groupId` dimasukkan ke kelompok uji "Uji: <id acara>" yang acaranya
+   * persis `eventIds` itu (dibuat bila belum ada). Tes yang memberi `groupId` sendiri tidak diubah.
+   */
+  const guestBody = async (method: string, path: string, body: unknown) => {
+    const isGuestWrite =
+      (method === "POST" && path === "/guests") ||
+      (method === "PUT" && /^\/guests\/[0-9a-f-]{36}$/.test(path));
+    if (!isGuestWrite || !body || typeof body !== "object" || "groupId" in body) return body;
+    const { eventIds = [], ...rest } = body as { eventIds?: string[] };
+    const name = `Uji: ${[...eventIds].sort().join(",") || "tanpa acara"}`;
+    const list = (await (await call("GET", "/groups")).json()) as {
+      items: { id: string; name: string }[];
+    };
+    let groupId = list.items.find((g) => g.name === name)?.id;
+    if (!groupId) {
+      const created = (await (await call("POST", "/groups", { name, eventIds })).json()) as {
+        group: { id: string };
+      };
+      groupId = created.group.id;
+    }
+    return { ...rest, groupId };
+  };
+
   return {
     get: (path: string) => call("GET", path),
-    post: (path: string, body: unknown = {}) => call("POST", path, body),
-    put: (path: string, body: unknown) => call("PUT", path, body),
+    post: async (path: string, body: unknown = {}) =>
+      call("POST", path, await guestBody("POST", path, body)),
+    put: async (path: string, body: unknown) =>
+      call("PUT", path, await guestBody("PUT", path, body)),
     delete: (path: string) => call("DELETE", path),
   };
 }

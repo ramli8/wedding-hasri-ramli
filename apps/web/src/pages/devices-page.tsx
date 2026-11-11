@@ -9,7 +9,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
@@ -244,14 +244,14 @@ function CreateDialog({
           )}
         </Field>
         {create.error && <Alert tone="error">{create.error.message}</Alert>}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogActions>
           <Button variant="outline" onClick={onClose}>
             Batal
           </Button>
           <Button type="submit" disabled={create.isPending || !name.trim()}>
             Buat kode pairing
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </Dialog>
   );
@@ -361,7 +361,7 @@ function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () 
             perangkat baru dan pasangkan ulang.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -372,7 +372,7 @@ function DeleteDialog({ device, onClose }: { device: Device | null; onClose: () 
             >
               Hapus perangkat
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>
@@ -400,7 +400,7 @@ function RevokeDialog({ device, onClose }: { device: Device | null; onClose: () 
             online.
           </p>
           {revoke.error && <Alert tone="error">{revoke.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -411,7 +411,7 @@ function RevokeDialog({ device, onClose }: { device: Device | null; onClose: () 
             >
               Cabut perangkat
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

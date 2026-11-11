@@ -14,7 +14,7 @@ import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { uploadSizeError } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { toast } from "@/components/kit/toast";
@@ -310,7 +310,7 @@ function DeleteDialog({ item, onClose }: { item: GalleryItem | null; onClose: ()
         <>
           <p>Foto dihapus dari galeri dan dari server.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -321,7 +321,7 @@ function DeleteDialog({ item, onClose }: { item: GalleryItem | null; onClose: ()
             >
               Hapus foto
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

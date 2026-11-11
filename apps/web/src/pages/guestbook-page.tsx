@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Pagination } from "@/components/kit/pagination";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -217,7 +217,7 @@ function DeleteDialog({
             Sembunyikan.
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -228,7 +228,7 @@ function DeleteDialog({
             >
               Hapus ucapan
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

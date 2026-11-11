@@ -68,7 +68,7 @@ export function useGuideSteps() {
       id: "kelompok",
       phase: "Persiapan",
       title: "Buat kelompok tamu",
-      why: "Kelompok memberi warna, penanda VIP, acara yang diundang, dan jam datang. Boleh dilewati.",
+      why: "Setiap tamu wajib masuk satu kelompok. Kelompok menentukan warna, VIP, acara yang diundang, dan jam datang.",
       todo: [
         "Nama kelompok, mis. Keluarga, Teman Kantor, VIP",
         "Centang acara yang diundang untuk kelompok ini",
@@ -76,7 +76,6 @@ export function useGuideSteps() {
       ],
       to: "/admin/kelompok",
       cta: "Buka Kelompok",
-      optional: true,
       done: (groups.data?.length ?? 0) > 0,
     },
     {
@@ -85,7 +84,8 @@ export function useGuideSteps() {
       title: "Masukkan daftar tamu",
       why: "Tiap tamu mendapat kode 6 huruf yang menjadi QR tiket dan link pribadinya.",
       todo: [
-        "Tambah satu per satu, atau impor dari CSV (ada templatnya di halaman impor)",
+        "Tambah satu per satu, atau impor dari Excel (unduh templatnya di halaman impor)",
+        "Pilih kelompoknya; acara yang diundang mengikuti kelompok",
         "Nama undangan seperti di pesan, mis. “Bpk. Budi & Keluarga”",
         "Nomor WhatsApp atau Instagram supaya bisa dikirimi undangan",
         "Tandai Rombongan bila penjaga perlu mengisi jumlah orang saat check-in",

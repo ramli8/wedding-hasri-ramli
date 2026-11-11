@@ -7,7 +7,7 @@ import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
 import { Checkbox } from "@/components/kit/checkbox";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { SwitchRow } from "@/components/kit/form-rows";
 import { EmptyState, FormFooter } from "@/components/kit/invitation-kit";
@@ -546,9 +546,10 @@ function DeleteGroupBody({
 }) {
   const refresh = useRefresh();
   const others = groups.filter((g) => g.id !== group.id);
-  // Tamu kelompok ini dipindahkan dulu (ke kelompok lain atau tanpa kelompok), lalu kelompok dihapus.
-  const [moveTo, setMoveTo] = useState("none");
+  // Tamu wajib berkelompok: tamu kelompok ini dipindah dulu ke kelompok lain, lalu kelompok dihapus.
+  const [moveTo, setMoveTo] = useState("");
   const hasGuests = group.guestCount > 0;
+  const stuck = hasGuests && others.length === 0;
   const remove = useMutation({
     mutationFn: () => adminApi.groups.remove(group.id, hasGuests ? moveTo : undefined),
     meta: { toast: "Terhapus" },
@@ -560,14 +561,21 @@ function DeleteGroupBody({
 
   return (
     <>
-      {hasGuests ? (
+      {stuck ? (
+        <p>
+          Kelompok ini masih punya {group.guestCount} tamu dan tidak ada kelompok lain untuk
+          menampungnya. Buat kelompok lain dulu.
+        </p>
+      ) : hasGuests ? (
         <Field
           label={`Pindahkan ${group.guestCount} tamu ke`}
-          hint="Tamunya tetap ada; hanya kelompoknya yang diganti. Jam datang kelompok ini ikut terhapus."
+          hint="Tamunya tetap ada; kelompok dan acaranya ikut kelompok tujuan."
         >
           {(id) => (
             <Select id={id} value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
-              <option value="none">Tanpa kelompok</option>
+              <option value="" disabled>
+                Pilih kelompok
+              </option>
               {others.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -580,14 +588,18 @@ function DeleteGroupBody({
         <p>Jam datang kelompok ini ikut terhapus.</p>
       )}
       {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-      <div data-form-footer className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <DialogActions>
         <Button variant="outline" onClick={onClose}>
           Batal
         </Button>
-        <Button variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
+        <Button
+          variant="destructive"
+          onClick={() => remove.mutate()}
+          disabled={remove.isPending || stuck || (hasGuests && !moveTo)}
+        >
           {hasGuests ? "Pindahkan & hapus" : "Hapus kelompok"}
         </Button>
-      </div>
+      </DialogActions>
     </>
   );
 }

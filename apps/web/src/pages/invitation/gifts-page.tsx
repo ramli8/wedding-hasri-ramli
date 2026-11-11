@@ -12,7 +12,7 @@ import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
@@ -247,7 +247,7 @@ function DeleteDialog({ item, onClose }: { item: Gift | null; onClose: () => voi
         <>
           <p>Rekening ini dihapus dari undangan.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -258,7 +258,7 @@ function DeleteDialog({ item, onClose }: { item: Gift | null; onClose: () => voi
             >
               Hapus rekening
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

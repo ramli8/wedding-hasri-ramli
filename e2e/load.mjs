@@ -180,6 +180,9 @@ async function seed() {
     hasRsvp: true,
   });
 
+  // Tamu wajib berkelompok; acaranya mengikuti kelompok.
+  const { group } = await adminCall("POST", "/groups", { name: "Tamu Uji", eventIds: [event.id] });
+
   // Tamu dibuat lewat admin API (jalur yang sama dengan pemakaian nyata), 20 sekaligus.
   const guests = [];
   for (let i = 0; i < GUESTS; i += 20) {
@@ -189,7 +192,7 @@ async function seed() {
           displayName: `Tamu ${i + j + 1}`,
           phone: `0812${String(10_000_000 + i + j)}`,
           isRombongan: (i + j) % 10 === 0,
-          eventIds: [event.id],
+          groupId: group.id,
         }),
       ),
     );

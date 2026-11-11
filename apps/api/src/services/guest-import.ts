@@ -13,7 +13,15 @@ import { events, groupEvents, guestEvents, guestGroups, guests } from "../db/sch
 import { generateUniqueCodes } from "../domain/guest-code.js";
 import { AppError } from "../http/errors.js";
 import { lockGuestRev } from "./checkin-log.js";
+import { syncGuestEvents } from "./guests.js";
 import { getSettings } from "./settings.js";
+import {
+  buildImportTemplateXlsx,
+  buildXlsx,
+  GUEST_COLUMNS,
+  guestLists,
+  isExampleRow,
+} from "./xlsx-template.js";
 
 const MAX_ROWS = 2000;
 const INSERT_CHUNK = 500;
@@ -93,28 +101,7 @@ function readRecords(csv: string): Record<string, string>[] {
   return records;
 }
 
-type EventRef = { id: string; slug: string; name: string };
-
-/** Kolom acara boleh berisi slug atau nama acara, tanpa memedulikan huruf besar/kecil. */
-function eventLookup(rows: EventRef[]) {
-  const bySlug = new Map(rows.map((e) => [e.slug.toLowerCase(), e.id]));
-  const byName = new Map<string, string[]>();
-  for (const e of rows) {
-    const key = e.name.trim().toLowerCase();
-    byName.set(key, [...(byName.get(key) ?? []), e.id]);
-  }
-  return (value: string): { id: string } | { error: string } => {
-    const key = value.toLowerCase();
-    const slugId = bySlug.get(key);
-    if (slugId) return { id: slugId };
-    const named = byName.get(key) ?? [];
-    if (named.length === 1 && named[0]) return { id: named[0] };
-    if (named.length > 1) {
-      return { error: `Nama acara "${value}" dipakai beberapa acara; tulis slug-nya` };
-    }
-    return { error: `Acara "${key}" tidak dikenal` };
-  };
-}
+const GROUP_PLACEHOLDER = "00000000-0000-4000-8000-000000000000";
 
 async function analyze(db: Db, csv: string) {
   const records = readRecords(csv);
@@ -123,18 +110,6 @@ async function analyze(db: Db, csv: string) {
     .select({ id: guestGroups.id, name: guestGroups.name })
     .from(guestGroups);
   const knownGroups = new Set(groupRows.map((g) => g.name.toLowerCase()));
-  // Acara yang diundang per kelompok (nama huruf kecil → id acara), untuk kolom acara kosong.
-  const invitedRows = await db.select().from(groupEvents);
-  const groupInvites = new Map(
-    groupRows.map((g) => [
-      g.name.toLowerCase(),
-      invitedRows.filter((r) => r.groupId === g.id).map((r) => r.eventId),
-    ]),
-  );
-  const eventRows = await db
-    .select({ id: events.id, slug: events.slug, name: events.name })
-    .from(events);
-  const findEvent = eventLookup(eventRows);
   const existing = await db
     .select({ displayName: guests.displayName, phone: guests.phone, instagram: guests.instagram })
     .from(guests)
@@ -147,7 +122,9 @@ async function analyze(db: Db, csv: string) {
   }
 
   const newGroups = new Map<string, string>(); // lowercase → nama asli
-  const rows: Candidate[] = records.map((record, index) => {
+  // Baris contoh dari template Excel dilewati, tapi nomor barisnya tetap dihitung.
+  const rows: Candidate[] = records.flatMap((record, index) => {
+    if (isExampleRow(record)) return [];
     const line = index + 2; // baris 1 adalah header
     const messages: string[] = [];
     let failed = false;
@@ -161,21 +138,10 @@ async function analyze(db: Db, csv: string) {
       fail('Kolom rombongan harus "ya" atau "tidak"');
     }
 
-    const wanted = (record.acara ?? "")
-      .split(/[;|]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const eventIds: string[] = [];
-    for (const value of wanted) {
-      const found = findEvent(value);
-      if ("id" in found) eventIds.push(found.id);
-      else fail(found.error);
-    }
-    // Kolom acara kosong: ikut acara kelompoknya; tanpa kelompok (atau kelompok baru) semua acara.
+    // Kelompok wajib (tamu selalu berkelompok); nama yang belum ada dibuat saat impor. Acara yang
+    // diundang mengikuti kelompoknya, jadi kolom acara (bila ada) diabaikan.
     const groupName = record.kelompok?.trim() || null;
-    const invited = wanted.length
-      ? eventIds
-      : ((groupName && groupInvites.get(groupName.toLowerCase())) ?? eventRows.map((e) => e.id));
+    if (!groupName) fail("Kolom kelompok wajib diisi");
 
     const parsed = guestInputSchema.safeParse({
       displayName: record.nama_undangan ?? "",
@@ -183,7 +149,8 @@ async function analyze(db: Db, csv: string) {
       instagram: record.instagram,
       isRombongan: ROMBONGAN_YES.has(rombongan),
       usherNote: record.catatan_penjaga,
-      eventIds: invited,
+      // Kelompok diperiksa lewat nama di atas; id aslinya baru diketahui saat impor dijalankan.
+      groupId: GROUP_PLACEHOLDER,
     });
     if (!parsed.success) for (const issue of parsed.error.issues) fail(issue.message);
 
@@ -218,11 +185,12 @@ async function analyze(db: Db, csv: string) {
     };
   });
 
-  return { rows, newGroups: [...newGroups.values()] };
+  const examplesSkipped = records.filter((record) => isExampleRow(record)).length;
+  return { rows, newGroups: [...newGroups.values()], examplesSkipped };
 }
 
 export async function previewImport(db: Db, csv: string): Promise<ImportPreview> {
-  const { rows, newGroups } = await analyze(db, csv);
+  const { rows, newGroups, examplesSkipped } = await analyze(db, csv);
   const counts = { ok: 0, duplicate: 0, error: 0 };
   for (const row of rows) counts[row.status]++;
   return {
@@ -238,6 +206,7 @@ export async function previewImport(db: Db, csv: string): Promise<ImportPreview>
     })),
     newGroups,
     counts,
+    examplesSkipped,
   };
 }
 
@@ -260,7 +229,7 @@ export async function commitImport(
         .values(newGroups.map((name) => ({ name })))
         .onConflictDoNothing()
         .returning({ id: guestGroups.id });
-      // Kelompok baru dari impor diundang ke semua acara, sama seperti kelompok baru di formulir.
+      // Kelompok baru dari impor diundang ke semua acara (ubah di menu Kelompok bila perlu).
       const allEvents = await tx.select({ id: events.id }).from(events);
       const invites = created.flatMap((g) =>
         allEvents.map((e) => ({ groupId: g.id, eventId: e.id })),
@@ -283,13 +252,12 @@ export async function commitImport(
       const data = row.data as GuestData;
       return {
         id: randomUUID(),
-        eventIds: [...new Set(data.eventIds)],
         values: {
           code: codes[i] as string,
           displayName: data.displayName,
           phone: data.phone,
           instagram: data.instagram,
-          groupId: row.groupName ? (groupId.get(row.groupName.toLowerCase()) ?? null) : null,
+          groupId: groupId.get((row.groupName ?? "").toLowerCase()) ?? null,
           isRombongan: data.isRombongan,
           usherNote: data.usherNote,
           source: "import" as const,
@@ -300,10 +268,11 @@ export async function commitImport(
     for (let start = 0; start < prepared.length; start += INSERT_CHUNK) {
       const chunk = prepared.slice(start, start + INSERT_CHUNK);
       await tx.insert(guests).values(chunk.map((p) => ({ id: p.id, ...p.values })));
-      const invitations = chunk.flatMap((p) =>
-        p.eventIds.map((eventId) => ({ guestId: p.id, eventId })),
+      // Undangan = acara kelompok masing-masing.
+      await syncGuestEvents(
+        tx,
+        chunk.map((p) => p.id),
       );
-      if (invitations.length) await tx.insert(guestEvents).values(invitations);
     }
   });
 
@@ -329,8 +298,8 @@ const EXPORT_COLUMNS = [
 ];
 
 /**
- * Label acara untuk kolom `acara` di CSV: nama acara (yang dikenali admin), atau kode singkat bila
- * dua acara bernama sama. Impor menerima keduanya.
+ * Label acara untuk kolom `acara` di CSV ekspor (informasi saja; impor mengabaikannya): nama acara,
+ * atau kode singkat bila dua acara bernama sama.
  */
 function eventLabels(rows: { id?: string; slug: string; name: string }[]) {
   const nameCount = new Map<string, number>();
@@ -342,7 +311,8 @@ function eventLabels(rows: { id?: string; slug: string; name: string }[]) {
     nameCount.get(e.name.trim().toLowerCase()) === 1 ? e.name.trim() : e.slug;
 }
 
-export async function exportGuestsCsv(db: Db): Promise<string> {
+/** Data ekspor tamu aktif (dipakai CSV dan Excel). Nilai mentah; pengaman rumus per format. */
+async function exportRecords(db: Db) {
   const settings = await getSettings(db);
   const groups = await db.select({ id: guestGroups.id, name: guestGroups.name }).from(guestGroups);
   const groupName = new Map(groups.map((g) => [g.id, g.name]));
@@ -371,12 +341,12 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
 
   const records = rows.map((g) => ({
     kode: g.code ?? "",
-    nama_undangan: safeCell(g.displayName),
+    nama_undangan: g.displayName,
     hp: g.phone ?? "",
     instagram: g.instagram ?? "",
-    kelompok: safeCell(g.groupId ? groupName.get(g.groupId) : ""),
+    kelompok: g.groupId ? (groupName.get(g.groupId) ?? "") : "",
     rombongan: g.isRombongan ? "ya" : "tidak",
-    catatan_penjaga: safeCell(g.usherNote),
+    catatan_penjaga: g.usherNote ?? "",
     acara: invitations
       .filter((i) => i.guestId === g.id)
       .map((i) => eventLabel.get(i.eventId))
@@ -384,31 +354,25 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
       .join(";"),
     link: settings && g.code ? `${settings.publicBaseUrl}/u/${g.code}` : "",
   }));
+  return { records, groupNames: groups.map((g) => g.name).sort((a, b) => a.localeCompare(b)) };
+}
 
+export async function exportGuestsCsv(db: Db): Promise<string> {
+  const { records: raw } = await exportRecords(db);
+  // Sel yang diawali = + - @ diberi petik supaya tidak dibaca sebagai rumus.
+  const records = raw.map((r) => ({
+    ...r,
+    nama_undangan: safeCell(r.nama_undangan),
+    kelompok: safeCell(r.kelompok),
+    catatan_penjaga: safeCell(r.catatan_penjaga),
+  }));
   // BOM agar Excel membaca UTF-8 (nama dengan huruf non-ASCII) dengan benar.
   return `﻿${stringify(records, { header: true, columns: EXPORT_COLUMNS })}`;
 }
 
-/** Template impor. Contoh kolom acara diambil dari acara yang sudah ada (nama, atau slug bila nama ganda). */
-export async function importTemplateCsv(db: Db): Promise<string> {
-  const columns = [
-    "nama_undangan",
-    "hp",
-    "instagram",
-    "kelompok",
-    "rombongan",
-    "catatan_penjaga",
-    "acara",
-  ];
-  const eventRows = await db
-    .select({ slug: events.slug, name: events.name })
-    .from(events)
-    .orderBy(asc(events.startsAt), asc(events.name));
-  const label = eventLabels(eventRows);
-  // Contoh kedua: diundang ke acara terakhir saja (biasanya resepsi). Tanpa acara: contoh lama.
-  const last = eventRows.at(-1);
-  const exampleEvent = last ? label(last) : "resepsi";
-
+/** Template impor. Tanpa kolom acara: acara yang diundang mengikuti kelompok. */
+export async function importTemplateCsv(): Promise<string> {
+  const columns = ["nama_undangan", "hp", "instagram", "kelompok", "rombongan", "catatan_penjaga"];
   const examples = [
     {
       nama_undangan: "Bpk. Budi & Keluarga",
@@ -417,7 +381,6 @@ export async function importTemplateCsv(db: Db): Promise<string> {
       kelompok: "Keluarga",
       rombongan: "ya",
       catatan_penjaga: "",
-      acara: "",
     },
     {
       nama_undangan: "Sari",
@@ -426,20 +389,39 @@ export async function importTemplateCsv(db: Db): Promise<string> {
       kelompok: "Teman Kuliah",
       rombongan: "tidak",
       catatan_penjaga: "",
-      acara: exampleEvent,
     },
   ];
-  // Dengan dua acara atau lebih, tunjukkan juga cara menulis beberapa acara sekaligus.
-  if (eventRows.length > 1) {
-    examples.push({
-      nama_undangan: "Pak RT",
-      hp: "0813-1111-2222",
-      instagram: "",
-      kelompok: "Tetangga",
-      rombongan: "tidak",
-      catatan_penjaga: "",
-      acara: eventRows.map(label).join(";"),
-    });
-  }
   return `\ufeff${stringify(examples, { header: true, columns })}`;
+}
+
+/** Template impor Excel: kolom kelompok berupa dropdown dari kelompok yang sudah ada. */
+export async function importTemplateXlsx(db: Db): Promise<Uint8Array> {
+  const groups = await db
+    .select({ name: guestGroups.name })
+    .from(guestGroups)
+    .orderBy(asc(guestGroups.name));
+  return buildImportTemplateXlsx(groups.map((g) => g.name));
+}
+
+/**
+ * Ekspor tamu sebagai Excel: kolom yang sama dengan CSV, dengan dropdown kelompok dan rombongan
+ * seperti template, sehingga berkasnya bisa diperbaiki lalu diimpor lagi. Sel ditulis sebagai teks,
+ * jadi tidak pernah dibaca sebagai rumus (tanpa petik pengaman).
+ */
+export async function exportGuestsXlsx(db: Db): Promise<Uint8Array> {
+  const { records, groupNames } = await exportRecords(db);
+  const widths: Record<string, number> = { kode: 10, acara: 28, link: 36 };
+  const columns = EXPORT_COLUMNS.map(
+    (header) =>
+      GUEST_COLUMNS.find((c) => c.header === header) ?? { header, width: widths[header] ?? 16 },
+  );
+  return buildXlsx([
+    {
+      name: "Tamu",
+      columns,
+      rows: records.map((r) => EXPORT_COLUMNS.map((c) => r[c as keyof typeof r] ?? "")),
+      lists: guestLists(groupNames.length),
+    },
+    { name: "Kelompok", list: groupNames },
+  ]);
 }

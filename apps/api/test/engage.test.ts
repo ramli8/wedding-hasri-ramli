@@ -77,7 +77,7 @@ async function setup() {
     await read<{ group: { id: string } }>(
       await api.post("/groups", {
         name: "Surabaya",
-        eventIds: [resepsi.id],
+        eventIds: [akad.id, resepsi.id],
         sessions: [{ eventId: resepsi.id, ...SESSION }],
       }),
     )
@@ -87,7 +87,6 @@ async function setup() {
     displayName: "Bpk. Budi & Keluarga",
     isRombongan: true,
     groupId: group.id,
-    eventIds: [akad.id, resepsi.id],
   });
   const sari = await createGuest({
     displayName: "Sari",

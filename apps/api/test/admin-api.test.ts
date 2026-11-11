@@ -9,8 +9,10 @@ import type {
 } from "@wedding/shared";
 import { DEFAULT_MESSAGE_TEMPLATE } from "@wedding/shared";
 import { eq } from "drizzle-orm";
+import { strFromU8, unzipSync } from "fflate";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { guests } from "../src/db/schema.js";
+import { exampleRows, GUEST_COLUMNS } from "../src/services/xlsx-template.js";
 import { adminClient, createTestContext, loggedInClient, ORIGIN } from "./helpers.js";
 
 const ctx = createTestContext();
@@ -338,14 +340,12 @@ describe("kelompok", () => {
     expect(res.status).toBe(400);
   });
 
-  it("mengubah acara kelompok ikut menambah/mencabut undangan tamunya, pengecualian lain tetap", async () => {
+  it("mengubah acara kelompok ikut mengubah undangan tamunya; kelompok lain tidak tersentuh", async () => {
     const akad = await makeEvent({ slug: "akad", name: "Akad" });
     const resepsi = await makeEvent();
-    const ngunduh = await makeEvent({ slug: "ngunduh", name: "Ngunduh" });
     const group = await makeGroup({ eventIds: [akad.id] });
     expect(group.eventIds).toEqual([akad.id]);
-    // Tamu ini juga diundang ke Ngunduh secara pribadi (di luar acara kelompok).
-    const guest = await makeGuest({ groupId: group.id, eventIds: [akad.id, ngunduh.id] });
+    const guest = await makeGuest({ groupId: group.id });
     const other = await makeGuest({ phone: "0812-0000-0001", eventIds: [akad.id] });
     const revBefore = await revOf(guest.id);
 
@@ -357,10 +357,10 @@ describe("kelompok", () => {
       (await read<{ guest: Guest }>(await api.get(`/guests/${id}`))).guest.events
         .map((e) => e.eventId)
         .sort();
-    expect(await invited(guest.id)).toEqual([resepsi.id, ngunduh.id].sort());
+    expect(await invited(guest.id)).toEqual([resepsi.id]);
     // Rev naik supaya perangkat pintu menerima undangan yang berubah.
     expect(await revOf(guest.id)).toBeGreaterThan(revBefore);
-    // Tamu di luar kelompok tidak tersentuh.
+    // Tamu kelompok lain tidak tersentuh.
     expect(await invited(other.id)).toEqual([akad.id]);
   });
 
@@ -374,14 +374,15 @@ describe("kelompok", () => {
     const blocked = await api.delete(`/groups/${group.id}`);
     expect(blocked.status).toBe(409);
 
-    // Memindahkan tamu keluar dari kelompok membuat kelompok bisa dihapus.
+    // Memindahkan tamu ke kelompok lain membuat kelompok bisa dihapus.
     await api.put(`/guests/${guest.id}`, { displayName: guest.displayName, phone: guest.phone });
     expect((await api.delete(`/groups/${group.id}`)).status).toBe(200);
   });
 
   it("menghapus kelompok sambil memindahkan tamunya (termasuk yang di tempat sampah)", async () => {
+    const event = await makeEvent();
     const group = await makeGroup();
-    const target = await makeGroup({ name: "Teman" });
+    const target = await makeGroup({ name: "Teman", eventIds: [event.id] });
     const active = await makeGuest({ groupId: group.id });
     const trashed = await makeGuest({
       displayName: "Dihapus",
@@ -402,26 +403,25 @@ describe("kelompok", () => {
       (await read<{ guest: Guest }>(await api.get(`/guests/${active.id}`))).guest.groupId,
     ).toBe(target.id);
     expect(await revOf(active.id)).toBeGreaterThan(before);
+    // Tamu yang dipindah diundang ke acara kelompok tujuan.
+    const moved = (await read<{ guest: Guest }>(await api.get(`/guests/${active.id}`))).guest;
+    expect(moved.events.map((e) => e.eventId)).toEqual([event.id]);
     const groups = (await read<{ items: Group[] }>(await api.get("/groups"))).items;
     expect(groups.map((g) => g.name)).toEqual(["Teman"]);
 
-    expect((await api.delete(`/groups/${target.id}?moveTo=none`)).status).toBe(200);
-    expect(
-      (await read<{ guest: Guest }>(await api.get(`/guests/${active.id}`))).guest.groupId,
-    ).toBe(null);
-    expect((await api.delete(`/groups/${target.id}?moveTo=none`)).status).toBe(404);
+    // Tamu wajib berkelompok: "tanpa kelompok" tidak lagi diterima.
+    expect((await api.delete(`/groups/${target.id}?moveTo=none`)).status).toBe(400);
   });
 });
 
 describe("tamu: membuat dan validasi", () => {
-  it("membuat tamu dengan kode 6 karakter, HP ternormalisasi, dan undangan acara", async () => {
+  it("membuat tamu dengan kode 6 karakter, HP ternormalisasi, dan undangan dari kelompok", async () => {
     const event = await makeEvent();
-    const group = await makeGroup();
+    const group = await makeGroup({ eventIds: [event.id] });
     const guest = await makeGuest({
       groupId: group.id,
       isRombongan: true,
       usherNote: "Pemain inti",
-      eventIds: [event.id],
     });
     expect(guest.code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
     expect(guest).toMatchObject({
@@ -436,9 +436,14 @@ describe("tamu: membuat dan validasi", () => {
   });
 
   it("menghasilkan kode unik untuk banyak tamu", async () => {
+    const group = await makeGroup();
     const created = await Promise.all(
       Array.from({ length: 25 }, (_, i) =>
-        makeGuest({ displayName: `Tamu ${i}`, phone: `08120000${String(i).padStart(4, "0")}` }),
+        makeGuest({
+          displayName: `Tamu ${i}`,
+          phone: `08120000${String(i).padStart(4, "0")}`,
+          groupId: group.id,
+        }),
       ),
     );
     expect(new Set(created.map((g) => g.code)).size).toBe(25);
@@ -474,21 +479,19 @@ describe("tamu: membuat dan validasi", () => {
     });
   });
 
-  it("menolak kelompok dan acara yang tidak ada, serta id yang bukan UUID", async () => {
+  it("menolak tamu tanpa kelompok atau kelompok yang tidak ada, serta id yang bukan UUID", async () => {
     const missing = "00000000-0000-4000-8000-000000000000";
     expect(
       (await api.post("/guests", { displayName: "A", phone: "0812-3456-7890", groupId: missing }))
         .status,
     ).toBe(400);
-    expect(
-      (
-        await api.post("/guests", {
-          displayName: "A",
-          phone: "0812-3456-7890",
-          eventIds: [missing],
-        })
-      ).status,
-    ).toBe(400);
+    const noGroup = await api.post("/guests", {
+      displayName: "A",
+      phone: "0812-3456-7890",
+      groupId: null,
+    });
+    expect(noGroup.status).toBe(400);
+    expect(JSON.stringify(await read(noGroup))).toContain("Pilih kelompok");
     expect((await api.get("/guests/bukan-uuid")).status).toBe(400);
     expect((await api.get(`/guests/${missing}`)).status).toBe(404);
   });
@@ -514,8 +517,8 @@ describe("tamu: daftar dan filter", () => {
   it("memfilter menurut kelompok, acara, status kirim, dan hanya-Instagram, dan hanya-rombongan", async () => {
     const e1 = await makeEvent({ slug: "akad", name: "Akad" });
     const e2 = await makeEvent({ slug: "resepsi", name: "Resepsi" });
-    const group = await makeGroup();
-    const alpha = await makeGuest({ displayName: "Alpha", groupId: group.id, eventIds: [e1.id] });
+    const group = await makeGroup({ eventIds: [e1.id] });
+    const alpha = await makeGuest({ displayName: "Alpha", groupId: group.id });
     await makeGuest({
       displayName: "Bravo",
       phone: "",
@@ -634,12 +637,13 @@ describe("tamu: ubah, hapus, kirim", () => {
 });
 
 describe("tamu: aksi massal", () => {
-  it("memindah kelompok, menambah dan menghapus acara, melewati tamu di tempat sampah", async () => {
+  it("memindah kelompok beserta acaranya, melewati tamu di tempat sampah", async () => {
     const event = await makeEvent();
-    const group = await makeGroup();
+    const group = await makeGroup({ eventIds: [event.id] });
     const a = await makeGuest({ displayName: "A", phone: "0812-0000-0001" });
-    const b = await makeGuest({ displayName: "B", phone: "0812-0000-0002", eventIds: [event.id] });
+    const b = await makeGuest({ displayName: "B", phone: "0812-0000-0002" });
     const gone = await makeGuest({ displayName: "C", phone: "0812-0000-0003" });
+    const oldGroup = gone.groupId;
     await api.delete(`/guests/${gone.id}`);
     const ids = [a.id, b.id, gone.id];
     const revA = await revOf(a.id);
@@ -648,42 +652,24 @@ describe("tamu: aksi massal", () => {
     expect(await read(moved)).toEqual({ updated: 2 });
     expect(await revOf(a.id)).toBeGreaterThan(revA);
     expect((await listGuests(`?groupId=${group.id}`)).total).toBe(2);
-    const goneRow = await read<{ guest: Guest }>(await api.get(`/guests/${gone.id}`));
-    expect(goneRow.guest.groupId).toBeNull();
-
-    // Hanya tamu yang belum diundang yang dihitung.
-    const added = await api.post("/guests/bulk", { ids, action: "add_event", eventId: event.id });
-    expect(await read(added)).toEqual({ updated: 1 });
+    // Undangan ikut acara kelompok tujuan.
     expect((await listGuests(`?eventId=${event.id}`)).total).toBe(2);
-
-    const revB = await revOf(b.id);
-    const removed = await api.post("/guests/bulk", {
-      ids: [b.id],
-      action: "remove_event",
-      eventId: event.id,
-    });
-    expect(await read(removed)).toEqual({ updated: 1 });
-    expect(await revOf(b.id)).toBeGreaterThan(revB);
-    expect((await listGuests(`?eventId=${event.id}`)).total).toBe(1);
-
-    const ungrouped = await api.post("/guests/bulk", { ids, action: "set_group", groupId: null });
-    expect(await read(ungrouped)).toEqual({ updated: 2 });
-    expect((await listGuests(`?groupId=${group.id}`)).total).toBe(0);
+    const goneRow = await read<{ guest: Guest }>(await api.get(`/guests/${gone.id}`));
+    expect(goneRow.guest.groupId).toBe(oldGroup);
   });
 
-  it("menolak data yang tidak lengkap dan rujukan yang tidak ada", async () => {
+  it("menolak data yang tidak lengkap, aksi lain, dan kelompok yang tidak ada", async () => {
     const guest = await makeGuest();
     const ids = [guest.id];
     expect((await api.post("/guests/bulk", { ids: [], action: "set_group" })).status).toBe(400);
     expect((await api.post("/guests/bulk", { ids, action: "set_group" })).status).toBe(400);
+    expect(
+      (await api.post("/guests/bulk", { ids, action: "set_group", groupId: null })).status,
+    ).toBe(400);
     expect((await api.post("/guests/bulk", { ids, action: "add_event" })).status).toBe(400);
-    expect((await api.post("/guests/bulk", { ids, action: "hapus" })).status).toBe(400);
     const missing = crypto.randomUUID();
     expect(
       (await api.post("/guests/bulk", { ids, action: "set_group", groupId: missing })).status,
-    ).toBe(404);
-    expect(
-      (await api.post("/guests/bulk", { ids, action: "add_event", eventId: missing })).status,
     ).toBe(404);
   });
 });
@@ -726,7 +712,7 @@ describe("impor CSV", () => {
     "Budi Lagi,+62 812 1111 2222,,Keluarga,ya,",
     ",,,,,",
     "Tanpa Kontak,,,,tidak,",
-    "Salah Acara,0813-0000-1111,,,tidak,tidak-ada",
+    "Tanpa Kelompok,0813-0000-1111,,,tidak,resepsi",
     "Salah Rombongan,0813-0000-2222,,,mungkin,",
   ].join("\n");
 
@@ -762,7 +748,7 @@ describe("impor CSV", () => {
     expect(byLine.get(4)?.messages.join(" ")).toContain("baris 2");
     expect(byLine.get(5)?.messages.join(" ")).toContain("Nama undangan wajib diisi");
     expect(byLine.get(6)?.messages.join(" ")).toContain("Isi nomor HP atau Instagram");
-    expect(byLine.get(7)?.messages.join(" ")).toContain('Acara "tidak-ada" tidak dikenal');
+    expect(byLine.get(7)?.messages.join(" ")).toContain("Kolom kelompok wajib diisi");
     expect(byLine.get(8)?.messages.join(" ")).toContain("rombongan");
   });
 
@@ -778,21 +764,14 @@ describe("impor CSV", () => {
     });
   });
 
-  it("menerima nama acara (huruf besar/kecil bebas) selain slug", async () => {
+  it("kolom acara diabaikan: undangan selalu mengikuti kelompok", async () => {
     const result = await preview(
-      "nama_undangan,hp,acara\nBudi,0812-1111-2222,AKAD;resepsi\nSari,0812-1111-3333,Resepsi Besar\n",
+      "nama_undangan,hp,kelompok,acara\nBudi,0812-1111-2222,Keluarga,acara-tak-dikenal\n",
     );
     expect(result.rows[0]?.status).toBe("ok");
-    expect(result.rows[1]?.messages.join(" ")).toContain("tidak dikenal");
-
-    await api.post("/guests/import/commit", {
-      csv: "nama_undangan,hp,acara\nBudi,0812-1111-2222,akad|RESEPSI",
-    });
-    const [budi] = (await listGuests()).items;
-    expect(budi?.events).toHaveLength(2);
   });
 
-  it("kolom acara kosong mengikuti acara kelompoknya; kelompok baru diundang ke semua acara", async () => {
+  it("undangan mengikuti acara kelompoknya; kelompok baru diundang ke semua acara", async () => {
     const all = (await read<{ items: { id: string }[] }>(await api.get("/events"))).items;
     const [first] = all;
     if (!first || all.length < 2) throw new Error("butuh minimal 2 acara");
@@ -808,16 +787,6 @@ describe("impor CSV", () => {
     expect(sari?.events).toHaveLength(all.length);
     const groups = (await read<{ items: Group[] }>(await api.get("/groups"))).items;
     expect(groups.find((g) => g.name === "Arisan")?.eventIds).toHaveLength(all.length);
-  });
-
-  it("menolak nama acara yang dipakai beberapa acara, tapi slug-nya tetap bisa dipakai", async () => {
-    await makeEvent({ slug: "unduh-1", name: "Ngunduh Mantu" });
-    await makeEvent({ slug: "unduh-2", name: "Ngunduh Mantu" });
-    const result = await preview(
-      "nama_undangan,hp,acara\nBudi,0812-1111-2222,ngunduh mantu\nSari,0812-1111-3333,UNDUH-2\n",
-    );
-    expect(result.rows[0]?.messages.join(" ")).toContain("dipakai beberapa acara");
-    expect(result.rows[1]?.status).toBe("ok");
   });
 
   it("membaca teks bertab hasil tempel dari spreadsheet, koma di dalam nama tetap utuh", async () => {
@@ -843,7 +812,7 @@ describe("impor CSV", () => {
 
   it("mendeteksi duplikat terhadap tamu yang sudah ada, tapi tidak terhadap tamu yang sudah dihapus", async () => {
     const existing = await makeGuest({ displayName: "Lama", phone: "0812-1111-2222" });
-    const csv = "nama_undangan,hp\nBaru,0812-1111-2222";
+    const csv = "nama_undangan,hp,kelompok\nBaru,0812-1111-2222,Keluarga";
     expect((await preview(csv)).rows[0]?.status).toBe("duplicate");
 
     await api.delete(`/guests/${existing.id}`);
@@ -868,7 +837,7 @@ describe("impor CSV", () => {
     expect(groups.map((g) => g.name).sort()).toEqual(["Keluarga", "Teman"]);
     expect(groups.find((g) => g.name === "Keluarga")?.guestCount).toBe(1);
 
-    // Kolom acara kosong = semua acara; "resepsi" = hanya resepsi.
+    // Kelompok baru dari impor diundang ke semua acara; kolom acara diabaikan.
     const events = (await read<{ items: Event[] }>(await api.get("/events"))).items;
     const slugOf = (id: string) => events.find((e) => e.id === id)?.slug;
     const invited = (name: string) =>
@@ -877,7 +846,7 @@ describe("impor CSV", () => {
         ?.events.map((e) => slugOf(e.eventId))
         .sort();
     expect(invited("Budi")).toEqual(["akad", "resepsi"]);
-    expect(invited("Sari")).toEqual(["resepsi"]);
+    expect(invited("Sari")).toEqual(["akad", "resepsi"]);
   });
 
   it("commit dengan skipDuplicates=false tetap mengimpor duplikat", async () => {
@@ -906,11 +875,10 @@ describe("ekspor dan template CSV", () => {
       publicBaseUrl: "https://nikah.example",
     });
     const event = await makeEvent();
-    const group = await makeGroup();
+    const group = await makeGroup({ eventIds: [event.id] });
     const guest = await makeGuest({
       displayName: '=HYPERLINK("http://jahat.example")',
       groupId: group.id,
-      eventIds: [event.id],
     });
 
     const res = await api.get("/guests/export.csv");
@@ -925,7 +893,7 @@ describe("ekspor dan template CSV", () => {
     expect(text.startsWith("kode,nama_undangan")).toBe(true);
     expect(text).toContain(`https://nikah.example/u/${guest.code}`);
     expect(text).toContain("Keluarga");
-    // Kolom acara memakai nama acara (yang dikenali admin), bukan kode singkat.
+    // Kolom acara (informasi saja) memakai nama acara, bukan kode singkat.
     expect(text).toContain(event.name);
     expect(text).toContain(`"'=HYPERLINK(""http://jahat.example"")"`);
     expect(text).not.toMatch(/,=HYPERLINK/);
@@ -948,25 +916,75 @@ describe("ekspor dan template CSV", () => {
     expect(result.rows[0]).toMatchObject({ displayName: "Budi, Ani & Anak", isRombongan: true });
   });
 
-  it("template memakai acara yang ada, dan contoh lama bila belum ada acara", async () => {
-    expect(await (await api.get("/guests/template.csv")).text()).toContain(",resepsi");
+  it("template Excel: dropdown kelompok dari kelompok yang ada, rombongan ya/tidak, kolom teks", async () => {
+    await makeGroup({ name: "Keluarga & Kerabat" });
+    await makeGroup({ name: "Teman Kantor" });
+    const res = await api.get("/guests/template.xlsx");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("spreadsheetml");
+    const files = unzipSync(new Uint8Array(await res.arrayBuffer()));
+    const sheet = (path: string) => strFromU8(files[path] ?? new Uint8Array());
+    const tamu = sheet("xl/worksheets/sheet1.xml");
+    expect(tamu).toContain(">nama_undangan<");
+    expect(tamu).toContain("<formula1>Kelompok!$A$1:$A$2</formula1>");
+    expect(tamu).toContain('<formula1>"ya,tidak"</formula1>');
+    // Daftar kelompok (lembar tersembunyi), nama di-escape untuk XML.
+    // Lima baris contoh langsung di lembar Tamu, memakai kelompok yang ada.
+    expect(tamu).toContain('<row r="6">');
+    expect(tamu).not.toContain('<row r="7">');
+    expect(tamu).toContain('s="1"><is><t xml:space="preserve">Bpk. Budi Santoso &amp; Keluarga<');
+    expect(tamu).toContain(">Teman Kantor<");
+    const kelompok = sheet("xl/worksheets/sheet2.xml");
+    expect(kelompok).toContain("Keluarga &amp; Kerabat");
+    expect(kelompok).toContain("Teman Kantor");
+    const workbook = sheet("xl/workbook.xml");
+    expect(workbook).toContain('<sheet name="Tamu" sheetId="1" r:id="rId1"/>');
+    expect(workbook).toContain('name="Kelompok" sheetId="2" state="hidden"');
+  });
 
-    await makeEvent({
-      slug: "akad-nikah",
-      name: "Akad Nikah",
-      startsAt: "2027-05-21T01:00:00Z",
-      endsAt: "2027-05-21T02:00:00Z",
-    });
-    await makeEvent({ slug: "pesta", name: "Pesta Kebun" });
+  it("ekspor Excel: kolom ekspor, sel teks apa adanya (tanpa petik), dropdown kelompok", async () => {
+    const event = await makeEvent();
+    const group = await makeGroup({ name: "Keluarga", eventIds: [event.id] });
+    await makeGuest({ displayName: "=1+1 & <Budi>", groupId: group.id });
+    const res = await api.get("/guests/export.xlsx");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-disposition")).toMatch(/tamu-.*\.xlsx/);
+    const files = unzipSync(new Uint8Array(await res.arrayBuffer()));
+    const tamu = strFromU8(files["xl/worksheets/sheet1.xml"] ?? new Uint8Array());
+    expect(tamu).toContain(">kode<");
+    expect(tamu).toContain(">link<");
+    // Teks inline tidak pernah jadi rumus, jadi nilainya ditulis apa adanya (di-escape untuk XML).
+    expect(tamu).toContain(">=1+1 &amp; &lt;Budi&gt;<");
+    expect(tamu).toContain(">6281234567890<");
+    expect(tamu).toContain(`>${event.name}<`);
+    expect(tamu).toContain("<formula1>Kelompok!$A$1:$A$1</formula1>");
+  });
+
+  it("baris contoh template Excel dilewati saat impor; contoh yang diubah dianggap tamu biasa", async () => {
+    await makeGroup({ name: "Keluarga" });
+    await makeGroup({ name: "Teman Kantor" });
+    const rows = exampleRows(["Keluarga", "Teman Kantor"]);
+    expect(rows).toHaveLength(5);
+    const header = GUEST_COLUMNS.map((c) => c.header);
+    const changed = ["Sari Lestari Baru", ...(rows[1] ?? []).slice(1)];
+    const tsv = [header, ...rows, changed].map((r) => r.join("\t")).join("\n");
+    const preview = await read<ImportPreview>(
+      await api.post("/guests/import/preview", { csv: tsv }),
+    );
+    expect(preview.counts).toEqual({ ok: 1, duplicate: 0, error: 0 });
+    expect(preview.examplesSkipped).toBe(5);
+    // Nomor baris tetap sesuai spreadsheet (baris 7 = setelah judul dan 5 contoh).
+    expect(preview.rows[0]).toMatchObject({ line: 7, displayName: "Sari Lestari Baru" });
+  });
+
+  it("template tanpa kolom acara, dan contohnya lolos pratinjau", async () => {
     const text = await (await api.get("/guests/template.csv")).text();
-    expect(text).toContain(",Pesta Kebun");
-    expect(text).toContain("Akad Nikah;Pesta Kebun");
-    expect(text).not.toContain("resepsi");
-
+    expect(text).toContain("kelompok");
+    expect(text).not.toContain("acara");
     const preview = await read<ImportPreview>(
       await api.post("/guests/import/preview", { csv: text }),
     );
-    expect(preview.counts).toEqual({ ok: 3, duplicate: 0, error: 0 });
+    expect(preview.counts).toEqual({ ok: 2, duplicate: 0, error: 0 });
   });
 
   it("menyediakan template CSV yang valid untuk diimpor", async () => {

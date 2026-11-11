@@ -170,18 +170,21 @@ try {
       name: "Surabaya",
       isVip: true,
       gate: "A",
+      eventIds: [event.id],
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
       ],
     })
   ).json.group;
+  // Tamu wajib berkelompok; tamu tanpa kelompok khusus masuk "Umum" (diundang ke acara ini).
+  const umum = (await admin("POST", "/groups", { name: "Umum", eventIds: [event.id] })).json.group;
   let phone = 81200000;
   const mk = async (displayName, extra = {}) =>
     (
       await admin("POST", "/guests", {
         displayName,
         phone: `0${phone++}`,
-        eventIds: [event.id],
+        groupId: umum.id,
         ...extra,
       })
     ).json.guest;

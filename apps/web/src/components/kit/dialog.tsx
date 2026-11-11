@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,22 @@ type DialogProps = {
 };
 
 /**
+ * Baris tombol di dasar dialog (Batal lalu aksi utama). Di HP tetap satu baris supaya lembar tidak
+ * banyak tertutup: tombol terakhir (aksi utama) melebar, Batal selebar isinya. Menempel di dasar
+ * lembar dan memberi bayangan selama masih ada isian di bawahnya (lihat styles.css).
+ */
+export function DialogActions({ children }: { children: ReactNode }) {
+  return (
+    <div data-form-footer className="flex gap-2 sm:justify-end">
+      {children}
+    </div>
+  );
+}
+
+/** Berapa lama setelah Simpan ditekan pesan galat yang muncul masih dianggap hasil Simpan itu. */
+const SUBMIT_ERROR_WINDOW_MS = 15_000;
+
+/**
  * Dialog Radix shadcn-admin (DialogContent/Header/Title/Description) dengan API lama.
  * Di HP berubah menjadi lembar yang menempel di bawah; baris tombol formulir menempel di dasar
  * lembar (lihat styles.css).
@@ -40,6 +56,43 @@ type DialogProps = {
 export function Dialog({ open, onClose, title, description, wide, children }: DialogProps) {
   const dirty = useRef(false);
   const [confirming, setConfirming] = useState(false);
+  const [content, setContent] = useState<HTMLDivElement | null>(null);
+  const submittedAt = useRef(0);
+
+  // Tanda "masih ada isian di bawah": `data-more` selama isi dialog belum digulir sampai dasar.
+  const updateMore = useCallback(() => {
+    if (!content) return;
+    const more = content.scrollTop + content.clientHeight < content.scrollHeight - 4;
+    content.toggleAttribute("data-more", more);
+  }, [content]);
+
+  useEffect(() => {
+    if (!content) return;
+    updateMore();
+    content.addEventListener("scroll", updateMore, { passive: true });
+    const resize = new ResizeObserver(updateMore);
+    resize.observe(content);
+    for (const child of content.children) resize.observe(child);
+
+    // Simpan ditekan tapi ada isian bermasalah: gulir ke pesan galat pertama yang baru muncul dan
+    // fokuskan kolomnya, supaya tidak tersembunyi di bawah baris tombol yang menempel.
+    let seen = new Set(content.querySelectorAll("[data-form-error]"));
+    const mutations = new MutationObserver(() => {
+      updateMore();
+      const errors = [...content.querySelectorAll<HTMLElement>("[data-form-error]")];
+      const fresh = errors.find((el) => !seen.has(el));
+      seen = new Set(errors);
+      if (!fresh || Date.now() - submittedAt.current > SUBMIT_ERROR_WINDOW_MS) return;
+      submittedAt.current = 0;
+      revealError(fresh);
+    });
+    mutations.observe(content, { childList: true, subtree: true, characterData: true });
+    return () => {
+      content.removeEventListener("scroll", updateMore);
+      resize.disconnect();
+      mutations.disconnect();
+    };
+  }, [content, updateMore]);
 
   useEffect(() => {
     if (open) dirty.current = false;
@@ -60,6 +113,16 @@ export function Dialog({ open, onClose, title, description, wide, children }: Di
           }}
           onChangeCapture={() => {
             dirty.current = true;
+          }}
+          ref={setContent}
+          onSubmitCapture={() => {
+            submittedAt.current = Date.now();
+          }}
+          // Kolom `required` yang kosong: peramban menolak kirim dan menggulir sendiri, tapi bisa
+          // berhenti di balik baris tombol. Arahkan ke tengah lembar.
+          onInvalidCapture={(event) => {
+            const field = event.target as HTMLElement;
+            requestAnimationFrame(() => field.scrollIntoView({ block: "center" }));
           }}
           className={cn(
             "max-h-[calc(100dvh-2rem)] overflow-y-auto",
@@ -101,4 +164,14 @@ export function Dialog({ open, onClose, title, description, wide, children }: Di
       </AlertDialog>
     </>
   );
+}
+
+/** Menggulir pesan galat (dan kolomnya) ke tengah lembar, lalu memfokuskan isiannya bila ada. */
+function revealError(error: HTMLElement) {
+  const field = error.closest<HTMLElement>("[data-field]") ?? error;
+  field.scrollIntoView({ block: "center", behavior: "smooth" });
+  const input = field.querySelector<HTMLElement>(
+    "input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea:not(:disabled)",
+  );
+  input?.focus({ preventScroll: true });
 }

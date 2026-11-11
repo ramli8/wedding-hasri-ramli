@@ -16,7 +16,7 @@ import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { SwitchRow } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
@@ -371,7 +371,7 @@ function DeleteEventDialog({ event, onClose }: { event: Event | null; onClose: (
               : "Jam sesi kelompok untuk acara ini ikut terhapus."}
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex justify-end gap-2">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -382,7 +382,7 @@ function DeleteEventDialog({ event, onClose }: { event: Event | null; onClose: (
             >
               Hapus acara
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

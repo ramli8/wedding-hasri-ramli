@@ -32,7 +32,7 @@ Ketik persis seperti ini supaya hasilnya mudah dicek.
 | Kelompok | `Keluarga` (VIP), `Teman Kantor`, `Teman Kuliah` |
 | Tamu A | `Bpk. Budi Santoso`, HP `0812 3456 7801`, kelompok Keluarga, diundang Akad + Resepsi |
 | Tamu B | `Sari Lestari`, Instagram `sarilestari`, kelompok Teman Kuliah, diundang Resepsi |
-| Tamu C (rombongan) | `Keluarga Bpk. Joko`, HP `0812 3456 7803`, centang Rombongan, diundang Resepsi |
+| Tamu C (rombongan) | `Keluarga Bpk. Joko`, HP `0812 3456 7803`, kelompok Teman Kantor, centang Rombongan, diundang Resepsi |
 | Tamu D | `Dewi Anggraini`, HP `0812 3456 7804`, kelompok Teman Kantor, diundang Resepsi |
 | Nama HP penjaga | `HP Gerbang A`, `HP Gerbang B` |
 | Nama laptop booth | `Laptop Booth` |
@@ -148,64 +148,79 @@ Epson L3110 untuk photobooth.
   **Harusnya**: ditolak dengan pesan jelas.
 - [ ] **4.5** Ubah tanggal Resepsi di menu Acara menjadi 22 Mei, lalu buka lagi Keluarga.
   **Harusnya**: jam datangnya tetap 11.00 (ikut pindah ke tanggal baru).
-- [ ] **4.6** Hapus kelompok yang masih dipakai tamu: diminta memindahkan tamunya dulu.
+- [ ] **4.6** (Setelah Bagian 5) Hapus kelompok yang masih dipakai tamu.
+  **Harusnya**: diminta memilih kelompok tujuan untuk tamunya; tidak ada pilihan "Tanpa kelompok".
+  Batalkan.
 - [ ] **4.7** (Setelah Bagian 5) Buka `Teman Kuliah`, centang **Akad Nikah**.
   **Harusnya**: muncul keterangan "1 tamu kelompok ini ikut diundang ke Akad Nikah". Simpan, lalu
   cek Sari di menu Tamu: kini diundang Akad + Resepsi. Kembalikan (lepas centang Akad, Simpan).
 
 ## Bagian 5. Tamu
 
-- [ ] **5.1** Menu **Tamu** → **Tambah tamu**. Isi hanya **Nama undangan** `Bpk. Budi Santoso`, klik
+- [ ] **5.1** Menu **Tamu**. **Harusnya**: saat kosong hanya ada **satu** tombol, **Tambah tamu
+  pertama** (plus tautan kecil impor). Bila belum ada kelompok, yang tampil justru ajakan **Buat
+  kelompok** (tamu wajib berkelompok). Klik **Tambah tamu pertama**. Isi hanya **Nama undangan** `Bpk. Budi Santoso`, klik
   **Simpan**.
   **Harusnya**: ditolak "Isi nomor HP atau Instagram".
-- [ ] **5.2** Lengkapi tamu A: **Nomor HP / WhatsApp** `0812 3456 7801`, **Kelompok** `Keluarga`.
-  **Harusnya**: acara **Akad Nikah** dan **Resepsi** tercentang otomatis (acara kelompok Keluarga).
-  Klik **Simpan**. **Harusnya**: tersimpan dan jendela tertutup. Klik **Tambah** lagi.
+- [ ] **5.2** Lengkapi tamu A: **Nomor HP / WhatsApp** `0812 3456 7801`. Klik **Simpan** tanpa
+  memilih kelompok. **Harusnya**: ditolak "Pilih kelompok". Pilih **Kelompok** `Keluarga`.
+  **Harusnya**: di bawahnya tertulis "Diundang ke Akad Nikah, Resepsi (mengikuti kelompok)"; tidak
+  ada pilihan "Tanpa kelompok" dan tidak ada centang acara. Klik **Simpan**. **Harusnya**: tersimpan dan jendela tertutup. Klik **Tambah** lagi.
 - [ ] **5.3** Tamu B: **Nama undangan** `Sari Lestari`, **Instagram** `sarilestari` (tanpa @),
-  kelompok `Teman Kuliah`. **Harusnya**: hanya **Resepsi** yang tercentang. **Simpan**, lalu
+  kelompok `Teman Kuliah`. **Harusnya**: tertulis "Diundang ke Resepsi". **Simpan**, lalu
   **Tambah** lagi.
-- [ ] **5.4** Tamu C: `Keluarga Bpk. Joko`, HP `0812 3456 7803`, nyalakan **Rombongan**, acara
-  **Resepsi**, **Catatan untuk penjaga** `Bawa kursi roda`. **Simpan**, lalu **Tambah** lagi.
+- [ ] **5.4** Tamu C: `Keluarga Bpk. Joko`, HP `0812 3456 7803`, kelompok `Teman Kantor`, nyalakan
+  **Rombongan**, **Catatan untuk penjaga** `Bawa kursi roda`. **Simpan**, lalu **Tambah** lagi.
 - [ ] **5.5** Tamu D: `Dewi Anggraini`, HP `0812 3456 7801` (sengaja sama dengan Budi).
   **Harusnya**: muncul peringatan nomor ini sudah dipakai tamu lain. Ganti jadi `0812 3456 7804`,
-  kelompok `Teman Kantor`, acara **Resepsi**, klik **Simpan**.
+  kelompok `Teman Kantor`, klik **Simpan**.
 - [ ] **5.6** **Harusnya**: daftar berisi 4 tamu, masing-masing punya **kode 6 huruf/angka**. Catat
   kode keempatnya (disebut KODE-A, KODE-B, KODE-C, KODE-D).
 - [ ] **5.7** Ketik `sari` di kotak cari. **Harusnya**: hanya Sari yang tampil. Coba juga filter
   kelompok dan acara.
-- [ ] **5.8** Klik tamu A → lihat **QR**. Klik **Unduh PNG**. Ulangi untuk tamu B dan C.
+- [ ] **5.8** Pada tamu A klik tombol **QR** (di HP: **⋯** → **QR tiket**). Klik **Unduh PNG**. Ulangi untuk tamu B dan C.
   **Harusnya**: tiga gambar QR tersimpan di laptop. Gambar ini dipindai HP penjaga di Bagian 9
   (buka di layar laptop, atau cetak).
 - [ ] **5.9** Klik **Kirim** pada tamu A.
   **Harusnya**: WhatsApp Web/aplikasi terbuka dengan pesan berisi link `.../u/KODE-A`. Kembali ke
   admin dan tandai terkirim; status tamu berubah "Sudah dikirim". Coba juga **Salin tautan** dan
   **Salin pesan**.
+- [ ] **5.9b** Centang tamu B dan D, klik **Pindah kelompok** → `Keluarga` → **Pindahkan**.
+  **Harusnya**: keduanya kini diundang Akad + Resepsi. Kembalikan: B ke `Teman Kuliah`, D ke
+  `Teman Kantor`.
 - [ ] **5.10** Hapus tamu D. **Harusnya**: hilang dari daftar. Buka filter **Tempat sampah**, klik
   **Pulihkan**: tamu D kembali.
-- [ ] **5.11** Klik **Cetak**. **Harusnya**: tampilan daftar tamu siap cetak (tekan Ctrl+P untuk
+- [ ] **5.11** Klik **⋯** di kanan atas → **Cetak kartu QR**. **Harusnya**: tampilan daftar tamu siap cetak (tekan Ctrl+P untuk
   melihat pratinjau cetak).
 
-### Impor dari Excel/CSV
+### Impor dan ekspor Excel
 
-- [ ] **5.12** **Tamu → Impor** → **Unduh template**. Buka file `template-tamu.csv` di Excel atau
-  Google Sheets dan isi 4 baris:
+- [ ] **5.12** **Tamu** → **⋯** di kanan atas → **Impor dari spreadsheet** → **Unduh template
+  Excel**. Buka `template-tamu.xlsx` di Excel atau Google Sheets.
+  **Harusnya**: judul kolom tebal dan tetap terlihat saat digulir; kolom **kelompok** berupa
+  dropdown berisi kelompok yang ada (Keluarga, Teman Kantor, Teman Kuliah), kolom **rombongan**
+  dropdown ya/tidak. Baris 2–6 berisi 5 contoh dengan kelompok Anda. Coba ketik
+  `Teman Arisan` di kolom kelompok: **Harusnya** ditolak.
+- [ ] **5.13** Biarkan 5 baris contoh, lalu di bawahnya isi 4 baris (kelompok dan rombongan dipilih
+  dari dropdown):
 
-  | nama_undangan | hp | instagram | kelompok | rombongan | catatan_penjaga | acara |
-  |---|---|---|---|---|---|---|
-  | Andi Wijaya | 081234567811 | | Teman Kantor | tidak | | resepsi |
-  | Rina Kusuma | | rinakusuma | Teman Arisan | tidak | | resepsi |
-  | Budi Santoso | 081234567801 | | Keluarga | tidak | | resepsi |
-  | Tanpa Kontak | | | | tidak | | resepsi |
+  | nama_undangan | hp | instagram | kelompok | rombongan | catatan_penjaga |
+  |---|---|---|---|---|---|
+  | Andi Wijaya | 081234567811 | | Teman Kantor | tidak | |
+  | Rina Kusuma | | rinakusuma | Teman Kuliah | tidak | |
+  | Budi Santoso | 081234567801 | | Keluarga | tidak | |
+  | Tanpa Kontak | | | | tidak | |
 
-  Simpan sebagai CSV (jangan ubah nama kolom di baris pertama; ikuti format kolom template bila
-  berbeda dari tabel ini).
-- [ ] **5.13** **Pilih berkas CSV** → pilih file itu.
-  **Harusnya**: pratinjau menandai Andi dan Rina **baik**, Budi **duplikat** (nomor sama dengan tamu
-  A), "Tanpa Kontak" **bermasalah**, dan kelompok `Teman Arisan` akan dibuat baru.
-- [ ] **5.14** Klik **Impor**.
-  **Harusnya**: 2 tamu masuk (duplikat dilewati), kelompok **Teman Arisan** muncul di menu Kelompok.
-- [ ] **5.15** **Ekspor** daftar tamu, buka di Excel.
-  **Harusnya**: semua tamu ada, beserta kode dan link.
+  **Harusnya**: nomor `081234567811` tetap diawali 0 (tidak berubah jadi angka). Simpan (tetap
+  .xlsx). Tidak ada kolom acara: acara yang diundang mengikuti kelompok.
+- [ ] **5.14** Di halaman impor klik **Pilih berkas Excel** → pilih berkas itu.
+  **Harusnya**: 5 baris contoh tidak muncul (dilewati); pratinjau menandai Andi dan Rina **baik**,
+  Budi **duplikat** (nomor sama dengan tamu A), dan "Tanpa Kontak" **bermasalah** (tanpa kontak dan
+  tanpa kelompok). Klik **Impor**.
+  **Harusnya**: 2 tamu masuk (duplikat dilewati). Andi diundang hanya Resepsi (acara Teman Kantor).
+- [ ] **5.15** **⋯** → **Ekspor Excel**, buka berkasnya.
+  **Harusnya**: semua tamu ada, beserta kode, acara, dan link; HP tidak berubah jadi angka; kolom
+  kelompok juga berupa dropdown, jadi berkas ini bisa diperbaiki lalu diimpor lagi.
 
 ## Bagian 6. Isi undangan
 
@@ -387,7 +402,7 @@ pasangkan ulang kedua HP (Bagian 9.1–9.2) lewat alamat baru.
   **Harusnya**: **Total uang** Rp500.000 dan **Total catatan** 2.
 - [ ] **12.3** **Kirim terima kasih** pada Budi (WhatsApp terbuka), lalu **Tandai dibalas**.
   **Harusnya**: hilang dari filter **Belum dibalas**.
-- [ ] **12.4** **Ekspor** CSV dan buka di Excel: rapi, angka benar.
+- [ ] **12.4** **Ekspor Excel** dan buka berkasnya: rapi, kolom nominal berupa angka (bisa dijumlah dengan SUM).
 - [ ] **12.5** Menu **Vendor** → **Tambah kategori umum**.
   **Harusnya**: kategori seperti Katering, Dekorasi, dll. otomatis dibuat.
 - [ ] **12.6** Di **Katering**: **Tambah vendor** dua kandidat (`Katering Sedap`, **Harga acuan**

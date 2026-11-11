@@ -9,7 +9,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -384,7 +384,7 @@ function ReviewSection({ items }: { items: ReviewItem[] }) {
                 : `Hanya check-in paling awal ${target.displayName} yang dihitung: ${target.primary.pax} orang. Duplikatnya tetap tersimpan di riwayat.`}
             </p>
             {resolve.error && <Alert tone="error">{resolve.error.message}</Alert>}
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <DialogActions>
               <Button variant="outline" onClick={() => setConfirming(null)}>
                 Kembali
               </Button>
@@ -400,7 +400,7 @@ function ReviewSection({ items }: { items: ReviewItem[] }) {
               >
                 {merge ? `Gabungkan jadi ${mergedPax(target)} orang` : "Abaikan duplikat"}
               </Button>
-            </div>
+            </DialogActions>
           </>
         )}
       </Dialog>
@@ -522,14 +522,14 @@ function PaxForm({ row, onClose }: { row: Recent; onClose: () => void }) {
         )}
       </Field>
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <DialogActions>
         <Button variant="outline" onClick={onClose}>
           Batal
         </Button>
         <Button type="submit" disabled={save.isPending || !(Number(pax) >= 1)}>
           Simpan
         </Button>
-      </div>
+      </DialogActions>
     </form>
   );
 }
@@ -554,7 +554,7 @@ function UndoDialog({ row, onClose }: { row: Recent | null; onClose: () => void 
         <>
           <p>Tamu ini kembali dianggap belum masuk. Riwayatnya tetap tersimpan di log.</p>
           {undo.error && <Alert tone="error">{undo.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Kembali
             </Button>
@@ -565,7 +565,7 @@ function UndoDialog({ row, onClose }: { row: Recent | null; onClose: () => void 
             >
               Batalkan check-in
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

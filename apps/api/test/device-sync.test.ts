@@ -322,9 +322,13 @@ describe("snapshot", () => {
     expect(snap.event.id).toBe(world.event.id);
     expect(snap.guests.map((g) => g.displayName).sort()).toEqual(["Bpk. Budi", "Pak Joko", "Sari"]);
     expect(snap.guests.every((g) => g.invited)).toBe(true);
-    expect(snap.groups).toEqual([
-      { id: world.group.id, name: "Surabaya", color: DEFAULT_GROUP_COLOR, isVip: true },
-    ]);
+    // Selain Surabaya ada kelompok uji otomatis (tamu wajib berkelompok, lihat helpers.ts).
+    expect(snap.groups).toContainEqual({
+      id: world.group.id,
+      name: "Surabaya",
+      color: DEFAULT_GROUP_COLOR,
+      isVip: true,
+    });
     expect(snap.sessions).toHaveLength(1);
 
     const budi = snap.guests.find((g) => g.id === world.budi.id);
@@ -653,7 +657,8 @@ describe("dashboard", () => {
       pax: 3,
       isVip: true,
     });
-    const none = dash.groups.find((g) => g.name === "Tanpa kelompok");
+    // Sari dan Joko ada di kelompok uji otomatis yang diundang ke acara ini (lihat helpers.ts).
+    const none = dash.groups.find((g) => g.name.startsWith("Uji:"));
     expect(none).toMatchObject({ invited: 2, arrived: 1, pax: 1 });
 
     expect(dash.devices.map((d) => d.name)).toEqual(["HP Gerbang A", "HP Gerbang B"]);

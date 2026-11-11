@@ -14,7 +14,9 @@ import { validate } from "../http/validate.js";
 import {
   commitImport,
   exportGuestsCsv,
+  exportGuestsXlsx,
   importTemplateCsv,
+  importTemplateXlsx,
   previewImport,
 } from "../services/guest-import.js";
 import {
@@ -51,8 +53,27 @@ export function guestRoutes({ db }: AppDeps) {
         c.body(await exportGuestsCsv(db), 200, csvHeaders("tamu.csv")),
       )
       .get("/template.csv", async (c) =>
-        c.body(await importTemplateCsv(db), 200, csvHeaders("template-tamu.csv")),
+        c.body(await importTemplateCsv(), 200, csvHeaders("template-tamu.csv")),
       )
+      .get("/export.xlsx", async (c) => {
+        const today = new Date().toISOString().slice(0, 10);
+        c.header(
+          "content-type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        c.header("content-disposition", `attachment; filename="tamu-${today}.xlsx"`);
+        c.header("cache-control", "no-store");
+        return c.body(new Uint8Array(await exportGuestsXlsx(db)).buffer);
+      })
+      .get("/template.xlsx", async (c) => {
+        c.header(
+          "content-type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        c.header("content-disposition", 'attachment; filename="template-tamu.xlsx"');
+        c.header("cache-control", "no-store");
+        return c.body(new Uint8Array(await importTemplateXlsx(db)).buffer);
+      })
       .get("/duplicates", validate("query", guestDuplicatesQuerySchema), async (c) => {
         return c.json(await findDuplicateContacts(db, c.req.valid("query")));
       })

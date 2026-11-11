@@ -421,18 +421,18 @@ export const adminApi = {
 
 /** Tautan unduhan (dibuka langsung oleh browser, cookie sesi ikut terkirim). */
 export const downloads = {
-  guestsCsv: `/api${base}/guests/export.csv`,
-  templateCsv: `/api${base}/guests/template.csv`,
+  guestsXlsx: `/api${base}/guests/export.xlsx`,
+  templateXlsx: `/api${base}/guests/template.xlsx`,
   dataJson: `/api${base}/export/data.json`,
   mediaZip: `/api${base}/export/media.zip`,
   boothPhotosZip: `/api${base}/booth/photos.zip`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
-  receivedGiftsCsv: (filter: ReceivedGiftFilter) => {
+  receivedGiftsXlsx: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();
     if (filter.q) search.set("q", filter.q);
     if (filter.kind) search.set("kind", filter.kind);
     if (filter.thanked !== undefined) search.set("thanked", String(filter.thanked));
     const text = search.toString();
-    return `/api${base}/received-gifts/export.csv${text ? `?${text}` : ""}`;
+    return `/api${base}/received-gifts/export.xlsx${text ? `?${text}` : ""}`;
   },
 };

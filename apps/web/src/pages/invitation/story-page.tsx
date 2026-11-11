@@ -6,7 +6,7 @@ import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
 import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
@@ -222,7 +222,7 @@ function DeleteDialog({ item, onClose }: { item: StoryItem | null; onClose: () =
         <>
           <p>Cerita ini dan fotonya dihapus dari undangan.</p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -233,7 +233,7 @@ function DeleteDialog({ item, onClose }: { item: StoryItem | null; onClose: () =
             >
               Hapus cerita
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

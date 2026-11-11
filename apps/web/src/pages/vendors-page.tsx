@@ -24,7 +24,7 @@ import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import { Dialog } from "@/components/kit/dialog";
+import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
@@ -789,7 +789,7 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
             )}
           </div>
           {updateDue.error && <Alert tone="error">{updateDue.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={() => setAskDue(false)}>
               Biarkan
             </Button>
@@ -799,7 +799,7 @@ function PaymentsPanel({ vendor }: { vendor: Vendor }) {
             >
               {nextDueOn ? "Simpan jatuh tempo" : "Hapus jatuh tempo"}
             </Button>
-          </div>
+          </DialogActions>
         </div>
       )}
 
@@ -1078,7 +1078,7 @@ function DeleteDialog({ vendor, onClose }: { vendor: Vendor | null; onClose: () 
               : "Vendor dihapus dari daftar kandidat."}
           </p>
           {remove.error && <Alert tone="error">{remove.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogActions>
             <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
@@ -1089,7 +1089,7 @@ function DeleteDialog({ vendor, onClose }: { vendor: Vendor | null; onClose: () 
             >
               Hapus vendor
             </Button>
-          </div>
+          </DialogActions>
         </>
       )}
     </Dialog>

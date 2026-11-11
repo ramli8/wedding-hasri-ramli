@@ -27,10 +27,10 @@ import {
 } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isUniqueViolation } from "../db/errors.js";
-import { events, guestEvents, guestGroups, guests } from "../db/schema.js";
+import { guestEvents, guestGroups, guests } from "../db/schema.js";
 import { generateCode } from "../domain/guest-code.js";
 import { AppError } from "../http/errors.js";
-import { lockGuestRev } from "./checkin-log.js";
+import { type Executor, lockGuestRev } from "./checkin-log.js";
 
 type GuestRow = typeof guests.$inferSelect;
 type GuestEventRow = typeof guestEvents.$inferSelect;
@@ -136,24 +136,47 @@ export async function getGuest(db: Db, id: string): Promise<Guest> {
 }
 
 async function assertReferencesExist(db: Db, input: GuestData) {
-  if (input.groupId) {
-    const [group] = await db
-      .select({ id: guestGroups.id })
-      .from(guestGroups)
-      .where(eq(guestGroups.id, input.groupId))
-      .limit(1);
-    if (!group) throw new AppError(400, "VALIDATION_ERROR", "Kelompok tidak ditemukan");
-  }
-  const eventIds = [...new Set(input.eventIds)];
-  if (eventIds.length) {
-    const found = await db
-      .select({ id: events.id })
-      .from(events)
-      .where(inArray(events.id, eventIds));
-    if (found.length !== eventIds.length) {
-      throw new AppError(400, "VALIDATION_ERROR", "Ada acara yang tidak ditemukan");
-    }
-  }
+  const [group] = await db
+    .select({ id: guestGroups.id })
+    .from(guestGroups)
+    .where(eq(guestGroups.id, input.groupId))
+    .limit(1);
+  if (!group) throw new AppError(400, "VALIDATION_ERROR", "Kelompok tidak ditemukan");
+}
+
+/**
+ * Menyamakan undangan tamu dengan acara kelompoknya: acara kelompok yang belum ada ditambahkan,
+ * acara di luar kelompok dicabut. Undangan yang tetap tidak disentuh, supaya status "terkirim"
+ * tidak hilang. Mengembalikan id tamu yang undangannya berubah. Pemanggil yang menjalankannya di
+ * luar perubahan baris tamu itu sendiri harus menaikkan `rev` tamu (dengan `lockGuestRev`).
+ */
+export async function syncGuestEvents(tx: Executor, guestIds: string[]): Promise<Set<string>> {
+  if (guestIds.length === 0) return new Set();
+  const removed = await tx
+    .delete(guestEvents)
+    .where(
+      and(
+        inArray(guestEvents.guestId, guestIds),
+        sql`not exists (
+          select 1 from guests g join group_events x on x.group_id = g.group_id
+          where g.id = ${guestEvents.guestId} and x.event_id = ${guestEvents.eventId}
+        )`,
+      ),
+    )
+    .returning({ guestId: guestEvents.guestId });
+  // Insert…select Drizzle menuntut semua kolom tabel, jadi bagian ini ditulis sebagai SQL.
+  const added = await tx.execute<{ guest_id: string }>(sql`
+    insert into guest_events (guest_id, event_id)
+    select guests.id, group_events.event_id
+    from guests join group_events on group_events.group_id = guests.group_id
+    where ${inArray(guests.id, guestIds)}
+    on conflict do nothing
+    returning guest_id
+  `);
+  return new Set([
+    ...removed.map((row) => row.guestId),
+    ...Array.from(added, (row) => row.guest_id),
+  ]);
 }
 
 function guestColumns(input: GuestData) {
@@ -173,7 +196,6 @@ export async function createGuest(
   source: GuestSource = "admin",
 ): Promise<Guest> {
   await assertReferencesExist(db, input);
-  const eventIds = [...new Set(input.eventIds)];
 
   // Tabrakan kode sangat jarang (32^6), tetapi tetap ditangani dengan mengulang.
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -185,11 +207,7 @@ export async function createGuest(
           .values({ ...guestColumns(input), code: generateCode(), source })
           .returning({ id: guests.id });
         if (!row) throw new Error("Gagal membuat tamu");
-        if (eventIds.length) {
-          await tx
-            .insert(guestEvents)
-            .values(eventIds.map((eventId) => ({ guestId: row.id, eventId })));
-        }
+        await syncGuestEvents(tx, [row.id]);
         return row.id;
       });
       return await getGuest(db, id);
@@ -203,7 +221,6 @@ export async function createGuest(
 
 export async function updateGuest(db: Db, id: string, input: GuestData): Promise<Guest> {
   await assertReferencesExist(db, input);
-  const wanted = new Set(input.eventIds);
 
   await db.transaction(async (tx) => {
     await lockGuestRev(tx);
@@ -214,19 +231,8 @@ export async function updateGuest(db: Db, id: string, input: GuestData): Promise
       .returning({ id: guests.id });
     if (updated.length === 0) throw new AppError(404, "NOT_FOUND", "Tamu tidak ditemukan");
 
-    // Undangan yang dipertahankan tidak disentuh, supaya status "terkirim" tidak hilang.
-    const existing = await tx.select().from(guestEvents).where(eq(guestEvents.guestId, id));
-    const have = new Set(existing.map((e) => e.eventId));
-    const toRemove = [...have].filter((eventId) => !wanted.has(eventId));
-    const toAdd = [...wanted].filter((eventId) => !have.has(eventId));
-    if (toRemove.length) {
-      await tx
-        .delete(guestEvents)
-        .where(and(eq(guestEvents.guestId, id), inArray(guestEvents.eventId, toRemove)));
-    }
-    if (toAdd.length) {
-      await tx.insert(guestEvents).values(toAdd.map((eventId) => ({ guestId: id, eventId })));
-    }
+    // Kelompok bisa berganti: undangannya ikut acara kelompok yang baru.
+    await syncGuestEvents(tx, [id]);
   });
   return getGuest(db, id);
 }
@@ -268,69 +274,31 @@ export async function markSent(db: Db, id: string, req: Required<MarkSentRequest
   return getGuest(db, id);
 }
 
-/** Aksi massal pada tamu terpilih. Tamu di tempat sampah dilewati. Satu transaksi. */
+/**
+ * Aksi massal: pindah kelompok (tamu di tempat sampah dilewati), lalu undangannya disamakan dengan
+ * acara kelompok tujuan. Satu transaksi.
+ */
 export async function bulkUpdateGuests(db: Db, input: GuestBulkData): Promise<GuestBulkResponse> {
   const ids = [...new Set(input.ids)];
-  if (input.action === "set_group" && input.groupId) {
-    const [group] = await db
-      .select({ id: guestGroups.id })
-      .from(guestGroups)
-      .where(eq(guestGroups.id, input.groupId))
-      .limit(1);
-    if (!group) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
-  }
-  const eventId = input.eventId;
-  if (input.action !== "set_group" && eventId) {
-    const [event] = await db
-      .select({ id: events.id })
-      .from(events)
-      .where(eq(events.id, eventId))
-      .limit(1);
-    if (!event) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
-  }
+  const [group] = await db
+    .select({ id: guestGroups.id })
+    .from(guestGroups)
+    .where(eq(guestGroups.id, input.groupId))
+    .limit(1);
+  if (!group) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
 
   return db.transaction(async (tx) => {
     await lockGuestRev(tx);
-    const active = and(inArray(guests.id, ids), isNull(guests.deletedAt));
-
-    if (input.action === "set_group") {
-      const updated = await tx
-        .update(guests)
-        .set({ groupId: input.groupId ?? null, ...guestTouch() })
-        .where(active)
-        .returning({ id: guests.id });
-      return { updated: updated.length };
-    }
-
-    const targets = (await tx.select({ id: guests.id }).from(guests).where(active)).map(
-      (g) => g.id,
+    const updated = await tx
+      .update(guests)
+      .set({ groupId: input.groupId, ...guestTouch() })
+      .where(and(inArray(guests.id, ids), isNull(guests.deletedAt)))
+      .returning({ id: guests.id });
+    await syncGuestEvents(
+      tx,
+      updated.map((g) => g.id),
     );
-    if (targets.length === 0 || !eventId) return { updated: 0 };
-
-    // Hanya tamu yang benar-benar berubah yang dihitung dan dinaikkan `rev`-nya.
-    const changed =
-      input.action === "add_event"
-        ? await tx
-            .insert(guestEvents)
-            .values(targets.map((guestId) => ({ guestId, eventId })))
-            .onConflictDoNothing()
-            .returning({ guestId: guestEvents.guestId })
-        : await tx
-            .delete(guestEvents)
-            .where(and(eq(guestEvents.eventId, eventId), inArray(guestEvents.guestId, targets)))
-            .returning({ guestId: guestEvents.guestId });
-    if (changed.length) {
-      await tx
-        .update(guests)
-        .set(guestTouch())
-        .where(
-          inArray(
-            guests.id,
-            changed.map((c) => c.guestId),
-          ),
-        );
-    }
-    return { updated: changed.length };
+    return { updated: updated.length };
   });
 }
 

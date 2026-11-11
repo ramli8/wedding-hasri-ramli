@@ -17,6 +17,8 @@ export type RowAction =
       onSelect: () => void;
       destructive?: boolean;
       disabled?: boolean;
+      /** Mis. `md:hidden` untuk aksi yang di layar lebar sudah tampil sebagai tombol sendiri. */
+      className?: string;
     };
 
 /** Menu "…" di ujung baris (DataTableRowActions shadcn-admin). */
@@ -40,6 +42,7 @@ export function DataTableRowActions({ actions }: { actions: RowAction[] }) {
               variant={action.destructive ? "destructive" : "default"}
               disabled={action.disabled}
               onClick={action.onSelect}
+              className={action.className}
             >
               {action.label}
               {action.icon && <span className="ms-auto [&_svg]:size-4">{action.icon}</span>}

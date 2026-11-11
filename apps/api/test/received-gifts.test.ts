@@ -1,4 +1,5 @@
 import type { ReceivedGift, ReceivedGiftSummary } from "@wedding/shared";
+import { strFromU8, unzipSync } from "fflate";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { adminClient, createTestContext, loggedInClient } from "./helpers.js";
 
@@ -282,10 +283,33 @@ describe("hadiah masuk", () => {
     expect(notThanked).not.toContain("Rice cooker");
   });
 
+  it("ekspor Excel: nominal berupa sel angka, teks apa adanya, mengikuti filter", async () => {
+    await api.post("/received-gifts", {
+      giverName: "=HYPERLINK(1)",
+      kind: "transfer",
+      amount: 1_250_000,
+      receivedOn: "2027-05-21",
+    });
+    await api.post("/received-gifts", {
+      giverName: "Bu Tini",
+      kind: "barang",
+      item: "Rice cooker",
+    });
+    const res = await api.get("/received-gifts/export.xlsx?kind=transfer");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-disposition")).toMatch(/hadiah-masuk-.*\.xlsx/);
+    const files = unzipSync(new Uint8Array(await res.arrayBuffer()));
+    const sheet = strFromU8(files["xl/worksheets/sheet1.xml"] ?? new Uint8Array());
+    expect(sheet).toContain('s="3"><v>1250000</v></c>');
+    expect(sheet).toContain(">=HYPERLINK(1)<");
+    expect(sheet).not.toContain("Rice cooker");
+  });
+
   it("memerlukan login admin", async () => {
     const anonymous = adminClient(ctx.makeApp(), "");
     expect((await anonymous.get("/received-gifts")).status).toBe(401);
     expect((await anonymous.get("/received-gifts/export.csv")).status).toBe(401);
+    expect((await anonymous.get("/received-gifts/export.xlsx")).status).toBe(401);
     expect(
       (await anonymous.post("/received-gifts", { giverName: "A", kind: "amplop", amount: 1000 }))
         .status,

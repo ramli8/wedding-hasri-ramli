@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { IMPORT_COLUMNS, type ImportCommitResponse, type ImportPreview } from "@wedding/shared";
-import { ClipboardPaste, FileUp, RefreshCw } from "lucide-react";
+import { ClipboardPaste, FileSpreadsheet, FileUp, RefreshCw } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -15,7 +15,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi, downloads } from "../../lib/admin-api.js";
-import { eventsQuery, useRefresh } from "../../lib/queries.js";
+import { groupsQuery, useRefresh } from "../../lib/queries.js";
+import { xlsxToTsv } from "../../lib/xlsx.js";
 
 const statusLabel = { ok: "Siap", duplicate: "Duplikat", error: "Error" } as const;
 
@@ -76,7 +77,8 @@ const previewColumns: ColumnDef<PreviewRow, unknown>[] = [
 
 export function ImportPage() {
   const refresh = useRefresh();
-  const events = useQuery(eventsQuery);
+  const groups = useQuery(groupsQuery);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<"file" | "paste">("file");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -112,7 +114,17 @@ export function ImportPage() {
     event.target.value = "";
     if (!file) return;
     setFileName(file.name);
-    check(await file.text());
+    setFileError(null);
+    // Hanya Excel (.xlsx): dibaca di peramban menjadi teks bertab untuk pratinjau yang sama.
+    if (!/\.xlsx$/i.test(file.name)) {
+      setFileError("Pilih berkas Excel (.xlsx). Pakai template Excel di bawah.");
+      return;
+    }
+    try {
+      check(xlsxToTsv(await file.arrayBuffer()));
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : "Berkas Excel tidak bisa dibaca.");
+    }
   }
 
   /** Periksa ulang: berkas harus dipilih lagi (isinya mungkin sudah diperbaiki di Excel). */
@@ -121,7 +133,7 @@ export function ImportPage() {
     else fileRef.current?.click();
   }
 
-  const eventNames = (events.data ?? []).map((e) => e.name);
+  const groupNames = (groups.data ?? []).map((g) => g.name);
 
   const data: ImportPreview | undefined = preview.data;
   const importable = data ? data.counts.ok + (skipDuplicates ? 0 : data.counts.duplicate) : 0;
@@ -131,7 +143,7 @@ export function ImportPage() {
       <PageHeader
         tag="Impor"
         title="Impor tamu"
-        description="Pilih berkas CSV atau tempel dari Excel/Google Sheets, periksa pratinjau, lalu impor."
+        description="Pilih berkas Excel atau tempel dari Excel/Google Sheets, periksa pratinjau, lalu impor."
         actions={
           <Link to="/admin/tamu" className={buttonVariants({ variant: "outline" })}>
             Kembali ke tamu
@@ -143,15 +155,16 @@ export function ImportPage() {
         <h2 className="text-base font-semibold">1. Masukkan data tamu</h2>
         <div className="grid gap-1 text-sm text-muted-foreground">
           <p>
-            Kolom: {IMPORT_COLUMNS.join(", ")}. Hanya <b>nama_undangan</b> yang wajib, dan salah
-            satu dari hp atau instagram harus terisi. Kelompok yang belum ada dibuat otomatis.
+            Paling mudah: unduh <b>template Excel</b>, isi, lalu pilih berkasnya di sini. Kolom
+            kelompok dan rombongan berupa pilihan (dropdown). Lima baris pertama adalah contoh:
+            boleh ditimpa atau dihapus, dan bila dibiarkan otomatis dilewati.
           </p>
           <p>
-            Kolom <b>acara</b> berisi nama acara, dipisah titik koma bila lebih dari satu; kosong
-            berarti diundang ke semua acara.{" "}
-            {eventNames.length > 0
-              ? `Acara yang bisa ditulis: ${eventNames.join("; ")}.`
-              : "Belum ada acara; buat dulu di menu Acara bila tamu perlu dipilah per acara."}
+            Kolom: {IMPORT_COLUMNS.join(", ")}. Wajib: <b>nama_undangan</b>, <b>kelompok</b>, dan
+            salah satu dari hp atau instagram. Acara yang diundang mengikuti kelompok.{" "}
+            {groupNames.length > 0
+              ? `Kelompok yang ada: ${groupNames.join(", ")}.`
+              : "Belum ada kelompok; buat dulu di menu Kelompok."}
           </p>
         </div>
 
@@ -159,7 +172,7 @@ export function ImportPage() {
           <TabsList>
             <TabsTrigger value="file">
               <FileUp aria-hidden />
-              Berkas CSV
+              Berkas
             </TabsTrigger>
             <TabsTrigger value="paste">
               <ClipboardPaste aria-hidden />
@@ -172,26 +185,28 @@ export function ImportPage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv,text/csv"
-                aria-label="Berkas CSV"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                aria-label="Berkas Excel"
                 onChange={onFile}
                 className="sr-only"
                 tabIndex={-1}
               />
               <Button onClick={() => fileRef.current?.click()}>
                 <FileUp aria-hidden />
-                Pilih berkas CSV
+                Pilih berkas Excel
               </Button>
               <span className="min-w-0 text-sm break-all text-muted-foreground">
                 {fileName ?? "Belum ada berkas dipilih"}
               </span>
             </div>
-            <div>
+            {fileError && <Alert tone="error">{fileError}</Alert>}
+            <div className="flex flex-wrap items-center gap-3">
               <a
-                href={downloads.templateCsv}
+                href={downloads.templateXlsx}
                 className={buttonVariants({ variant: "outline", size: "sm" })}
               >
-                Unduh template
+                <FileSpreadsheet aria-hidden />
+                Unduh template Excel
               </a>
             </div>
           </TabsContent>
@@ -232,6 +247,19 @@ export function ImportPage() {
             <Badge variant="outline">{data.counts.duplicate} duplikat</Badge>
             <Badge variant="outline">{data.counts.error} error</Badge>
           </div>
+          {data.rows.length === 0 ? (
+            <Alert>
+              {data.examplesSkipped > 0
+                ? `Berkas ini baru berisi ${data.examplesSkipped} baris contoh dari template, dan baris contoh tidak ikut diimpor. Tulis data tamu di bawah baris contoh (atau timpa contohnya), simpan, lalu pilih berkasnya lagi.`
+                : "Belum ada data tamu di berkas ini. Isi data tamu di bawah baris judul kolom, simpan, lalu pilih berkasnya lagi."}
+            </Alert>
+          ) : (
+            data.examplesSkipped > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {data.examplesSkipped} baris contoh dari template dilewati.
+              </p>
+            )
+          )}
           {data.counts.error > 0 && (
             <Alert tone="error">
               <span className="flex flex-wrap items-center gap-x-3 gap-y-2">

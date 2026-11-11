@@ -16,14 +16,16 @@ type FieldProps = {
 export function Field({ label, hint, required, error, children }: FieldProps) {
   const id = useId();
   return (
-    <div className="grid content-start gap-2">
+    <div data-field className="grid content-start gap-2">
       <Label htmlFor={id}>
         {label}
         {required && <span className="text-xs font-normal text-muted-foreground">wajib</span>}
       </Label>
       {children(id)}
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p data-form-error className="text-sm text-destructive">
+          {error}
+        </p>
       ) : (
         hint && <p className="text-sm text-muted-foreground">{hint}</p>
       )}

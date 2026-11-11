@@ -12,7 +12,11 @@ export function Alert({
 }) {
   const Icon = tone === "error" ? CircleAlert : Info;
   return (
-    <ShadcnAlert variant={tone === "error" ? "destructive" : "default"}>
+    // `data-form-error`: di dalam dialog, galat yang muncul setelah Simpan digulir ke tengah lembar.
+    <ShadcnAlert
+      variant={tone === "error" ? "destructive" : "default"}
+      data-form-error={tone === "error" ? "" : undefined}
+    >
       <Icon />
       <AlertDescription>{children}</AlertDescription>
     </ShadcnAlert>

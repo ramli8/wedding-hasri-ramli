@@ -1,11 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { type Event, type Group, type Guest, guestInputSchema } from "@wedding/shared";
-import { TriangleAlert } from "lucide-react";
+import { CalendarDays, TriangleAlert } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
-import { CheckCard, FormSection, SwitchRow } from "@/components/kit/form-rows";
+import { FormSection, SwitchRow } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
 import { Select } from "@/components/kit/select";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ export function GuestFormDialog({ editing, groups, events, onClose }: Props) {
   );
 }
 
-type FieldName = "displayName" | "phone" | "instagram";
+type FieldName = "displayName" | "phone" | "instagram" | "groupId";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 /** Aturan dari server ("Isi nomor HP atau Instagram") ditulis lebih jelas untuk admin. */
@@ -50,13 +51,17 @@ const EITHER_CONTACT = "Isi salah satu: nomor HP atau Instagram.";
 /** Pesan galat server yang dikenali dipetakan ke kolomnya, supaya tampil tepat di bawah isian. */
 function fieldOfMessage(message: string): FieldName | null {
   if (message.startsWith("Nama undangan")) return "displayName";
+  if (message === "Pilih kelompok" || message === "Kelompok tidak ditemukan") return "groupId";
   if (message.startsWith("Username Instagram")) return "instagram";
   if (message.startsWith("Nomor HP") || message === "Isi nomor HP atau Instagram") return "phone";
   return null;
 }
 
 function friendly(message: string) {
-  return message === "Isi nomor HP atau Instagram" ? EITHER_CONTACT : message;
+  if (message === "Isi nomor HP atau Instagram") return EITHER_CONTACT;
+  // Bedakan dari teks "Pilih kelompok" di dalam kolomnya sendiri.
+  if (message === "Pilih kelompok") return "Kelompok wajib dipilih.";
+  return message;
 }
 
 function useDebounced<T>(value: T, ms: number) {
@@ -113,18 +118,12 @@ function GuestForm({
   const [groupId, setGroupId] = useState(guest?.groupId ?? "");
   const [isRombongan, setIsRombongan] = useState(guest?.isRombongan ?? false);
   const [usherNote, setUsherNote] = useState(guest?.usherNote ?? "");
-  // Tamu baru diundang ke semua acara secara bawaan.
-  const [eventIds, setEventIds] = useState<string[]>(
-    guest ? guest.events.map((e) => e.eventId) : events.map((e) => e.id),
-  );
   const [errors, setErrors] = useState<FieldErrors>({});
-
-  // Memilih kelompok mencentang acara kelompok itu; centangnya masih bisa diubah per tamu.
-  const chooseGroup = (id: string) => {
-    setGroupId(id);
-    const chosen = groups.find((g) => g.id === id);
-    if (chosen) setEventIds(chosen.eventIds);
-  };
+  // Acara yang diundang selalu mengikuti kelompok; di sini hanya ditampilkan.
+  const chosenGroup = groups.find((g) => g.id === groupId);
+  const invitedNames = events
+    .filter((e) => chosenGroup?.eventIds.includes(e.id))
+    .map((e) => e.name);
 
   const phoneDuplicates = useDuplicates("phone", phone, guest?.id);
   const instagramDuplicates = useDuplicates("instagram", instagram, guest?.id);
@@ -133,10 +132,9 @@ function GuestForm({
     displayName,
     phone,
     instagram,
-    groupId: groupId || null,
+    groupId,
     isRombongan,
     usherNote,
-    eventIds,
   });
 
   const save = useMutation({
@@ -162,7 +160,13 @@ function GuestForm({
       const next: FieldErrors = {};
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
-        if ((field === "displayName" || field === "phone" || field === "instagram") && !next[field])
+        if (
+          (field === "displayName" ||
+            field === "phone" ||
+            field === "instagram" ||
+            field === "groupId") &&
+          !next[field]
+        )
           next[field] = friendly(issue.message);
       }
       setErrors(next);
@@ -175,9 +179,6 @@ function GuestForm({
 
   const clearError = (field: FieldName) =>
     setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
-
-  const toggleEvent = (id: string, checked: boolean) =>
-    setEventIds((current) => (checked ? [...current, id] : current.filter((e) => e !== id)));
 
   const serverError = save.error && !fieldOfMessage(save.error.message) ? save.error.message : null;
 
@@ -264,18 +265,48 @@ function GuestForm({
       </FormSection>
 
       <FormSection title="Pengelompokan">
-        <Field label="Kelompok" hint="Menentukan warna, penanda VIP, acara, dan jam datang.">
-          {(id) => (
-            <Select id={id} value={groupId} onChange={(e) => chooseGroup(e.target.value)}>
-              <option value="">Tanpa kelompok</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
+        {groups.length === 0 ? (
+          <Alert tone="error">
+            Belum ada kelompok. Buat dulu di menu{" "}
+            <Link to="/admin/kelompok" className="font-medium underline underline-offset-4">
+              Kelompok
+            </Link>
+            ; setiap tamu wajib masuk satu kelompok.
+          </Alert>
+        ) : (
+          <Field label="Kelompok" required error={errors.groupId}>
+            {(id) => (
+              <Select
+                id={id}
+                value={groupId}
+                aria-invalid={!!errors.groupId}
+                onChange={(e) => {
+                  setGroupId(e.target.value);
+                  clearError("groupId");
+                }}
+              >
+                <option value="" disabled>
+                  Pilih kelompok
                 </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+        {chosenGroup && (
+          <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+            <CalendarDays className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>
+              {invitedNames.length
+                ? `Diundang ke ${invitedNames.join(", ")} (mengikuti kelompok).`
+                : "Kelompok ini belum diundang ke acara apa pun. Atur di menu Kelompok."}
+            </span>
+          </p>
+        )}
         <SwitchRow
           title="Rombongan"
           description="Penjaga mengisi jumlah orang saat check-in. Selain itu otomatis 1 orang."
@@ -284,30 +315,13 @@ function GuestForm({
         />
       </FormSection>
 
-      <FormSection title="Diundang ke acara">
-        {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada acara. Tambahkan di menu Acara.</p>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {events.map((event) => (
-              <CheckCard
-                key={event.id}
-                title={event.name}
-                checked={eventIds.includes(event.id)}
-                onCheckedChange={(checked) => toggleEvent(event.id, checked)}
-              />
-            ))}
-          </div>
-        )}
-      </FormSection>
-
       <Field label="Catatan untuk penjaga" hint="Tampil di layar scanner, mis. 'Pemain inti klub'.">
         {(id) => <Input id={id} value={usherNote} onChange={(e) => setUsherNote(e.target.value)} />}
       </Field>
 
       {guest?.code && <p className="text-xs text-muted-foreground">Kode tamu: {guest.code}</p>}
       {serverError && <Alert tone="error">{serverError}</Alert>}
-      <FormFooter onCancel={onDone} pending={save.isPending} />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={groups.length === 0} />
     </form>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRupiah, parseAmount } from "./format.js";
+import { formatPhone, formatRupiah, parseAmount } from "./format.js";
 
 describe("format", () => {
   it("memberi pemisah ribuan gaya Indonesia", () => {
@@ -15,5 +15,11 @@ describe("format", () => {
     expect(parseAmount("12,5")).toBeNull();
     expect(parseAmount("-5")).toBeNull();
     expect(parseAmount("abc")).toBeNull();
+  });
+
+  it("menampilkan nomor HP Indonesia gaya lokal, nomor luar negeri dengan +", () => {
+    expect(formatPhone("6281234567801")).toBe("0812-3456-7801");
+    expect(formatPhone("628123456789")).toBe("0812-3456-789");
+    expect(formatPhone("6591234567")).toBe("+6591234567");
   });
 });

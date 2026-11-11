@@ -1,6 +1,7 @@
 import { Lightbulb, type LucideIcon, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/kit/button";
+import { DialogActions } from "@/components/kit/dialog";
 import { Card } from "@/components/ui/card";
 
 /**
@@ -48,19 +49,24 @@ export function Tip({ children }: { children: ReactNode }) {
   );
 }
 
-/** Keadaan kosong: ikon, penjelasan, dan satu tombol untuk memulai. */
+/**
+ * Keadaan kosong: ikon, penjelasan, dan satu tombol untuk memulai. `children` (opsional) tampil
+ * di bawah tombol sebagai jalan lain yang lebih kecil, mis. tautan impor.
+ */
 export function EmptyState({
   icon: Icon,
   title,
   description,
   addLabel,
   onAdd,
+  children,
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
   addLabel: string;
   onAdd: () => void;
+  children?: ReactNode;
 }) {
   return (
     <Card className="items-center px-6 py-12 text-center">
@@ -75,6 +81,7 @@ export function EmptyState({
         {addLabel}
         <Plus aria-hidden />
       </Button>
+      {children}
     </Card>
   );
 }
@@ -95,13 +102,13 @@ export function FormFooter({
   submitLabel?: string;
 }) {
   return (
-    <div data-form-footer className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <DialogActions>
       <Button variant="outline" onClick={onCancel}>
         Batal
       </Button>
       <Button type="submit" disabled={pending || disabled}>
         {pending ? "Menyimpan…" : submitLabel}
       </Button>
-    </div>
+    </DialogActions>
   );
 }

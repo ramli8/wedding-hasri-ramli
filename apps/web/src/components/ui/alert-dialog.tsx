@@ -66,7 +66,8 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">)
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      // Satu baris juga di HP, senada dengan baris tombol dialog formulir (DialogActions).
+      className={cn("flex justify-end gap-2 max-sm:[&>*:last-child]:flex-1", className)}
       {...props}
     />
   );

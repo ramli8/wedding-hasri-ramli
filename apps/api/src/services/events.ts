@@ -1,8 +1,13 @@
-import { DEFAULT_MESSAGE_TEMPLATE, type Event, type EventData } from "@wedding/shared";
+import {
+  DEFAULT_MESSAGE_TEMPLATE,
+  DEFAULT_REMINDER_TEMPLATE,
+  type Event,
+  type EventData,
+} from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
-import { events, groupSessions, messageTemplates } from "../db/schema.js";
+import { events, groupSessions, messageTemplates, reminderTemplates } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 
 const invitedCount = sql<number>`(
@@ -14,12 +19,14 @@ const invitedCount = sql<number>`(
 const selection = {
   event: events,
   template: messageTemplates.body,
+  reminder: reminderTemplates.body,
   invitedCount,
 };
 
 function toEvent(row: {
   event: typeof events.$inferSelect;
   template: string | null;
+  reminder: string | null;
   invitedCount: number;
 }): Event {
   const { event } = row;
@@ -35,6 +42,7 @@ function toEvent(row: {
     checkinEnabled: event.checkinEnabled,
     hasRsvp: event.hasRsvp,
     messageTemplate: row.template ?? "",
+    reminderTemplate: row.reminder ?? "",
     invitedCount: row.invitedCount,
   };
 }
@@ -44,6 +52,7 @@ export async function listEvents(db: Db): Promise<Event[]> {
     .select(selection)
     .from(events)
     .leftJoin(messageTemplates, eq(messageTemplates.eventId, events.id))
+    .leftJoin(reminderTemplates, eq(reminderTemplates.eventId, events.id))
     .orderBy(asc(events.startsAt), asc(events.name));
   return rows.map(toEvent);
 }
@@ -53,6 +62,7 @@ export async function getEvent(db: Db, id: string): Promise<Event> {
     .select(selection)
     .from(events)
     .leftJoin(messageTemplates, eq(messageTemplates.eventId, events.id))
+    .leftJoin(reminderTemplates, eq(reminderTemplates.eventId, events.id))
     .where(eq(events.id, id))
     .limit(1);
   if (!row) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
@@ -177,6 +187,20 @@ export async function updateEvent(db: Db, id: string, input: EventData): Promise
 export async function setEventMessage(db: Db, id: string, body: string): Promise<Event> {
   await getEvent(db, id);
   await saveTemplate(db, id, body);
+  return getEvent(db, id);
+}
+
+/** Pesan pengingat RSVP satu acara. Kosong atau sama dengan bawaan = memakai bawaan. */
+export async function setEventReminder(db: Db, id: string, body: string): Promise<Event> {
+  await getEvent(db, id);
+  if (!body.trim() || body.trim() === DEFAULT_REMINDER_TEMPLATE.trim()) {
+    await db.delete(reminderTemplates).where(eq(reminderTemplates.eventId, id));
+  } else {
+    await db
+      .insert(reminderTemplates)
+      .values({ eventId: id, body })
+      .onConflictDoUpdate({ target: reminderTemplates.eventId, set: { body } });
+  }
   return getEvent(db, id);
 }
 

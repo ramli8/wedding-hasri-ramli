@@ -1,32 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  DEFAULT_REMINDER_TEMPLATE,
-  MESSAGE_TEMPLATE_VARIABLES,
-  type RsvpRow,
-  whatsappUrl,
-} from "@wedding/shared";
+import { Link } from "@tanstack/react-router";
+import { DEFAULT_REMINDER_TEMPLATE, type RsvpRow, whatsappUrl } from "@wedding/shared";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/kit/alert";
-import { Button } from "@/components/kit/button";
+import { Button, buttonVariants } from "@/components/kit/button";
 import { Checkbox } from "@/components/kit/checkbox";
 import { Dialog } from "@/components/kit/dialog";
-import { useCaretInsert, VariableChips } from "@/components/kit/variable-chips";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { renderGuestText } from "../lib/message.js";
 import { eventsQuery, groupsQuery, settingsQuery } from "../lib/queries.js";
-
-const STORAGE_KEY = "rsvp-reminder-template";
-
-function loadTemplate() {
-  try {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_REMINDER_TEMPLATE;
-  } catch {
-    return DEFAULT_REMINDER_TEMPLATE;
-  }
-}
 
 /**
  * Pengingat RSVP: daftar tamu yang belum menjawab, masing-masing dengan tombol WhatsApp. Admin
@@ -47,11 +32,11 @@ export function ReminderDialog({
   const events = useQuery(eventsQuery);
   const groups = useQuery(groupsQuery);
   const settings = useQuery(settingsQuery);
-  const [template, setTemplate] = useState(loadTemplate);
   const [hideReminded, setHideReminded] = useState(true);
-  const chips = useCaretInsert(template, changeTemplate);
 
   const event = events.data?.find((e) => e.id === eventId);
+  // Isi pesan diatur di Pengaturan → Pesan WhatsApp → Pengingat RSVP.
+  const template = event?.reminderTemplate || DEFAULT_REMINDER_TEMPLATE;
   const pending = rows.filter((row) => row.status === null);
   const withPhone = pending.filter((row) => row.phone);
   const noPhone = pending.length - withPhone.length;
@@ -74,15 +59,6 @@ export function ReminderDialog({
         })
       : "";
 
-  function changeTemplate(value: string) {
-    setTemplate(value);
-    try {
-      localStorage.setItem(STORAGE_KEY, value);
-    } catch {
-      // Tanpa penyimpanan peramban, isi template hanya berlaku selama dialog terbuka.
-    }
-  }
-
   function send(row: RsvpRow) {
     if (!row.phone) return;
     // window.open harus dipanggil langsung dari klik agar tidak diblokir pop-up blocker.
@@ -90,7 +66,7 @@ export function ReminderDialog({
     mark.mutate({ guestId: row.guestId, reminded: true });
   }
 
-  const first = shown[0];
+  const first = shown[0] ?? withPhone[0];
 
   return (
     <Dialog
@@ -101,39 +77,24 @@ export function ReminderDialog({
       description={`${withPhone.length} tamu belum menjawab dan punya nomor HP; ${remindedCount} sudah diingatkan.`}
     >
       <div className="flex flex-col gap-2">
-        <label htmlFor="reminder-template" className="text-xs font-medium text-foreground">
-          Isi pesan
-        </label>
-        <Textarea
-          id="reminder-template"
-          ref={chips.ref}
-          spellCheck={false}
-          className="min-h-36"
-          value={template}
-          onChange={(e) => changeTemplate(e.target.value)}
-          onSelect={chips.trackCaret}
-        />
-        <VariableChips variables={MESSAGE_TEMPLATE_VARIABLES} onInsert={chips.insert} />
-        <p className="text-xs text-muted-foreground">
-          Ketuk variabel untuk menyisipkannya di posisi kursor.{" "}
-          <button
-            type="button"
-            className="underline"
-            onClick={() => changeTemplate(DEFAULT_REMINDER_TEMPLATE)}
-          >
-            Kembalikan bawaan
-          </button>
-        </p>
         {first && (
           <details className="text-sm">
             <summary className="cursor-pointer font-semibold">
-              Contoh untuk {first.displayName}
+              Isi pesan (contoh untuk {first.displayName})
             </summary>
             <pre className="mt-2 border bg-background p-3 break-words whitespace-pre-wrap">
               {textFor(first)}
             </pre>
           </details>
         )}
+        <Link
+          to="/admin/pengaturan/pesan"
+          search={{ acara: eventId, jenis: "pengingat" }}
+          className={buttonVariants({ variant: "outline", size: "sm", className: "self-start" })}
+        >
+          <Pencil aria-hidden />
+          Ubah isi pesan di Pengaturan
+        </Link>
       </div>
 
       <Checkbox checked={hideReminded} onChange={(e) => setHideReminded(e.target.checked)}>

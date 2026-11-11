@@ -243,8 +243,9 @@ const settingsChildren = [
   createRoute({
     getParentRoute: () => settingsRoute,
     path: "pesan",
-    validateSearch: (search: Record<string, unknown>): { acara?: string } => ({
+    validateSearch: (search: Record<string, unknown>): { acara?: string; jenis?: "pengingat" } => ({
       acara: typeof search.acara === "string" && search.acara ? search.acara : undefined,
+      jenis: search.jenis === "pengingat" ? "pengingat" : undefined,
     }),
     component: MessageSettings,
   }),

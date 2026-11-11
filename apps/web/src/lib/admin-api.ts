@@ -134,6 +134,13 @@ export const adminApi = {
         eventResponseSchema,
         withBody("PUT", { messageTemplate }),
       ),
+    /** Pesan pengingat RSVP acara ini (Pengaturan → Pesan). Kosong = bawaan. */
+    saveReminder: (id: string, reminderTemplate: string) =>
+      request(
+        `${base}/events/${id}/reminder`,
+        eventResponseSchema,
+        withBody("PUT", { reminderTemplate }),
+      ),
     remove: (id: string) => request(`${base}/events/${id}`, okSchema, withBody("DELETE")),
   },
 

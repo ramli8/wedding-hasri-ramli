@@ -218,6 +218,13 @@
       "when": 1794367958016,
       "tag": "0030_lazy_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794380353534,
+      "tag": "0031_familiar_gauntlet",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { eventInputSchema, eventMessageSchema } from "@wedding/shared";
+import { eventInputSchema, eventMessageSchema, eventReminderSchema } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppDeps, AppEnv } from "../http/env.js";
@@ -9,6 +9,7 @@ import {
   getEvent,
   listEvents,
   setEventMessage,
+  setEventReminder,
   updateEvent,
 } from "../services/events.js";
 
@@ -35,6 +36,17 @@ export function eventRoutes({ db }: AppDeps) {
         const { id } = c.req.valid("param");
         return c.json({
           event: await setEventMessage(db, id, c.req.valid("json").messageTemplate),
+        });
+      },
+    )
+    .put(
+      "/:id/reminder",
+      validate("param", idParam),
+      validate("json", eventReminderSchema),
+      async (c) => {
+        const { id } = c.req.valid("param");
+        return c.json({
+          event: await setEventReminder(db, id, c.req.valid("json").reminderTemplate),
         });
       },
     )

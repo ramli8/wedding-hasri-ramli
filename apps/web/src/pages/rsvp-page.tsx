@@ -13,7 +13,6 @@ import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormFooter } from "@/components/kit/invitation-kit";
-import { Select } from "@/components/kit/select";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +23,44 @@ import { formatDateTime } from "../lib/datetime.js";
 import { eventsQuery, rsvpQuery } from "../lib/queries.js";
 import { ReminderDialog } from "./rsvp-reminder-dialog.js";
 
-function Stat({ label, value, note }: { label: string; value: number; note?: string }) {
+type StatusKey = RsvpStatus | "belum";
+
+/** Warna per status: titik di kartu ringkasan dan lencana di tabel. */
+const STATUS_TONE: Record<StatusKey, { dot: string; badge: string }> = {
+  hadir: {
+    dot: "bg-emerald-500",
+    badge:
+      "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  },
+  tidak_hadir: {
+    dot: "bg-rose-500",
+    badge: "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
+  },
+  ragu: {
+    dot: "bg-amber-500",
+    badge: "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  },
+  belum: { dot: "bg-muted-foreground/40", badge: "text-muted-foreground" },
+};
+
+function Stat({
+  status,
+  label,
+  value,
+  note,
+}: {
+  status: StatusKey;
+  label: string;
+  value: number;
+  note?: string;
+}) {
   return (
     <Card className="gap-0 py-6">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <span aria-hidden className={cn("size-2 rounded-full", STATUS_TONE[status].dot)} />
+          {label}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
@@ -69,14 +101,22 @@ const baseColumns: ColumnDef<RsvpRow, unknown>[] = [
     id: "status",
     accessorFn: (row) => row.status ?? "belum",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) =>
-      row.original.status ? (
-        <Badge variant={row.original.status === "hadir" ? "secondary" : "outline"}>
-          {RSVP_LABEL[row.original.status]}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">Belum menjawab</span>
-      ),
+    cell: ({ row }) => {
+      const { status, remindedAt } = row.original;
+      return (
+        <div className="flex flex-col items-start gap-1">
+          <Badge variant="outline" className={STATUS_TONE[status ?? "belum"].badge}>
+            {status ? RSVP_LABEL[status] : "Belum menjawab"}
+          </Badge>
+          {!status && remindedAt && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Bell className="size-3" aria-hidden />
+              Diingatkan {formatDateTime(remindedAt)}
+            </span>
+          )}
+        </div>
+      );
+    },
     filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
   },
   {
@@ -144,19 +184,22 @@ export function RsvpPage() {
       />
 
       {rsvpEvents.length > 1 && (
-        <div className="max-w-xs">
-          <Select
-            compact
-            aria-label="Acara"
-            value={eventId || rsvp.data?.event.id || ""}
-            onChange={(e) => setEventId(e.target.value)}
-          >
-            {rsvpEvents.map((event) => (
-              <option key={event.id} value={event.id}>
+        <div role="tablist" aria-label="Acara" className="flex flex-wrap gap-2">
+          {rsvpEvents.map((event) => {
+            const active = event.id === (eventId || rsvp.data?.event.id);
+            return (
+              <button
+                key={event.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setEventId(event.id)}
+                className={buttonVariants({ variant: active ? "default" : "outline", size: "sm" })}
+              >
                 {event.name}
-              </option>
-            ))}
-          </Select>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -194,10 +237,16 @@ export function RsvpPage() {
             {rsvp.data.event.name} · {totals.invited} undangan
           </p>
           <section aria-label="Ringkasan RSVP" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Hadir" value={totals.hadir} note={`${totals.hadirPax} orang`} />
-            <Stat label="Tidak hadir" value={totals.tidakHadir} />
-            <Stat label="Belum pasti" value={totals.ragu} />
-            <Stat label="Belum menjawab" value={totals.belum} />
+            {(
+              [
+                ["hadir", "Hadir", totals.hadir, `${totals.hadirPax} orang`],
+                ["tidak_hadir", "Tidak hadir", totals.tidakHadir, undefined],
+                ["ragu", "Belum pasti", totals.ragu, undefined],
+                ["belum", "Belum menjawab", totals.belum, undefined],
+              ] as const
+            ).map(([status, label, value, note]) => (
+              <Stat key={status} status={status} label={label} value={value} note={note} />
+            ))}
           </section>
 
           <DataTable

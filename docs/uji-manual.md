@@ -117,8 +117,8 @@ Epson L3110 untuk photobooth.
   melayani satu acara). Batal / hapus acara ini setelahnya.
 - [ ] **3.7** **Link Google Maps** diisi `javascript:alert(1)`.
   **Harusnya**: ditolak "Link peta harus diawali http:// atau https://".
-- [ ] **3.8** Di kartu Resepsi klik **Pesan** (atau **Pengaturan → Pesan undangan**).
-  **Harusnya**: halaman Pesan undangan dengan tombol pilihan acara (Akad Nikah, Resepsi). Isi pesan
+- [ ] **3.8** Di kartu Resepsi klik **Pesan** (atau **Pengaturan → Pesan WhatsApp**).
+  **Harusnya**: halaman Pesan WhatsApp (tab **Undangan**) dengan tombol pilihan acara (Akad Nikah, Resepsi). Isi pesan
   sudah terisi lengkap (salam, nama tamu tebal, acara, 🗓 tanggal, 🕙 jam datang sesuai kelompok
   tamu, 📍 tempat, link,
   penutup, nama mempelai). Di bawahnya pratinjau tab **WhatsApp** (kartu link + teks tebal) dan
@@ -127,7 +127,7 @@ Epson L3110 untuk photobooth.
   **Harusnya**: perubahan tersimpan; Akad Nikah tetap memakai pesan bawaan. **Kembalikan ke contoh
   bawaan** mengembalikan isi semula.
 - [ ] **3.10** Hapus acara Akad Nikah (menu titik tiga → Hapus).
-  **Harusnya**: Akad Nikah juga hilang dari pilihan di Pengaturan → Pesan undangan.
+  **Harusnya**: Akad Nikah juga hilang dari pilihan di Pengaturan → Pesan WhatsApp.
 
 ## Bagian 4. Kelompok
 
@@ -253,14 +253,23 @@ HP penjaga, dan photobooth. Bagian ini akan diisi setelah halaman tamu tersambun
 
 ## Bagian 8. RSVP (dicatat dari admin)
 
-- [ ] **8.1** Menu **RSVP**, pilih acara **Resepsi**.
-  **Harusnya**: semua tamu Resepsi tampil "Belum menjawab".
+- [ ] **8.1** Menu **RSVP**. Bila lebih dari satu acara memakai RSVP, pilih tombol **Resepsi** di
+  atas ringkasan.
+  **Harusnya**: semua tamu Resepsi tampil "Belum menjawab" (lencana abu-abu).
 - [ ] **8.2** Pada Budi klik **Catat jawaban** → **Hadir**. Pada Keluarga Bpk. Joko → **Hadir**,
   **Jumlah orang yang hadir** `4`. Pada Sari → **Tidak hadir**. Pada Dewi → **Belum pasti**.
   **Harusnya**: ringkasan di atas: Hadir 2 (5 orang), Tidak hadir 1, Belum pasti 1.
-- [ ] **8.3** Pada tamu yang belum menjawab, klik **Kirim pengingat**.
-  **Harusnya**: WhatsApp terbuka dengan pesan pengingat; tamu bisa ditandai sudah diingatkan, dan
-  pilihan **Sembunyikan yang sudah diingatkan** menyembunyikannya.
+  Status di tabel berwarna: Hadir hijau, Tidak hadir merah, Belum pasti kuning.
+- [ ] **8.3** Menu **Pengaturan → Pesan WhatsApp**, tab **Pengingat RSVP**.
+  **Harusnya**: hanya acara yang RSVP-nya menyala (Resepsi) tampil. Isinya contoh bawaan, dengan
+  pratinjau WhatsApp/Instagram di bawah. Ubah satu kalimat, **Simpan**, muat ulang halaman: isinya
+  tetap.
+- [ ] **8.4** Kembali ke menu **RSVP**, klik **Kirim pengingat** (kanan atas).
+  **Harusnya**: dialog berisi tamu yang belum menjawab dan punya nomor HP. **Isi pesan** menampilkan
+  kalimat yang tadi diubah; **Ubah isi pesan di Pengaturan** membuka tab Pengingat RSVP. Klik **Buka
+  WhatsApp** pada satu tamu: WhatsApp terbuka dengan pesan itu, tamu ditandai "Diingatkan", dan
+  pilihan **Sembunyikan yang sudah diingatkan** menyembunyikannya. Tutup dialog: di tabel, tamu itu
+  bertuliskan "Diingatkan" beserta jamnya di bawah status.
 
 ## Bagian 9. HP penjaga pintu (scanner)
 
@@ -269,8 +278,13 @@ Pakai **HP A** dan **HP B**. Semua dibuka lewat ALAMAT-HP.
 ### Memasangkan HP
 
 - [ ] **9.1** Di laptop: menu **Perangkat** → **Tambah perangkat**, **Nama perangkat**
-  `HP Gerbang A`, Simpan.
-  **Harusnya**: muncul **kode pairing 8 karakter** (mis. `K7M2-9QXA`) dan status **Belum dipasang**.
+  `HP Gerbang A`, tekan **Buat kode pairing**.
+  **Harusnya**: muncul dialog **Pasangkan HP Gerbang A** berisi QR, **kode pairing** besar (mis.
+  `K7M2-9QXA`), tombol **Salin kode** / **Salin tautan**, dan jam kedaluwarsa kode. Setelah
+  **Selesai**, status HP Gerbang A di daftar **Belum dipasang**.
+  > QR di dialog berisi alamat yang sedang dibuka di laptop. Bila laptop membuka admin lewat
+  > `localhost:5173`, QR itu tidak bisa dibuka di HP: pakai cara ketik kode di 9.2. Bila admin dibuka
+  > lewat ALAMAT-HP (langkah 0.6), QR bisa langsung dipindai kamera HP.
 - [ ] **9.2** Di HP A buka `ALAMAT-HP/scan/pasang`, ketik kode itu di **Kode pairing**, tekan
   **Pasangkan**.
   **Harusnya**: masuk ke layar scanner; di laptop status HP Gerbang A menjadi **Aktif**.
@@ -316,6 +330,10 @@ Mode tanpa internet hanya jalan di versi siap-pakai. Di laptop, terminal ketiga:
 ketik `pnpm build` dan setelah selesai `pnpm --filter @wedding/web exec vite preview`. Jalankan ulang
 `cloudflared tunnel --url http://localhost:4173` (perhatikan **4173**), dapatkan ALAMAT-HP baru, lalu
 pasangkan ulang kedua HP (Bagian 9.1–9.2) lewat alamat baru.
+
+Admin di laptop kini dibuka di `http://localhost:4173/admin`. Agar login dan tombol admin tidak ditolak
+("Origin tidak diizinkan"), buka `.env`, tambahkan `,http://localhost:4173` di ujung baris
+`ALLOWED_ORIGINS=`, simpan, lalu di terminal kedua tekan `Ctrl+C` dan jalankan lagi `pnpm dev:api`.
 
 - [ ] **10.1** Buka scanner di kedua HP sekali saat online, tunggu 10 detik. Buka **Uji kesiapan**.
   **Harusnya**: "Aplikasi tersimpan untuk offline" hijau.

@@ -89,6 +89,15 @@ export const messageTemplates = pgTable("message_templates", {
   body: text().notNull(),
 });
 
+// Template pesan pengingat RSVP per acara (variabel sama dengan pesan undangan). Tidak ada baris =
+// memakai DEFAULT_REMINDER_TEMPLATE.
+export const reminderTemplates = pgTable("reminder_templates", {
+  eventId: uuid()
+    .primaryKey()
+    .references(() => events.id, { onDelete: "cascade" }),
+  body: text().notNull(),
+});
+
 export const guestGroups = pgTable("guest_groups", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull().unique("guest_groups_name_unique"),

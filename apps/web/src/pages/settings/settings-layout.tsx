@@ -14,7 +14,7 @@ const items = [
   { href: "/admin/pengaturan", title: "Pernikahan", icon: <Heart size={18} /> },
   {
     href: "/admin/pengaturan/pesan",
-    title: "Pesan undangan",
+    title: "Pesan WhatsApp",
     icon: <MessageSquareText size={18} />,
   },
   { href: "/admin/pengaturan/pratinjau", title: "Pratinjau tautan", icon: <Link2 size={18} /> },

@@ -58,7 +58,7 @@ export function useGuideSteps() {
         "Nama acara (Akad Nikah, Resepsi, …) dan tanggalnya; jam datang diatur di Kelompok",
         "Nama tempat, alamat, dan link Google Maps (salin dari aplikasi Maps)",
         "RSVP dan Check-in QR sudah aktif; matikan untuk acara yang tidak memakainya (mis. akad)",
-        "Pesan undangan tiap acara otomatis dibuat; ubah di Pengaturan → Pesan undangan",
+        "Pesan undangan tiap acara otomatis dibuat; ubah di Pengaturan → Pesan WhatsApp",
       ],
       to: "/admin/acara",
       cta: "Buka Acara",

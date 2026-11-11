@@ -7,7 +7,7 @@ import type {
   ImportPreview,
   Settings,
 } from "@wedding/shared";
-import { DEFAULT_MESSAGE_TEMPLATE } from "@wedding/shared";
+import { DEFAULT_MESSAGE_TEMPLATE, DEFAULT_REMINDER_TEMPLATE } from "@wedding/shared";
 import { eq } from "drizzle-orm";
 import { strFromU8, unzipSync } from "fflate";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -153,6 +153,27 @@ describe("acara", () => {
     expect((await read<{ event: Event }>(reset)).event.messageTemplate).toBe("");
     const missing = "00000000-0000-4000-8000-000000000000";
     expect((await api.put(`/events/${missing}/message`, { messageTemplate: "x" })).status).toBe(
+      404,
+    );
+  });
+
+  it("pesan pengingat RSVP disimpan per acara, terpisah dari pesan undangan", async () => {
+    const event = await makeEvent();
+    expect(event.reminderTemplate).toBe("");
+    const saved = await api.put(`/events/${event.id}/reminder`, {
+      reminderTemplate: "Halo {panggilan}, mohon konfirmasi {acara}",
+    });
+    expect(saved.status).toBe(200);
+    const after = (await read<{ event: Event }>(saved)).event;
+    expect(after.reminderTemplate).toBe("Halo {panggilan}, mohon konfirmasi {acara}");
+    expect(after.messageTemplate).toBe(event.messageTemplate);
+
+    const same = await api.put(`/events/${event.id}/reminder`, {
+      reminderTemplate: DEFAULT_REMINDER_TEMPLATE,
+    });
+    expect((await read<{ event: Event }>(same)).event.reminderTemplate).toBe("");
+    const missing = "00000000-0000-4000-8000-000000000000";
+    expect((await api.put(`/events/${missing}/reminder`, { reminderTemplate: "x" })).status).toBe(
       404,
     );
   });

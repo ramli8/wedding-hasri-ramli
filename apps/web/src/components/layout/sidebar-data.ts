@@ -87,7 +87,7 @@ export const navGroups: NavGroup[] = [
         icon: Settings,
         items: [
           { title: "Pernikahan", url: "/admin/pengaturan" },
-          { title: "Pesan undangan", url: "/admin/pengaturan/pesan" },
+          { title: "Pesan WhatsApp", url: "/admin/pengaturan/pesan" },
           { title: "Pratinjau tautan", url: "/admin/pengaturan/pratinjau" },
           { title: "Kata sandi", url: "/admin/pengaturan/sandi" },
           { title: "Cadangan", url: "/admin/pengaturan/cadangan" },

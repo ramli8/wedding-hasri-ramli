@@ -102,6 +102,8 @@ export const eventSchema = z.object({
   checkinEnabled: z.boolean(),
   hasRsvp: z.boolean(),
   messageTemplate: z.string(),
+  /** Pesan pengingat RSVP; "" = memakai DEFAULT_REMINDER_TEMPLATE. */
+  reminderTemplate: z.string(),
   /** Jumlah tamu (belum dihapus) yang diundang ke acara ini. */
   invitedCount: z.number(),
 });
@@ -115,3 +117,9 @@ export const eventMessageSchema = z.object({
   messageTemplate: z.string().trim().max(4000, "Pesan maksimal 4.000 karakter"),
 });
 export type EventMessageInput = z.input<typeof eventMessageSchema>;
+
+/** Mengubah pesan pengingat RSVP satu acara. Kosong atau sama dengan bawaan = memakai bawaan. */
+export const eventReminderSchema = z.object({
+  reminderTemplate: z.string().trim().max(4000, "Pesan maksimal 4.000 karakter"),
+});
+export type EventReminderInput = z.input<typeof eventReminderSchema>;

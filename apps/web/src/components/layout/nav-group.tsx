@@ -137,7 +137,7 @@ function SidebarMenuCollapsedDropdown({ item, href }: { item: NavCollapsible; hr
   );
 }
 
-const EXACT_ONLY = new Set(['/admin', '/admin/pengaturan'])
+const EXACT_ONLY = new Set(['/admin', '/admin/pengaturan', '/admin/photobooth'])
 
 function checkIsActive(
   href: string,

@@ -6,25 +6,78 @@ import {
   type BoothPhoto,
   type BoothUpload,
   type BoothUploadResponse,
+  type boothConfigSchema,
+  type GuestPhotoResponse,
   mediaUrl,
 } from "@wedding/shared";
 import { count, desc, eq } from "drizzle-orm";
+import type { z } from "zod";
 import type { Db } from "../db/client.js";
-import { boothConfig, boothPhotos, devices, media } from "../db/schema.js";
+import { boothConfig, boothPhotoDeletions, boothPhotos, devices, media } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { zipFilesStream } from "./export.js";
 import { discardMedia, saveMedia } from "./media.js";
+import { getSettings } from "./settings.js";
 
-/** Bingkai aktif; tanpa baris pengaturan semua bingkai bawaan aktif. */
+/** Pengaturan booth; tanpa baris pengaturan semua bingkai bawaan aktif dan tanpa QR. */
 export async function getBoothConfig(db: Db): Promise<BoothConfig> {
   const [row] = await db.select({ frames: boothConfig.frames }).from(boothConfig).limit(1);
   const frames = (row?.frames ?? []).filter((f): f is BoothFrame =>
     (BOOTH_FRAMES as readonly string[]).includes(f),
   );
-  return { frames: frames.length > 0 ? frames : [...BOOTH_FRAMES] };
+  return {
+    frames: frames.length > 0 ? frames : [...BOOTH_FRAMES],
+    photoBaseUrl: null,
+  };
 }
 
-export async function saveBoothConfig(db: Db, input: BoothConfig): Promise<BoothConfig> {
+/** Pengaturan untuk laptop booth: ditambah alamat situs untuk QR foto. */
+export async function getBoothDeviceConfig(db: Db): Promise<BoothConfig> {
+  const [config, site] = await Promise.all([getBoothConfig(db), getSettings(db)]);
+  return { ...config, photoBaseUrl: site?.publicBaseUrl ?? null };
+}
+
+/**
+ * Satu foto booth untuk halaman tamu (dari QR di cetakannya). Id foto dibuat acak oleh booth (uuid
+ * v7: 74 bit acak), jadi tidak bisa ditebak untuk melihat foto tamu lain. "pending" = belum
+ * terunggah (laptop booth masih offline, halaman tamu menunggu); "deleted" = dihapus admin.
+ */
+export async function getGuestPhoto(
+  db: Db,
+  id: string,
+): Promise<GuestPhotoResponse | "pending" | "deleted"> {
+  const [row] = await db
+    .select({
+      id: boothPhotos.id,
+      takenAt: boothPhotos.takenAt,
+      mediaId: media.id,
+      width: media.width,
+      height: media.height,
+    })
+    .from(boothPhotos)
+    .innerJoin(media, eq(media.id, boothPhotos.mediaId))
+    .where(eq(boothPhotos.id, id))
+    .limit(1);
+  if (!row) return (await wasDeleted(db, id)) ? "deleted" : "pending";
+  return {
+    photo: {
+      id: row.id,
+      takenAt: row.takenAt.toISOString(),
+      media: {
+        id: row.mediaId,
+        width: row.width,
+        height: row.height,
+        large: mediaUrl(row.mediaId, "large"),
+        thumb: mediaUrl(row.mediaId, "thumb"),
+      },
+    },
+  };
+}
+
+export async function saveBoothConfig(
+  db: Db,
+  input: z.output<typeof boothConfigSchema>,
+): Promise<BoothConfig> {
   await db
     .insert(boothConfig)
     .values({ id: 1, frames: input.frames })
@@ -32,7 +85,7 @@ export async function saveBoothConfig(db: Db, input: BoothConfig): Promise<Booth
       target: boothConfig.id,
       set: { frames: input.frames, updatedAt: new Date() },
     });
-  return input;
+  return { frames: input.frames, photoBaseUrl: null };
 }
 
 /**
@@ -49,7 +102,8 @@ export async function saveBoothPhoto(
   const exists = async () =>
     (await db.select({ id: boothPhotos.id }).from(boothPhotos).where(eq(boothPhotos.id, meta.id)))
       .length > 0;
-  if (await exists()) return { id: meta.id, duplicate: true };
+  // Foto yang sudah dihapus admin dijawab sukses agar booth berhenti mengirimnya, tanpa disimpan.
+  if ((await exists()) || (await wasDeleted(db, meta.id))) return { id: meta.id, duplicate: true };
 
   const saved = await saveMedia(db, dir, {
     buffer,
@@ -139,10 +193,24 @@ export async function boothPhotosZip(db: Db, dir: string): Promise<ReadableStrea
 }
 
 export async function deleteBoothPhoto(db: Db, dir: string, id: string): Promise<void> {
-  const [row] = await db
-    .delete(boothPhotos)
-    .where(eq(boothPhotos.id, id))
-    .returning({ mediaId: boothPhotos.mediaId });
+  const row = await db.transaction(async (tx) => {
+    const [deleted] = await tx
+      .delete(boothPhotos)
+      .where(eq(boothPhotos.id, id))
+      .returning({ mediaId: boothPhotos.mediaId });
+    if (deleted) await tx.insert(boothPhotoDeletions).values({ id }).onConflictDoNothing();
+    return deleted;
+  });
   if (!row) throw new AppError(404, "NOT_FOUND", "Foto tidak ditemukan");
   await discardMedia(db, dir, row.mediaId);
+}
+
+/** Foto ini pernah dihapus admin. */
+async function wasDeleted(db: Db, id: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: boothPhotoDeletions.id })
+    .from(boothPhotoDeletions)
+    .where(eq(boothPhotoDeletions.id, id))
+    .limit(1);
+  return rows.length > 0;
 }

@@ -62,11 +62,6 @@ export function PaxPrompt({
                 </span>
               )}
               <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
-                <span
-                  className="size-2.5 rounded-full ring-1 ring-black/15"
-                  style={{ backgroundColor: view.group.color }}
-                  aria-hidden
-                />
                 {view.group.name}
               </span>
             </div>

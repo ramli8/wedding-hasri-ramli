@@ -2,16 +2,17 @@ import { z } from "zod";
 import { mediaRefSchema } from "./media.js";
 
 /**
- * Bingkai bawaan photobooth (lihat docs/rancangan.md §14 "Photobooth"): A poster film, B film strip,
- * C tiket bioskop. Digambar oleh kode di peramban, jadi server hanya menyimpan kuncinya.
+ * Bingkai bawaan photobooth bertema bunga (lihat docs/rancangan.md §14 "Photobooth"). Digambar oleh
+ * kode di peramban, jadi server hanya menyimpan kuncinya. Kunci lama (poster/strip/tiket, dari
+ * desain bioskop) dipertahankan agar foto dan pengaturan yang sudah tersimpan tetap sah.
  */
 export const BOOTH_FRAMES = ["poster", "strip", "tiket"] as const;
 export type BoothFrame = (typeof BOOTH_FRAMES)[number];
 
 export const BOOTH_FRAME_LABELS: Record<BoothFrame, string> = {
-  poster: "Poster film",
-  strip: "Film strip",
-  tiket: "Tiket bioskop",
+  poster: "Bunga sudut",
+  strip: "Panel samping",
+  tiket: "Lengkung bunga",
 };
 
 /** Ukuran hasil: 4R mendatar (152 × 102 mm) pada 300 dpi. */
@@ -30,12 +31,22 @@ export const boothConfigSchema = z.object({
     .min(1, "Pilih minimal satu bingkai")
     .transform((frames) => BOOTH_FRAMES.filter((frame) => frames.includes(frame))),
 });
-export type BoothConfig = z.output<typeof boothConfigSchema>;
 export type BoothConfigInput = z.input<typeof boothConfigSchema>;
 
-export const boothConfigResponseSchema = z.object({
-  config: z.object({ frames: z.array(boothFrameSchema) }),
+export const boothConfigDataSchema = z.object({
+  frames: z.array(boothFrameSchema),
+  /**
+   * Alamat situs (Pengaturan → Pernikahan) untuk QR foto: `<photoBaseUrl>/foto/<id foto>`. Hanya
+   * dikirim ke booth; null = booth memakai alamat yang sedang dibukanya.
+   */
+  photoBaseUrl: z
+    .url({ protocol: /^https?$/ })
+    .nullable()
+    .default(null),
 });
+export type BoothConfig = z.output<typeof boothConfigDataSchema>;
+
+export const boothConfigResponseSchema = z.object({ config: boothConfigDataSchema });
 export type BoothConfigResponse = z.infer<typeof boothConfigResponseSchema>;
 
 /** Data yang menyertai berkas saat booth mengunggah foto (bidang multipart selain `file`). */
@@ -69,3 +80,9 @@ export const boothPhotoQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(60).default(24),
 });
 export type BoothPhotoQuery = z.input<typeof boothPhotoQuerySchema>;
+
+/** Halaman foto tamu (`/foto/<id>`, dari QR di cetakan): satu foto saja, tanpa login. */
+export const guestPhotoResponseSchema = z.object({
+  photo: z.object({ id: z.uuid(), takenAt: z.string(), media: mediaRefSchema }),
+});
+export type GuestPhotoResponse = z.infer<typeof guestPhotoResponseSchema>;

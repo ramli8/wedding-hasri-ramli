@@ -1,8 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import { BOOTH_FRAME_LABELS, type BoothFrame, uuid7 } from "@wedding/shared";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Camera, Check, Printer, RotateCcw, Settings2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
+import { Alert } from "@/components/kit/alert";
+import { Button } from "@/components/kit/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ThemeProvider } from "@/context/theme-provider";
+import { cn } from "@/lib/utils";
 import { useBoothCamera } from "../../lib/booth/camera.js";
 import {
   activeFrames,
@@ -10,6 +17,7 @@ import {
   countPending,
   getBoothMeta,
   markPrinted,
+  photoLink,
   requestPersistentStorage,
   savePhoto,
   setBoothMeta,
@@ -24,6 +32,7 @@ import {
   PHOTO_SIZE,
 } from "../../lib/booth/frames.js";
 import { startBoothSync } from "../../lib/booth/uploader.js";
+import { FrameThumb, SAMPLE_PHOTO_ID } from "./frame-thumb.js";
 import { StaffPanel } from "./staff-panel.js";
 
 const COUNTDOWN_FROM = 3;
@@ -73,6 +82,14 @@ const PRINT_CSS = `
 `;
 
 export function BoothPage() {
+  return (
+    <ThemeProvider>
+      <Booth />
+    </ThemeProvider>
+  );
+}
+
+function Booth() {
   const navigate = useNavigate();
   const camera = useBoothCamera();
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
@@ -89,7 +106,17 @@ export function BoothPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const frames = useLiveQuery(() => activeFrames(), [], null);
+  const auth = useLiveQuery(() => getBoothMeta("auth"), [], null);
+  // QR pratinjau: contoh tautan halaman foto; setiap foto mendapat QR-nya sendiri saat dipotret.
+  const previewQr = useLiveQuery(() => photoLink(SAMPLE_PHOTO_ID), [], null);
   const authError = useLiveQuery(() => getBoothMeta("authError"), [], null);
+  // undefined = belum pernah sinkron; null = alamat situs belum diisi di Pengaturan. Keduanya membuat
+  // QR memakai alamat laptop ini (mis. localhost), yang mungkin tidak bisa dibuka HP tamu.
+  const photoBaseUrl = useLiveQuery(
+    async () => (await getBoothMeta("photoBaseUrl")) ?? "none",
+    [],
+    "",
+  );
   const pending = useLiveQuery(() => countPending(), [], 0);
   const [frame, setFrame] = useState<BoothFrame>("poster");
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -121,12 +148,12 @@ export function BoothPage() {
       const ctx = canvas?.getContext("2d");
       if (cancelled || !canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawFrame(ctx, frame, "····");
+      drawFrame(ctx, frame, previewQr);
     });
     return () => {
       cancelled = true;
     };
-  }, [frame]);
+  }, [frame, previewQr]);
 
   const capture = useCallback(async () => {
     const video = camera.videoRef.current;
@@ -143,17 +170,20 @@ export function BoothPage() {
     source.getContext("2d")?.drawImage(video, 0, 0);
 
     const number = ((await getBoothMeta("counter")) ?? 0) + 1;
+    // Id foto dibuat di sini agar QR di cetakan langsung menunjuk halaman foto ini (/foto/<id>),
+    // walau fotonya baru terunggah nanti saat laptop online.
+    const id = uuid7();
     const out = document.createElement("canvas");
     composePhoto(
       out,
       source,
       { width: source.width, height: source.height },
       frame,
-      formatPhotoNumber(number),
+      await photoLink(id),
     );
     const blob = await canvasToJpeg(out);
     const row: BoothPhotoRow = {
-      id: uuid7(),
+      id,
       blob,
       frame,
       takenAt: new Date().toISOString(),
@@ -330,15 +360,68 @@ export function BoothPage() {
   const showPreview = stage.kind === "idle" || stage.kind === "countdown";
 
   return (
-    <main className="booth fixed inset-0 overflow-hidden bg-[#0e0c0a] text-[#efe6d6] select-none">
+    <div className="booth flex h-dvh flex-col overflow-hidden bg-background text-foreground select-none">
       <style>{PRINT_CSS}</style>
 
-      <div className="flex h-full items-center gap-[3vw] px-[3vw] py-[4vh]">
+      {/* Bilah atas sepola scanner: identitas di kiri, status unggah dan tombol petugas di kanan. */}
+      <header className="border-b bg-background/95">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-6">
+          <div className="flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+            H&amp;R
+          </div>
+          <div className="grid min-w-0 flex-1 text-sm leading-tight">
+            <span className="truncate font-semibold">Photobooth</span>
+            <span className="truncate text-xs text-muted-foreground">
+              {auth?.deviceName ?? "Laptop booth"}
+            </span>
+          </div>
+          <Badge variant="outline" className="h-8 gap-2 px-3 text-sm">
+            <span
+              aria-hidden
+              className={cn("size-2 rounded-full", online ? "bg-success" : "bg-warning")}
+            />
+            {online ? "Online" : "Offline"}
+            <span className="text-muted-foreground">
+              · {pending > 0 ? `${pending} foto menunggu unggah` : "semua terunggah"}
+            </span>
+          </Badge>
+          <Button variant="ghost" onClick={() => setStaffOpen(true)}>
+            <Settings2 aria-hidden />
+            Petugas
+          </Button>
+        </div>
+      </header>
+
+      {(authError || notice || photoBaseUrl === "none") && (
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-6 pt-4">
+          {photoBaseUrl === "none" && (
+            <Alert>
+              Alamat situs belum diterima dari server (laptop belum tersambung, atau alamat situs
+              belum diisi di Pengaturan → Pernikahan). QR di cetakan memakai alamat laptop ini dan
+              mungkin tidak bisa dibuka tamu.
+            </Alert>
+          )}
+          {authError && <Alert tone="error">{authError} Foto tetap tersimpan di laptop ini.</Alert>}
+          {notice && (
+            <Alert tone="error">
+              <span className="flex items-start justify-between gap-3">
+                {notice}
+                <button type="button" onClick={() => setNotice(null)} className="underline">
+                  Tutup
+                </button>
+              </span>
+            </Alert>
+          )}
+        </div>
+      )}
+
+      <main className="mx-auto grid min-h-0 w-full max-w-[1600px] flex-1 items-center gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         {/* Panggung: pratinjau langsung (dicerminkan) atau hasil (tidak dicerminkan). */}
-        <div
-          className={`relative aspect-[3/2] shrink-0 shadow-[0_0_0_1px_#3a322b] ${
-            stage.kind === "countdown" ? "mx-auto w-[min(88vw,132vh)]" : "w-[min(60vw,88vh)]"
-          } ${stage.kind === "printing" ? "hidden" : ""}`}
+        <Card
+          className={cn(
+            "relative mx-auto aspect-[3/2] w-full max-w-[calc((100dvh-10rem)*1.5)] gap-0 overflow-hidden p-0",
+            stage.kind === "printing" && "hidden",
+          )}
           style={{ background: spec.ground }}
         >
           <video
@@ -352,7 +435,6 @@ export function BoothPage() {
               width: pct(win.w, PHOTO_SIZE.width),
               height: pct(win.h, PHOTO_SIZE.height),
               transform: "scaleX(-1)",
-              filter: spec.photoFilter,
               visibility: showPreview ? "visible" : "hidden",
             }}
           />
@@ -365,120 +447,62 @@ export function BoothPage() {
             aria-hidden
           />
           {stage.kind === "review" && (
-            <img
-              src={stage.shot.url}
-              alt="Hasil foto"
-              className="absolute inset-0 size-full shadow-[0_24px_60px_rgba(0,0,0,.6)]"
-            />
+            <img src={stage.shot.url} alt="Hasil foto" className="absolute inset-0 size-full" />
           )}
           {camera.error && showPreview && (
-            <div className="absolute inset-0 grid place-items-center bg-[#0e0c0a]/85 p-8 text-center">
+            <div className="absolute inset-0 grid place-items-center bg-background/90 p-8 text-center">
               <div className="flex max-w-md flex-col items-center gap-4">
-                <p className="font-[Courier_Prime] text-lg">{camera.error}</p>
-                <button
-                  type="button"
-                  onClick={() => void camera.retry()}
-                  className="min-h-11 border-2 border-[#efe6d6] px-6 font-[Bebas_Neue] text-2xl tracking-wider"
-                >
-                  COBA LAGI
-                </button>
+                <span className="grid size-14 place-items-center rounded-full bg-muted">
+                  <Camera className="size-7 text-muted-foreground" aria-hidden />
+                </span>
+                <p className="text-lg">{camera.error}</p>
+                <Button onClick={() => void camera.retry()}>Coba lagi</Button>
               </div>
             </div>
           )}
           {stage.kind === "countdown" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/10">
               <span
                 key={stage.n}
-                className="booth-count font-[Bebas_Neue] text-[42vh] leading-[.8] text-[#fff6ea] [text-shadow:0_8px_40px_rgba(0,0,0,.6)]"
+                className="booth-count text-[34vh] leading-[.85] font-bold text-white [text-shadow:0_8px_40px_rgba(0,0,0,.45)]"
               >
                 {stage.n}
               </span>
-              <span className="bg-[#0e0c0a] px-5 py-2 font-[Courier_Prime] text-[3vh] tracking-[.3em] text-[#fff6ea]">
-                SENYUM!
+              <span className="rounded-full bg-background/90 px-6 py-2 text-[3vh] font-semibold">
+                Senyum!
               </span>
             </div>
           )}
-        </div>
+        </Card>
 
-        {stage.kind === "idle" && (
-          <IdlePanel
-            frames={frames ?? []}
-            frame={frame}
-            onFrame={setFrame}
-            onStart={start}
-            disabled={!!camera.error || !camera.size}
-          />
-        )}
-
-        {stage.kind === "review" && (
-          <div className="flex min-w-0 flex-1 flex-col gap-[2.4vh]">
-            <span className="font-[Courier_Prime] text-[1.7vh] tracking-[.2em] text-[#a89a8a]">
-              ADEGAN SELESAI DIREKAM
-            </span>
-            <h1 className="font-[Bebas_Neue] text-[10vh] leading-[.9] font-normal">
-              CETAK
-              <br />
-              FOTO INI?
-            </h1>
-            <button
-              type="button"
-              onClick={() => void confirmPrint()}
-              className="mt-2 min-h-[13vh] bg-[#a5532f] font-[Bebas_Neue] text-[6.5vh] tracking-[.06em] text-[#fff6ea] active:brightness-90"
-            >
-              CETAK
-            </button>
-            <button
-              type="button"
-              onClick={() => discard(stage.shot)}
-              className="min-h-[10vh] border-2 border-[#efe6d6] font-[Bebas_Neue] text-[4.6vh] tracking-[.06em] active:bg-white/10"
-            >
-              ULANGI
-            </button>
-            <span className="font-[Courier_Prime] text-[1.7vh] text-[#a89a8a]">
-              Kembali ke layar awal dalam {stage.left} detik tanpa mencetak.
-            </span>
-          </div>
+        {stage.kind !== "printing" && (
+          <Card className="gap-5 p-6">
+            {stage.kind === "review" ? (
+              <ReviewPanel
+                left={stage.left}
+                onPrint={() => void confirmPrint()}
+                onRetake={() => discard(stage.shot)}
+              />
+            ) : (
+              <IdlePanel
+                frames={frames ?? []}
+                frame={frame}
+                onFrame={setFrame}
+                onStart={start}
+                counting={stage.kind === "countdown"}
+                disabled={!!camera.error || !camera.size || stage.kind === "countdown"}
+                previewQr={previewQr}
+              />
+            )}
+          </Card>
         )}
 
         {stage.kind === "printing" && (
           <PrintingScreen number={formatPhotoNumber(stage.shot.row.number)} online={online} />
         )}
-      </div>
+      </main>
 
-      {/* Baris status untuk petugas. */}
-      {stage.kind === "idle" && (
-        <div className="absolute top-[2vh] left-[3vw] flex flex-wrap gap-3 font-[Courier_Prime] text-[13px] tracking-[.08em] text-[#d8cfc2]">
-          <span className="border border-[#3a322b] px-3 py-1.5">
-            {online ? "● ONLINE" : "● OFFLINE"}
-            {pending > 0 ? ` · ${pending} FOTO MENUNGGU UNGGAH` : " · SEMUA TERUNGGAH"}
-          </span>
-          {authError && (
-            <span className="border border-[#c9784f] px-3 py-1.5 text-[#f0b08f]">
-              {authError.toUpperCase()} · FOTO TETAP TERSIMPAN DI LAPTOP INI
-            </span>
-          )}
-          {notice && (
-            <button
-              type="button"
-              onClick={() => setNotice(null)}
-              className="border border-[#c9784f] px-3 py-1.5 text-left text-[#f0b08f]"
-              title="Tutup pesan"
-            >
-              {notice} ✕
-            </button>
-          )}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setStaffOpen(true)}
-        className="absolute right-[2vw] bottom-[2vh] min-h-11 px-3 font-[Courier_Prime] text-[13px] tracking-[.12em] text-[#6f6458] hover:text-[#d8cfc2]"
-      >
-        PETUGAS
-      </button>
-
-      {flash && <div className="booth-flash pointer-events-none absolute inset-0 bg-white" />}
+      {flash && <div className="booth-flash pointer-events-none fixed inset-0 z-40 bg-white" />}
 
       {staffOpen && (
         <StaffPanel
@@ -496,7 +520,7 @@ export function BoothPage() {
         </div>,
         document.body,
       )}
-    </main>
+    </div>
   );
 }
 
@@ -505,87 +529,112 @@ function IdlePanel({
   frame,
   onFrame,
   onStart,
+  counting,
   disabled,
+  previewQr,
 }: {
   frames: BoothFrame[];
   frame: BoothFrame;
   onFrame: (frame: BoothFrame) => void;
   onStart: () => void;
+  counting: boolean;
   disabled: boolean;
+  previewQr: string | null;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-[2.6vh]">
-      <span className="font-[Courier_Prime] text-[1.6vh] tracking-[.2em] text-[#a89a8a]">
-        PHOTOBOOTH · PEMUTARAN PERDANA
-      </span>
-      <h1 className="font-[Bebas_Neue] text-[11vh] leading-[.9] font-normal tracking-[.01em]">
-        JADILAH
-        <br />
-        PEMERAN
-        <br />
-        MALAM INI
-      </h1>
-      <p className="font-[Cormorant_Garamond] text-[2.9vh] leading-snug text-[#d8cfc2]">
-        Berdiri di tanda, tekan tombol, lalu tersenyum. Fotomu langsung dicetak 4R.
-      </p>
+    <>
+      <div className="grid gap-1.5">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {counting ? "Bersiap…" : "Siap berfoto?"}
+        </h1>
+        <p className="text-muted-foreground">
+          Berdiri di tanda, tekan tombol, lalu tersenyum. Fotomu langsung dicetak, dan QR di
+          cetakannya membuka versi digitalnya.
+        </p>
+      </div>
       {frames.length > 1 && (
-        <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-2 font-[Courier_Prime] text-[13px] tracking-[.16em] text-[#a89a8a]">
-            PILIH BINGKAI
-          </legend>
-          {frames.map((f) => (
-            <button
-              key={f}
-              type="button"
-              aria-pressed={f === frame}
-              onClick={() => onFrame(f)}
-              className={`min-h-11 border px-4 font-[Courier_Prime] text-[15px] tracking-[.08em] ${
-                f === frame
-                  ? "border-[#efe6d6] bg-[#efe6d6] text-[#0e0c0a]"
-                  : "border-[#3a322b] text-[#d8cfc2] hover:border-[#a89a8a]"
-              }`}
-            >
-              {BOOTH_FRAME_LABELS[f]}
-            </button>
-          ))}
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm font-medium">Pilih bingkai</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {frames.map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={f === frame}
+                disabled={counting}
+                onClick={() => onFrame(f)}
+                className={cn(
+                  "grid gap-1.5 rounded-lg border p-1.5 text-xs font-medium transition-colors hover:bg-accent/50 disabled:opacity-60",
+                  f === frame && "border-primary ring-2 ring-primary/30",
+                )}
+              >
+                <FrameThumb frame={f} qr={previewQr} className="rounded-sm border-0" />
+                <span className="flex items-center justify-center gap-1">
+                  {f === frame && <Check className="size-3.5" aria-hidden />}
+                  {BOOTH_FRAME_LABELS[f]}
+                </span>
+              </button>
+            ))}
+          </div>
         </fieldset>
       )}
-      <button
-        type="button"
-        onClick={onStart}
-        disabled={disabled}
-        className="min-h-[14vh] bg-[#a5532f] font-[Bebas_Neue] text-[6.6vh] tracking-[.06em] text-[#fff6ea] active:brightness-90 disabled:opacity-40"
-      >
-        AMBIL FOTO
-      </button>
-      <span className="font-[Courier_Prime] text-[1.7vh] text-[#a89a8a]">
-        atau tekan Spasi / tombol remote
-      </span>
-    </div>
+      <Button onClick={onStart} disabled={disabled} className="h-16 text-lg">
+        <Camera className="size-6" aria-hidden />
+        Ambil foto
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">atau tekan Spasi / tombol remote</p>
+    </>
+  );
+}
+
+function ReviewPanel({
+  left,
+  onPrint,
+  onRetake,
+}: {
+  left: number;
+  onPrint: () => void;
+  onRetake: () => void;
+}) {
+  return (
+    <>
+      <div className="grid gap-1.5">
+        <h1 className="text-3xl font-bold tracking-tight">Cetak foto ini?</h1>
+        <p className="text-muted-foreground">
+          Kalau belum pas, ulangi saja. Foto yang dicetak juga bisa diunduh lewat QR di cetakannya.
+        </p>
+      </div>
+      <Button onClick={onPrint} className="h-16 text-lg">
+        <Printer className="size-6" aria-hidden />
+        Cetak
+      </Button>
+      <Button variant="outline" onClick={onRetake} className="h-14 text-base">
+        <RotateCcw className="size-5" aria-hidden />
+        Ulangi
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Kembali ke layar awal dalam {left} detik tanpa mencetak.
+      </p>
+    </>
   );
 }
 
 function PrintingScreen({ number, online }: { number: string; online: boolean }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[3vh] bg-[#ebe3d5] text-center text-[#221c17]">
-      <div className="booth-holes absolute inset-x-0 top-0 h-[7vh] bg-[#0e0c0a]" />
-      <span className="font-[Courier_Prime] text-[2vh] tracking-[.24em] text-[#6f6458]">
-        TERIMA KASIH SUDAH HADIR
-      </span>
-      <h1 className="font-[Bebas_Neue] text-[19vh] leading-[.85] font-normal">
-        SEDANG
-        <br />
-        DICETAK
-      </h1>
-      <p className="font-[Cormorant_Garamond] text-[4vh] leading-tight">
-        Ambil fotomu di printer.
-        <br />
-        Kira-kira satu menit.
-      </p>
-      <p className="font-[Courier_Prime] text-[1.8vh] tracking-[.1em] text-[#6f6458]">
-        FOTO NO. {number} · {online ? "TERSIMPAN" : "TERSIMPAN, DIUNGGAH SAAT ONLINE"}
-      </p>
-      <div className="booth-holes absolute inset-x-0 bottom-0 h-[7vh] bg-[#0e0c0a]" />
+    <div className="col-span-full grid place-items-center">
+      <Card className="max-w-lg items-center gap-4 px-10 py-12 text-center">
+        <span className="grid size-20 place-items-center rounded-full bg-success text-white ring-[10px] ring-success/15">
+          <Printer className="size-10" aria-hidden />
+        </span>
+        <h1 className="text-4xl font-bold tracking-tight">Sedang dicetak</h1>
+        <p className="text-lg text-muted-foreground">
+          Ambil fotomu di printer, kira-kira satu menit. Pindai QR di cetakannya untuk mengunduh
+          versi digitalnya.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Foto no. {number} · {online ? "tersimpan" : "tersimpan, diunggah saat online"}
+        </p>
+      </Card>
     </div>
   );
 }

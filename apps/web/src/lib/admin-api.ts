@@ -12,6 +12,7 @@ import {
   coupleResponseSchema,
   coverResponseSchema,
   createDeviceResponseSchema,
+  type DeviceKind,
   dashboardResponseSchema,
   deviceListResponseSchema,
   deviceResponseSchema,
@@ -188,8 +189,8 @@ export const adminApi = {
 
   devices: {
     list: () => request(`${base}/devices`, deviceListResponseSchema),
-    create: (name: string) =>
-      request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name })),
+    create: (name: string, kind: DeviceKind) =>
+      request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name, kind })),
     /** Kode pairing baru untuk perangkat yang belum dipasang. */
     newPairingCode: (id: string) =>
       request(

@@ -15,6 +15,7 @@ import {
   boothPhotosZip,
   deleteBoothPhoto,
   getBoothConfig,
+  getBoothDeviceConfig,
   listBoothPhotos,
   saveBoothConfig,
   saveBoothPhoto,
@@ -31,7 +32,7 @@ export function boothRoutes(deps: AppDeps) {
   const { db, config } = deps;
   return new Hono<AppEnv>()
     .use("*", requireDevice(deps, "booth"))
-    .get("/config", async (c) => c.json({ config: await getBoothConfig(db) }))
+    .get("/config", async (c) => c.json({ config: await getBoothDeviceConfig(db) }))
     .post(
       "/photos",
       bodyLimit({

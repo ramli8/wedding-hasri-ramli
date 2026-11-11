@@ -36,7 +36,6 @@ async function withSessions(
     ({ group, guestCount }): Group => ({
       id: group.id,
       name: group.name,
-      color: group.color,
       isVip: group.isVip,
       guestCount,
       eventIds: invited.filter((e) => e.groupId === group.id).map((e) => e.eventId),
@@ -142,7 +141,6 @@ export async function createGroup(db: Db, input: GroupData): Promise<Group> {
         .insert(guestGroups)
         .values({
           name: input.name,
-          color: input.color,
           isVip: input.isVip,
         })
         .returning({ id: guestGroups.id });
@@ -166,7 +164,6 @@ export async function updateGroup(db: Db, id: string, input: GroupData): Promise
         .update(guestGroups)
         .set({
           name: input.name,
-          color: input.color,
           isVip: input.isVip,
         })
         .where(eq(guestGroups.id, id))

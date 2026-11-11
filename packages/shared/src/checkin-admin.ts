@@ -22,6 +22,8 @@ export type Device = z.infer<typeof deviceSchema>;
 
 export const createDeviceRequestSchema = z.object({
   name: z.string().trim().min(1, "Nama perangkat wajib diisi").max(60),
+  /** Jenis perangkat dipilih admin saat membuat kode; pairing dengan jenis lain ditolak. */
+  kind: deviceKindSchema.default("scanner"),
 });
 export type CreateDeviceRequest = z.input<typeof createDeviceRequestSchema>;
 
@@ -70,7 +72,6 @@ export const dashboardResponseSchema = z.object({
     z.object({
       id: z.uuid().nullable(),
       name: z.string(),
-      color: z.string(),
       isVip: z.boolean(),
       invited: z.number(),
       arrived: z.number(),

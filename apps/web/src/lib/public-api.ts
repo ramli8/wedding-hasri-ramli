@@ -2,6 +2,7 @@ import {
   type GuestbookPostRequest,
   guestbookListResponseSchema,
   guestbookPostResponseSchema,
+  guestPhotoResponseSchema,
   invitationResponseSchema,
   myClaimsResponseSchema,
   type RsvpRequest,
@@ -31,6 +32,8 @@ export const publicApi = {
     request(`${base}/guestbook?page=${page}&pageSize=${pageSize}`, guestbookListResponseSchema),
   postGuestbook: (input: GuestbookPostRequest) =>
     request(`${base}/guestbook`, guestbookPostResponseSchema, withBody("POST", input)),
+  /** Foto photobooth dari QR di cetakan; 404 = belum terunggah dari laptop booth. */
+  photo: (id: string) => request(`${base}/foto/${id}`, guestPhotoResponseSchema),
   rsvp: (input: RsvpRequest) =>
     request(`${base}/rsvp`, rsvpResponseSchema, withBody("POST", input)),
 };

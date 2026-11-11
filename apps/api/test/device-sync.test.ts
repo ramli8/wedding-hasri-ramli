@@ -1,8 +1,8 @@
 import {
   type Dashboard,
-  DEFAULT_GROUP_COLOR,
   type Device,
   type DeviceEvent,
+  LEGACY_GROUP_COLOR,
   MIN_SUPPORTED_SYNC_VERSION,
   type PushResponse,
   type ReviewItem,
@@ -326,7 +326,7 @@ describe("snapshot", () => {
     expect(snap.groups).toContainEqual({
       id: world.group.id,
       name: "Surabaya",
-      color: DEFAULT_GROUP_COLOR,
+      color: LEGACY_GROUP_COLOR,
       isVip: true,
     });
     expect(snap.sessions).toHaveLength(1);

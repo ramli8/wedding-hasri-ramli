@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Device } from "@wedding/shared";
-import { Ban, Copy, KeyRound, Link2, Plus, Trash2 } from "lucide-react";
+import { DEVICE_PAIR_PAGE, type Device, type DeviceKind } from "@wedding/shared";
+import { Ban, Camera, Copy, KeyRound, Link2, Plus, ScanLine, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { type FormEvent, useEffect, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
@@ -15,6 +15,9 @@ import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import { adminApi } from "../lib/admin-api.js";
 import { devicesQuery, useRefresh } from "../lib/queries.js";
 import { formatAgo } from "../lib/scan/format.js";
@@ -25,7 +28,28 @@ const STATUS = {
   revoked: { label: "Dicabut", variant: "outline" },
 } as const;
 
-type PairingCode = { name: string; code: string; expires: string | null };
+/** Jenis perangkat: dipilih saat membuat kode, menentukan halaman pasang yang menerima kodenya. */
+const KIND: Record<
+  DeviceKind,
+  { label: string; icon: typeof ScanLine; page: string; hint: string; example: string }
+> = {
+  scanner: {
+    label: "Scanner pintu",
+    icon: ScanLine,
+    page: DEVICE_PAIR_PAGE.scanner,
+    hint: "HP penjaga untuk memindai QR tamu.",
+    example: "HP Gerbang A",
+  },
+  booth: {
+    label: "Photobooth",
+    icon: Camera,
+    page: DEVICE_PAIR_PAGE.booth,
+    hint: "Laptop booth foto; tidak bisa membuka data tamu.",
+    example: "Laptop Booth",
+  },
+};
+
+type PairingCode = { name: string; kind: DeviceKind; code: string; expires: string | null };
 
 export function DevicesPage() {
   const refresh = useRefresh();
@@ -43,6 +67,7 @@ export function DevicesPage() {
       await refresh("devices");
       setCode({
         name: data.device.name,
+        kind: data.device.kind,
         code: data.pairingCode,
         expires: data.device.pairingExpiresAt,
       });
@@ -54,14 +79,22 @@ export function DevicesPage() {
       id: "nama",
       accessorFn: (device) => device.name,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
-      cell: ({ row }) => (
-        <span className="font-semibold">
-          {row.original.name}
-          {row.original.kind === "booth" && row.original.status !== "pending" && (
-            <span className="ms-2 text-xs font-normal text-muted-foreground">· photobooth</span>
-          )}
-        </span>
-      ),
+      cell: ({ row }) => <span className="font-semibold">{row.original.name}</span>,
+    },
+    {
+      id: "jenis",
+      accessorFn: (device) => device.kind,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Jenis" />,
+      cell: ({ row }) => {
+        const kind = KIND[row.original.kind];
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <kind.icon className="size-4" aria-hidden />
+            {kind.label}
+          </span>
+        );
+      },
+      filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
     },
     {
       id: "status",
@@ -146,8 +179,8 @@ export function DevicesPage() {
   return (
     <>
       <PageHeader
-        title="Perangkat penjaga"
-        description="HP atau laptop yang dipakai di pintu. Tiap perangkat dipasangkan dengan kode sekali pakai dan bisa dicabut kapan saja."
+        title="Perangkat"
+        description="HP scanner di pintu dan laptop photobooth. Tiap perangkat dipasangkan dengan kode sekali pakai sesuai jenisnya dan bisa dicabut kapan saja."
         actions={
           <Button onClick={() => setCreating(true)}>
             Tambah perangkat
@@ -167,9 +200,17 @@ export function DevicesPage() {
         emptyText={
           devices.isPending
             ? "Memuat…"
-            : "Belum ada perangkat. Tambahkan satu per HP atau laptop yang akan dipakai di pintu."
+            : "Belum ada perangkat. Tambahkan satu per HP scanner atau laptop photobooth."
         }
         filters={[
+          {
+            columnId: "jenis",
+            title: "Jenis",
+            options: [
+              { label: KIND.scanner.label, value: "scanner" },
+              { label: KIND.booth.label, value: "booth" },
+            ],
+          },
           {
             columnId: "status",
             title: "Status",
@@ -208,16 +249,19 @@ function CreateDialog({
 }) {
   const refresh = useRefresh();
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<DeviceKind>("scanner");
   const create = useMutation({
-    mutationFn: () => adminApi.devices.create(name),
+    mutationFn: () => adminApi.devices.create(name, kind),
     onSuccess: async (data) => {
       await refresh("devices");
       onCreated({
         name: data.device.name,
+        kind: data.device.kind,
         code: data.pairingCode,
         expires: data.device.pairingExpiresAt,
       });
       setName("");
+      setKind("scanner");
     },
   });
 
@@ -229,10 +273,37 @@ function CreateDialog({
   return (
     <Dialog open={open} onClose={onClose} title="Tambah perangkat">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <Field
-          label="Nama perangkat"
-          hint="Agar mudah dikenali di dashboard, mis. “HP Gerbang A” atau “Laptop Meja Bantuan”."
-        >
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm leading-none font-medium">Jenis perangkat</legend>
+          <RadioGroup
+            value={kind}
+            onValueChange={(value) => setKind(value as DeviceKind)}
+            className="grid gap-2 sm:grid-cols-2"
+          >
+            {(Object.keys(KIND) as DeviceKind[]).map((value) => {
+              const item = KIND[value];
+              return (
+                <Label
+                  key={value}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal transition-colors hover:bg-accent/50",
+                    kind === value && "border-primary bg-accent/30",
+                  )}
+                >
+                  <RadioGroupItem value={value} className="mt-0.5" />
+                  <span className="grid gap-1">
+                    <span className="flex items-center gap-1.5 text-sm leading-none font-medium">
+                      <item.icon className="size-4" aria-hidden />
+                      {item.label}
+                    </span>
+                    <span className="text-sm text-muted-foreground">{item.hint}</span>
+                  </span>
+                </Label>
+              );
+            })}
+          </RadioGroup>
+        </fieldset>
+        <Field label="Nama perangkat" hint={`Agar mudah dikenali, mis. “${KIND[kind].example}”.`}>
           {(id) => (
             <Input
               id={id}
@@ -257,9 +328,9 @@ function CreateDialog({
   );
 }
 
-/** Tautan yang membuka halaman pasang dengan kode sudah terisi. */
-const pairingUrl = (code: string) =>
-  `${window.location.origin}/scan/pasang?kode=${encodeURIComponent(code)}`;
+/** Tautan yang membuka halaman pasang (sesuai jenis perangkat) dengan kode sudah terisi. */
+const pairingUrl = (code: PairingCode) =>
+  `${window.location.origin}${KIND[code.kind].page}?kode=${encodeURIComponent(code.code)}`;
 
 async function copy(text: string, what: string) {
   try {
@@ -279,7 +350,7 @@ function CodeDialog({ code, onClose }: { code: PairingCode | null; onClose: () =
 }
 
 function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void }) {
-  const url = pairingUrl(code.code);
+  const url = pairingUrl(code);
   const [image, setImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -296,8 +367,12 @@ function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void })
     <div className="flex flex-col gap-4">
       <p>
         Pindai QR ini dengan kamera perangkat itu, lalu ketuk <b>Pasangkan</b>. Atau buka{" "}
-        <b className="font-mono break-all">{window.location.origin}/scan/pasang</b> dan ketik
-        kodenya. Lakukan saat internet masih menyala.
+        <b className="font-mono break-all">
+          {window.location.origin}
+          {KIND[code.kind].page}
+        </b>{" "}
+        di {code.kind === "booth" ? "laptop photobooth" : "HP penjaga"} dan ketik kodenya. Lakukan
+        saat internet masih menyala.
       </p>
       <div className="flex justify-center">
         {image ? (

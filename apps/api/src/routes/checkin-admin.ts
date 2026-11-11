@@ -31,7 +31,8 @@ export function deviceAdminRoutes({ db }: AppDeps) {
   return new Hono<AppEnv>()
     .get("/", async (c) => c.json({ items: await listDevices(db) }))
     .post("/", validate("json", createDeviceRequestSchema), async (c) => {
-      return c.json(await createDevice(db, c.req.valid("json").name), 201);
+      const { name, kind } = c.req.valid("json");
+      return c.json(await createDevice(db, name, kind), 201);
     })
     .post("/:id/pairing-code", validate("param", idParam), async (c) => {
       return c.json(await renewPairingCode(db, c.req.valid("param").id));

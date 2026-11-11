@@ -13,6 +13,7 @@ import type { AppDeps, AppEnv } from "../http/env.js";
 import { AppError } from "../http/errors.js";
 import { clientIp } from "../http/middleware.js";
 import { validate } from "../http/validate.js";
+import { getGuestPhoto } from "../services/booth.js";
 import { createInvitationCache, type InvitationCache } from "../services/layout.js";
 import {
   findGuestByCode,
@@ -25,6 +26,7 @@ import { myClaims, setClaim } from "../services/wish-claims.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const codeParam = z.object({ code: guestCodeSchema });
+const photoParam = z.object({ id: z.uuid() });
 
 /**
  * Rute tanpa login untuk tamu. Dua pembatas per IP: tebakan kode yang salah (agar kode tidak bisa
@@ -67,6 +69,19 @@ export function publicRoutes(
         c.header("cache-control", "public, max-age=30");
         c.header("content-type", "application/json");
         return c.body(await invitation.get());
+      })
+      // Foto photobooth dari QR di cetakan. 404 = belum terunggah (booth offline; halaman tamu
+      // menunggu dan memeriksa ulang), 410 = dihapus admin. Tidak ada pembatas tebakan per IP: id
+      // foto punya 74 bit acak sehingga tidak bisa ditebak, sedangkan tamu yang menunggu di Wi-Fi
+      // gedung atau CGNAT berbagi IP dan akan saling memblokir. Batas umum 1200/menit per IP di
+      // app.ts tetap berlaku.
+      .get("/foto/:id", validate("param", photoParam), async (c) => {
+        const found = await getGuestPhoto(db, c.req.valid("param").id);
+        if (found === "pending") throw new AppError(404, "NOT_FOUND", "Foto belum tersedia");
+        if (found === "deleted") {
+          throw new AppError(410, "NOT_FOUND", "Foto ini sudah dihapus oleh pengantin");
+        }
+        return c.json(found);
       })
       .get("/ticket/:code", validate("param", codeParam), async (c) => {
         const { code } = c.req.valid("param");

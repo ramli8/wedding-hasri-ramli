@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { DEFAULT_GROUP_COLOR, type Event, formatSessionTime, type Group } from "@wedding/shared";
-import { Check, Clock, Palette, Plus, SquarePen, Star, Trash2, Users } from "lucide-react";
+import { type Event, formatSessionTime, type Group } from "@wedding/shared";
+import { Clock, Plus, SquarePen, Star, Trash2, Users } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
@@ -147,8 +147,7 @@ function GroupCard({
       <div className="flex items-start gap-3 px-4">
         <span
           aria-hidden
-          className="grid size-12 shrink-0 place-items-center rounded-xl text-lg font-semibold text-neutral-800 ring-1 ring-black/10"
-          style={{ backgroundColor: group.color }}
+          className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-lg font-semibold"
         >
           {group.name.trim().charAt(0).toUpperCase()}
         </span>
@@ -297,66 +296,6 @@ export function GroupsPage() {
   );
 }
 
-/** Warna pastel siap pakai (kalem dan minimalis): cukup diketuk, tanpa membuka pemilih warna. */
-const PRESET_COLORS = [
-  { value: "#f4b6c2", name: "Merah muda" },
-  { value: "#f7c9a9", name: "Peach" },
-  { value: "#f3e0a3", name: "Krem" },
-  { value: "#bcd9b4", name: "Hijau sage" },
-  { value: "#a9dbd0", name: "Mint" },
-  { value: "#b3cde8", name: "Biru langit" },
-  { value: "#cfc0e8", name: "Lavender" },
-  { value: "#d6d3d1", name: "Abu-abu" },
-];
-
-function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
-  const current = value.toLowerCase();
-  const custom = !PRESET_COLORS.some((c) => c.value === current);
-  return (
-    <div role="radiogroup" aria-label="Warna" className="flex flex-wrap gap-2">
-      {PRESET_COLORS.map((color) => {
-        const selected = color.value === current;
-        return (
-          // biome-ignore lint/a11y/useSemanticElements: tombol bulat lebih mudah diketuk daripada radio bawaan
-          <button
-            key={color.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            aria-label={color.name}
-            title={color.name}
-            onClick={() => onChange(color.value)}
-            className={cn(
-              "grid size-11 place-items-center rounded-full border-2 text-neutral-800 transition-shadow",
-              selected ? "border-foreground ring-2 ring-ring/40" : "border-black/5",
-            )}
-            style={{ backgroundColor: color.value }}
-          >
-            {selected && <Check className="size-5" aria-hidden />}
-          </button>
-        );
-      })}
-      <label
-        title="Warna lain"
-        className={cn(
-          "relative grid size-11 cursor-pointer place-items-center rounded-full border-2",
-          custom ? "border-foreground ring-2 ring-ring/40" : "border-dashed border-border",
-        )}
-        style={custom ? { backgroundColor: value } : undefined}
-      >
-        <Palette className={cn("size-5", custom && "text-neutral-800")} aria-hidden />
-        <span className="sr-only">Warna lain</span>
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 size-full cursor-pointer opacity-0"
-        />
-      </label>
-    </div>
-  );
-}
-
 function GroupForm({
   group,
   events,
@@ -368,7 +307,6 @@ function GroupForm({
 }) {
   const refresh = useRefresh();
   const [name, setName] = useState(group?.name ?? "");
-  const [color, setColor] = useState(group?.color ?? DEFAULT_GROUP_COLOR);
   const [isVip, setIsVip] = useState(group?.isVip ?? false);
   // Kelompok baru belum diundang ke acara apa pun; admin mencentang acara yang diundang.
   const [eventIds, setEventIds] = useState<string[]>(() => group?.eventIds ?? []);
@@ -405,7 +343,6 @@ function GroupForm({
     mutationFn: () => {
       const input = {
         name,
-        color,
         isVip,
         eventIds,
         sessions: Object.entries(sessions).flatMap(([eventId, range]) => {
@@ -454,7 +391,7 @@ function GroupForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4">
         <Field label="Nama kelompok" required>
           {(id) => (
             <Input
@@ -466,10 +403,6 @@ function GroupForm({
             />
           )}
         </Field>
-        <div className="grid content-start gap-2">
-          <span className="text-sm leading-none font-medium">Warna</span>
-          <ColorPicker value={color} onChange={setColor} />
-        </div>
       </div>
       <SwitchRow
         title="VIP"

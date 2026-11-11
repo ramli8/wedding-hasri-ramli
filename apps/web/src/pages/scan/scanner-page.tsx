@@ -724,13 +724,6 @@ function RecentRow({ item }: { item: RecentCheckin }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm leading-none font-medium">{item.guest.displayName}</p>
         <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-          {item.group && (
-            <span
-              className="size-2 shrink-0 rounded-full ring-1 ring-black/15"
-              style={{ backgroundColor: item.group.color }}
-              aria-hidden
-            />
-          )}
           <span className="truncate">
             {item.group?.name ?? "Tanpa grup"} · {item.mine ? "pintu ini" : "pintu lain"}
           </span>
@@ -783,11 +776,6 @@ function LastPanel({ last }: { last: OkOutcome }) {
             <p className="truncate font-semibold">{last.view.guest.displayName}</p>
             {group && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span
-                  className="size-2 rounded-full ring-1 ring-black/15"
-                  style={{ backgroundColor: group.color }}
-                  aria-hidden
-                />
                 {group.name}
               </p>
             )}

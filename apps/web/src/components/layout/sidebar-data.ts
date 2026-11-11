@@ -69,7 +69,14 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: "Check-in", url: "/admin/checkin", icon: ScanLine },
       { title: "Perangkat", url: "/admin/perangkat", icon: Smartphone },
-      { title: "Photobooth", url: "/admin/photobooth", icon: Camera },
+      {
+        title: "Photobooth",
+        icon: Camera,
+        items: [
+          { title: "Bingkai", url: "/admin/photobooth" },
+          { title: "Foto", url: "/admin/photobooth/foto" },
+        ],
+      },
     ],
   },
   {

@@ -5,14 +5,21 @@ import { deviceEventSchema, storedEventSchema } from "./checkin.js";
 export const PAIRING_CODE_LENGTH = 8;
 
 /**
- * Jenis perangkat, ditentukan saat pairing. HP scanner hanya boleh memakai /sync (data tamu),
+ * Jenis perangkat, dipilih admin saat membuat kode pairing; kode hanya bisa dipasang sebagai jenis
+ * itu (scanner di /scan/pasang, booth di /booth/pasang). HP scanner hanya boleh memakai /sync (data tamu),
  * laptop photobooth hanya /booth, sehingga token booth di area umum tidak bisa mengambil daftar tamu.
  */
 export const deviceKindSchema = z.enum(["scanner", "booth"]);
 export type DeviceKind = z.infer<typeof deviceKindSchema>;
 
+/** Halaman tempat kode pairing tiap jenis perangkat diketik. */
+export const DEVICE_PAIR_PAGE: Record<DeviceKind, string> = {
+  scanner: "/scan/pasang",
+  booth: "/booth/pasang",
+};
+
 export const pairRequestSchema = z.object({
-  /** Tidak diisi = scanner (klien lama). */
+  /** Tidak diisi = scanner (klien lama). Harus sama dengan jenis yang dipilih admin. */
   kind: deviceKindSchema.default("scanner"),
   code: z
     .string()
@@ -67,7 +74,8 @@ export const snapshotResponseSchema = z.object({
     z.object({
       id: z.uuid(),
       name: z.string(),
-      color: z.string(),
+      /** Tidak dipakai lagi (warna kelompok dihapus); tetap dikirim server untuk perangkat lama. */
+      color: z.string().optional(),
       isVip: z.boolean(),
     }),
   ),

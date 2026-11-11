@@ -1,5 +1,6 @@
 import {
   type DeviceEvent,
+  LEGACY_GROUP_COLOR,
   MIN_SUPPORTED_SYNC_VERSION,
   normalizeInstagram,
   normalizePhone,
@@ -135,7 +136,9 @@ export async function buildSnapshot(
     groups: groupRows.map((g) => ({
       id: g.id,
       name: g.name,
-      color: g.color,
+      // Warna kelompok sudah dihapus; nilai tetap ini hanya agar perangkat lama (yang mewajibkan
+      // field ini) tidak perlu diperbarui.
+      color: LEGACY_GROUP_COLOR,
       isVip: g.isVip,
     })),
     // Format sinkron tetap (endsAt wajib): "sampai selesai" dikirim sebagai akhir hari itu (WIB),

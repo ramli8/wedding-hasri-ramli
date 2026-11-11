@@ -13,6 +13,8 @@ import { getMeta } from "./lib/scan/db.js";
 import { BoothAdminPage } from "./pages/booth/booth-admin-page.js";
 import { BoothPage } from "./pages/booth/booth-page.js";
 import { BoothPairPage } from "./pages/booth/booth-pair-page.js";
+import { BoothPhotosPage } from "./pages/booth/booth-photos-page.js";
+import { GuestPhotoPage } from "./pages/booth/guest-photo-page.js";
 import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
 import {
@@ -289,6 +291,13 @@ const guestInvitationRoute = createRoute({
   component: InvitationPage,
 });
 
+// Foto photobooth tamu: dibuka dari QR unik di cetakan 4R, tanpa login.
+const guestPhotoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/foto/$id",
+  component: GuestPhotoPage,
+});
+
 // Aplikasi penjaga pintu: tidak memakai login admin, melainkan token perangkat (lihat /scan/pasang).
 const requirePairedDevice = async () => {
   if (!(await getMeta("auth"))) throw redirect({ to: "/scan/pasang" });
@@ -330,6 +339,12 @@ const boothPairRoute = createRoute({
   component: BoothPairPage,
 });
 
+const boothPhotosRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/photobooth/foto",
+  component: BoothPhotosPage,
+});
+
 const boothAdminRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/photobooth",
@@ -341,6 +356,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   ticketRoute,
   guestInvitationRoute,
+  guestPhotoRoute,
   scanRoute,
   pairRoute,
   readinessRoute,
@@ -371,6 +387,7 @@ const routeTree = rootRoute.addChildren([
     checkinRoute,
     devicesRoute,
     boothAdminRoute,
+    boothPhotosRoute,
     settingsRoute.addChildren(settingsChildren),
     ...errorRoutes,
   ]),

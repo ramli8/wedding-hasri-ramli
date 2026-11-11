@@ -17,8 +17,11 @@ export const groupSessionInputSchema = z
     path: ["endsAt"],
   });
 
-/** Warna kelompok bawaan: abu-abu pastel (palet di menu Kelompok serba pastel). */
-export const DEFAULT_GROUP_COLOR = "#d6d3d1";
+/**
+ * Warna kelompok sudah dihapus (11 Nov 2026), tetapi snapshot scanner tetap mengirim nilai tetap ini
+ * karena aplikasi scanner lama mewajibkan field `color`.
+ */
+export const LEGACY_GROUP_COLOR = "#d6d3d1";
 
 /**
  * `eventIds` = acara yang diundang untuk kelompok ini. Tamu baru di kelompok ini diundang ke
@@ -28,10 +31,6 @@ export const DEFAULT_GROUP_COLOR = "#d6d3d1";
 export const groupInputSchema = z
   .object({
     name: z.string().trim().min(1, "Nama kelompok wajib diisi"),
-    color: z
-      .string()
-      .regex(/^#[0-9a-fA-F]{6}$/, "Warna harus berformat #rrggbb")
-      .default(DEFAULT_GROUP_COLOR),
     isVip: z.boolean().default(false),
     eventIds: z.array(z.uuid()).default([]),
     sessions: z.array(groupSessionInputSchema).default([]),
@@ -46,7 +45,6 @@ export type GroupData = z.output<typeof groupInputSchema>;
 export const groupSchema = z.object({
   id: z.uuid(),
   name: z.string(),
-  color: z.string(),
   isVip: z.boolean(),
   guestCount: z.number(),
   eventIds: z.array(z.uuid()),

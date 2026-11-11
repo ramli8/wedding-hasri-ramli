@@ -1,6 +1,5 @@
 import {
   type Dashboard,
-  DEFAULT_GROUP_COLOR,
   needsReview,
   type ResolveRequest,
   type ReviewItem,
@@ -23,7 +22,7 @@ import { findCheckin, getCheckinEvent, loadEvents, lockCheckinLog } from "./chec
 import { toDevice } from "./devices.js";
 import { rsvpHadirPax } from "./engage.js";
 
-const NO_GROUP = { name: "Tanpa kelompok", color: DEFAULT_GROUP_COLOR };
+const NO_GROUP = { name: "Tanpa kelompok" };
 
 async function loadContext(db: Db, eventId: string) {
   const storedEvents = await loadEvents(db, eventId);
@@ -68,7 +67,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
     {
       id: string | null;
       name: string;
-      color: string;
       isVip: boolean;
       invited: number;
       arrived: number;
@@ -82,7 +80,6 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
     const bucket = {
       id: group?.id ?? null,
       name: group?.name ?? NO_GROUP.name,
-      color: group?.color ?? NO_GROUP.color,
       isVip: group?.isVip ?? false,
       invited: 0,
       arrived: 0,

@@ -129,10 +129,6 @@ export function CheckinPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Kelompok" />,
       cell: ({ row }) => (
         <span className="flex items-center gap-2 font-semibold">
-          <span
-            className="size-3 rounded-full border"
-            style={{ backgroundColor: row.original.color }}
-          />
           {row.original.name}
           {row.original.isVip && <Badge variant="default">VIP</Badge>}
         </span>

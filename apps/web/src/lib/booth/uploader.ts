@@ -49,6 +49,7 @@ export async function syncBooth(): Promise<SyncResult> {
   try {
     const { config } = await call("/config", boothConfigResponseSchema, auth.token);
     await setBoothMeta("frames", config.frames);
+    await setBoothMeta("photoBaseUrl", config.photoBaseUrl);
     await setBoothMeta("authError", null);
   } catch (err) {
     if (await handleFatal(err)) return { ...result, offline: isNetwork(err) };
@@ -107,7 +108,10 @@ export function startBoothSync(onResult?: (result: SyncResult) => void): {
     if (running || stopped) return;
     running = true;
     try {
-      onResult?.(await syncBooth());
+      // Jangan ditulis `onResult?.(await syncBooth())`: tanpa onResult, `?.()` melewati argumennya
+      // juga, sehingga syncBooth tidak pernah jalan dan foto tidak pernah terunggah.
+      const result = await syncBooth();
+      onResult?.(result);
     } finally {
       running = false;
     }

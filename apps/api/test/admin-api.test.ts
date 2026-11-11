@@ -257,7 +257,6 @@ describe("kelompok", () => {
     const event = await makeEvent();
     const group = await makeGroup({
       name: "Surabaya",
-      color: "#2563eb",
       eventIds: [event.id],
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
@@ -348,7 +347,6 @@ describe("kelompok", () => {
     expect(reversed.status).toBe(400);
 
     expect((await api.post("/groups", { name: "Keluarga" })).status).toBe(409);
-    expect((await api.post("/groups", { name: "Z", color: "merah" })).status).toBe(400);
   });
 
   it("acara kelompok: jam datang hanya untuk acara yang diundang", async () => {

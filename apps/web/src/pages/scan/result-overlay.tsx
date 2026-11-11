@@ -22,14 +22,14 @@ import { formatClock } from "../../lib/scan/format.js";
 
 // Check-in berhasil cukup sekilas supaya antrean jalan; hasil yang butuh dibaca (sudah masuk, tidak
 // valid) lebih lama. VIP berhasil juga lebih lama agar penjaga sempat membaca catatan dan menyambut.
-const AUTO_CLOSE_MS = { ok: 1_500, vip: 5_000, already: 3_500, invalid: 3_500 } as const;
+const AUTO_CLOSE_MS = { ok: 1_500, vip: 6_000, already: 3_500, invalid: 3_500 } as const;
 
 type Tone = "ok" | "vip" | "already" | "invalid";
 
 // Gaya kartu admin di atas latar yang diberi warna lembut sesuai hasil: hijau masuk, kuning sudah
 // masuk, merah tidak valid. Warna utamanya ada di lingkaran ikon besar dan label status, supaya
 // tetap terbaca sekilas dari jauh. Di mode gelap tint dipertebal agar warnanya tetap terlihat.
-// VIP: latar nila (bukan hijau, supaya beda dari tamu biasa), lingkaran navy dengan kilau emas (mode
+// VIP: latar biru langit (bukan hijau, supaya beda dari tamu biasa), lingkaran navy dengan kilau emas (mode
 // gelap dibalik), plus lencana hijau "Silakan masuk" agar tidak tertukar dengan penolakan.
 const TONE: Record<Tone, { tint: string; icon: string; ring: string; label: string }> = {
   ok: {
@@ -39,7 +39,7 @@ const TONE: Record<Tone, { tint: string; icon: string; ring: string; label: stri
     label: "text-success",
   },
   vip: {
-    tint: "bg-indigo-500/15 dark:bg-indigo-500/30",
+    tint: "bg-sky-500/15 dark:bg-sky-500/25",
     icon: "bg-[#0f172a] text-amber-200 dark:bg-amber-200 dark:text-[#0f172a]",
     ring: "ring-[#0f172a]/10 dark:ring-amber-200/20",
     label: "text-success",
@@ -184,16 +184,7 @@ export function ResultOverlay({
                   VIP
                 </Chip>
               )}
-              {group && (
-                <Chip>
-                  <span
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: group.color }}
-                    aria-hidden
-                  />
-                  {group.name}
-                </Chip>
-              )}
+              {group && <Chip>{group.name}</Chip>}
               {guest.isRombongan && (
                 <Chip>
                   <Users aria-hidden />

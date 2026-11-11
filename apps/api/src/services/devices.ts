@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import type { Device, DeviceKind, PairResponse } from "@wedding/shared";
-import { PAIRING_CODE_LENGTH } from "@wedding/shared";
+import { DEVICE_PAIR_PAGE, PAIRING_CODE_LENGTH } from "@wedding/shared";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isUniqueViolation } from "../db/errors.js";
@@ -49,7 +49,7 @@ export async function listDevices(db: Db): Promise<Device[]> {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export async function createDevice(db: Db, name: string) {
+export async function createDevice(db: Db, name: string, kind: DeviceKind = "scanner") {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generatePairingCode();
     try {
@@ -57,6 +57,7 @@ export async function createDevice(db: Db, name: string) {
         .insert(devices)
         .values({
           name,
+          kind,
           pairingCodeHash: sha256(code),
           pairingExpiresAt: new Date(Date.now() + PAIRING_TTL_MS),
         })
@@ -145,7 +146,16 @@ export async function deleteDevice(db: Db, id: string): Promise<void> {
   });
 }
 
-/** Menukar kode pairing sekali pakai dengan token perangkat; jenis perangkat ditetapkan di sini. */
+const KIND_PAGE: Record<DeviceKind, string> = {
+  scanner: `HP penjaga pintu: buka ${DEVICE_PAIR_PAGE.scanner}`,
+  booth: `laptop photobooth: buka ${DEVICE_PAIR_PAGE.booth}`,
+};
+
+/**
+ * Menukar kode pairing sekali pakai dengan token perangkat. Jenis perangkat sudah dipilih admin saat
+ * membuat kode; kode yang dipakai di halaman pasang jenis lain ditolak (409) tanpa menghanguskannya,
+ * supaya kode laptop photobooth di area umum tidak bisa dipakai untuk mengambil daftar tamu.
+ */
 export async function pairDevice(
   db: Db,
   code: string,
@@ -161,11 +171,17 @@ export async function pairDevice(
       .limit(1);
     const expired = !pending?.pairingExpiresAt || pending.pairingExpiresAt <= new Date();
     if (pending?.status !== "pending" || expired) return [];
+    if (pending.kind !== kind) {
+      throw new AppError(
+        409,
+        "CONFLICT",
+        `Kode ini untuk ${KIND_PAGE[pending.kind as DeviceKind]} dan ketik kodenya di sana.`,
+      );
+    }
     return tx
       .update(devices)
       .set({
         status: "active",
-        kind,
         tokenHash: sha256(token),
         // kode hangus: tidak bisa dipakai di perangkat lain
         pairingCodeHash: null,

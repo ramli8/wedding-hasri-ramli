@@ -1,3 +1,5 @@
+@import "@fontsource/great-vibes/400.css";
+
 /* Layar photobooth (/booth). Ukuran kertas cetak (@page) dipasang oleh halaman booth sendiri
    agar tidak memengaruhi halaman cetak admin. */
 .booth .booth-count {
@@ -5,13 +7,6 @@
 }
 .booth .booth-flash {
   animation: booth-flash 350ms ease-out both;
-}
-/* Lubang sproket di tepi layar "Sedang dicetak". */
-.booth .booth-holes {
-  background-image: radial-gradient(circle at center, #ebe3d5 0 6px, transparent 6.5px);
-  background-size: 34px 100%;
-  background-repeat: repeat-x;
-  background-position: center;
 }
 @keyframes booth-count {
   from {
@@ -35,4 +30,100 @@
   .booth .booth-count {
     animation: none;
   }
+}
+
+/* Halaman foto tamu (/foto/<id>, tujuan QR di cetakan photobooth): krem, emas, dan merah mawar
+   seperti bingkai bunga. Terpisah dari tema admin. */
+.guest-photo {
+  --gp-ground: #fbf6ef;
+  --gp-ink: #5b3f3a;
+  --gp-rose: #8f4a55;
+  --gp-gold: #c9a66b;
+  --gp-gold-deep: #9c7a45;
+  min-height: 100dvh;
+  background: var(--gp-ground);
+  color: var(--gp-ink);
+  padding: max(2rem, env(safe-area-inset-top)) 1rem max(2rem, env(safe-area-inset-bottom));
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+.guest-photo__inner {
+  margin-inline: auto;
+  display: flex;
+  max-width: 42rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+.guest-photo__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.guest-photo__kicker {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gp-gold-deep);
+}
+.guest-photo__names {
+  font-family: "Great Vibes", cursive;
+  font-size: 3rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--gp-rose);
+}
+@media (min-width: 640px) {
+  .guest-photo__names {
+    font-size: 3.75rem;
+  }
+}
+.guest-photo__text {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+.guest-photo__notice {
+  display: flex;
+  max-width: 28rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid color-mix(in srgb, var(--gp-gold) 60%, transparent);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 0.7);
+  padding: 1.5rem;
+}
+.guest-photo__image {
+  height: auto;
+  width: 100%;
+  border-radius: 0.5rem;
+  box-shadow: 0 18px 50px -18px rgb(91 63 58 / 0.45);
+}
+.guest-photo__button {
+  display: inline-flex;
+  min-height: 3rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  background: var(--gp-rose);
+  padding-inline: 1.5rem;
+  font-family: "Inter Variable", system-ui, sans-serif;
+  font-weight: 500;
+  color: #fff;
+}
+@media (min-width: 640px) {
+  .guest-photo__button {
+    width: auto;
+  }
+}
+.guest-photo__button--outline {
+  min-height: 2.75rem;
+  width: auto;
+  border: 1px solid var(--gp-gold);
+  background: transparent;
+  color: var(--gp-ink);
 }

@@ -14,7 +14,7 @@ import {
   setBoothMeta,
 } from "./db.js";
 import { coverCrop, FRAME_SPECS, formatPhotoNumber } from "./frames.js";
-import { syncBooth } from "./uploader.js";
+import { startBoothSync, syncBooth } from "./uploader.js";
 
 describe("coverCrop", () => {
   it("memotong sisi kiri-kanan video 16:9 sama rata untuk jendela yang lebih sempit", () => {
@@ -119,6 +119,26 @@ describe("penyimpanan dan unggah booth", () => {
     expect(await getBoothMeta("frames")).toEqual(["tiket"]);
     // Foto tidak dihapus dari laptop setelah terunggah.
     expect(await boothDb.photos.count()).toBe(2);
+  });
+
+  it("startBoothSync tanpa callback tetap mengunggah (seperti dipakai halaman /booth)", async () => {
+    await savePhoto(photo());
+    fetchMock.mockImplementation(async (url, init) => {
+      if (String(url).endsWith("/config")) return json(200, { config: { frames: ["poster"] } });
+      const form = init?.body as FormData;
+      return json(201, { id: form.get("id"), duplicate: false });
+    });
+
+    const sync = startBoothSync();
+    try {
+      await vi.waitFor(async () => expect(await pendingPhotos()).toEqual([]));
+    } finally {
+      sync.stop();
+    }
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/booth/photos",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("jaringan putus: berhenti tanpa kehilangan foto, lalu lanjut di putaran berikutnya", async () => {

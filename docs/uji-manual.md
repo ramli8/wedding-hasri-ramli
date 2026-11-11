@@ -133,7 +133,7 @@ Epson L3110 untuk photobooth.
 
 - [ ] **4.1** Menu **Kelompok**.
   **Harusnya**: saat kosong hanya ada **satu** tombol, **Tambah kelompok pertama**.
-- [ ] **4.2** Tambah `Keluarga`, pilih **Warna**, nyalakan **VIP**. Di **Acara & jam datang**
+- [ ] **4.2** Tambah `Keluarga`, nyalakan **VIP**. Di **Acara & jam datang**
   semua acara awalnya **Tidak diundang**. Klik **Simpan** tanpa mencentang.
   **Harusnya**: ditolak "Centang minimal satu acara". Centang **Akad Nikah** dan **Resepsi**.
   Pada Resepsi pilih **Jam tertentu**.
@@ -141,7 +141,7 @@ Epson L3110 untuk photobooth.
   centang **Sampai selesai**. Akad Nikah biarkan **Jam bebas**. Klik **Simpan**.
 - [ ] **4.3** Tambah `Teman Kantor`: centang hanya **Resepsi**, pilih **Jam tertentu**
   `12.00`–`13.00`. Lalu `Teman Kuliah`: centang hanya **Resepsi**, biarkan **Jam bebas**.
-  **Harusnya**: tiap kelompok tampil sebagai kartu berwarna. Kartu Keluarga: Akad Nikah "Jam
+  **Harusnya**: tiap kelompok tampil sebagai kartu dengan huruf awal namanya. Kartu Keluarga: Akad Nikah "Jam
   bebas" dan Resepsi "11.00 – sampai selesai"; Teman Kantor hanya Resepsi "12.00–13.00";
   Teman Kuliah hanya Resepsi "Jam bebas".
 - [ ] **4.4** Coba **Jam tertentu** tanpa mengisi jam, atau jam selesai sebelum jam mulai.
@@ -277,7 +277,8 @@ Pakai **HP A** dan **HP B**. Semua dibuka lewat ALAMAT-HP.
 
 ### Memasangkan HP
 
-- [ ] **9.1** Di laptop: menu **Perangkat** → **Tambah perangkat**, **Nama perangkat**
+- [ ] **9.1** Di laptop: menu **Perangkat** → **Tambah perangkat**, **Jenis perangkat** biarkan
+  **Scanner pintu**, **Nama perangkat**
   `HP Gerbang A`, tekan **Buat kode pairing**.
   **Harusnya**: muncul dialog **Pasangkan HP Gerbang A** berisi QR, **kode pairing** besar (mis.
   `K7M2-9QXA`), tombol **Salin kode** / **Salin tautan**, dan jam kedaluwarsa kode. Setelah
@@ -376,37 +377,47 @@ Admin di laptop kini dibuka di `http://localhost:4173/admin`. Agar login dan tom
 
 ### Memasangkan booth
 
-- [ ] **11.4** Laptop (di jendela Chrome biasa): **Perangkat → Tambah perangkat**, nama
-  `Laptop Booth`. Ketik kodenya di layar booth **Pasang photobooth**, tekan **Pasangkan**.
-  **Harusnya**: layar booth "JADILAH PEMERAN MALAM INI" dengan pratinjau kamera di dalam bingkai.
+- [ ] **11.4** Laptop (di jendela Chrome biasa): **Perangkat → Tambah perangkat**, **Jenis
+  perangkat** pilih **Photobooth**, nama `Laptop Booth`. Coba dulu ketik kodenya di HP pada
+  `/scan/pasang`: harus ditolak "Kode ini untuk laptop photobooth...". Lalu ketik kodenya di layar
+  booth **Pasang photobooth**, tekan **Pasangkan**.
+  **Harusnya**: layar booth bergaya admin: bilah atas (Photobooth, status Online, tombol
+  **Petugas**), pratinjau kamera di dalam bingkai bunga (tanpa filter warna) di kiri, dan kartu
+  "Siap berfoto?" dengan tiga pilihan bingkai dan tombol **Ambil foto** di kanan.
   Izinkan kamera bila ditanya.
-- [ ] **11.5** Klik tulisan kecil **PETUGAS** di pojok kanan bawah.
-  **Harusnya**: **KAMERA** memilih FUJIFILM X-A7, "Resolusi kamera: 1280×720". Tutup dengan **Esc**.
+- [ ] **11.5** Klik **Petugas** di kanan atas.
+  **Harusnya**: **Kamera** memilih FUJIFILM X-A7, "Resolusi kamera: 1280×720". Tutup dengan **Esc**.
 
 ### Memotret dan mencetak
 
-- [ ] **11.6** Di admin (jendela lain): **Photobooth** → matikan bingkai **Film strip**.
-  **Harusnya**: dalam ±15 detik pilihan bingkai di booth tinggal Poster film dan Tiket bioskop.
-- [ ] **11.7** Pilih bingkai **Tiket bioskop**, tekan **AMBIL FOTO** (atau Spasi).
-  **Harusnya**: hitung mundur 3-2-1, kilat putih, bunyi rana, lalu layar "CETAK FOTO INI?".
-- [ ] **11.8** Tekan **ULANGI**.
+- [ ] **11.6** Di admin (jendela lain): **Photobooth → Bingkai** → matikan bingkai **Panel samping**.
+  **Harusnya**: dalam ±15 detik pilihan bingkai di booth tinggal Bunga sudut dan Lengkung bunga.
+- [ ] **11.7** Pilih bingkai **Lengkung bunga**, tekan **Ambil foto** (atau Spasi).
+  **Harusnya**: hitung mundur 3-2-1, kilat putih, bunyi rana, lalu kartu "Cetak foto ini?".
+- [ ] **11.8** Tekan **Ulangi**.
   **Harusnya**: kembali ke layar awal, foto dibuang.
 - [ ] **11.9** Foto lagi, lalu jangan sentuh apa pun selama 20 detik.
   **Harusnya**: kembali ke layar awal sendiri, foto tidak dicetak (tetap tersimpan di laptop).
-- [ ] **11.10** Foto lagi, tekan **CETAK** dua kali cepat-cepat.
-  **Harusnya**: layar "SEDANG DICETAK", printer mengeluarkan **hanya satu** lembar 4R **tanpa tepi
-  putih** dan tanpa lembar kosong tambahan; nomor foto di tiket tercetak.
+- [ ] **11.10** Foto lagi, tekan **Cetak** dua kali cepat-cepat.
+  **Harusnya**: layar "Sedang dicetak", printer mengeluarkan **hanya satu** lembar 4R **tanpa tepi
+  putih** dan tanpa lembar kosong tambahan; QR di pojok kanan bawah tercetak jelas.
+- [ ] **11.10a** Pindai QR di cetakan itu dengan HP (tunggu beberapa detik sampai laptop selesai
+  mengunggah).
+  **Harusnya**: halaman "Hasri & Ramli" berisi **foto itu saja**, tombol **Unduh foto** menyimpan
+  fotonya. QR di cetakan lain membuka foto lain. Bila alamat situs di Pengaturan berbeda dengan
+  alamat laptop booth, QR memakai alamat situs.
 - [ ] **11.11** Cabut kabel USB kamera.
   **Harusnya**: muncul pesan "Kamera terputus...", tombol foto tidak bisa ditekan. Colok lagi:
   pratinjau kembali sendiri dalam beberapa detik.
 - [ ] **11.12** Matikan Wi-Fi laptop, ambil 2 foto.
-  **Harusnya**: pojok kiri atas "● OFFLINE · 2 FOTO MENUNGGU UNGGAH". Nyalakan Wi-Fi: berubah jadi
-  "SEMUA TERUNGGAH".
-- [ ] **11.13** Admin → **Photobooth**.
-  **Harusnya**: foto-foto muncul di **Foto masuk**. **Unduh semua (ZIP)** menghasilkan file berisi
-  semua foto.
-- [ ] **11.14** PETUGAS → **Cetak ulang** salah satu foto: tercetak lagi, "dicetak 2×".
-- [ ] **11.15** Matikan Wi-Fi, ambil 1 foto, PETUGAS → **Lepas perangkat ini** → **Ya, lepas**.
+  **Harusnya**: bilah atas "Offline · 2 foto menunggu unggah". Pindai QR salah satunya: halaman
+  foto menunggu ("sedang dikirim dari photobooth"). Nyalakan Wi-Fi: bilah atas jadi "semua
+  terunggah", dan halaman foto di HP memuat fotonya sendiri dalam ±15 detik.
+- [ ] **11.13** Admin → **Photobooth → Foto**.
+  **Harusnya**: foto-foto muncul sebagai galeri (terbaru di depan). Klik satu foto: terbuka besar
+  dengan tombol **Unduh**, **Halaman tamu** (tujuan QR), **Salin tautan**, dan **Hapus**. **Unduh semua (ZIP)** menghasilkan file berisi semua foto.
+- [ ] **11.14** Petugas → **Cetak ulang** salah satu foto: tercetak lagi, "dicetak 2×".
+- [ ] **11.15** Matikan Wi-Fi, ambil 1 foto, Petugas → **Lepas perangkat ini** → **Ya, lepas**.
   **Harusnya**: ditolak karena masih ada foto yang belum terunggah. Nyalakan Wi-Fi lagi.
 - [ ] **11.16** Biarkan booth menyala 2 jam dengan kamera memakai dummy battery/adaptor listrik.
   **Harusnya**: kamera tidak mati, layar laptop tidak tidur.

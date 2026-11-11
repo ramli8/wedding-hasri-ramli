@@ -101,7 +101,6 @@ export const reminderTemplates = pgTable("reminder_templates", {
 export const guestGroups = pgTable("guest_groups", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull().unique("guest_groups_name_unique"),
-  color: text().notNull().default("#737373"),
   isVip: boolean().notNull().default(false),
 });
 
@@ -585,3 +584,10 @@ export const boothPhotos = pgTable(
     index("booth_photos_taken_at_idx").on(table.takenAt),
   ],
 );
+
+// Id foto booth yang dihapus admin. Halaman tamu (QR di cetakan) menjawab "sudah dihapus" alih-alih
+// "belum terunggah", dan booth tidak bisa mengunggahnya ulang.
+export const boothPhotoDeletions = pgTable("booth_photo_deletions", {
+  id: uuid().primaryKey(),
+  deletedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

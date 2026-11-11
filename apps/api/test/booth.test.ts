@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   type BoothPhotoListResponse,
   type Device,
+  type GuestPhotoResponse,
   SYNC_PROTOCOL_VERSION,
   SYNC_VERSION_HEADER,
 } from "@wedding/shared";
@@ -27,7 +28,7 @@ beforeEach(async () => {
 
 async function pairBooth(name = "Laptop Booth", kind: "booth" | "scanner" | null = "booth") {
   const created = await read<{ pairingCode: string; device: Device }>(
-    await api.post("/devices", { name }),
+    await api.post("/devices", { name, kind: kind ?? "scanner" }),
   );
   const paired = await app.request("/api/v1/device/pair", {
     method: "POST",
@@ -94,6 +95,7 @@ describe("photobooth", () => {
     ]);
 
     expect((await api.put("/booth/config", { frames: [] })).status).toBe(400);
+
     expect((await api.put("/booth/config", { frames: ["polaroid"] })).status).toBe(400);
   });
 
@@ -196,6 +198,73 @@ describe("photobooth", () => {
       "Laptop Booth": "booth",
       "HP Pintu": "scanner",
     });
+  });
+
+  it("kode hanya bisa dipasang sebagai jenis yang dipilih admin", async () => {
+    const pair = (code: string, kind?: "booth" | "scanner") =>
+      app.request("/api/v1/device/pair", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          [SYNC_VERSION_HEADER]: String(SYNC_PROTOCOL_VERSION),
+        },
+        body: JSON.stringify(kind ? { code, kind } : { code }),
+      });
+    const booth = await read<{ pairingCode: string }>(
+      await api.post("/devices", { name: "Laptop Booth", kind: "booth" }),
+    );
+    // Kode booth dipakai di /scan/pasang (klien lama tanpa kind = scanner): ditolak, kode tetap berlaku.
+    const wrong = await pair(booth.pairingCode);
+    expect(wrong.status).toBe(409);
+    expect((await read<{ error: { message: string } }>(wrong)).error.message).toContain(
+      "/booth/pasang",
+    );
+    expect((await pair(booth.pairingCode, "booth")).status).toBe(200);
+
+    const scanner = await read<{ pairingCode: string }>(
+      await api.post("/devices", { name: "HP Pintu" }),
+    );
+    expect((await pair(scanner.pairingCode, "booth")).status).toBe(409);
+    expect((await pair(scanner.pairingCode, "scanner")).status).toBe(200);
+  });
+
+  it("tamu membuka fotonya lewat QR: /public/foto/:id", async () => {
+    const booth = await pairBooth();
+    const guestPhoto = (id: string) => app.request(`/api/v1/public/foto/${id}`);
+
+    // Belum terunggah (booth offline): 404, halaman tamu menunggu.
+    expect((await guestPhoto(ID)).status).toBe(404);
+    expect((await upload(booth.token, meta, await photo())).status).toBe(201);
+
+    const found = await read<GuestPhotoResponse>(await guestPhoto(ID));
+    expect(found.photo.id).toBe(ID);
+    expect(found.photo.media.large).toMatch(/^\/media\/.+\/large\.webp$/);
+    expect((await guestPhoto("bukan-uuid")).status).toBe(400);
+
+    // Menunggu foto yang belum terunggah tidak memblokir tamu lain di IP yang sama.
+    const other = "0190f4c2-6b1e-7a3c-9d2e-1f2a3b4c5d00";
+    for (let i = 0; i < 150; i++) expect((await guestPhoto(other)).status).toBe(404);
+    expect((await guestPhoto(ID)).status).toBe(200);
+
+    // Dihapus admin: 410 (bukan "belum terunggah"), dan booth tidak bisa mengunggahnya ulang.
+    expect((await api.delete(`/booth/photos/${ID}`)).status).toBe(200);
+    expect((await guestPhoto(ID)).status).toBe(410);
+    const again = await upload(booth.token, meta, await photo());
+    expect(await read<{ duplicate: boolean }>(again)).toMatchObject({ duplicate: true });
+    expect((await guestPhoto(ID)).status).toBe(410);
+
+    // Booth menerima alamat situs untuk QR; admin tidak memerlukannya.
+    await api.put("/settings", {
+      groomName: "Mohamad Rizal Ramli",
+      brideName: "Hasri Wiji Aqsari",
+      publicBaseUrl: "https://hasriramli.com",
+    });
+    const config = await app.request("/api/v1/booth/config", {
+      headers: { authorization: `Bearer ${booth.token}` },
+    });
+    expect((await read<{ config: { photoBaseUrl: string } }>(config)).config.photoBaseUrl).toBe(
+      "https://hasriramli.com",
+    );
   });
 
   it("admin mengunduh semua foto booth sebagai ZIP", async () => {

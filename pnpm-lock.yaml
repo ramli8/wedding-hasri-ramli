@@ -260,6 +260,9 @@ importers:
       '@fontsource/courier-prime':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/great-vibes':
+        specifier: 5.2.8
+        version: 5.2.8
       '@fontsource/ibm-plex-mono':
         specifier: ^5.3.0
         version: 5.3.0
@@ -1544,6 +1547,9 @@ packages:
 
   '@fontsource/courier-prime@5.3.0':
     resolution: {integrity: sha512-KIi1k4VG1Wv+/CGpb1AUpLkUuOAQA6zmvthqxOZGN0AV8BEgQgbK7qAtquv14zsBJAY1bb5BHIEbWVFLgENh0w==}
+
+  '@fontsource/great-vibes@5.2.8':
+    resolution: {integrity: sha512-/PATz436NGixjNaigierUpv50wfNv2UhAAijcCPkn4ynvl41x66TCLbXVSVfp4pth9gjWnGqgoj0lVIhHapAuw==}
 
   '@fontsource/ibm-plex-mono@5.3.0':
     resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
@@ -5980,6 +5986,8 @@ snapshots:
   '@fontsource/cormorant-garamond@5.3.0': {}
 
   '@fontsource/courier-prime@5.3.0': {}
+
+  '@fontsource/great-vibes@5.2.8': {}
 
   '@fontsource/ibm-plex-mono@5.3.0': {}
 

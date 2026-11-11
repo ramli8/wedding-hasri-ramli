@@ -26,6 +26,8 @@ export type BoothMetaMap = {
   auth: BoothAuth;
   /** Bingkai aktif dari server (disimpan agar tetap ada tanpa internet). */
   frames: BoothFrame[];
+  /** Alamat situs untuk QR foto (`<alamat>/foto/<id>`), dari server; null = alamat booth sendiri. */
+  photoBaseUrl: string | null;
   /** Nomor foto terakhir di perangkat ini. */
   counter: number;
   cameraDeviceId: string;
@@ -68,6 +70,15 @@ export async function setBoothMeta<K extends keyof BoothMetaMap>(
 export async function activeFrames(): Promise<BoothFrame[]> {
   const frames = await getBoothMeta("frames");
   return frames && frames.length > 0 ? frames : [...BOOTH_FRAMES];
+}
+
+/**
+ * Tautan halaman foto tamu untuk QR di cetakan. Memakai alamat situs dari Pengaturan (supaya QR
+ * tetap benar walau laptop membuka booth lewat alamat lain); belum pernah sinkron = alamat sendiri.
+ */
+export async function photoLink(id: string): Promise<string> {
+  const base = (await getBoothMeta("photoBaseUrl")) || window.location.origin;
+  return `${base.replace(/\/+$/, "")}/foto/${id}`;
 }
 
 /** Menaikkan penghitung foto secara atomik dan mengembalikan nomor baru. */

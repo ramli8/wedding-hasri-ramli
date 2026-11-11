@@ -13,7 +13,7 @@ import type { AppDeps, AppEnv } from "../http/env.js";
 import { AppError } from "../http/errors.js";
 import { clientIp } from "../http/middleware.js";
 import { validate } from "../http/validate.js";
-import { getInvitation } from "../services/layout.js";
+import { createInvitationCache, type InvitationCache } from "../services/layout.js";
 import {
   findGuestByCode,
   getTicket,
@@ -30,7 +30,10 @@ const codeParam = z.object({ code: guestCodeSchema });
  * Rute tanpa login untuk tamu. Dua pembatas per IP: tebakan kode yang salah (agar kode tidak bisa
  * dicoba satu per satu) dan jumlah kiriman RSVP/ucapan (agar tidak dipakai spam).
  */
-export function publicRoutes({ db, config }: AppDeps) {
+export function publicRoutes(
+  { db, config }: AppDeps,
+  invitation: InvitationCache = createInvitationCache(db),
+) {
   const guessLimiter = new FailureLimiter({ max: 30, windowMs: WINDOW_MS });
   const writeLimiter = new FailureLimiter({ max: 20, windowMs: WINDOW_MS });
   const tooMany = () =>
@@ -62,7 +65,8 @@ export function publicRoutes({ db, config }: AppDeps) {
       // Isi undangan (mempelai, cerita) tidak memuat data tamu, jadi tidak memerlukan kode.
       .get("/invitation", async (c) => {
         c.header("cache-control", "public, max-age=30");
-        return c.json(await getInvitation(db));
+        c.header("content-type", "application/json");
+        return c.body(await invitation.get());
       })
       .get("/ticket/:code", validate("param", codeParam), async (c) => {
         const { code } = c.req.valid("param");
@@ -86,7 +90,9 @@ export function publicRoutes({ db, config }: AppDeps) {
         const input = c.req.valid("json");
         const guest = await knownCode(clientIp(c, config.trustProxy), input.code);
         countWrite(input.code);
-        return c.json(await setClaim(db, guest.id, input.wishId, input.quantity));
+        const result = await setClaim(db, guest.id, input.wishId, input.quantity);
+        invitation.invalidate(); // jumlah terpilih berubah
+        return c.json(result);
       })
       .get("/guestbook", validate("query", guestbookListQuerySchema), async (c) => {
         const { page, pageSize } = c.req.valid("query");

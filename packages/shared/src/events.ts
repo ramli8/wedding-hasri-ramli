@@ -47,8 +47,9 @@ export const eventInputSchema = z
     endsAt: isoDateTime.nullish().transform((value) => value ?? null),
     venueName: optionalText,
     address: optionalText,
+    // Hanya http(s): nilai ini dipakai sebagai href di halaman tamu, jadi `javascript:` ditolak.
     mapsUrl: z
-      .url("Link peta tidak valid")
+      .url({ protocol: /^https?$/, error: "Link peta harus diawali http:// atau https://" })
       .nullish()
       .or(z.literal(""))
       .transform((value) => value || null),

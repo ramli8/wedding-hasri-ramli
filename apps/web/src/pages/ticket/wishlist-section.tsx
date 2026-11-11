@@ -6,6 +6,7 @@ import { Badge } from "../../components/guest-ui/badge.js";
 import { Button } from "../../components/guest-ui/button.js";
 import { Select } from "../../components/guest-ui/select.js";
 import { publicApi } from "../../lib/public-api.js";
+import { safeHref } from "../../lib/safe-url.js";
 import { BODY_COL, HEAD_COL, MagHead } from "./mag.js";
 
 /** Wishlist hadiah: tamu memilih hadiah agar tidak ada yang memberi hal yang sama. */
@@ -105,7 +106,7 @@ export function WishlistSection({
                 )}
                 {wish.url && !dimmed && (
                   <a
-                    href={wish.url}
+                    href={safeHref(wish.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex w-fit items-center gap-1 text-sm font-semibold underline"

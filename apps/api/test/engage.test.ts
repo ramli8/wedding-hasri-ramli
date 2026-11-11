@@ -6,6 +6,7 @@ import type {
   TicketResponse,
 } from "@wedding/shared";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { PUBLIC_REQUESTS_PER_MINUTE } from "../src/app.js";
 import { adminClient, createTestContext, loggedInClient } from "./helpers.js";
 
 const ctx = createTestContext();
@@ -196,6 +197,27 @@ describe("RSVP", () => {
     expect((await rsvp(sari.code, resepsi.id, { status: "mungkin" })).status).toBe(400);
     expect((await rsvp("ZZZZZZ", resepsi.id, { status: "hadir" })).status).toBe(404);
     expect((await rsvp(budi.code, resepsi.id, { status: "hadir", pax: 0 })).status).toBe(400);
+  });
+
+  it("membanjiri rute tamu dari satu IP dibatasi (429), rute admin tidak", async () => {
+    const flooded = ctx.makeApp();
+    for (let i = 0; i < PUBLIC_REQUESTS_PER_MINUTE; i++) {
+      expect((await publicCall(flooded, "GET", "/invitation")).status).toBe(200);
+    }
+    const blocked = await publicCall(flooded, "GET", "/guestbook");
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBe("60");
+    expect((await flooded.request("/api/health")).status).toBe(200);
+  });
+
+  it("menolak body raksasa sebelum dibaca ke memori (413)", async () => {
+    const res = await pub.post("/rsvp", {
+      code: world.sari.code,
+      eventId: world.resepsi.id,
+      status: "hadir",
+      sampah: "x".repeat(5 * 1024 * 1024),
+    });
+    expect(res.status).toBe(413);
   });
 
   it("membatasi jumlah kiriman per kode tamu, tidak per IP (CGNAT, Wi-Fi gedung)", async () => {

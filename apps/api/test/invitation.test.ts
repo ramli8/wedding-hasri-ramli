@@ -438,6 +438,9 @@ describe("FAQ", () => {
 
     expect((await api.delete(`/invitation/faqs/${a.id}`)).status).toBe(200);
     expect((await api.delete(`/invitation/faqs/${a.id}`)).status).toBe(404);
+    // Isi undangan di-cache sebentar, tetapi perubahan admin langsung terlihat oleh tamu.
+    const after = await read<InvitationResponse>(await app.request("/api/v1/public/invitation"));
+    expect(after.faqs.map((i) => i.id)).toEqual([b.id]);
   });
 
   it("menolak pertanyaan atau jawaban kosong dan memerlukan login", async () => {

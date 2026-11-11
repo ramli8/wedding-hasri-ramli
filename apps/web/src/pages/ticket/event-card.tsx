@@ -1,6 +1,7 @@
 import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
 import { CalendarPlus, MapPin } from "lucide-react";
 import { buildIcs, downloadIcs, icsFilename } from "../../lib/ics.js";
+import { safeHref } from "../../lib/safe-url.js";
 
 export function EventCard({ event }: { event: TicketEvent }) {
   const time = event.session
@@ -60,7 +61,7 @@ export function EventCard({ event }: { event: TicketEvent }) {
         )}
         {event.mapsUrl && (
           <a
-            href={event.mapsUrl}
+            href={safeHref(event.mapsUrl)}
             target="_blank"
             rel="noreferrer"
             className="tag inline-flex items-center gap-2 underline underline-offset-4 max-md:min-h-11"

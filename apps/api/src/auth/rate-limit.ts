@@ -32,3 +32,30 @@ export class FailureLimiter {
     return recent;
   }
 }
+
+/**
+ * Penghitung permintaan per kunci dalam jendela tetap (mis. 300 per menit per IP). Dipakai untuk
+ * menahan banjir permintaan ke rute tanpa login; batas percobaan gagal ada di FailureLimiter.
+ */
+export class RequestCounter {
+  private windowStart = 0;
+  private counts = new Map<string, number>();
+
+  constructor(
+    private readonly options: { max: number; windowMs: number },
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  /** Mencatat satu permintaan; false bila kunci ini sudah melewati batas di jendela sekarang. */
+  hit(key: string): boolean {
+    const now = this.now();
+    if (now - this.windowStart >= this.options.windowMs) {
+      // Jendela baru: semua hitungan lama dibuang sekaligus, jadi memori tidak tumbuh.
+      this.windowStart = now;
+      this.counts.clear();
+    }
+    const count = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, count);
+    return count <= this.options.max;
+  }
+}

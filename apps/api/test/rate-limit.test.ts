@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FailureLimiter } from "../src/auth/rate-limit.js";
+import { FailureLimiter, RequestCounter } from "../src/auth/rate-limit.js";
 
 describe("FailureLimiter", () => {
   it("memblokir setelah batas percobaan gagal tercapai", () => {
@@ -26,5 +26,17 @@ describe("FailureLimiter", () => {
     limiter.recordFailure("a");
     limiter.reset("a");
     expect(limiter.isBlocked("a")).toBe(false);
+  });
+});
+
+describe("RequestCounter", () => {
+  it("menolak permintaan di atas batas per kunci, lalu menerima lagi di jendela berikutnya", () => {
+    let now = 0;
+    const counter = new RequestCounter({ max: 3, windowMs: 60_000 }, () => now);
+    expect([1, 2, 3].map(() => counter.hit("a"))).toEqual([true, true, true]);
+    expect(counter.hit("a")).toBe(false);
+    expect(counter.hit("b")).toBe(true);
+    now = 60_000;
+    expect(counter.hit("a")).toBe(true);
   });
 });

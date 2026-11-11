@@ -17,7 +17,8 @@
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "e2e": "node e2e/scan-offline.mjs",
-    "e2e:qr": "node e2e/qr-decode.mjs"
+    "e2e:qr": "node e2e/qr-decode.mjs",
+    "e2e:load": "E2E_DATABASE_URL=${E2E_DATABASE_URL:-postgres://wedding:wedding@localhost:5433/wedding_load} node e2e/load.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

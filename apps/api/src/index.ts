@@ -17,6 +17,14 @@ const app = createApp({ db, config, logger });
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info({ port: info.port, version: config.version }, "api berjalan");
 });
+// Koneksi yang mengirim header/body sangat lambat (slowloris) tidak boleh menahan slot selamanya.
+// Unggahan foto lewat sinyal seluler diberi waktu sampai 2 menit, sama dengan edge Caddy.
+if ("headersTimeout" in server) {
+  server.headersTimeout = 15_000;
+  server.requestTimeout = 120_000;
+  // Lebih lama dari idle Caddy di depannya, agar Caddy yang menutup koneksi lebih dulu.
+  server.keepAliveTimeout = 130_000;
+}
 
 const cleanup = setInterval(
   () => {

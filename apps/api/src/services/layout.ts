@@ -127,3 +127,36 @@ export async function getInvitation(db: Db): Promise<InvitationResponse> {
     eventDate: first?.at?.toISOString() ?? null,
   };
 }
+
+/**
+ * Isi undangan sama untuk semua pengunjung tetapi butuh ±10 kueri. Saat undangan baru disebar,
+ * ribuan orang membukanya bersamaan; tanpa cache API melambat sampai puluhan detik (diukur dengan
+ * `pnpm e2e:load`). Hasil disimpan sebentar dan permintaan yang datang bersamaan menunggu satu kueri
+ * yang sama. Setiap perubahan oleh admin dan setiap pilihan hadiah tamu membuang cache, jadi
+ * perubahan langsung terlihat; TTL hanya jaring pengaman.
+ */
+export type InvitationCache = {
+  /** JSON siap kirim: disusun sekali per isi cache, bukan sekali per pengunjung. */
+  get: () => Promise<string>;
+  invalidate: () => void;
+};
+
+export function createInvitationCache(db: Db, ttlMs = 5_000): InvitationCache {
+  let entry: { at: number; value: Promise<string> } | null = null;
+  return {
+    get() {
+      if (!entry || Date.now() - entry.at > ttlMs) {
+        const value = getInvitation(db).then((body) => JSON.stringify(body));
+        entry = { at: Date.now(), value };
+        // Gagal (mis. database sesaat tidak terjangkau) tidak boleh tersimpan.
+        value.catch(() => {
+          if (entry?.value === value) entry = null;
+        });
+      }
+      return entry.value;
+    },
+    invalidate() {
+      entry = null;
+    },
+  };
+}

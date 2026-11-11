@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { publicApi } from "../../lib/public-api.js";
+import { safeHref } from "../../lib/safe-url.js";
 import { GuestbookCard } from "./guestbook-card.js";
 import { Barcode, BODY_COL, HEAD_COL, MagHead, MagPhoto } from "./mag.js";
 import { WishlistSection } from "./wishlist-section.js";
@@ -542,7 +543,7 @@ function LiveCard({ live }: { live: Live }) {
         {live.note && <p className="font-semibold break-words">{live.note}</p>}
       </div>
       <a
-        href={live.url}
+        href={safeHref(live.url)}
         target="_blank"
         rel="noreferrer"
         className="tag inline-flex w-fit items-center gap-2 bg-paper px-6 py-4 text-ink hover:bg-bone-2"

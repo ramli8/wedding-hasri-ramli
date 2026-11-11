@@ -7,6 +7,12 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    # Batas sumber daya: layanan yang dibanjiri tidak boleh menghabiskan RAM/CPU seluruh VPS
+    # (angka untuk VPS 2-4 GB; jumlah semua stack + edge harus muat di RAM VPS).
+    mem_limit: 768m
+    cpus: 1.5
+    pids_limit: 200
+    security_opt: ["no-new-privileges:true"]
     environment:
       POSTGRES_USER: wedding
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD}
@@ -25,6 +31,10 @@ services:
       dockerfile: deploy/Dockerfile
       target: api
     restart: unless-stopped
+    mem_limit: 768m
+    cpus: 1.5
+    pids_limit: 200
+    security_opt: ["no-new-privileges:true"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +70,10 @@ services:
       context: ..
       dockerfile: deploy/backup/Dockerfile
     restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 100
+    security_opt: ["no-new-privileges:true"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,6 +112,10 @@ services:
       dockerfile: deploy/Dockerfile
       target: web
     restart: unless-stopped
+    mem_limit: 192m
+    cpus: 1
+    pids_limit: 100
+    security_opt: ["no-new-privileges:true"]
     depends_on:
       - api
     networks:

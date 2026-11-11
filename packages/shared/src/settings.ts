@@ -3,7 +3,9 @@ import { z } from "zod";
 export const settingsInputSchema = z.object({
   groomName: z.string().trim().min(1, "Nama mempelai pria wajib diisi"),
   brideName: z.string().trim().min(1, "Nama mempelai wanita wajib diisi"),
-  publicBaseUrl: z.url("Alamat situs tidak valid").transform((url) => url.replace(/\/+$/, "")),
+  publicBaseUrl: z
+    .url({ protocol: /^https?$/, error: "Alamat situs harus diawali http:// atau https://" })
+    .transform((url) => url.replace(/\/+$/, "")),
 });
 export type SettingsInput = z.input<typeof settingsInputSchema>;
 

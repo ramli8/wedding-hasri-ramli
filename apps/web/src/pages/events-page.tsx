@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime, isoToWibInput, wibInputToIso } from "../lib/datetime.js";
 import { eventsQuery, useRefresh } from "../lib/queries.js";
+import { safeHref } from "../lib/safe-url.js";
 
 type Editing = { kind: "new" } | { kind: "edit"; event: Event } | null;
 
@@ -125,7 +126,7 @@ export function EventsPage() {
                     {event.venueName ?? "—"}
                     {event.mapsUrl && (
                       <a
-                        href={event.mapsUrl}
+                        href={safeHref(event.mapsUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="ms-2 text-muted-foreground underline underline-offset-4"

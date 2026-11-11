@@ -26,6 +26,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
 import { useRefresh, wishesQuery } from "../../lib/queries.js";
+import { safeHref } from "../../lib/safe-url.js";
 
 type Editing = { kind: "new" } | { kind: "edit"; item: AdminWish };
 type Releasing = { wish: AdminWish; guestId: string; guestName: string };
@@ -165,7 +166,7 @@ export function WishlistPage() {
                   )}
                   {item.url && (
                     <a
-                      href={item.url}
+                      href={safeHref(item.url)}
                       target="_blank"
                       rel="noreferrer"
                       className="truncate text-sm underline"

@@ -6,6 +6,10 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 100
+    security_opt: ["no-new-privileges:true"]
     ports:
       - "80:80"
       - "443:443"
@@ -13,6 +17,8 @@ services:
     environment:
       PROD_DOMAIN: ${PROD_DOMAIN:?isi PROD_DOMAIN}
       STAGING_DOMAIN: ${STAGING_DOMAIN:?isi STAGING_DOMAIN}
+      # Opsional: IP yang boleh masuk tanpa lewat Cloudflare (lihat edge.Caddyfile), mis. "203.0.113.7/32".
+      EXTRA_ALLOWED_IPS: ${EXTRA_ALLOWED_IPS:-127.0.0.1/32}
     volumes:
       - ./edge.Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

@@ -17,23 +17,30 @@ import { settingsRoutes } from "./settings.js";
 import { vendorRoutes } from "./vendors.js";
 
 /** Semua rute di bawah /api/v1/admin memerlukan sesi admin. */
-export function adminRoutes(deps: AppDeps) {
-  return new Hono<AppEnv>()
-    .use("*", originCheck(deps.config.allowedOrigins), requireAdmin(deps))
-    .route("/export", exportRoutes(deps))
-    .route("/booth", boothAdminRoutes(deps))
-    .route("/home", homeRoutes(deps))
-    .route("/settings", settingsRoutes(deps))
-    .route("/seo", seoRoutes(deps))
-    .route("/events", eventRoutes(deps))
-    .route("/groups", groupRoutes(deps))
-    .route("/guests", guestRoutes(deps))
-    .route("/devices", deviceAdminRoutes(deps))
-    .route("/checkins", checkinAdminRoutes(deps))
-    .route("/invitation", invitationAdminRoutes(deps))
-    .route("/media", mediaAdminRoutes(deps))
-    .route("/received-gifts", receivedGiftRoutes(deps))
-    .route("/vendors", vendorRoutes(deps))
-    .route("/rsvps", rsvpAdminRoutes(deps))
-    .route("/guestbook", guestbookAdminRoutes(deps));
+export function adminRoutes(deps: AppDeps, onChange: () => void = () => {}) {
+  return (
+    new Hono<AppEnv>()
+      .use("*", originCheck(deps.config.allowedOrigins), requireAdmin(deps))
+      // Setiap perubahan oleh admin membuang cache isi undangan publik (lihat createInvitationCache).
+      .use("*", async (c, next) => {
+        await next();
+        if (c.req.method !== "GET" && c.res.status < 400) onChange();
+      })
+      .route("/export", exportRoutes(deps))
+      .route("/booth", boothAdminRoutes(deps))
+      .route("/home", homeRoutes(deps))
+      .route("/settings", settingsRoutes(deps))
+      .route("/seo", seoRoutes(deps))
+      .route("/events", eventRoutes(deps))
+      .route("/groups", groupRoutes(deps))
+      .route("/guests", guestRoutes(deps))
+      .route("/devices", deviceAdminRoutes(deps))
+      .route("/checkins", checkinAdminRoutes(deps))
+      .route("/invitation", invitationAdminRoutes(deps))
+      .route("/media", mediaAdminRoutes(deps))
+      .route("/received-gifts", receivedGiftRoutes(deps))
+      .route("/vendors", vendorRoutes(deps))
+      .route("/rsvps", rsvpAdminRoutes(deps))
+      .route("/guestbook", guestbookAdminRoutes(deps))
+  );
 }

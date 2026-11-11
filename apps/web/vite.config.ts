@@ -22,6 +22,9 @@ const devProxy: ProxyOptions = {
   },
 };
 
+const CSP =
+  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
   plugins: [
@@ -75,6 +78,9 @@ export default defineConfig({
   },
   preview: {
     port: 4173,
+    // CSP yang sama dengan deploy/web.Caddyfile, supaya `pnpm e2e` (build produksi) ikut menguji
+    // bahwa aplikasi tetap jalan di bawah kebijakan itu. Ubah keduanya bersamaan.
+    headers: { "Content-Security-Policy": CSP },
     proxy: { "/api": apiTarget, "/media": apiTarget },
   },
 });

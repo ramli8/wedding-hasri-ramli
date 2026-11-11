@@ -19,7 +19,16 @@ import {
 } from "./actions.js";
 import { facingFromLabel } from "./camera.js";
 import { clockOffset, correctedNow, updateClockOffset } from "./clock.js";
-import { db, getMeta, pendingCount, resetDevice, setMeta } from "./db.js";
+import {
+  db,
+  getMeta,
+  PendingDataError,
+  pendingCount,
+  releaseDevice,
+  repairDevice,
+  resetDevice,
+  setMeta,
+} from "./db.js";
 import { deviceApi } from "./device-api.js";
 import { searchGuests } from "./search.js";
 import { SyncEngine } from "./sync.js";
@@ -575,6 +584,42 @@ describe("SyncEngine", () => {
       push.mockClear();
       await engine.syncNow();
       expect(push).not.toHaveBeenCalled();
+    });
+
+    it("dipasangkan ulang setelah dicabut: check-in tertunda tetap ada dan terkirim dengan token baru", async () => {
+      await seed(guest());
+      await setMeta("sound", false);
+      const engine = new SyncEngine();
+      push.mockRejectedValue(new ApiError(401, "DEVICE_REVOKED", "Perangkat ini sudah dicabut"));
+      expect((await handleScan("ABC234")).status).toBe("ok");
+      await engine.syncNow();
+      expect(engine.getSnapshot().revoked).toBe(true);
+
+      await repairDevice({ token: "token-baru", deviceId: ME, deviceName: "HP Gerbang A" });
+      engine.clearAuthFlags();
+      expect(await pendingCount()).toBe(1);
+      expect(await getMeta("revoked")).toBeUndefined();
+      expect(await getMeta("sound")).toBe(false);
+      expect(await db.guests.count()).toBe(0);
+
+      push.mockReset();
+      push.mockImplementation(async (_token, body) => ok(body));
+      snapshot.mockResolvedValue(snap());
+      await engine.syncNow();
+      expect(push).toHaveBeenCalledWith("token-baru", expect.anything());
+      expect(push.mock.calls[0]?.[1].events).toHaveLength(1);
+    });
+
+    it("melepas perangkat ditolak selama masih ada check-in yang belum terkirim", async () => {
+      await seed(guest());
+      await handleScan("ABC234");
+      await expect(releaseDevice()).rejects.toBeInstanceOf(PendingDataError);
+      expect(await db.outbox.count()).toBe(1);
+
+      await db.outbox.toCollection().modify({ sentAt: Date.now() });
+      await releaseDevice();
+      expect(await db.outbox.count()).toBe(0);
+      expect(await getMeta("auth")).toBeUndefined();
     });
 
     it("aplikasi terlalu lama: sinkronisasi berhenti, tetapi scan dan outbox tetap bekerja", async () => {

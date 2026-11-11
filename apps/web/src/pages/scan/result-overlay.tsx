@@ -160,7 +160,6 @@ export function ResultOverlay({
   const time = outcome.status === "invalid" ? null : formatClock(outcome.scannedAt);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: ketuk di mana saja = lanjut; tombol tetap bisa dipakai lewat keyboard
     <div
       role="alertdialog"
       aria-live="assertive"

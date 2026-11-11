@@ -239,6 +239,12 @@ export async function addWalkin(input: WalkinInput): Promise<Outcome> {
   await loadStamp();
   const event = await getMeta("event");
   if (!event) throw new Error("Data acara belum diunduh. Hubungkan ke internet sekali.");
+  // Diperiksa sebelum menyimpan: bila check-in di bawah gagal, tamu walk-in sudah terlanjur
+  // tersimpan (dan terkirim ke server) tanpa pernah tercatat masuk.
+  if (!Number.isInteger(input.pax) || input.pax < 1 || input.pax > MAX_PAX) {
+    throw new Error(`Jumlah orang harus 1 sampai ${MAX_PAX}.`);
+  }
+  if (!input.displayName.trim()) throw new Error("Nama tamu wajib diisi.");
 
   const walkin: PendingWalkin = {
     id: uuid7(),

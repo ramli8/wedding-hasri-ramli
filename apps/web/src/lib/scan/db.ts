@@ -93,7 +93,7 @@ export async function setMeta<K extends keyof MetaMap>(key: K, value: MetaMap[K]
   await db.meta.put({ key, value });
 }
 
-/** Menghapus semua data perangkat (setelah dicabut atau dipasangkan ulang). */
+/** Menghapus semua data perangkat. Hanya untuk tes; aplikasi memakai releaseDevice/repairDevice. */
 export async function resetDevice(): Promise<void> {
   await db.transaction(
     "rw",
@@ -127,4 +127,58 @@ export async function resetDevice(): Promise<void> {
 /** Jumlah check-in dan tamu walk-in yang belum diterima server. */
 export async function pendingCount(): Promise<number> {
   return (await db.outbox.filter((e) => !e.sentAt).count()) + (await db.walkins.count());
+}
+
+/** Pengaturan perangkat yang tetap disimpan saat dipasangkan ulang. */
+const KEEP_ON_REPAIR: (keyof MetaMap)[] = [
+  "sound",
+  "cameraFacing",
+  "cameraDeviceId",
+  "serverOffsetMs",
+];
+
+/**
+ * Memasangkan ulang (mis. setelah dicabut admin): data tamu dan log diunduh ulang dari nol, tetapi
+ * check-in dan walk-in yang BELUM terkirim tetap disimpan lalu dikirim dengan token baru. Dulu
+ * semuanya dihapus, sehingga check-in yang tertahan karena perangkat dicabut hilang permanen.
+ */
+export async function repairDevice(auth: AuthMeta): Promise<void> {
+  await db.transaction(
+    "rw",
+    [db.guests, db.groups, db.sessions, db.events, db.rejected, db.devices, db.meta],
+    async () => {
+      const kept = (await db.meta.bulkGet(KEEP_ON_REPAIR)).filter((row): row is MetaRow => !!row);
+      await Promise.all([
+        db.guests.clear(),
+        db.groups.clear(),
+        db.sessions.clear(),
+        db.events.clear(),
+        db.rejected.clear(),
+        db.devices.clear(),
+        db.meta.clear(),
+      ]);
+      await db.meta.bulkPut(kept);
+      await setMeta("auth", auth);
+    },
+  );
+}
+
+export class PendingDataError extends Error {
+  constructor(readonly pending: number) {
+    super(
+      `Masih ada ${pending} check-in yang belum terkirim. Hubungkan internet dan tunggu sinkron dulu.`,
+    );
+  }
+}
+
+/**
+ * Melepas perangkat: semua data dihapus. Ditolak bila masih ada check-in/walk-in yang belum
+ * terkirim; diperiksa di dalam transaksi yang sama, bukan dari angka di layar yang bisa basi.
+ */
+export async function releaseDevice(): Promise<void> {
+  await db.transaction("rw", db.tables, async () => {
+    const pending = await pendingCount();
+    if (pending > 0) throw new PendingDataError(pending);
+    await Promise.all(db.tables.map((table) => table.clear()));
+  });
 }

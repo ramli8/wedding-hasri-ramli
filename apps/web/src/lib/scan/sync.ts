@@ -79,6 +79,15 @@ export class SyncEngine {
     window.removeEventListener("online", this.trigger);
   }
 
+  /**
+   * Setelah dipasangkan ulang atau dilepas: lupakan tanda "dicabut"/"usang" milik token lama. Tanpa
+   * ini status di memori tetap `revoked` dan sinkron berhenti sampai halaman dimuat ulang.
+   */
+  clearAuthFlags() {
+    this.failures = 0;
+    this.update({ revoked: false, outdated: false, lastError: null });
+  }
+
   /** Sinkronkan segera (mis. setelah check-in baru). */
   trigger = () => {
     if (!this.started) return;

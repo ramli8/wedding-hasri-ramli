@@ -9,7 +9,7 @@ import { Field } from "@/components/kit/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/context/theme-provider";
-import { getMeta, pendingCount, resetDevice, setMeta } from "../../lib/scan/db.js";
+import { getMeta, releaseDevice, repairDevice } from "../../lib/scan/db.js";
 import { deviceApi } from "../../lib/scan/device-api.js";
 import { syncEngine } from "../../lib/scan/sync.js";
 
@@ -34,7 +34,6 @@ function codeFromUrl() {
 export function PairPage() {
   const navigate = useNavigate();
   const auth = useLiveQuery(() => getMeta("auth"), []);
-  const pending = useLiveQuery(() => pendingCount(), [], 0);
 
   // Terisi dari tautan bila ada; penjaga tetap harus mengetuk "Pasangkan".
   const [fromLink] = useState(codeFromUrl);
@@ -49,12 +48,13 @@ export function PairPage() {
     setError(null);
     try {
       const result = await deviceApi.pair(code);
-      await resetDevice();
-      await setMeta("auth", {
+      // Check-in yang belum terkirim (mis. karena perangkat lama dicabut) tetap disimpan.
+      await repairDevice({
         token: result.token,
         deviceId: result.deviceId,
         deviceName: result.deviceName,
       });
+      syncEngine.clearAuthFlags();
       await syncEngine.start();
       await syncEngine.syncNow();
       await navigate({ to: "/scan" });
@@ -65,16 +65,15 @@ export function PairPage() {
   }
 
   async function release() {
-    if (pending > 0) {
+    try {
+      await releaseDevice();
+      syncEngine.clearAuthFlags();
       setConfirming(false);
-      setError(
-        `Masih ada ${pending} check-in yang belum terkirim. Hubungkan internet dan tunggu sinkron dulu.`,
-      );
-      return;
+      setError(null);
+    } catch (err) {
+      setConfirming(false);
+      setError(err instanceof Error ? err.message : "Gagal melepas perangkat");
     }
-    await resetDevice();
-    setConfirming(false);
-    setError(null);
   }
 
   return (

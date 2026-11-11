@@ -1,10 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { type Event, eventInputSchema, formatTimeRange } from "@wedding/shared";
+import { type Event, eventInputSchema, formatEventDate } from "@wedding/shared";
 import {
   CalendarCheck,
   CalendarDays,
-  Clock,
   MapPin,
   MessageSquareText,
   Plus,
@@ -27,7 +26,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "../lib/admin-api.js";
-import { isoToWibInput, wibInputToIso } from "../lib/datetime.js";
+import { isoToWibDate, wibInputToIso } from "../lib/datetime.js";
 import { eventsQuery, useRefresh } from "../lib/queries.js";
 import { safeHref } from "../lib/safe-url.js";
 
@@ -94,17 +93,6 @@ export function EventsPage() {
 
 const dayFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "numeric" });
 const monthFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", month: "short" });
-const weekdayFormat = new Intl.DateTimeFormat("id-ID", {
-  timeZone: "Asia/Jakarta",
-  weekday: "long",
-});
-const timeFormat = new Intl.DateTimeFormat("id-ID", {
-  timeZone: "Asia/Jakarta",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
-
 /** Kotak tanggal ala kalender: "21 / MEI". */
 function DateTile({ iso }: { iso: string | null }) {
   return (
@@ -146,14 +134,8 @@ function EventCard({
         >
           <span className="truncate text-base font-semibold">{event.name}</span>
           <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Clock className="size-3.5 shrink-0" aria-hidden />
-            {event.startsAt
-              ? `${weekdayFormat.format(new Date(event.startsAt))} · ${
-                  event.endsAt
-                    ? formatTimeRange(event.startsAt, event.endsAt)
-                    : `${timeFormat.format(new Date(event.startsAt)).replace(":", ".")} WIB`
-                }`
-              : "Waktu belum diatur"}
+            <CalendarDays className="size-3.5 shrink-0" aria-hidden />
+            {event.startsAt ? formatEventDate(event.startsAt) : "Tanggal belum diatur"}
           </span>
           {event.venueName && (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -191,16 +173,21 @@ function EventCard({
       <div
         className={`mt-auto grid gap-2 border-t px-4 pt-4 ${maps ? "grid-cols-3" : "grid-cols-2"}`}
       >
-        <Link to="/admin/tamu" search={{ acara: event.id }} className={action}>
+        <Link to="/admin/tamu" search={{ acara: event.id }} className={action} data-slot="button">
           <Users aria-hidden />
           Tamu <span className="font-semibold">{event.invitedCount}</span>
         </Link>
-        <Link to="/admin/pengaturan/pesan" search={{ acara: event.id }} className={action}>
+        <Link
+          to="/admin/pengaturan/pesan"
+          search={{ acara: event.id }}
+          className={action}
+          data-slot="button"
+        >
           <MessageSquareText aria-hidden />
           Pesan
         </Link>
         {maps && (
-          <a href={maps} target="_blank" rel="noreferrer" className={action}>
+          <a href={maps} target="_blank" rel="noreferrer" className={action} data-slot="button">
             <MapPin aria-hidden />
             Peta
           </a>
@@ -208,14 +195,6 @@ function EventCard({
       </div>
     </Card>
   );
-}
-
-const TWO_HOURS_MS = 2 * 3600_000;
-
-/** Nilai datetime-local WIB ditambah dua jam (perkiraan lama acara). */
-function plusTwoHours(local: string): string {
-  const iso = wibInputToIso(local);
-  return iso ? isoToWibInput(new Date(Date.parse(iso) + TWO_HOURS_MS).toISOString()) : "";
 }
 
 function EventDialog({ editing, onClose }: { editing: Editing; onClose: () => void }) {
@@ -237,8 +216,8 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
   const refresh = useRefresh();
   const events = useQuery(eventsQuery).data;
   const [name, setName] = useState(event?.name ?? "");
-  const [startsAt, setStartsAt] = useState(isoToWibInput(event?.startsAt));
-  const [endsAt, setEndsAt] = useState(isoToWibInput(event?.endsAt));
+  // Acara cukup bertanggal; jam kedatangan diatur per kelompok (menu Kelompok).
+  const [date, setDate] = useState(isoToWibDate(event?.startsAt));
   const [venueName, setVenueName] = useState(event?.venueName ?? "");
   const [address, setAddress] = useState(event?.address ?? "");
   const [mapsUrl, setMapsUrl] = useState(event?.mapsUrl ?? "");
@@ -247,26 +226,16 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
   const otherCheckin = (events ?? []).some((e) => e.checkinEnabled && e.id !== event?.id);
   const [checkinEnabled, setCheckinEnabled] = useState(event?.checkinEnabled ?? !otherCheckin);
   const [hasRsvp, setHasRsvp] = useState(event?.hasRsvp ?? true);
-  // Jam selesai yang diisi otomatis (mulai + 2 jam) ikut bergeser selama admin belum mengubahnya.
-  const [endAuto, setEndAuto] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<"name" | "endsAt" | "mapsUrl", string>>>({});
-
-  function changeStart(value: string) {
-    setStartsAt(value);
-    if (value && (!endsAt || endAuto)) {
-      setEndsAt(plusTwoHours(value));
-      setEndAuto(true);
-    }
-    setErrors((current) => ({ ...current, endsAt: undefined }));
-  }
+  const [errors, setErrors] = useState<Partial<Record<"name" | "mapsUrl", string>>>({});
+  const startsAt = date ? wibInputToIso(`${date}T00:00`) : null;
 
   const save = useMutation({
     mutationFn: () => {
       // Kode singkat tidak diisi admin: dibuat server dari nama (lihat services/events.ts).
       const input = {
         name,
-        startsAt: wibInputToIso(startsAt),
-        endsAt: wibInputToIso(endsAt),
+        startsAt,
+        endsAt: null,
         venueName,
         address,
         mapsUrl,
@@ -285,21 +254,13 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
     submitEvent.preventDefault();
     // Aturan yang sama dengan server dicek di sini agar pesannya tampil di bawah kolomnya.
     const next: typeof errors = {};
-    const parsed = eventInputSchema.safeParse({
-      name,
-      startsAt: wibInputToIso(startsAt),
-      endsAt: wibInputToIso(endsAt),
-      mapsUrl,
-    });
+    const parsed = eventInputSchema.safeParse({ name, startsAt, mapsUrl });
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
-        if (field === "name" || field === "mapsUrl" || field === "endsAt")
-          next[field] ??= issue.message;
+        if (field === "name" || field === "mapsUrl") next[field] ??= issue.message;
       }
     }
-    if (startsAt && endsAt && endsAt <= startsAt)
-      next.endsAt = "Jam selesai harus setelah jam mulai.";
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
     save.mutate();
@@ -327,35 +288,11 @@ function EventForm({ event, onDone }: { event: Event | null; onDone: () => void 
         )}
       </Field>
 
-      {/* Jam WIB; Selesai terisi otomatis 2 jam setelah Mulai selama belum diubah admin. */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Mulai (WIB)">
-          {(id) => (
-            <Input
-              id={id}
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => changeStart(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Selesai (WIB)" error={errors.endsAt}>
-          {(id) => (
-            <Input
-              id={id}
-              type="datetime-local"
-              value={endsAt}
-              min={startsAt || undefined}
-              aria-invalid={!!errors.endsAt}
-              onChange={(e) => {
-                setEndsAt(e.target.value);
-                setEndAuto(false);
-                setErrors((current) => ({ ...current, endsAt: undefined }));
-              }}
-            />
-          )}
-        </Field>
-      </div>
+      <Field label="Tanggal">
+        {(id) => (
+          <Input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        )}
+      </Field>
 
       <Field label="Nama tempat">
         {(id) => (

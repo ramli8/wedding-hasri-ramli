@@ -637,6 +637,16 @@ Status: **sudah dibangun (belum di-commit per 10 Nov 2026)**; kamera X-A7 sudah 
   - **Penyimpanan permanen** diminta (`navigator.storage.persist()`); statusnya tampil di panel petugas. Gagal menyimpan foto ditampilkan ke petugas, tidak lagi hilang diam-diam.
   - **Admin:** unduh semua foto booth (`GET /admin/booth/photos.zip`, nama berkas memakai waktu WIB). Penyapuan gambar yatim memakai satu kueri, tidak lagi memeriksa setiap foto booth ke setiap tabel pada setiap unggahan.
 
+### Acara bertanggal, jam datang per kelompok (11 Nov 2026)
+
+- **Acara hanya punya tanggal** (formulir: satu kolom Tanggal; `events.starts_at` disimpan 00.00 WIB, `ends_at` kosong). Jam kedatangan diatur per kelompok di menu Kelompok.
+- **Jam datang per kelompok per acara:** *Jam bebas* (tidak ada baris `group_sessions`), atau *Jam tertentu* dengan jam selesai, atau "sampai selesai" (`group_sessions.ends_at` null, migrasi 0029). Tamu tanpa kelompok juga dianggap jam bebas. Di pesan undangan `{jam_sesi}` menjadi "10.00–12.00 WIB", "10.00 WIB – sampai selesai", atau "Bebas, datang kapan saja".
+- **Sinkron scanner tidak berubah:** snapshot tetap mengirim `endsAt` wajib; "sampai selesai" dikirim sebagai 23.59.59 WIB hari itu, jadi perangkat lama tidak perlu diperbarui dan `SYNC_PROTOCOL_VERSION` tidak naik. Server menandai `outsideSession` hanya bila sebelum jam mulai untuk sesi tanpa jam selesai.
+- **Tanggal acara diubah:** jam datang kelompok di acara itu ikut pindah ke tanggal baru (jamnya tetap).
+- **Acara per kelompok** (`group_events`, migrasi 0030; kelompok lama diisi semua acara): tidak semua kelompok diundang ke semua acara. Kelompok baru di formulir mulai dari "Tidak diundang" di semua acara dan wajib dicentang minimal satu. Memilih kelompok di formulir tamu mencentang acara kelompok itu (masih bisa diubah per tamu). Mengubah acara kelompok ikut menambah/mencabut `guest_events` semua tamu kelompok itu untuk acara yang berubah saja (pengecualian per tamu di acara lain tetap) dan menaikkan `guests.rev`. Jam datang hanya boleh untuk acara yang diundang. Impor CSV dengan kolom acara kosong mengikuti acara kelompoknya (kelompok baru: semua acara).
+- **Hitung mundur** undangan diatur di Pengaturan → Pernikahan (`settings.countdown_at`); kosong = tanggal acara pertama.
+- **Kode singkat acara** tidak lagi diisi admin (dibuat server dari nama); impor/ekspor CSV memakai nama acara. **Pesan undangan** per acara diatur di Pengaturan → Pesan undangan.
+
 ## 15. Belum diputuskan (tidak memblokir fase 1–4)
 
 - Desain dan format undangan (ide game 2D; sebaiknya "mode jelajah" opsional yang dimuat belakangan agar sinyal lemah tetap lancar).

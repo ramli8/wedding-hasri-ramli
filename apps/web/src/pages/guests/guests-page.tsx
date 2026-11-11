@@ -198,7 +198,10 @@ export function GuestsPage() {
         const group = row.original.groupId ? groupById.get(row.original.groupId) : undefined;
         return group ? (
           <Badge variant="outline">
-            <span className="size-2 rounded-full" style={{ backgroundColor: group.color }} />
+            <span
+              className="size-2 rounded-full ring-1 ring-black/15"
+              style={{ backgroundColor: group.color }}
+            />
             {group.name}
             {group.isVip && " · VIP"}
           </Badge>

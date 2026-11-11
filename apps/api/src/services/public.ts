@@ -84,7 +84,10 @@ export async function getTicket(db: Db, code: string): Promise<TicketResponse> {
         checkinEnabled: event.checkinEnabled,
         hasRsvp: event.hasRsvp,
         session: session
-          ? { startsAt: session.startsAt.toISOString(), endsAt: session.endsAt.toISOString() }
+          ? {
+              startsAt: session.startsAt.toISOString(),
+              endsAt: session.endsAt?.toISOString() ?? null,
+            }
           : null,
         rsvp: answer ? { status: answer.status as RsvpStatus, pax: answer.pax } : null,
       };

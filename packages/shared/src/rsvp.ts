@@ -31,7 +31,8 @@ export const ticketEventSchema = z.object({
   checkinEnabled: z.boolean(),
   hasRsvp: z.boolean(),
   /** Jam sesi kelompok tamu di acara ini, bila ada. */
-  session: z.object({ startsAt: z.string(), endsAt: z.string() }).nullable(),
+  /** Jam kedatangan kelompok tamu; null = jam bebas. `endsAt` null = sampai selesai. */
+  session: z.object({ startsAt: z.string(), endsAt: z.string().nullable() }).nullable(),
   rsvp: z.object({ status: rsvpStatusSchema, pax: z.number() }).nullable(),
 });
 export type TicketEvent = z.infer<typeof ticketEventSchema>;

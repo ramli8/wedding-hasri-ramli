@@ -45,7 +45,7 @@ Menu: ubah `navGroups` di `components/layout/sidebar-data.ts` (item biasa atau b
 - Formulir dalam `Dialog` (kit): baris tombol terakhir yang berisi tombol submit menempel di dasar lembar HP (CSS, tanpa kode per halaman). Menutup dialog lewat ketuk luar/Esc/X saat isian sudah berubah menanyakan "Buang perubahan?".
 - Setiap `useMutation` yang berhasil menampilkan "Tersimpan" (Toaster di AppLayout, `MutationCache` di `main.tsx`); ganti dengan `meta: { toast: "Terhapus" }` atau matikan dengan `meta: { toast: false }`.
 - Tombol dan isian minimal 44px di HP lewat CSS global (`[data-slot=button]`, `input`, `select-trigger`, `textarea`).
-- Formulir tambah data: `FormFooter again` + `isAgain(event)` untuk "Simpan & tambah lagi" (kosongkan isian yang berganti, pertahankan pilihan seperti kelompok/acara/jenis, fokus ke kolom pertama); `Field required` untuk kolom wajib dan `error` untuk pesan di bawah kolom; `MoneyInput` untuk rupiah (pemisah ribuan saat mengetik, papan angka).
+- Formulir: `FormFooter` (Batal + Simpan saja; "Simpan & tambah lagi" ditolak pemilik); `Field required` untuk kolom wajib dan `error` untuk pesan di bawah kolom; `MoneyInput` untuk rupiah (pemisah ribuan saat mengetik, papan angka).
 - Chip variabel templat pesan: `components/kit/variable-chips.tsx` (`useCaretInsert` + `VariableChips`) menyisipkan di posisi kursor.
 - Pairing perangkat: dialog kode menampilkan QR tautan `/scan/pasang?kode=XXXX-XXXX`; halaman pasang mengisi kodenya dari tautan.
 - Teks UI berbahasa Indonesia; kelas tinggi sentuh 44px di HP (`max-md:h-11`) ditambahkan di adaptor, bukan di berkas `ui/`.

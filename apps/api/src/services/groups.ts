@@ -1,10 +1,17 @@
 import type { Group, GroupData } from "@wedding/shared";
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
-import { events, groupSessions, guestGroups, guests } from "../db/schema.js";
+import {
+  events,
+  groupEvents,
+  groupSessions,
+  guestEvents,
+  guestGroups,
+  guests,
+} from "../db/schema.js";
 import { AppError } from "../http/errors.js";
-import { lockGuestRev } from "./checkin-log.js";
+import { type Executor, lockGuestRev } from "./checkin-log.js";
 import { guestTouch } from "./guests.js";
 
 // Nama tabel ditulis eksplisit: Drizzle membuang awalan tabel pada query satu-tabel, dan
@@ -17,6 +24,10 @@ async function withSessions(
   db: Db,
   rows: { group: typeof guestGroups.$inferSelect; guestCount: number }[],
 ) {
+  const ids = rows.map((r) => r.group.id);
+  const invited = ids.length
+    ? await db.select().from(groupEvents).where(inArray(groupEvents.groupId, ids))
+    : [];
   const sessions = rows.length
     ? await db
         .select()
@@ -35,12 +46,13 @@ async function withSessions(
       color: group.color,
       isVip: group.isVip,
       guestCount,
+      eventIds: invited.filter((e) => e.groupId === group.id).map((e) => e.eventId),
       sessions: sessions
         .filter((s) => s.groupId === group.id)
         .map((s) => ({
           eventId: s.eventId,
           startsAt: s.startsAt.toISOString(),
-          endsAt: s.endsAt.toISOString(),
+          endsAt: s.endsAt?.toISOString() ?? null,
         })),
     }),
   );
@@ -69,7 +81,7 @@ async function assertEventsExist(db: Pick<Db, "select">, eventIds: string[]) {
   if (eventIds.length === 0) return;
   const found = await db.select({ id: events.id }).from(events).where(inArray(events.id, eventIds));
   if (found.length !== new Set(eventIds).size) {
-    throw new AppError(400, "VALIDATION_ERROR", "Ada acara pada jam sesi yang tidak ditemukan");
+    throw new AppError(400, "VALIDATION_ERROR", "Ada acara yang tidak ditemukan");
   }
 }
 
@@ -86,18 +98,61 @@ function replaceSessions(tx: Pick<Db, "delete" | "insert">, groupId: string, inp
               groupId,
               eventId: s.eventId,
               startsAt: new Date(s.startsAt),
-              endsAt: new Date(s.endsAt),
+              endsAt: s.endsAt ? new Date(s.endsAt) : null,
             })),
           )
         : undefined,
     );
 }
 
+/**
+ * Menyimpan acara yang diundang untuk kelompok, lalu menyamakan undangan tamu kelompok itu:
+ * acara yang baru dicentang ditambahkan ke semua tamunya, acara yang dilepas dicabut.
+ * Undangan lain milik tamu (pengecualian per tamu) tidak disentuh.
+ */
+async function replaceInvitedEvents(tx: Executor, groupId: string, wanted: string[]) {
+  const before = await tx
+    .select({ eventId: groupEvents.eventId })
+    .from(groupEvents)
+    .where(eq(groupEvents.groupId, groupId));
+  const have = new Set(before.map((e) => e.eventId));
+  const want = new Set(wanted);
+  const added = [...want].filter((id) => !have.has(id));
+  const removed = [...have].filter((id) => !want.has(id));
+  if (removed.length) {
+    await tx
+      .delete(groupEvents)
+      .where(and(eq(groupEvents.groupId, groupId), inArray(groupEvents.eventId, removed)));
+  }
+  if (added.length) {
+    await tx.insert(groupEvents).values(added.map((eventId) => ({ groupId, eventId })));
+  }
+  if (!added.length && !removed.length) return;
+
+  // Undangan tamu ikut dikirim ke perangkat pintu, jadi rev tamunya harus naik (lihat lockGuestRev).
+  await lockGuestRev(tx);
+  const members = await tx
+    .update(guests)
+    .set(guestTouch())
+    .where(eq(guests.groupId, groupId))
+    .returning({ id: guests.id });
+  const memberIds = members.map((m) => m.id);
+  if (!memberIds.length) return;
+  if (removed.length) {
+    await tx
+      .delete(guestEvents)
+      .where(and(inArray(guestEvents.guestId, memberIds), inArray(guestEvents.eventId, removed)));
+  }
+  if (added.length) {
+    await tx
+      .insert(guestEvents)
+      .values(memberIds.flatMap((guestId) => added.map((eventId) => ({ guestId, eventId }))))
+      .onConflictDoNothing();
+  }
+}
+
 export async function createGroup(db: Db, input: GroupData): Promise<Group> {
-  await assertEventsExist(
-    db,
-    input.sessions.map((s) => s.eventId),
-  );
+  await assertEventsExist(db, input.eventIds);
   try {
     const id = await db.transaction(async (tx) => {
       const [row] = await tx
@@ -109,6 +164,7 @@ export async function createGroup(db: Db, input: GroupData): Promise<Group> {
         })
         .returning({ id: guestGroups.id });
       if (!row) throw new Error("Gagal membuat kelompok");
+      await replaceInvitedEvents(tx, row.id, input.eventIds);
       await replaceSessions(tx, row.id, input);
       return row.id;
     });
@@ -120,10 +176,7 @@ export async function createGroup(db: Db, input: GroupData): Promise<Group> {
 }
 
 export async function updateGroup(db: Db, id: string, input: GroupData): Promise<Group> {
-  await assertEventsExist(
-    db,
-    input.sessions.map((s) => s.eventId),
-  );
+  await assertEventsExist(db, input.eventIds);
   try {
     await db.transaction(async (tx) => {
       const updated = await tx
@@ -136,6 +189,7 @@ export async function updateGroup(db: Db, id: string, input: GroupData): Promise
         .where(eq(guestGroups.id, id))
         .returning({ id: guestGroups.id });
       if (updated.length === 0) throw new AppError(404, "NOT_FOUND", "Kelompok tidak ditemukan");
+      await replaceInvitedEvents(tx, id, input.eventIds);
       await replaceSessions(tx, id, input);
     });
     return await getGroup(db, id);

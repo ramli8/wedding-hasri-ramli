@@ -2,7 +2,7 @@ import { DEFAULT_MESSAGE_TEMPLATE, type Event, type EventData } from "@wedding/s
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
-import { events, messageTemplates } from "../db/schema.js";
+import { events, groupSessions, messageTemplates } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 
 const invitedCount = sql<number>`(
@@ -131,6 +131,16 @@ export async function createEvent(db: Db, input: EventData): Promise<Event> {
   }
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WIB_MS = 7 * 60 * 60 * 1000;
+/** Awal hari (00.00 WIB) dari sebuah waktu, dalam milidetik. */
+const wibDay = (iso: string) => Math.floor((Date.parse(iso) + WIB_MS) / DAY_MS) * DAY_MS;
+
+/** Selisih hari (dalam ms) antara tanggal lama dan baru; 0 bila salah satu kosong atau sama. */
+function dayShiftMs(before: string | null, after: string | null): number {
+  return before && after ? wibDay(after) - wibDay(before) : 0;
+}
+
 export async function updateEvent(db: Db, id: string, input: EventData): Promise<Event> {
   // Kode singkat lama dipertahankan saat nama diubah (impor lama yang memakainya tetap cocok).
   const existing = await getEvent(db, id);
@@ -143,6 +153,18 @@ export async function updateEvent(db: Db, id: string, input: EventData): Promise
         .returning({ id: events.id });
       if (updated.length === 0) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
       if (input.messageTemplate !== undefined) await saveTemplate(tx, id, input.messageTemplate);
+      // Jam datang kelompok menyimpan tanggal lengkap: bila tanggal acara pindah, jamnya ikut pindah
+      // ke tanggal baru (jamnya tetap).
+      const shiftMs = dayShiftMs(existing.startsAt, input.startsAt);
+      if (shiftMs) {
+        await tx
+          .update(groupSessions)
+          .set({
+            startsAt: sql`${groupSessions.startsAt} + ${shiftMs} * interval '1 millisecond'`,
+            endsAt: sql`${groupSessions.endsAt} + ${shiftMs} * interval '1 millisecond'`,
+          })
+          .where(eq(groupSessions.eventId, id));
+      }
     });
     return await getEvent(db, id);
   } catch (err) {

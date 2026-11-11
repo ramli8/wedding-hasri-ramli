@@ -52,6 +52,8 @@ export const settings = pgTable(
     seoTitle: text(),
     seoDescription: text(),
     seoImageMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    // Tujuan hitung mundur di undangan; kosong = tanggal acara pertama.
+    countdownAt: timestamp({ withTimezone: true }),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("settings_singleton", sql`${table.id} = 1`)],
@@ -94,6 +96,21 @@ export const guestGroups = pgTable("guest_groups", {
   isVip: boolean().notNull().default(false),
 });
 
+// Acara yang diundang untuk satu kelompok. Tamu baru di kelompok ini diundang ke acara-acara ini,
+// dan mengubahnya ikut mengubah undangan tamu kelompok yang sudah ada.
+export const groupEvents = pgTable(
+  "group_events",
+  {
+    groupId: uuid()
+      .notNull()
+      .references(() => guestGroups.id, { onDelete: "cascade" }),
+    eventId: uuid()
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.groupId, table.eventId] })],
+);
+
 // Jam sesi kelompok per acara, mis. kelompok Surabaya 10.00–12.00 di resepsi.
 export const groupSessions = pgTable(
   "group_sessions",
@@ -105,11 +122,15 @@ export const groupSessions = pgTable(
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
     startsAt: timestamp({ withTimezone: true }).notNull(),
-    endsAt: timestamp({ withTimezone: true }).notNull(),
+    // Null = "sampai selesai". Tanpa baris sesi sama sekali = jam bebas.
+    endsAt: timestamp({ withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.groupId, table.eventId] }),
-    check("group_sessions_time_order", sql`${table.endsAt} > ${table.startsAt}`),
+    check(
+      "group_sessions_time_order",
+      sql`${table.endsAt} is null or ${table.endsAt} > ${table.startsAt}`,
+    ),
   ],
 );
 

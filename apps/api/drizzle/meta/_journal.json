@@ -204,6 +204,20 @@
       "when": 1794311874047,
       "tag": "0028_omniscient_rick_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794366755220,
+      "tag": "0029_abnormal_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794367958016,
+      "tag": "0030_lazy_speedball",
+      "breakpoints": true
     }
   ]
 }

@@ -6,7 +6,7 @@ import { Alert } from "@/components/kit/alert";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { CheckCard, FormSection, SwitchRow } from "@/components/kit/form-rows";
-import { FormFooter, isAgain } from "@/components/kit/invitation-kit";
+import { FormFooter } from "@/components/kit/invitation-kit";
 import { Select } from "@/components/kit/select";
 import { Input } from "@/components/ui/input";
 import { adminApi } from "../../lib/admin-api.js";
@@ -118,7 +118,13 @@ function GuestForm({
     guest ? guest.events.map((e) => e.eventId) : events.map((e) => e.id),
   );
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  // Memilih kelompok mencentang acara kelompok itu; centangnya masih bisa diubah per tamu.
+  const chooseGroup = (id: string) => {
+    setGroupId(id);
+    const chosen = groups.find((g) => g.id === id);
+    if (chosen) setEventIds(chosen.eventIds);
+  };
 
   const phoneDuplicates = useDuplicates("phone", phone, guest?.id);
   const instagramDuplicates = useDuplicates("instagram", instagram, guest?.id);
@@ -134,25 +140,13 @@ function GuestForm({
   });
 
   const save = useMutation({
-    mutationFn: (again: boolean) => {
+    mutationFn: () => {
       const body = input();
-      const request = guest ? adminApi.guests.update(guest.id, body) : adminApi.guests.create(body);
-      return request.then((result) => ({ result, again }));
+      return guest ? adminApi.guests.update(guest.id, body) : adminApi.guests.create(body);
     },
-    onSuccess: async ({ result, again }) => {
+    onSuccess: async () => {
       await refresh("guests", "groups", "events");
-      if (!again) {
-        onDone();
-        return;
-      }
-      // Kelompok, rombongan, dan acara sengaja dipertahankan: tamu berikutnya biasanya serupa.
-      setLastSaved(result.guest.displayName);
-      setDisplayName("");
-      setPhone("");
-      setInstagram("");
-      setUsherNote("");
-      setErrors({});
-      nameRef.current?.focus();
+      onDone();
     },
     onError: (error) => {
       const field = fieldOfMessage(error.message);
@@ -176,7 +170,7 @@ function GuestForm({
       return;
     }
     setErrors({});
-    save.mutate(isAgain(event));
+    save.mutate();
   }
 
   const clearError = (field: FieldName) =>
@@ -189,11 +183,6 @@ function GuestForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      {lastSaved && (
-        <Alert>
-          “{lastSaved}” tersimpan. Isi tamu berikutnya; kelompok dan acara tetap seperti tadi.
-        </Alert>
-      )}
       <FormSection
         title="Identitas"
         description="Nama seperti yang akan tertulis di pesan undangan. Isi salah satu: nomor HP atau Instagram."
@@ -275,9 +264,9 @@ function GuestForm({
       </FormSection>
 
       <FormSection title="Pengelompokan">
-        <Field label="Kelompok" hint="Menentukan warna, penanda VIP, dan jam sesi.">
+        <Field label="Kelompok" hint="Menentukan warna, penanda VIP, acara, dan jam datang.">
           {(id) => (
-            <Select id={id} value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <Select id={id} value={groupId} onChange={(e) => chooseGroup(e.target.value)}>
               <option value="">Tanpa kelompok</option>
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
@@ -318,7 +307,7 @@ function GuestForm({
 
       {guest?.code && <p className="text-xs text-muted-foreground">Kode tamu: {guest.code}</p>}
       {serverError && <Alert tone="error">{serverError}</Alert>}
-      <FormFooter onCancel={onDone} pending={save.isPending} again={!guest} />
+      <FormFooter onCancel={onDone} pending={save.isPending} />
     </form>
   );
 }

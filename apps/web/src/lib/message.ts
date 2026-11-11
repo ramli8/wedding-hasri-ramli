@@ -1,8 +1,9 @@
 import {
   DEFAULT_MESSAGE_TEMPLATE,
   type Event,
+  FREE_TIME_LABEL,
   formatEventDate,
-  formatTimeRange,
+  formatSessionTime,
   type Group,
   type Guest,
   renderTemplate,
@@ -14,12 +15,13 @@ export function guestLink(guest: Pick<Guest, "code">, settings: Settings | null 
   return settings && guest.code ? `${settings.publicBaseUrl}/u/${guest.code}` : null;
 }
 
-/** Jam sesi tamu di acara ini: jam kelompoknya, atau jam acara bila kelompok tak punya sesi. */
+/**
+ * Jam kedatangan tamu di acara ini, dari jam sesi kelompoknya ("10.00–12.00 WIB" atau
+ * "10.00 WIB – sampai selesai"). Kelompok tanpa jam (atau tamu tanpa kelompok): jam bebas.
+ */
 export function sessionLabel(event: Event, group: Group | null | undefined) {
   const session = group?.sessions.find((s) => s.eventId === event.id);
-  if (session) return formatTimeRange(session.startsAt, session.endsAt);
-  if (event.startsAt && event.endsAt) return formatTimeRange(event.startsAt, event.endsAt);
-  return "";
+  return session ? formatSessionTime(session.startsAt, session.endsAt) : FREE_TIME_LABEL;
 }
 
 /** "Hasri Wiji Aqsari & Mohamad Rizal Ramli" dari Pengaturan → Pernikahan. */

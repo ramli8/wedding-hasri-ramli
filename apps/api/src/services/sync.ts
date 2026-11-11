@@ -31,6 +31,14 @@ import {
 } from "./checkin-log.js";
 import type { DeviceRow } from "./devices.js";
 
+const WIB_MS = 7 * 60 * 60 * 1000;
+/** 23:59:59.999 WIB di hari yang sama dengan `at`. */
+function endOfDayWib(at: Date): Date {
+  const wib = new Date(at.getTime() + WIB_MS);
+  wib.setUTCHours(23, 59, 59, 999);
+  return new Date(wib.getTime() - WIB_MS);
+}
+
 export async function buildSnapshot(
   db: Db,
   device: DeviceRow,
@@ -130,10 +138,12 @@ export async function buildSnapshot(
       color: g.color,
       isVip: g.isVip,
     })),
+    // Format sinkron tetap (endsAt wajib): "sampai selesai" dikirim sebagai akhir hari itu (WIB),
+    // jadi perangkat lama tidak perlu diperbarui.
     sessions: sessionRows.map((s) => ({
       groupId: s.groupId,
       startsAt: s.startsAt.toISOString(),
-      endsAt: s.endsAt.toISOString(),
+      endsAt: (s.endsAt ?? endOfDayWib(s.startsAt)).toISOString(),
     })),
     guests: snapshotGuests,
     guestRev: maxRev,
@@ -293,7 +303,9 @@ export async function pushEvents(
       if (e.kind === "checkin") {
         const groupId = groupOfGuest.get(e.guestId);
         const session = groupId ? sessions.get(groupId) : undefined;
-        outsideSession = !!session && (scannedAt < session.startsAt || scannedAt > session.endsAt);
+        outsideSession =
+          !!session &&
+          (scannedAt < session.startsAt || (!!session.endsAt && scannedAt > session.endsAt));
       }
 
       await tx.insert(checkinEvents).values({

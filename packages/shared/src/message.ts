@@ -63,6 +63,14 @@ export function formatTimeRange(startsAt: string, endsAt: string): string {
   return `${clock(startsAt)}–${clock(endsAt)} WIB`;
 }
 
+/** Jam kedatangan kelompok: "10.00–12.00 WIB" atau, tanpa jam selesai, "10.00 WIB – sampai selesai". */
+export function formatSessionTime(startsAt: string, endsAt: string | null): string {
+  return endsAt ? formatTimeRange(startsAt, endsAt) : `${clock(startsAt)} WIB – sampai selesai`;
+}
+
+/** Teks untuk tamu yang kelompoknya tidak diberi jam (atau tanpa kelompok). */
+export const FREE_TIME_LABEL = "Bebas, datang kapan saja";
+
 export function whatsappUrl(phone: string, text: string): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }

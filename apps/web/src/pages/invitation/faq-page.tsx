@@ -1,14 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Faq } from "@wedding/shared";
 import { CircleHelp, Plus, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { EmptyState, FormFooter, isAgain, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,7 @@ export function FaqPage() {
   return (
     <>
       <Toolbar
+        empty={!!faqs.data && items.length === 0}
         summary={`${items.length} pertanyaan`}
         addLabel="Tambah pertanyaan"
         onAdd={() => setEditing({ kind: "new" })}
@@ -160,28 +161,23 @@ function FaqForm({
   const refresh = useRefresh();
   const [question, setQuestion] = useState(item?.question ?? initialQuestion ?? "");
   const [answer, setAnswer] = useState(item?.answer ?? "");
-  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: (_again: boolean) => {
+    mutationFn: () => {
       const input = { question, answer };
       return item
         ? adminApi.invitation.updateFaq(item.id, input)
         : adminApi.invitation.createFaq(input);
     },
-    onSuccess: async (_data, again) => {
+    onSuccess: async () => {
       await refresh("invitation");
-      if (!again) return onDone();
-      // "Simpan & tambah lagi": dialog tetap terbuka dengan isian kosong.
-      setQuestion("");
-      setAnswer("");
-      first.current?.focus();
+      onDone();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate(isAgain(event));
+    save.mutate();
   }
 
   return (
@@ -194,7 +190,6 @@ function FaqForm({
           {(id) => (
             <Input
               id={id}
-              ref={first}
               required
               maxLength={200}
               value={question}
@@ -220,7 +215,6 @@ function FaqForm({
         onCancel={onDone}
         pending={save.isPending}
         disabled={!question.trim() || !answer.trim()}
-        again={!item}
       />
     </form>
   );

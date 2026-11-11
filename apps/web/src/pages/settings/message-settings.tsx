@@ -4,7 +4,6 @@ import {
   DEFAULT_MESSAGE_TEMPLATE,
   type Event,
   formatEventDate,
-  formatTimeRange,
   MESSAGE_TEMPLATE_VARIABLES,
   renderTemplate,
   type Settings,
@@ -105,7 +104,8 @@ function MessageForm({ event, settings }: { event: Event; settings: Settings | n
     link: `${settings?.publicBaseUrl ?? "https://situs-anda.com"}/u/ABC234`,
     acara: event.name,
     tanggal: formatEventDate(event.startsAt),
-    jam_sesi: event.startsAt && event.endsAt ? formatTimeRange(event.startsAt, event.endsAt) : "",
+    // Contoh tamu dari kelompok berjam tertentu; jam asli diambil dari kelompok tiap tamu.
+    jam_sesi: "10.00–12.00 WIB",
     tempat: event.venueName ?? "",
     mempelai: coupleNames(settings) || "Hasri & Ramli",
   });

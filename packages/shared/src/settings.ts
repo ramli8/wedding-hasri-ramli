@@ -6,6 +6,11 @@ export const settingsInputSchema = z.object({
   publicBaseUrl: z
     .url({ protocol: /^https?$/, error: "Alamat situs harus diawali http:// atau https://" })
     .transform((url) => url.replace(/\/+$/, "")),
+  /** Waktu tujuan hitung mundur di undangan. Kosong: tanggal acara pertama. */
+  countdownAt: z.iso
+    .datetime({ offset: true })
+    .nullish()
+    .transform((value) => value ?? null),
 });
 export type SettingsInput = z.input<typeof settingsInputSchema>;
 
@@ -13,6 +18,7 @@ export const settingsSchema = z.object({
   groomName: z.string(),
   brideName: z.string(),
   publicBaseUrl: z.string(),
+  countdownAt: z.string().nullable(),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 

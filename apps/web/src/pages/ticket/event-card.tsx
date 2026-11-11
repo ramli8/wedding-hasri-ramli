@@ -1,14 +1,21 @@
-import { formatEventDate, formatTimeRange, type TicketEvent } from "@wedding/shared";
+import {
+  FREE_TIME_LABEL,
+  formatEventDate,
+  formatSessionTime,
+  type TicketEvent,
+} from "@wedding/shared";
 import { CalendarPlus, MapPin } from "lucide-react";
 import { buildIcs, downloadIcs, icsFilename } from "../../lib/ics.js";
 import { safeHref } from "../../lib/safe-url.js";
 
 export function EventCard({ event }: { event: TicketEvent }) {
+  // Jam kedatangan dari kelompok tamu; tanpa sesi = jam bebas.
   const time = event.session
-    ? { label: "Sesi Anda", value: formatTimeRange(event.session.startsAt, event.session.endsAt) }
-    : event.startsAt && event.endsAt
-      ? { label: "Waktu", value: formatTimeRange(event.startsAt, event.endsAt) }
-      : null;
+    ? {
+        label: "Jam datang",
+        value: formatSessionTime(event.session.startsAt, event.session.endsAt),
+      }
+    : { label: "Jam datang", value: FREE_TIME_LABEL };
 
   // Jam sesi kelompok tamu bila ada; kalau tidak, jam acara.
   const calendarStart = event.session?.startsAt ?? event.startsAt;

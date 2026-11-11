@@ -108,14 +108,14 @@ export function VendorsPage() {
               Kategori
               <Tags aria-hidden />
             </Button>
-            {/* Kandidat baru langsung masuk ke kategori yang sedang dibuka. */}
-            <Button
-              onClick={() => setForm({ kind: "new", categoryId: activeCategory?.id })}
-              disabled={!data || data.categories.length === 0}
-            >
-              Tambah vendor
-              <Plus aria-hidden />
-            </Button>
+            {/* Kandidat baru langsung masuk ke kategori yang sedang dibuka. Kategori yang masih
+                kosong sudah punya tombol "Tambah kandidat pertama", jadi tombol ini disembunyikan. */}
+            {data?.vendors.some((v) => v.categoryId === activeCategory?.id) && (
+              <Button onClick={() => setForm({ kind: "new", categoryId: activeCategory?.id })}>
+                Tambah vendor
+                <Plus aria-hidden />
+              </Button>
+            )}
           </>
         }
       />
@@ -269,7 +269,7 @@ function CategorySection(props: {
       <div>
         <h2 className="text-lg font-semibold">{category.name}</h2>
         <p className="text-sm text-muted-foreground">
-          Tambahkan beberapa kandidat lewat “Tambah vendor”, bandingkan harganya, lalu pilih satu.
+          Tambahkan beberapa kandidat, bandingkan harganya, lalu pilih satu.
         </p>
       </div>
       {vendors.length === 0 ? (

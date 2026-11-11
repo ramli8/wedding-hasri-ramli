@@ -20,7 +20,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -31,7 +31,7 @@ import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { FormFooter, isAgain } from "@/components/kit/invitation-kit";
+import { FormFooter } from "@/components/kit/invitation-kit";
 import { MoneyInput } from "@/components/kit/money-input";
 import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
@@ -310,7 +310,6 @@ const KIND_SHORT_LABEL: Record<ReceivedGiftKind, string> = {
 
 function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => void }) {
   const refresh = useRefresh();
-  const formRef = useRef<HTMLFormElement>(null);
   const [guestId, setGuestId] = useState<string | null>(gift?.guestId ?? null);
   const [giverName, setGiverName] = useState(gift?.giverName ?? "");
   const [giverPhone, setGiverPhone] = useState(gift?.giverPhone ?? "");
@@ -336,7 +335,7 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
   const valid = missing.length === 0;
 
   const save = useMutation({
-    mutationFn: (_again: boolean) => {
+    mutationFn: () => {
       const input = {
         guestId,
         giverName,
@@ -353,39 +352,25 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
     },
     // Pesan berisi apa yang baru dicatat, supaya pencatatan beruntun bisa dicek sekilas.
     meta: { toast: false },
-    onSuccess: async ({ gift: saved }, again) => {
+    onSuccess: async ({ gift: saved }) => {
       const what =
         saved.kind === "barang"
           ? (saved.itemDescription ?? "Barang")
           : formatRupiah(saved.amount ?? 0);
       toast(`Tersimpan: ${what} dari ${saved.giverName}`);
       await refresh("received-gifts");
-      if (!again) {
-        onDone();
-        return;
-      }
-      // Catat lagi: jenis dan tanggal tetap, pemberi dan nilai dikosongkan.
-      setGuestId(null);
-      setGiverName("");
-      setGiverPhone("");
-      setAmount(null);
-      setItem("");
-      setNote("");
-      setGuestSearch("");
-      requestAnimationFrame(() =>
-        formRef.current?.querySelector<HTMLInputElement>("input")?.focus(),
-      );
+      onDone();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!valid) return;
-    save.mutate(!gift && isAgain(event));
+    save.mutate();
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <FormSection title="Pemberi">
         {guestId ? (
           <div className="grid gap-2">
@@ -551,13 +536,7 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
           Lengkapi dulu: {missing.join(", ")}.
         </p>
       )}
-      <FormFooter
-        onCancel={onDone}
-        pending={save.isPending}
-        disabled={!valid}
-        again={!gift}
-        againLabel="Simpan & catat lagi"
-      />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!valid} />
     </form>
   );
 }

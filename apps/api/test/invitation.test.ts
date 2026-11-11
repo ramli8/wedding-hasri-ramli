@@ -293,6 +293,21 @@ describe("isi undangan untuk tamu", () => {
       eventDate: null,
     });
   });
+
+  it("hitung mundur memakai waktu di Pengaturan, atau tanggal acara pertama", async () => {
+    await api.post("/events", { name: "Resepsi", startsAt: "2027-05-20T17:00:00Z" });
+    const eventDate = async () =>
+      (await read<InvitationResponse>(await app.request("/api/v1/public/invitation"))).eventDate;
+    expect(await eventDate()).toBe("2027-05-20T17:00:00.000Z");
+
+    await api.put("/settings", {
+      groomName: "Ramli",
+      brideName: "Hasri",
+      publicBaseUrl: "https://contoh.com",
+      countdownAt: "2027-05-21T03:00:00Z",
+    });
+    expect(await eventDate()).toBe("2027-05-21T03:00:00.000Z");
+  });
 });
 
 describe("galeri", () => {

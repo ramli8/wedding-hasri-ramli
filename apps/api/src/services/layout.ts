@@ -11,7 +11,7 @@ import {
 } from "@wedding/shared";
 import { asc, eq, min } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { events, invitationCover, invitationSections, media } from "../db/schema.js";
+import { events, invitationCover, invitationSections, media, settings } from "../db/schema.js";
 import {
   assertPhotoUsable,
   getCouple,
@@ -113,7 +113,9 @@ export async function getLayout(db: Db): Promise<LayoutResponse> {
 // --- Untuk tamu -----------------------------------------------------------------------------------
 
 export async function getInvitation(db: Db): Promise<InvitationResponse> {
+  // Hitung mundur: waktu di Pengaturan, atau tanggal acara pertama.
   const [first] = await db.select({ at: min(events.startsAt) }).from(events);
+  const [config] = await db.select({ at: settings.countdownAt }).from(settings).limit(1);
   return {
     couple: await getCouple(db),
     story: await listStory(db),
@@ -124,7 +126,7 @@ export async function getInvitation(db: Db): Promise<InvitationResponse> {
     cover: await getCover(db),
     sections: await getSections(db),
     live: await getLive(db),
-    eventDate: first?.at?.toISOString() ?? null,
+    eventDate: (config?.at ?? first?.at)?.toISOString() ?? null,
   };
 }
 

@@ -1,5 +1,6 @@
 import {
   type Dashboard,
+  DEFAULT_GROUP_COLOR,
   needsReview,
   type ResolveRequest,
   type ReviewItem,
@@ -22,7 +23,7 @@ import { findCheckin, getCheckinEvent, loadEvents, lockCheckinLog } from "./chec
 import { toDevice } from "./devices.js";
 import { rsvpHadirPax } from "./engage.js";
 
-const NO_GROUP = { name: "Tanpa kelompok", color: "#737373" };
+const NO_GROUP = { name: "Tanpa kelompok", color: DEFAULT_GROUP_COLOR };
 
 async function loadContext(db: Db, eventId: string) {
   const storedEvents = await loadEvents(db, eventId);

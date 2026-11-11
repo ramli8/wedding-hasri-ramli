@@ -9,7 +9,7 @@ import { parse } from "csv-parse/sync";
 import { stringify } from "csv-stringify/sync";
 import { asc, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { events, guestEvents, guestGroups, guests } from "../db/schema.js";
+import { events, groupEvents, guestEvents, guestGroups, guests } from "../db/schema.js";
 import { generateUniqueCodes } from "../domain/guest-code.js";
 import { AppError } from "../http/errors.js";
 import { lockGuestRev } from "./checkin-log.js";
@@ -119,8 +119,18 @@ function eventLookup(rows: EventRef[]) {
 async function analyze(db: Db, csv: string) {
   const records = readRecords(csv);
 
-  const groupRows = await db.select({ name: guestGroups.name }).from(guestGroups);
+  const groupRows = await db
+    .select({ id: guestGroups.id, name: guestGroups.name })
+    .from(guestGroups);
   const knownGroups = new Set(groupRows.map((g) => g.name.toLowerCase()));
+  // Acara yang diundang per kelompok (nama huruf kecil → id acara), untuk kolom acara kosong.
+  const invitedRows = await db.select().from(groupEvents);
+  const groupInvites = new Map(
+    groupRows.map((g) => [
+      g.name.toLowerCase(),
+      invitedRows.filter((r) => r.groupId === g.id).map((r) => r.eventId),
+    ]),
+  );
   const eventRows = await db
     .select({ id: events.id, slug: events.slug, name: events.name })
     .from(events);
@@ -161,8 +171,11 @@ async function analyze(db: Db, csv: string) {
       if ("id" in found) eventIds.push(found.id);
       else fail(found.error);
     }
-    // Kolom acara kosong berarti diundang ke semua acara.
-    const invited = wanted.length ? eventIds : eventRows.map((e) => e.id);
+    // Kolom acara kosong: ikut acara kelompoknya; tanpa kelompok (atau kelompok baru) semua acara.
+    const groupName = record.kelompok?.trim() || null;
+    const invited = wanted.length
+      ? eventIds
+      : ((groupName && groupInvites.get(groupName.toLowerCase())) ?? eventRows.map((e) => e.id));
 
     const parsed = guestInputSchema.safeParse({
       displayName: record.nama_undangan ?? "",
@@ -174,7 +187,6 @@ async function analyze(db: Db, csv: string) {
     });
     if (!parsed.success) for (const issue of parsed.error.issues) fail(issue.message);
 
-    const groupName = record.kelompok?.trim() || null;
     if (groupName && !knownGroups.has(groupName.toLowerCase())) {
       newGroups.set(groupName.toLowerCase(), newGroups.get(groupName.toLowerCase()) ?? groupName);
     }
@@ -243,10 +255,17 @@ export async function commitImport(
   await db.transaction(async (tx) => {
     await lockGuestRev(tx);
     if (newGroups.length) {
-      await tx
+      const created = await tx
         .insert(guestGroups)
         .values(newGroups.map((name) => ({ name })))
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ id: guestGroups.id });
+      // Kelompok baru dari impor diundang ke semua acara, sama seperti kelompok baru di formulir.
+      const allEvents = await tx.select({ id: events.id }).from(events);
+      const invites = created.flatMap((g) =>
+        allEvents.map((e) => ({ groupId: g.id, eventId: e.id })),
+      );
+      if (invites.length) await tx.insert(groupEvents).values(invites);
     }
     const groups = await tx
       .select({ id: guestGroups.id, name: guestGroups.name })

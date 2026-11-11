@@ -1,5 +1,6 @@
 import {
   type Dashboard,
+  DEFAULT_GROUP_COLOR,
   type Device,
   type DeviceEvent,
   MIN_SUPPORTED_SYNC_VERSION,
@@ -84,6 +85,7 @@ async function setupWorld() {
   const groupRes = await api.post("/groups", {
     name: "Surabaya",
     isVip: true,
+    eventIds: [event.id],
     sessions: [{ eventId: event.id, ...SESSION }],
   });
   const group = (await read<{ group: { id: string } }>(groupRes)).group;
@@ -287,6 +289,26 @@ describe("akses sinkronisasi", () => {
   });
 });
 
+describe("sesi sampai selesai", () => {
+  it("dikirim ke perangkat sebagai akhir hari (WIB), dan check-in malam tidak di luar sesi", async () => {
+    await api.put(`/groups/${world.group.id}`, {
+      name: "Surabaya",
+      isVip: true,
+      eventIds: [world.event.id],
+      sessions: [{ eventId: world.event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: null }],
+    });
+    const snap = await read<SnapshotResponse>(await world.gateA.client.snapshot());
+    // 23:59:59.999 WIB tanggal 21 Mei = 16:59:59.999 UTC.
+    expect(snap.sessions).toEqual([
+      {
+        groupId: world.group.id,
+        startsAt: "2027-05-21T03:00:00.000Z",
+        endsAt: "2027-05-21T16:59:59.999Z",
+      },
+    ]);
+  });
+});
+
 describe("snapshot", () => {
   it("unduhan penuh: hanya tamu yang diundang, tanpa data pribadi, dengan kelompok dan sesi", async () => {
     const res = await world.gateA.client.snapshot();
@@ -301,7 +323,7 @@ describe("snapshot", () => {
     expect(snap.guests.map((g) => g.displayName).sort()).toEqual(["Bpk. Budi", "Pak Joko", "Sari"]);
     expect(snap.guests.every((g) => g.invited)).toBe(true);
     expect(snap.groups).toEqual([
-      { id: world.group.id, name: "Surabaya", color: "#737373", isVip: true },
+      { id: world.group.id, name: "Surabaya", color: DEFAULT_GROUP_COLOR, isVip: true },
     ]);
     expect(snap.sessions).toHaveLength(1);
 

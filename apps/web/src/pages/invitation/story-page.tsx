@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { MediaRef, StoryItem } from "@wedding/shared";
 import { BookHeart, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
@@ -9,7 +9,7 @@ import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { EmptyState, FormFooter, isAgain, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,7 @@ export function StoryPage() {
   return (
     <>
       <Toolbar
+        empty={!!story.data && items.length === 0}
         summary={`${items.length} tahap`}
         addLabel="Tambah cerita"
         onAdd={() => setEditing({ kind: "new" })}
@@ -142,30 +143,23 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
   const [title, setTitle] = useState(item?.title ?? "");
   const [body, setBody] = useState(item?.body ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(item?.photo ?? null);
-  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: (_again: boolean) => {
+    mutationFn: () => {
       const input = { whenLabel, title, body, photoMediaId: photo?.id ?? null };
       return item
         ? adminApi.invitation.updateStory(item.id, input)
         : adminApi.invitation.createStory(input);
     },
-    onSuccess: async (_data, again) => {
+    onSuccess: async () => {
       await refresh("invitation");
-      if (!again) return onDone();
-      // "Simpan & tambah lagi": dialog tetap terbuka dengan isian kosong untuk tahap berikutnya.
-      setWhenLabel("");
-      setTitle("");
-      setBody("");
-      setPhoto(null);
-      first.current?.focus();
+      onDone();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate(isAgain(event));
+    save.mutate();
   }
 
   return (
@@ -174,12 +168,7 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
         <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
           <Field label="Waktu" hint='Mis. "2019" atau "Mei 2022".'>
             {(id) => (
-              <Input
-                id={id}
-                ref={first}
-                value={whenLabel}
-                onChange={(e) => setWhenLabel(e.target.value)}
-              />
+              <Input id={id} value={whenLabel} onChange={(e) => setWhenLabel(e.target.value)} />
             )}
           </Field>
           <Field label="Judul" required>
@@ -211,12 +200,7 @@ function StoryForm({ item, onDone }: { item: StoryItem | null; onDone: () => voi
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <FormFooter
-        onCancel={onDone}
-        pending={save.isPending}
-        disabled={!title.trim()}
-        again={!item}
-      />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!title.trim()} />
     </form>
   );
 }

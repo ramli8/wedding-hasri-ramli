@@ -8,6 +8,7 @@ import { Field } from "@/components/kit/field";
 import { Input } from "@/components/ui/input";
 import { adminApi, downloads } from "../../lib/admin-api.js";
 import { api } from "../../lib/api.js";
+import { isoToWibInput, wibInputToIso } from "../../lib/datetime.js";
 import { useRefresh } from "../../lib/queries.js";
 
 export function WeddingForm({ initial }: { initial: Settings | null }) {
@@ -15,6 +16,8 @@ export function WeddingForm({ initial }: { initial: Settings | null }) {
   const [groomName, setGroomName] = useState(initial?.groomName ?? "");
   const [brideName, setBrideName] = useState(initial?.brideName ?? "");
   const [publicBaseUrl, setPublicBaseUrl] = useState(initial?.publicBaseUrl ?? "");
+  // Tujuan hitung mundur di undangan (WIB). Kosong: tanggal acara pertama.
+  const [countdownAt, setCountdownAt] = useState(isoToWibInput(initial?.countdownAt));
 
   // "Tersimpan" ditampilkan toast global (MutationCache di main.tsx).
   const save = useMutation({
@@ -24,7 +27,7 @@ export function WeddingForm({ initial }: { initial: Settings | null }) {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate({ groomName, brideName, publicBaseUrl });
+    save.mutate({ groomName, brideName, publicBaseUrl, countdownAt: wibInputToIso(countdownAt) });
   }
 
   return (
@@ -67,6 +70,16 @@ export function WeddingForm({ initial }: { initial: Settings | null }) {
               placeholder="https://"
               value={publicBaseUrl}
               onChange={(e) => setPublicBaseUrl(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Hitung mundur ke (WIB)">
+          {(id) => (
+            <Input
+              id={id}
+              type="datetime-local"
+              value={countdownAt}
+              onChange={(e) => setCountdownAt(e.target.value)}
             />
           )}
         </Field>

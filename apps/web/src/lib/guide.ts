@@ -55,7 +55,7 @@ export function useGuideSteps() {
       title: "Buat acara",
       why: "Setiap tamu diundang ke satu atau lebih acara. Check-in dan RSVP diatur per acara.",
       todo: [
-        "Nama acara (Akad Nikah, Resepsi, …), waktu mulai dan selesai (WIB)",
+        "Nama acara (Akad Nikah, Resepsi, …) dan tanggalnya; jam datang diatur di Kelompok",
         "Nama tempat, alamat, dan link Google Maps (salin dari aplikasi Maps)",
         "RSVP dan Check-in QR sudah aktif; matikan untuk acara yang tidak memakainya (mis. akad)",
         "Pesan undangan tiap acara otomatis dibuat; ubah di Pengaturan → Pesan undangan",
@@ -68,8 +68,12 @@ export function useGuideSteps() {
       id: "kelompok",
       phase: "Persiapan",
       title: "Buat kelompok tamu",
-      why: "Kelompok memberi warna, penanda VIP, dan jam sesi kedatangan. Boleh dilewati.",
-      todo: ["Nama kelompok, mis. Keluarga, Teman Kantor, VIP", "Jam sesi per acara (opsional)"],
+      why: "Kelompok memberi warna, penanda VIP, acara yang diundang, dan jam datang. Boleh dilewati.",
+      todo: [
+        "Nama kelompok, mis. Keluarga, Teman Kantor, VIP",
+        "Centang acara yang diundang untuk kelompok ini",
+        "Jam datang per acara: Jam bebas, atau jam tertentu (boleh sampai selesai)",
+      ],
       to: "/admin/kelompok",
       cta: "Buka Kelompok",
       optional: true,

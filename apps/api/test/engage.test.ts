@@ -77,6 +77,7 @@ async function setup() {
     await read<{ group: { id: string } }>(
       await api.post("/groups", {
         name: "Surabaya",
+        eventIds: [resepsi.id],
         sessions: [{ eventId: resepsi.id, ...SESSION }],
       }),
     )

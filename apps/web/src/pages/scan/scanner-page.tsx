@@ -717,7 +717,7 @@ function RecentRow({ item }: { item: RecentCheckin }) {
         <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
           {item.group && (
             <span
-              className="size-2 shrink-0 rounded-full"
+              className="size-2 shrink-0 rounded-full ring-1 ring-black/15"
               style={{ backgroundColor: item.group.color }}
               aria-hidden
             />
@@ -775,7 +775,7 @@ function LastPanel({ last }: { last: OkOutcome }) {
             {group && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span
-                  className="size-2 rounded-full"
+                  className="size-2 rounded-full ring-1 ring-black/15"
                   style={{ backgroundColor: group.color }}
                   aria-hidden
                 />

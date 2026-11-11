@@ -26,8 +26,9 @@ Ketik persis seperti ini supaya hasilnya mudah dicek.
 | Kata sandi admin | `RahasiaNikah2027` (minimal 10 huruf) |
 | Mempelai pria / wanita | `Mohamad Rizal Ramli` / `Hasri Wiji Aqsari` |
 | Alamat situs | `https://hasriramli.com` |
-| Acara 1 | Nama `Akad Nikah`, mulai `21 Mei 2027 08.00`, selesai `10.00`, tempat `Masjid Al-Ikhlas` |
-| Acara 2 | Nama `Resepsi`, mulai `21 Mei 2027 11.00`, selesai `14.00`, tempat `Gedung Graha Bunga` |
+| Acara 1 | Nama `Akad Nikah`, tanggal `21 Mei 2027`, tempat `Masjid Al-Ikhlas` |
+| Acara 2 | Nama `Resepsi`, tanggal `21 Mei 2027`, tempat `Gedung Graha Bunga` |
+| Acara & jam datang (di Kelompok) | Keluarga: Akad + Resepsi, Resepsi `11.00` sampai selesai; Teman Kantor: hanya Resepsi `12.00–13.00`; Teman Kuliah: hanya Resepsi, jam bebas |
 | Kelompok | `Keluarga` (VIP), `Teman Kantor`, `Teman Kuliah` |
 | Tamu A | `Bpk. Budi Santoso`, HP `0812 3456 7801`, kelompok Keluarga, diundang Akad + Resepsi |
 | Tamu B | `Sari Lestari`, Instagram `sarilestari`, kelompok Teman Kuliah, diundang Resepsi |
@@ -88,6 +89,8 @@ Epson L3110 untuk photobooth.
   **Harusnya**: ditolak, ada pesan "Alamat situs harus diawali http:// atau https://".
 - [ ] **2.2** Ganti **Alamat situs** menjadi `https://hasriramli.com`, klik **Simpan**.
   **Harusnya**: muncul tanda kecil "Tersimpan".
+- [ ] **2.2b** Di halaman yang sama isi **Hitung mundur ke (WIB)** `21 Mei 2027 11.00`, Simpan.
+  (Dipakai hitung mundur di undangan; kosong = tanggal acara pertama.)
 - [ ] **2.3** Menu **Pengaturan → Tampilan**: pilih **Gelap**, lalu muat ulang halaman (F5).
   **Harusnya**: tetap gelap. Kembalikan ke **Terang** atau **Sistem**.
 - [ ] **2.4** Perkecil jendela Chrome selebar HP (atau buka admin dari HP lewat ALAMAT-HP).
@@ -98,28 +101,26 @@ Epson L3110 untuk photobooth.
 
 - [ ] **3.1** Menu **Acara**.
   **Harusnya**: saat masih kosong hanya ada **satu** tombol, **Tambah acara pertama**.
-- [ ] **3.2** Klik **Tambah acara pertama**. Isi **Nama acara** `Akad Nikah`, **Mulai**
-  `21 Mei 2027 08.00` (**Selesai** terisi sendiri 10.00), **Nama tempat** `Masjid Al-Ikhlas`,
+- [ ] **3.2** Klik **Tambah acara pertama**. Isi **Nama acara** `Akad Nikah`, **Tanggal**
+  `21 Mei 2027` (tanpa jam; jam datang diatur di Kelompok), **Nama tempat** `Masjid Al-Ikhlas`,
   **Alamat** `Jl. Mawar No. 1, Surabaya`. Untuk **Link Google Maps**: buka Google Maps di HP/laptop,
   cari tempatnya, tekan **Bagikan → Salin link**, lalu tempel di kolom ini.
   **Harusnya**: **RSVP** dan **Check-in QR** sudah menyala. Matikan keduanya (akad tidak memakainya),
   lalu **Simpan**.
 - [ ] **3.3** Di kartu Akad Nikah, klik **peta**.
   **Harusnya**: Google Maps terbuka di lokasi yang Anda salin.
-- [ ] **3.4** Klik **Tambah acara** (sekarang muncul di kanan atas). Isi `Resepsi`, mulai
-  `21 Mei 2027 11.00`, selesai `14.00`, **Nama tempat** `Gedung Graha Bunga`, **Alamat**, dan
-  **Link Google Maps**.
+- [ ] **3.4** Klik **Tambah acara** (sekarang muncul di kanan atas). Isi `Resepsi`, tanggal
+  `21 Mei 2027`, **Nama tempat** `Gedung Graha Bunga`, **Alamat**, dan **Link Google Maps**.
   **Harusnya**: RSVP dan Check-in QR menyala. Simpan.
 - [ ] **3.5** Tambah acara ketiga `Ngunduh Mantu`.
   **Harusnya**: RSVP menyala, tetapi **Check-in QR mati** (sudah dipakai Resepsi; scanner hanya
   melayani satu acara). Batal / hapus acara ini setelahnya.
-- [ ] **3.6** Coba ubah Resepsi: **Selesai** dibuat `10.00` (sebelum mulai), Simpan.
-  **Harusnya**: ditolak "Jam selesai harus setelah jam mulai". Kembalikan ke `14.00`.
 - [ ] **3.7** **Link Google Maps** diisi `javascript:alert(1)`.
   **Harusnya**: ditolak "Link peta harus diawali http:// atau https://".
 - [ ] **3.8** Di kartu Resepsi klik **Pesan** (atau **Pengaturan → Pesan undangan**).
   **Harusnya**: halaman Pesan undangan dengan tombol pilihan acara (Akad Nikah, Resepsi). Isi pesan
-  sudah terisi lengkap (salam, nama tamu tebal, acara, 🗓 tanggal, 🕙 jam, 📍 tempat, link,
+  sudah terisi lengkap (salam, nama tamu tebal, acara, 🗓 tanggal, 🕙 jam datang sesuai kelompok
+  tamu, 📍 tempat, link,
   penutup, nama mempelai). Di bawahnya pratinjau tab **WhatsApp** (kartu link + teks tebal) dan
   **Instagram** (tanda `*` tampil apa adanya).
 - [ ] **3.9** Ubah satu kalimat, **Simpan**, pindah ke Akad Nikah lalu kembali ke Resepsi.
@@ -130,24 +131,41 @@ Epson L3110 untuk photobooth.
 
 ## Bagian 4. Kelompok
 
-- [ ] **4.1** Menu **Kelompok** → **Tambah kelompok**. **Nama kelompok** `Keluarga`, pilih
-  **Warna**, nyalakan **VIP**, Simpan.
-- [ ] **4.2** Tambah `Teman Kantor` dan `Teman Kuliah` (tanpa VIP).
-  **Harusnya**: tiga kelompok tampil dengan warnanya.
-- [ ] **4.3** (Opsional) **Jam sesi per acara**: untuk `Teman Kantor` di Resepsi isi 12.00–13.00.
+- [ ] **4.1** Menu **Kelompok**.
+  **Harusnya**: saat kosong hanya ada **satu** tombol, **Tambah kelompok pertama**.
+- [ ] **4.2** Tambah `Keluarga`, pilih **Warna**, nyalakan **VIP**. Di **Acara & jam datang**
+  semua acara awalnya **Tidak diundang**. Klik **Simpan** tanpa mencentang.
+  **Harusnya**: ditolak "Centang minimal satu acara". Centang **Akad Nikah** dan **Resepsi**.
+  Pada Resepsi pilih **Jam tertentu**.
+  **Harusnya**: jam langsung terisi `09.00`–`11.00` (bukan jam sekarang). Ubah **Mulai** ke `11.00`,
+  centang **Sampai selesai**. Akad Nikah biarkan **Jam bebas**. Klik **Simpan**.
+- [ ] **4.3** Tambah `Teman Kantor`: centang hanya **Resepsi**, pilih **Jam tertentu**
+  `12.00`–`13.00`. Lalu `Teman Kuliah`: centang hanya **Resepsi**, biarkan **Jam bebas**.
+  **Harusnya**: tiap kelompok tampil sebagai kartu berwarna. Kartu Keluarga: Akad Nikah "Jam
+  bebas" dan Resepsi "11.00 – sampai selesai"; Teman Kantor hanya Resepsi "12.00–13.00";
+  Teman Kuliah hanya Resepsi "Jam bebas".
+- [ ] **4.4** Coba **Jam tertentu** tanpa mengisi jam, atau jam selesai sebelum jam mulai.
+  **Harusnya**: ditolak dengan pesan jelas.
+- [ ] **4.5** Ubah tanggal Resepsi di menu Acara menjadi 22 Mei, lalu buka lagi Keluarga.
+  **Harusnya**: jam datangnya tetap 11.00 (ikut pindah ke tanggal baru).
+- [ ] **4.6** Hapus kelompok yang masih dipakai tamu: diminta memindahkan tamunya dulu.
+- [ ] **4.7** (Setelah Bagian 5) Buka `Teman Kuliah`, centang **Akad Nikah**.
+  **Harusnya**: muncul keterangan "1 tamu kelompok ini ikut diundang ke Akad Nikah". Simpan, lalu
+  cek Sari di menu Tamu: kini diundang Akad + Resepsi. Kembalikan (lepas centang Akad, Simpan).
 
 ## Bagian 5. Tamu
 
 - [ ] **5.1** Menu **Tamu** → **Tambah tamu**. Isi hanya **Nama undangan** `Bpk. Budi Santoso`, klik
   **Simpan**.
   **Harusnya**: ditolak "Isi nomor HP atau Instagram".
-- [ ] **5.2** Lengkapi tamu A: **Nomor HP / WhatsApp** `0812 3456 7801`, **Kelompok** `Keluarga`,
-  centang acara **Akad Nikah** dan **Resepsi**. Klik **Simpan & tambah lagi**.
-  **Harusnya**: tersimpan, jendela tetap terbuka dan kosong untuk tamu berikutnya.
+- [ ] **5.2** Lengkapi tamu A: **Nomor HP / WhatsApp** `0812 3456 7801`, **Kelompok** `Keluarga`.
+  **Harusnya**: acara **Akad Nikah** dan **Resepsi** tercentang otomatis (acara kelompok Keluarga).
+  Klik **Simpan**. **Harusnya**: tersimpan dan jendela tertutup. Klik **Tambah** lagi.
 - [ ] **5.3** Tamu B: **Nama undangan** `Sari Lestari`, **Instagram** `sarilestari` (tanpa @),
-  kelompok `Teman Kuliah`, acara **Resepsi**. **Simpan & tambah lagi**.
+  kelompok `Teman Kuliah`. **Harusnya**: hanya **Resepsi** yang tercentang. **Simpan**, lalu
+  **Tambah** lagi.
 - [ ] **5.4** Tamu C: `Keluarga Bpk. Joko`, HP `0812 3456 7803`, nyalakan **Rombongan**, acara
-  **Resepsi**, **Catatan untuk penjaga** `Bawa kursi roda`. **Simpan & tambah lagi**.
+  **Resepsi**, **Catatan untuk penjaga** `Bawa kursi roda`. **Simpan**, lalu **Tambah** lagi.
 - [ ] **5.5** Tamu D: `Dewi Anggraini`, HP `0812 3456 7801` (sengaja sama dengan Budi).
   **Harusnya**: muncul peringatan nomor ini sudah dipakai tamu lain. Ganti jadi `0812 3456 7804`,
   kelompok `Teman Kantor`, acara **Resepsi**, klik **Simpan**.

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AdminWish, MediaRef } from "@wedding/shared";
 import { Gift, SquarePen, Trash2 } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { ImageField } from "@/components/image-field";
 import { Alert } from "@/components/kit/alert";
@@ -9,7 +9,7 @@ import { Button } from "@/components/kit/button";
 import { Dialog } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
 import { FormSection } from "@/components/kit/form-rows";
-import { EmptyState, FormFooter, isAgain, Tip, Toolbar } from "@/components/kit/invitation-kit";
+import { EmptyState, FormFooter, Tip, Toolbar } from "@/components/kit/invitation-kit";
 import { ReorderButtons } from "@/components/kit/reorder-buttons";
 import {
   AlertDialog,
@@ -74,6 +74,7 @@ export function WishlistPage() {
   return (
     <>
       <Toolbar
+        empty={!!wishes.data && items.length === 0}
         summary={`${items.length} hadiah`}
         addLabel="Tambah hadiah"
         onAdd={() => setEditing({ kind: "new" })}
@@ -250,10 +251,9 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
   const [url, setUrl] = useState(item?.url ?? "");
   const [photo, setPhoto] = useState<MediaRef | null>(item?.photo ?? null);
   const [quantity, setQuantity] = useState(String(item?.quantity ?? 1));
-  const first = useRef<HTMLInputElement>(null);
 
   const save = useMutation({
-    mutationFn: (_again: boolean) => {
+    mutationFn: () => {
       const input = {
         name,
         note,
@@ -265,22 +265,15 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
         ? adminApi.invitation.updateWish(item.id, input)
         : adminApi.invitation.createWish(input);
     },
-    onSuccess: async (_data, again) => {
+    onSuccess: async () => {
       await refresh("invitation");
-      if (!again) return onDone();
-      // "Simpan & tambah lagi": dialog tetap terbuka dengan isian kosong untuk hadiah berikutnya.
-      setName("");
-      setNote("");
-      setUrl("");
-      setPhoto(null);
-      setQuantity("1");
-      first.current?.focus();
+      onDone();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    save.mutate(isAgain(event));
+    save.mutate();
   }
 
   return (
@@ -291,7 +284,6 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
             {(id) => (
               <Input
                 id={id}
-                ref={first}
                 required
                 maxLength={120}
                 value={name}
@@ -346,12 +338,7 @@ function WishForm({ item, onDone }: { item: AdminWish | null; onDone: () => void
       </FormSection>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      <FormFooter
-        onCancel={onDone}
-        pending={save.isPending}
-        disabled={!name.trim()}
-        again={!item}
-      />
+      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!name.trim()} />
     </form>
   );
 }

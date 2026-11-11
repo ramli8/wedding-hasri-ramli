@@ -235,6 +235,7 @@ describe("kelompok", () => {
     const group = await makeGroup({
       name: "Surabaya",
       color: "#2563eb",
+      eventIds: [event.id],
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
       ],
@@ -249,9 +250,41 @@ describe("kelompok", () => {
     ]);
   });
 
+  it("jam sesi tanpa jam selesai berarti sampai selesai", async () => {
+    const event = await makeEvent();
+    const group = await makeGroup({
+      eventIds: [event.id],
+      sessions: [{ eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: null }],
+    });
+    expect(group.sessions).toEqual([
+      { eventId: event.id, startsAt: "2027-05-21T03:00:00.000Z", endsAt: null },
+    ]);
+  });
+
+  it("tanggal acara diubah: jam datang kelompok ikut pindah tanggal, jamnya tetap", async () => {
+    const event = await makeEvent({ startsAt: "2027-05-20T17:00:00Z", endsAt: null });
+    const group = await makeGroup({
+      eventIds: [event.id],
+      sessions: [
+        { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
+      ],
+    });
+    // 21 Mei -> 23 Mei (00.00 WIB).
+    await api.put(`/events/${event.id}`, { name: event.name, startsAt: "2027-05-22T17:00:00Z" });
+    const groups = (await read<{ items: Group[] }>(await api.get("/groups"))).items;
+    expect(groups.find((g) => g.id === group.id)?.sessions).toEqual([
+      {
+        eventId: event.id,
+        startsAt: "2027-05-23T03:00:00.000Z",
+        endsAt: "2027-05-23T05:00:00.000Z",
+      },
+    ]);
+  });
+
   it("memperbarui kelompok dengan mengganti seluruh jam sesi", async () => {
     const event = await makeEvent();
     const group = await makeGroup({
+      eventIds: [event.id],
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: "2027-05-21T05:00:00Z" },
       ],
@@ -259,6 +292,7 @@ describe("kelompok", () => {
     const res = await api.put(`/groups/${group.id}`, {
       name: "Keluarga",
       isVip: true,
+      eventIds: [event.id],
       sessions: [],
     });
     expect(res.status).toBe(200);
@@ -270,6 +304,7 @@ describe("kelompok", () => {
     await makeGroup();
     const unknownEvent = await api.post("/groups", {
       name: "X",
+      eventIds: ["00000000-0000-4000-8000-000000000000"],
       sessions: [
         {
           eventId: "00000000-0000-4000-8000-000000000000",
@@ -282,6 +317,7 @@ describe("kelompok", () => {
 
     const reversed = await api.post("/groups", {
       name: "Y",
+      eventIds: [event.id],
       sessions: [
         { eventId: event.id, startsAt: "2027-05-21T05:00:00Z", endsAt: "2027-05-21T03:00:00Z" },
       ],
@@ -290,6 +326,42 @@ describe("kelompok", () => {
 
     expect((await api.post("/groups", { name: "Keluarga" })).status).toBe(409);
     expect((await api.post("/groups", { name: "Z", color: "merah" })).status).toBe(400);
+  });
+
+  it("acara kelompok: jam datang hanya untuk acara yang diundang", async () => {
+    const event = await makeEvent();
+    const res = await api.post("/groups", {
+      name: "X",
+      eventIds: [],
+      sessions: [{ eventId: event.id, startsAt: "2027-05-21T03:00:00Z", endsAt: null }],
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("mengubah acara kelompok ikut menambah/mencabut undangan tamunya, pengecualian lain tetap", async () => {
+    const akad = await makeEvent({ slug: "akad", name: "Akad" });
+    const resepsi = await makeEvent();
+    const ngunduh = await makeEvent({ slug: "ngunduh", name: "Ngunduh" });
+    const group = await makeGroup({ eventIds: [akad.id] });
+    expect(group.eventIds).toEqual([akad.id]);
+    // Tamu ini juga diundang ke Ngunduh secara pribadi (di luar acara kelompok).
+    const guest = await makeGuest({ groupId: group.id, eventIds: [akad.id, ngunduh.id] });
+    const other = await makeGuest({ phone: "0812-0000-0001", eventIds: [akad.id] });
+    const revBefore = await revOf(guest.id);
+
+    const res = await api.put(`/groups/${group.id}`, { name: "Keluarga", eventIds: [resepsi.id] });
+    expect(res.status).toBe(200);
+    expect((await read<{ group: Group }>(res)).group.eventIds).toEqual([resepsi.id]);
+
+    const invited = async (id: string) =>
+      (await read<{ guest: Guest }>(await api.get(`/guests/${id}`))).guest.events
+        .map((e) => e.eventId)
+        .sort();
+    expect(await invited(guest.id)).toEqual([resepsi.id, ngunduh.id].sort());
+    // Rev naik supaya perangkat pintu menerima undangan yang berubah.
+    expect(await revOf(guest.id)).toBeGreaterThan(revBefore);
+    // Tamu di luar kelompok tidak tersentuh.
+    expect(await invited(other.id)).toEqual([akad.id]);
   });
 
   it("menghitung tamu aktif, dan menolak menghapus kelompok yang masih dipakai", async () => {
@@ -718,6 +790,24 @@ describe("impor CSV", () => {
     });
     const [budi] = (await listGuests()).items;
     expect(budi?.events).toHaveLength(2);
+  });
+
+  it("kolom acara kosong mengikuti acara kelompoknya; kelompok baru diundang ke semua acara", async () => {
+    const all = (await read<{ items: { id: string }[] }>(await api.get("/events"))).items;
+    const [first] = all;
+    if (!first || all.length < 2) throw new Error("butuh minimal 2 acara");
+    await makeGroup({ name: "Kantor", eventIds: [first.id] });
+
+    await api.post("/guests/import/commit", {
+      csv: "nama_undangan,hp,kelompok\nBudi,0812-1111-2222,Kantor\nSari,0812-1111-3333,Arisan\n",
+    });
+    const guests = (await listGuests()).items;
+    const budi = guests.find((g) => g.displayName === "Budi");
+    const sari = guests.find((g) => g.displayName === "Sari");
+    expect(budi?.events.map((e) => e.eventId)).toEqual([first.id]);
+    expect(sari?.events).toHaveLength(all.length);
+    const groups = (await read<{ items: Group[] }>(await api.get("/groups"))).items;
+    expect(groups.find((g) => g.name === "Arisan")?.eventIds).toHaveLength(all.length);
   });
 
   it("menolak nama acara yang dipakai beberapa acara, tapi slug-nya tetap bisa dipakai", async () => {

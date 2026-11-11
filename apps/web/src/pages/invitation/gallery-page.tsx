@@ -117,6 +117,7 @@ export function GalleryPage() {
         }}
       />
       <Toolbar
+        empty={!!gallery.data && items.length === 0 && !upload.isPending}
         summary={`${items.length} foto`}
         addLabel={uploadLabel}
         onAdd={() => picker.current?.click()}

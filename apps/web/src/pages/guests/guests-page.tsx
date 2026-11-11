@@ -346,7 +346,9 @@ export function GuestsPage() {
             ? "Memuat…"
             : !isFiltered && total === 0
               ? "Belum ada tamu. Tambahkan satu per satu atau impor dari CSV."
-              : "Tidak ada tamu yang cocok dengan filter."
+              : eventId && !search && !groupId && !sent && extras.length === 0
+                ? `Belum ada tamu yang diundang ke ${eventName(eventId)}. Tambah tamu dan centang acara ini, atau tekan Atur ulang untuk melihat semua tamu.`
+                : "Tidak ada tamu yang cocok dengan filter."
         }
         options={{
           manualPagination: true,

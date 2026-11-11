@@ -6,6 +6,8 @@ export type TemplateVariables = {
   acara: string;
   tanggal: string;
   jam_sesi: string;
+  tempat: string;
+  mempelai: string;
 };
 
 /**

@@ -55,6 +55,8 @@ describe("renderTemplate", () => {
     acara: "Resepsi",
     tanggal: "Jumat, 21 Mei 2027",
     jam_sesi: "10.00–12.00 WIB",
+    tempat: "Gedung Graha Bunga",
+    mempelai: "Hasri & Ramli",
   };
 
   it("mengganti semua variabel, termasuk yang muncul lebih dari sekali", () => {
@@ -80,14 +82,26 @@ describe("renderTemplate", () => {
   it("template bawaan menghasilkan pesan lengkap, dan rapi bila tanggal dan jam kosong", async () => {
     const { DEFAULT_MESSAGE_TEMPLATE } = await import("@wedding/shared");
     const full = renderTemplate(DEFAULT_MESSAGE_TEMPLATE, vars);
-    expect(full).toContain("Tanggal: Jumat, 21 Mei 2027");
-    expect(full).toContain("Waktu: 10.00–12.00 WIB");
+    expect(full).toContain("*Bpk. Budi*");
+    expect(full).toContain("*Resepsi* pernikahan kami");
+    expect(full).toContain("🗓 Jumat, 21 Mei 2027");
+    expect(full).toContain("🕙 10.00–12.00 WIB");
+    expect(full).toContain("📍 Gedung Graha Bunga");
     expect(full).toContain("https://x.id/u/ABC234");
+    expect(full).toContain("*Hasri & Ramli*");
+    expect(full).not.toMatch(/\{\w+\}/);
 
-    const bare = renderTemplate(DEFAULT_MESSAGE_TEMPLATE, { ...vars, tanggal: "", jam_sesi: "" });
-    expect(bare).not.toContain("Tanggal:");
-    expect(bare).not.toContain("Waktu:");
-    expect(bare).toContain("Kami mengundang Anda ke Resepsi.");
+    // Tanggal, jam, dan tempat kosong: barisnya dibuang, tidak tersisa ikon yang menggantung.
+    const bare = renderTemplate(DEFAULT_MESSAGE_TEMPLATE, {
+      ...vars,
+      tanggal: "",
+      jam_sesi: "",
+      tempat: "",
+    });
+    expect(bare).not.toContain("🗓");
+    expect(bare).not.toContain("🕙");
+    expect(bare).not.toContain("📍");
+    expect(bare).toContain("*Resepsi* pernikahan kami");
   });
 
   it("membiarkan variabel yang tidak dikenal", () => {

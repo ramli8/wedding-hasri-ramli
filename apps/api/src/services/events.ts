@@ -1,4 +1,4 @@
-import type { Event, EventData } from "@wedding/shared";
+import { DEFAULT_MESSAGE_TEMPLATE, type Event, type EventData } from "@wedding/shared";
 import { asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isForeignKeyViolation, isUniqueViolation } from "../db/errors.js";
@@ -59,9 +59,34 @@ export async function getEvent(db: Db, id: string): Promise<Event> {
   return toEvent(row);
 }
 
-function eventColumns(input: EventData) {
+/** "Resepsi & Ramah Tamah" -> "resepsi-ramah-tamah"; huruf non-Latin saja -> "acara". */
+const slugify = (text: string) =>
+  text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "acara";
+
+/**
+ * Kode singkat unik dari nama acara (admin tidak perlu mengisinya; dipakai sebagai penanda di
+ * impor/ekspor bila dua acara bernama sama). Bentrok diberi akhiran -2, -3, dst.
+ */
+async function uniqueSlug(db: Db, name: string, exceptId?: string): Promise<string> {
+  const base = slugify(name);
+  const taken = new Set(
+    (await db.select({ id: events.id, slug: events.slug }).from(events))
+      .filter((row) => row.id !== exceptId)
+      .map((row) => row.slug),
+  );
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+
+function eventColumns(input: EventData, slug: string) {
   return {
-    slug: input.slug,
+    slug,
     name: input.name,
     startsAt: input.startsAt ? new Date(input.startsAt) : null,
     endsAt: input.endsAt ? new Date(input.endsAt) : null,
@@ -74,7 +99,8 @@ function eventColumns(input: EventData) {
 }
 
 async function saveTemplate(tx: Pick<Db, "insert" | "delete">, eventId: string, body: string) {
-  if (!body) {
+  // Sama dengan bawaan = tidak disimpan, supaya perbaikan template bawaan ikut terpakai.
+  if (!body.trim() || body.trim() === DEFAULT_MESSAGE_TEMPLATE.trim()) {
     await tx.delete(messageTemplates).where(eq(messageTemplates.eventId, eventId));
     return;
   }
@@ -91,10 +117,11 @@ export async function createEvent(db: Db, input: EventData): Promise<Event> {
     const id = await db.transaction(async (tx) => {
       const [row] = await tx
         .insert(events)
-        .values(eventColumns(input))
+        .values(eventColumns(input, input.slug ?? (await uniqueSlug(db, input.name))))
         .returning({ id: events.id });
       if (!row) throw new Error("Gagal membuat acara");
-      await saveTemplate(tx, row.id, input.messageTemplate);
+      if (input.messageTemplate !== undefined)
+        await saveTemplate(tx, row.id, input.messageTemplate);
       return row.id;
     });
     return await getEvent(db, id);
@@ -105,21 +132,30 @@ export async function createEvent(db: Db, input: EventData): Promise<Event> {
 }
 
 export async function updateEvent(db: Db, id: string, input: EventData): Promise<Event> {
+  // Kode singkat lama dipertahankan saat nama diubah (impor lama yang memakainya tetap cocok).
+  const existing = await getEvent(db, id);
   try {
     await db.transaction(async (tx) => {
       const updated = await tx
         .update(events)
-        .set(eventColumns(input))
+        .set(eventColumns(input, input.slug ?? existing.slug))
         .where(eq(events.id, id))
         .returning({ id: events.id });
       if (updated.length === 0) throw new AppError(404, "NOT_FOUND", "Acara tidak ditemukan");
-      await saveTemplate(tx, id, input.messageTemplate);
+      if (input.messageTemplate !== undefined) await saveTemplate(tx, id, input.messageTemplate);
     });
     return await getEvent(db, id);
   } catch (err) {
     if (isUniqueViolation(err, "events_slug_unique")) throw slugTaken();
     throw err;
   }
+}
+
+/** Pesan undangan satu acara (Pengaturan → Pesan undangan). Terhapus otomatis bersama acaranya. */
+export async function setEventMessage(db: Db, id: string, body: string): Promise<Event> {
+  await getEvent(db, id);
+  await saveTemplate(db, id, body);
+  return getEvent(db, id);
 }
 
 export async function deleteEvent(db: Db, id: string): Promise<void> {

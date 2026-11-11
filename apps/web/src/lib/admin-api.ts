@@ -127,6 +127,13 @@ export const adminApi = {
       request(`${base}/events`, eventResponseSchema, withBody("POST", input)),
     update: (id: string, input: EventInput) =>
       request(`${base}/events/${id}`, eventResponseSchema, withBody("PUT", input)),
+    /** Pesan undangan acara ini (Pengaturan → Pesan undangan). Kosong = bawaan. */
+    saveMessage: (id: string, messageTemplate: string) =>
+      request(
+        `${base}/events/${id}/message`,
+        eventResponseSchema,
+        withBody("PUT", { messageTemplate }),
+      ),
     remove: (id: string) => request(`${base}/events/${id}`, okSchema, withBody("DELETE")),
   },
 

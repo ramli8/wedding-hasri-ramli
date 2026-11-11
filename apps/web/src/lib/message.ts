@@ -22,6 +22,11 @@ export function sessionLabel(event: Event, group: Group | null | undefined) {
   return "";
 }
 
+/** "Hasri Wiji Aqsari & Mohamad Rizal Ramli" dari Pengaturan → Pernikahan. */
+export function coupleNames(settings: Settings | null | undefined) {
+  return settings ? `${settings.brideName} & ${settings.groomName}` : "";
+}
+
 /** Mengisi variabel template untuk satu tamu di satu acara. */
 export function renderGuestText(
   template: string,
@@ -39,6 +44,8 @@ export function renderGuestText(
     acara: event.name,
     tanggal: formatEventDate(event.startsAt),
     jam_sesi: sessionLabel(event, group),
+    tempat: event.venueName ?? "",
+    mempelai: coupleNames(settings),
   });
 }
 

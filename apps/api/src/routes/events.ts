@@ -1,9 +1,16 @@
-import { eventInputSchema } from "@wedding/shared";
+import { eventInputSchema, eventMessageSchema } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { validate } from "../http/validate.js";
-import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from "../services/events.js";
+import {
+  createEvent,
+  deleteEvent,
+  getEvent,
+  listEvents,
+  setEventMessage,
+  updateEvent,
+} from "../services/events.js";
 
 const idParam = z.object({ id: z.uuid() });
 
@@ -20,6 +27,17 @@ export function eventRoutes({ db }: AppDeps) {
       const event = await updateEvent(db, c.req.valid("param").id, c.req.valid("json"));
       return c.json({ event });
     })
+    .put(
+      "/:id/message",
+      validate("param", idParam),
+      validate("json", eventMessageSchema),
+      async (c) => {
+        const { id } = c.req.valid("param");
+        return c.json({
+          event: await setEventMessage(db, id, c.req.valid("json").messageTemplate),
+        });
+      },
+    )
     .delete("/:id", validate("param", idParam), async (c) => {
       await deleteEvent(db, c.req.valid("param").id);
       return c.json({ ok: true });

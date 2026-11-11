@@ -7,6 +7,7 @@ import type {
   ImportPreview,
   Settings,
 } from "@wedding/shared";
+import { DEFAULT_MESSAGE_TEMPLATE } from "@wedding/shared";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { guests } from "../src/db/schema.js";
@@ -114,6 +115,51 @@ describe("pengaturan", () => {
 });
 
 describe("acara", () => {
+  it("kode singkat dibuat otomatis dari nama, unik, dan tidak berubah saat nama diganti", async () => {
+    const create = async (name: string) =>
+      read<{ event: Event }>(await api.post("/events", { name })).then((r) => r.event);
+    const a = await create("Résepsi & Ramah Tamah");
+    const b = await create("Résepsi & Ramah Tamah");
+    const c = await create("婚礼");
+    expect([a.slug, b.slug, c.slug]).toEqual([
+      "resepsi-ramah-tamah",
+      "resepsi-ramah-tamah-2",
+      "acara",
+    ]);
+
+    const renamed = await api.put(`/events/${a.id}`, { name: "Resepsi Malam" });
+    expect((await read<{ event: Event }>(renamed)).event.slug).toBe("resepsi-ramah-tamah");
+  });
+
+  it("pesan diatur lewat endpoint sendiri; mengubah acara tidak menghapusnya", async () => {
+    const event = await makeEvent();
+    const saved = await api.put(`/events/${event.id}/message`, {
+      messageTemplate: "Halo {panggilan}, datang ke {acara} ya",
+    });
+    expect(saved.status).toBe(200);
+    expect((await read<{ event: Event }>(saved)).event.messageTemplate).toBe(
+      "Halo {panggilan}, datang ke {acara} ya",
+    );
+
+    // Formulir acara tidak lagi mengirim messageTemplate.
+    const edited = await api.put(`/events/${event.id}`, { name: "Resepsi Malam" });
+    expect((await read<{ event: Event }>(edited)).event.messageTemplate).toBe(
+      "Halo {panggilan}, datang ke {acara} ya",
+    );
+
+    const reset = await api.put(`/events/${event.id}/message`, { messageTemplate: "" });
+    expect((await read<{ event: Event }>(reset)).event.messageTemplate).toBe("");
+    const missing = "00000000-0000-4000-8000-000000000000";
+    expect((await api.put(`/events/${missing}/message`, { messageTemplate: "x" })).status).toBe(
+      404,
+    );
+  });
+
+  it("template yang sama dengan bawaan tidak disimpan, agar ikut perbaikan bawaan", async () => {
+    const event = await makeEvent({ slug: undefined, messageTemplate: DEFAULT_MESSAGE_TEMPLATE });
+    expect(event.messageTemplate).toBe("");
+  });
+
   it("membuat acara beserta template pesan", async () => {
     const event = await makeEvent({ messageTemplate: "Halo {panggilan}" });
     expect(event).toMatchObject({
@@ -789,7 +835,8 @@ describe("ekspor dan template CSV", () => {
     expect(text.startsWith("kode,nama_undangan")).toBe(true);
     expect(text).toContain(`https://nikah.example/u/${guest.code}`);
     expect(text).toContain("Keluarga");
-    expect(text).toContain("resepsi");
+    // Kolom acara memakai nama acara (yang dikenali admin), bukan kode singkat.
+    expect(text).toContain(event.name);
     expect(text).toContain(`"'=HYPERLINK(""http://jahat.example"")"`);
     expect(text).not.toMatch(/,=HYPERLINK/);
   });

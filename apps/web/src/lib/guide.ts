@@ -56,8 +56,9 @@ export function useGuideSteps() {
       why: "Setiap tamu diundang ke satu atau lebih acara. Check-in dan RSVP diatur per acara.",
       todo: [
         "Nama acara (Akad Nikah, Resepsi, …), waktu mulai dan selesai (WIB)",
-        "Nama tempat, alamat, dan link peta",
-        "Aktifkan Check-in QR di acara yang memakai scanner, dan RSVP bila tamu perlu menjawab",
+        "Nama tempat, alamat, dan link Google Maps (salin dari aplikasi Maps)",
+        "RSVP dan Check-in QR sudah aktif; matikan untuk acara yang tidak memakainya (mis. akad)",
+        "Pesan undangan tiap acara otomatis dibuat; ubah di Pengaturan → Pesan undangan",
       ],
       to: "/admin/acara",
       cta: "Buka Acara",

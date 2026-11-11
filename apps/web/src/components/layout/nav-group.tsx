@@ -137,14 +137,18 @@ function SidebarMenuCollapsedDropdown({ item, href }: { item: NavCollapsible; hr
   );
 }
 
+const EXACT_ONLY = new Set(['/admin', '/admin/pengaturan'])
+
 function checkIsActive(
   href: string,
   item: NavItem | { url: string },
   mainNav = false
 ) {
   const path = href.split('?')[0] ?? href
+  // Menu yang alamatnya menjadi awalan menu lain (Beranda, Pengaturan → Pernikahan) hanya aktif
+  // bila alamatnya persis sama; selain itu "Pernikahan" ikut tersorot di "Pesan undangan".
   const isUrl = (url: string) =>
-    url === '/admin' ? path === url : path === url || path.startsWith(`${url}/`)
+    EXACT_ONLY.has(url) ? path === url : path === url || path.startsWith(`${url}/`)
   if ('items' in item && item.items) {
     return item.items.some((child) => isUrl(child.url))
   }

@@ -44,6 +44,7 @@ import { RsvpPage } from "./pages/rsvp-page.js";
 import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
+import { MessageSettings } from "./pages/settings/message-settings.js";
 import { SeoSettings } from "./pages/settings/seo-settings.js";
 import { SettingsLayout } from "./pages/settings/settings-layout.js";
 import {
@@ -239,6 +240,14 @@ const settingsRoute = createRoute({
 });
 const settingsChildren = [
   createRoute({ getParentRoute: () => settingsRoute, path: "/", component: WeddingSettings }),
+  createRoute({
+    getParentRoute: () => settingsRoute,
+    path: "pesan",
+    validateSearch: (search: Record<string, unknown>): { acara?: string } => ({
+      acara: typeof search.acara === "string" && search.acara ? search.acara : undefined,
+    }),
+    component: MessageSettings,
+  }),
   createRoute({ getParentRoute: () => settingsRoute, path: "pratinjau", component: SeoSettings }),
   createRoute({ getParentRoute: () => settingsRoute, path: "sandi", component: PasswordSettings }),
   createRoute({ getParentRoute: () => settingsRoute, path: "cadangan", component: BackupSettings }),

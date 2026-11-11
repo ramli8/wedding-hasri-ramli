@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { DatabaseBackup, Heart, KeyRound, Link2, Palette } from "lucide-react";
+import { DatabaseBackup, Heart, KeyRound, Link2, MessageSquareText, Palette } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Select,
@@ -12,6 +12,11 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/admin/pengaturan", title: "Pernikahan", icon: <Heart size={18} /> },
+  {
+    href: "/admin/pengaturan/pesan",
+    title: "Pesan undangan",
+    icon: <MessageSquareText size={18} />,
+  },
   { href: "/admin/pengaturan/pratinjau", title: "Pratinjau tautan", icon: <Link2 size={18} /> },
   { href: "/admin/pengaturan/sandi", title: "Kata sandi", icon: <KeyRound size={18} /> },
   { href: "/admin/pengaturan/cadangan", title: "Cadangan", icon: <DatabaseBackup size={18} /> },

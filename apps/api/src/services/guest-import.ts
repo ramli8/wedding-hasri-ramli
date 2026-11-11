@@ -309,12 +309,29 @@ const EXPORT_COLUMNS = [
   "link",
 ];
 
+/**
+ * Label acara untuk kolom `acara` di CSV: nama acara (yang dikenali admin), atau kode singkat bila
+ * dua acara bernama sama. Impor menerima keduanya.
+ */
+function eventLabels(rows: { id?: string; slug: string; name: string }[]) {
+  const nameCount = new Map<string, number>();
+  for (const e of rows) {
+    const key = e.name.trim().toLowerCase();
+    nameCount.set(key, (nameCount.get(key) ?? 0) + 1);
+  }
+  return (e: { slug: string; name: string }) =>
+    nameCount.get(e.name.trim().toLowerCase()) === 1 ? e.name.trim() : e.slug;
+}
+
 export async function exportGuestsCsv(db: Db): Promise<string> {
   const settings = await getSettings(db);
   const groups = await db.select({ id: guestGroups.id, name: guestGroups.name }).from(guestGroups);
   const groupName = new Map(groups.map((g) => [g.id, g.name]));
-  const eventRows = await db.select({ id: events.id, slug: events.slug }).from(events);
-  const slug = new Map(eventRows.map((e) => [e.id, e.slug]));
+  const eventRows = await db
+    .select({ id: events.id, slug: events.slug, name: events.name })
+    .from(events);
+  const labelOf = eventLabels(eventRows);
+  const eventLabel = new Map(eventRows.map((e) => [e.id, labelOf(e)]));
 
   const rows = await db
     .select()
@@ -343,7 +360,7 @@ export async function exportGuestsCsv(db: Db): Promise<string> {
     catatan_penjaga: safeCell(g.usherNote),
     acara: invitations
       .filter((i) => i.guestId === g.id)
-      .map((i) => slug.get(i.eventId))
+      .map((i) => eventLabel.get(i.eventId))
       .filter(Boolean)
       .join(";"),
     link: settings && g.code ? `${settings.publicBaseUrl}/u/${g.code}` : "",
@@ -368,13 +385,7 @@ export async function importTemplateCsv(db: Db): Promise<string> {
     .select({ slug: events.slug, name: events.name })
     .from(events)
     .orderBy(asc(events.startsAt), asc(events.name));
-  const nameCount = new Map<string, number>();
-  for (const e of eventRows) {
-    const key = e.name.trim().toLowerCase();
-    nameCount.set(key, (nameCount.get(key) ?? 0) + 1);
-  }
-  const label = (e: { slug: string; name: string }) =>
-    nameCount.get(e.name.trim().toLowerCase()) === 1 ? e.name.trim() : e.slug;
+  const label = eventLabels(eventRows);
   // Contoh kedua: diundang ke acara terakhir saja (biasanya resepsi). Tanpa acara: contoh lama.
   const last = eventRows.at(-1);
   const exampleEvent = last ? label(last) : "resepsi";

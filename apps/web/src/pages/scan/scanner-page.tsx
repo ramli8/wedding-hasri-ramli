@@ -358,7 +358,16 @@ function Scanner() {
         />
       )}
       {outcome && outcome.status !== "need_pax" && (
-        <ResultOverlay outcome={outcome} onClose={closeResult} />
+        <ResultOverlay
+          outcome={outcome}
+          onClose={closeResult}
+          onSearch={() => {
+            setOutcome(null);
+            setTab("cari");
+            // Tunggu tab Cari tampil (HP) sebelum memfokuskan kolomnya.
+            requestAnimationFrame(() => document.getElementById("cari-tamu")?.focus());
+          }}
+        />
       )}
       <WalkinDialog open={walkinOpen} onClose={() => setWalkinOpen(false)} onDone={show} />
     </div>

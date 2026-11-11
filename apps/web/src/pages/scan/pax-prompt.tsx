@@ -42,15 +42,15 @@ export function PaxPrompt({
       aria-label="Jumlah orang rombongan"
       className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background pt-[env(safe-area-inset-top)] text-foreground duration-150 animate-in fade-in"
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-5 sm:p-8 landscape:max-md:p-4 md:grid md:grid-cols-2 md:items-center md:gap-10 md:p-10 lg:gap-16">
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center md:items-start md:text-start landscape:max-md:gap-2">
-          <span className="grid size-20 place-items-center rounded-full bg-muted sm:size-24 landscape:max-md:size-14">
-            <Users className="size-10 sm:size-12 landscape:max-md:size-7" aria-hidden />
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-5 sm:p-8 short:p-4 md:grid md:grid-cols-2 md:items-center md:gap-10 md:p-10 lg:gap-16">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center md:items-start md:text-start short:gap-2">
+          <span className="grid size-20 place-items-center rounded-full bg-muted sm:size-24 short:size-14">
+            <Users className="size-10 sm:size-12 short:size-7" aria-hidden />
           </span>
           <p className="text-sm font-semibold tracking-[0.2em] text-muted-foreground uppercase">
             Rombongan
           </p>
-          <h2 className="text-4xl leading-[1.1] font-bold tracking-tight break-words [overflow-wrap:anywhere] sm:text-5xl landscape:max-md:text-3xl">
+          <h2 className="text-4xl leading-[1.1] font-bold tracking-tight break-words [overflow-wrap:anywhere] sm:text-5xl short:text-3xl">
             {view.guest.displayName}
           </h2>
           {view.group && (
@@ -136,9 +136,9 @@ export function PaxPrompt({
           </div>
           {error && <Alert tone="error">{error}</Alert>}
 
-          <div className="mt-auto grid gap-3 pb-[env(safe-area-inset-bottom)] sm:grid-cols-[auto_1fr] md:mt-2 landscape:max-md:grid-cols-[auto_1fr]">
+          <div className="mt-auto grid gap-3 pb-[env(safe-area-inset-bottom)] sm:grid-cols-[auto_1fr] md:mt-2 short:grid-cols-[auto_1fr]">
             <Button
-              className="h-16 text-lg sm:order-2 landscape:max-md:order-2 landscape:max-md:h-12"
+              className="h-16 text-lg sm:order-2 short:order-2 short:h-12"
               onClick={() => void confirm()}
               disabled={busy}
             >
@@ -146,7 +146,7 @@ export function PaxPrompt({
             </Button>
             <Button
               variant="outline"
-              className="h-12 sm:order-1 sm:h-16 sm:px-6 landscape:max-md:order-1 landscape:max-md:h-12"
+              className="h-12 sm:order-1 sm:h-16 sm:px-6 short:order-1 short:h-12"
               onClick={onCancel}
               disabled={busy}
             >

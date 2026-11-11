@@ -5,6 +5,8 @@
 @import "./booth.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Layar pendek (HP mendatar): hasil scan dan prompt rombongan memakai versi ringkas. */
+@custom-variant short (@media (max-height: 500px));
 
 /* Tema shadcn-admin (shadcn/ui, netral): token CSS di :root, dipetakan ke utilitas Tailwind lewat @theme inline. */
 /* Token persis dari shadcn-admin (src/styles/theme.css), ditambah success dan warning untuk hasil scan. */

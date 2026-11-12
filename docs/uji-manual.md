@@ -406,6 +406,19 @@ Admin di laptop kini dibuka di `http://localhost:4173/admin`. Agar login dan tom
   **Harusnya**: halaman "Hasri & Ramli" berisi **foto itu saja**, tombol **Unduh foto** menyimpan
   fotonya. QR di cetakan lain membuka foto lain. Bila alamat situs di Pengaturan berbeda dengan
   alamat laptop booth, QR memakai alamat situs.
+- [ ] **11.10b** Di halaman foto itu, coba di **iPhone (Safari)** dan **Android (Chrome)**: tekan
+  **Bagikan**, pilih Instagram (story), lalu ulangi dan cari WhatsApp (di Android ada di
+  **More/Lainnya**) untuk status; ulangi lagi dan pilih **Simpan Gambar**/**Simpan ke Foto**.
+  Lalu tekan **Unduh foto**. Ulangi di tablet dan laptop.
+  **Harusnya**: semua perangkat menampilkan dua tombol, **Bagikan** dan **Unduh foto**. Di HP dan
+  tablet menu bagikan terbuka dengan foto terlampir; story Instagram dan status WhatsApp menerima
+  fotonya; foto yang disimpan muncul di galeri/Photos; unduhan berakhiran `.jpg`. Di laptop,
+  Bagikan membuka menu bagikan berisi tautan foto (Windows/Mac), atau menyalin tautannya dengan
+  pesan "Tautan foto disalin" (Linux/Firefox).
+- [ ] **11.10c** (Hanya di server produksi/staging, bukan `pnpm dev`) Kirim tautan foto itu ke
+  chat WhatsApp.
+  **Harusnya**: pratinjau tautan menampilkan foto itu dengan judul "Foto photobooth · Hasri &
+  Ramli".
 - [ ] **11.11** Cabut kabel USB kamera.
   **Harusnya**: muncul pesan "Kamera terputus...", tombol foto tidak bisa ditekan. Colok lagi:
   pratinjau kembali sendiri dalam beberapa detik.

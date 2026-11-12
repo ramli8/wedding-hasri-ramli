@@ -35,6 +35,12 @@
 		reverse_proxy api:3000
 	}
 
+	# Halaman foto photobooth (/foto/<id>, dari QR di cetakan): sama, pratinjau tautannya berisi
+	# foto itu agar tautan yang dikirim tamu lewat WhatsApp tampil dengan gambarnya.
+	handle /foto/* {
+		reverse_proxy api:3000
+	}
+
 	handle {
 		root * /srv
 		header /assets/* Cache-Control "public, max-age=31536000, immutable"

@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { access, rm } from "node:fs/promises";
 import { join } from "node:path";
 import {
   type BoothPhotoListResponse,
@@ -123,6 +124,30 @@ describe("photobooth", () => {
     // Resolusi hasil booth dipertahankan (4R 300 dpi).
     expect(item?.media).toMatchObject({ width: 1800, height: 1200 });
     expect((await app.request(item?.media.large ?? "")).status).toBe(200);
+
+    // Salinan JPEG untuk tamu (story WhatsApp/Instagram tidak selalu menerima WebP).
+    const jpeg = await app.request(item?.media.jpeg ?? "");
+    expect(jpeg.status).toBe(200);
+    expect(jpeg.headers.get("content-type")).toBe("image/jpeg");
+    const jpegMeta = await sharp(Buffer.from(await jpeg.arrayBuffer())).metadata();
+    expect(jpegMeta).toMatchObject({ format: "jpeg", width: 1800, height: 1200 });
+  });
+
+  it("salinan JPEG foto lama dibuat sekali dari varian large", async () => {
+    const booth = await pairBooth();
+    await upload(booth.token, meta, await photo());
+    const [item] = (await read<BoothPhotoListResponse>(await api.get("/booth/photos"))).items;
+    const mediaId = item?.media.id ?? "";
+    // Foto yang diunggah sebelum ada salinan JPEG.
+    await rm(join(TEST_MEDIA_DIR, mediaId, "photo.jpg"));
+    const res = await app.request(`/media/${mediaId}/photo.jpg`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("image/jpeg");
+    await expect(access(join(TEST_MEDIA_DIR, mediaId, "photo.jpg"))).resolves.toBeUndefined();
+    expect((await app.request(`/media/${mediaId}/photo.png`)).status).toBe(400);
+    expect(
+      (await app.request("/media/0190f4c2-6b1e-7a3c-9d2e-1f2a3b4c5d00/photo.jpg")).status,
+    ).toBe(404);
   });
 
   it("menolak tanpa token, perangkat dicabut, dan data yang tidak lengkap", async () => {
@@ -239,6 +264,7 @@ describe("photobooth", () => {
     const found = await read<GuestPhotoResponse>(await guestPhoto(ID));
     expect(found.photo.id).toBe(ID);
     expect(found.photo.media.large).toMatch(/^\/media\/.+\/large\.webp$/);
+    expect(found.photo.media.jpeg).toMatch(/^\/media\/.+\/photo\.jpg$/);
     expect((await guestPhoto("bukan-uuid")).status).toBe(400);
 
     // Menunggu foto yang belum terunggah tidak memblokir tamu lain di IP yang sama.
@@ -282,8 +308,8 @@ describe("photobooth", () => {
     const entries = unzipSync(new Uint8Array(await res.arrayBuffer()));
     // Waktu di nama berkas dalam WIB (UTC+7), urut waktu foto.
     expect(Object.keys(entries)).toEqual([
-      "photobooth-2027-05-21_12-12-00-3b4c5d6e.webp",
-      "photobooth-2027-05-21_12-13-00-3b4c5d6f.webp",
+      "photobooth-2027-05-21_12-12-00-3b4c5d6e.jpg",
+      "photobooth-2027-05-21_12-13-00-3b4c5d6f.jpg",
     ]);
     expect(Object.values(entries)[0]?.length).toBeGreaterThan(0);
   });

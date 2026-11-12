@@ -1,9 +1,11 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { z } from "zod";
 import { FailureLimiter } from "../auth/rate-limit.js";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { clientIp } from "../http/middleware.js";
+import { getGuestPhoto } from "../services/booth.js";
 import { findGuestByCode } from "../services/public.js";
-import { buildPreview, type LinkPreview } from "../services/seo.js";
+import { buildPhotoPreview, buildPreview, type LinkPreview } from "../services/seo.js";
 
 const escapeHtml = (text: string) =>
   text
@@ -50,15 +52,11 @@ export function injectHead(html: string, preview: LinkPreview): string {
 const CACHE_MS = 30_000;
 
 /**
- * Halaman tamu (/u/KODE dan /u/KODE/undangan). Isinya index.html aplikasi web ditambah tag Open
- * Graph per tamu; aplikasinya sendiri tetap SPA yang berjalan di browser seperti biasa.
+ * index.html aplikasi web (dari WEB_INDEX_URL, di-cache 30 detik) yang disajikan dengan tag Open
+ * Graph tambahan; aplikasinya sendiri tetap SPA yang berjalan di browser seperti biasa.
  */
-export function shareRoutes({ db, config, logger }: AppDeps) {
+function indexPage({ config, logger }: AppDeps) {
   let cached: { html: string; at: number } | null = null;
-  // Halaman ini membedakan kode valid (ada tag nama tamu) dari yang tidak, jadi tebakan kode yang
-  // salah dibatasi per IP seperti di /api/v1/public. Yang diblokir tetap mendapat halaman, hanya
-  // tanpa pratinjau (crawler WhatsApp tidak pernah menebak, jadi tidak terkena).
-  const guessLimiter = new FailureLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
 
   async function loadIndex(): Promise<string | null> {
     if (!config.webIndexUrl) return null;
@@ -75,21 +73,60 @@ export function shareRoutes({ db, config, logger }: AppDeps) {
     }
   }
 
-  const page = (suffix: string) => async (c: import("hono").Context<AppEnv>) => {
+  /** Halaman dengan pratinjau; tanpa pratinjau (data tidak ada) index.html apa adanya. */
+  return async (
+    c: Context<AppEnv>,
+    preview: () => Promise<LinkPreview | null>,
+  ): Promise<Response> => {
     const html = await loadIndex();
     if (!html) return c.text("Halaman belum tersedia.", 503);
-    const code = (c.req.param("code") ?? "").toUpperCase();
-    const ip = clientIp(c, config.trustProxy);
-    const guest = code && !guessLimiter.isBlocked(ip) ? await findGuestByCode(db, code) : null;
-    if (code && !guest) guessLimiter.recordFailure(ip);
-    const preview = guest
-      ? await buildPreview(db, { panggilan: guest.displayName, path: `/u/${code}${suffix}` })
-      : null;
+    const head = await preview();
     c.header("Content-Type", "text/html; charset=utf-8");
     c.header("Cache-Control", "no-cache");
     c.header("X-Robots-Tag", "noindex, nofollow");
-    return c.body(preview ? injectHead(html, preview) : html);
+    return c.body(head ? injectHead(html, head) : html);
   };
+}
+
+/** Halaman tamu (/u/KODE dan /u/KODE/undangan) dengan tag Open Graph per tamu. */
+export function shareRoutes(deps: AppDeps) {
+  const { db, config } = deps;
+  const serve = indexPage(deps);
+  // Halaman ini membedakan kode valid (ada tag nama tamu) dari yang tidak, jadi tebakan kode yang
+  // salah dibatasi per IP seperti di /api/v1/public. Yang diblokir tetap mendapat halaman, hanya
+  // tanpa pratinjau (crawler WhatsApp tidak pernah menebak, jadi tidak terkena).
+  const guessLimiter = new FailureLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
+
+  const page = (suffix: string) => (c: Context<AppEnv>) =>
+    serve(c, async () => {
+      const code = (c.req.param("code") ?? "").toUpperCase();
+      const ip = clientIp(c, config.trustProxy);
+      const guest = code && !guessLimiter.isBlocked(ip) ? await findGuestByCode(db, code) : null;
+      if (code && !guest) guessLimiter.recordFailure(ip);
+      return guest
+        ? buildPreview(db, { panggilan: guest.displayName, path: `/u/${code}${suffix}` })
+        : null;
+    });
 
   return new Hono<AppEnv>().get("/:code", page("")).get("/:code/undangan", page("/undangan"));
+}
+
+const photoId = z.uuid();
+
+/**
+ * Halaman foto photobooth (/foto/<id>) dengan pratinjau tautan berisi foto itu, agar tautan yang
+ * dikirim tamu lewat WhatsApp tampil dengan gambarnya. Seperti GET /public/foto/:id, tanpa
+ * pembatas tebakan per IP: id foto acak (uuid v7) tidak bisa ditebak.
+ */
+export function photoShareRoutes(deps: AppDeps) {
+  const serve = indexPage(deps);
+  return new Hono<AppEnv>().get("/:id", (c) =>
+    serve(c, async () => {
+      const id = photoId.safeParse(c.req.param("id"));
+      if (!id.success) return null;
+      const photo = await getGuestPhoto(deps.db, id.data);
+      if (typeof photo === "string") return null;
+      return buildPhotoPreview(deps.db, { id: id.data, thumb: photo.photo.media.thumb });
+    }),
+  );
 }

@@ -1,4 +1,9 @@
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, mediaListResponseSchema } from "@wedding/shared";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_MB,
+  MEDIA_JPEG_FILE,
+  mediaListResponseSchema,
+} from "@wedding/shared";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
@@ -8,6 +13,7 @@ import { validate } from "../http/validate.js";
 import {
   deleteMedia,
   listMedia,
+  readJpeg,
   readVariant,
   saveMedia,
   sweepOrphanMedia,
@@ -61,18 +67,20 @@ export function mediaAdminRoutes({ db, config }: AppDeps) {
 
 const fileParam = z.object({
   id: z.uuid(),
-  file: z.enum(["large.webp", "thumb.webp"]),
+  file: z.enum(["large.webp", "thumb.webp", MEDIA_JPEG_FILE]),
 });
 
 /** Menyajikan gambar tanpa login. Id acak dan tidak pernah berubah isinya, jadi boleh di-cache lama. */
 export function mediaPublicRoutes({ config }: AppDeps) {
   return new Hono<AppEnv>().get("/:id/:file", validate("param", fileParam), async (c) => {
     const { id, file } = c.req.valid("param");
-    const variant = file === "large.webp" ? "large" : "thumb";
-    const data = await readVariant(config.mediaDir, id, variant);
+    const jpeg = file === MEDIA_JPEG_FILE;
+    const data = jpeg
+      ? await readJpeg(config.mediaDir, id)
+      : await readVariant(config.mediaDir, id, file === "large.webp" ? "large" : "thumb");
     if (!data) throw new AppError(404, "NOT_FOUND", "Gambar tidak ditemukan");
     return c.body(new Uint8Array(data), 200, {
-      "content-type": "image/webp",
+      "content-type": jpeg ? "image/jpeg" : "image/webp",
       "cache-control": "public, max-age=31536000, immutable",
       "x-content-type-options": "nosniff",
     });

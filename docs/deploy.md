@@ -144,7 +144,7 @@ sehingga cukup besar) dan `<id>/thumb.webp`. Caddy meneruskan `/media/*` ke API,
 ## Pratinjau tautan (WhatsApp, Instagram)
 
 Crawler WhatsApp dan Instagram tidak menjalankan JavaScript, jadi tag Open Graph harus ada di HTML.
-Karena itu `/u/*` diteruskan Caddy ke API (`deploy/web.Caddyfile`), dan API menyajikan `index.html`
+Karena itu `/u/*` dan `/foto/*` (halaman foto photobooth; gambarnya foto itu sendiri) diteruskan Caddy ke API (`deploy/web.Caddyfile`), dan API menyajikan `index.html`
 aplikasi web yang sudah disisipi judul, deskripsi, dan gambar milik tamu itu. Variabel
 `WEB_INDEX_URL` (di `deploy/stack.compose.yaml`: `http://web/index.html`) memberi tahu API dari mana
 mengambil `index.html`. Isi judul, deskripsi, dan gambar di admin: Pengaturan → Pratinjau tautan.

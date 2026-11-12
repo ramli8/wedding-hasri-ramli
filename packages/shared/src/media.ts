@@ -21,6 +21,16 @@ export function mediaUrl(id: string, variant: MediaVariant): string {
   return `/media/${id}/${variant}.webp`;
 }
 
+/**
+ * Salinan JPEG (kualitas 95, warna penuh 4:4:4) untuk foto yang dibagikan tamu: story WhatsApp,
+ * Instagram dan galeri HP lama tidak selalu menerima WebP. Hanya dibuat untuk foto booth.
+ */
+export const MEDIA_JPEG_FILE = "photo.jpg";
+
+export function mediaJpegUrl(id: string): string {
+  return `/media/${id}/${MEDIA_JPEG_FILE}`;
+}
+
 export const mediaRefSchema = z.object({
   id: z.uuid(),
   width: z.number(),

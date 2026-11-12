@@ -127,3 +127,30 @@
   background: transparent;
   color: var(--gp-ink);
 }
+.guest-photo__actions {
+  display: grid;
+  width: 100%;
+  gap: 0.75rem;
+}
+.guest-photo__actions .guest-photo__button {
+  min-height: 3rem;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .guest-photo__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .guest-photo__actions .guest-photo__button {
+    width: auto;
+  }
+}
+.guest-photo__button:disabled {
+  opacity: 0.6;
+}
+.guest-photo__hint {
+  max-width: 28rem;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}

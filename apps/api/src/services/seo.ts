@@ -82,3 +82,22 @@ export async function buildPreview(
     siteName: values.mempelai,
   };
 }
+
+/** Bahan tag Open Graph untuk satu foto photobooth (/foto/<id>); null bila pengaturan kosong. */
+export async function buildPhotoPreview(
+  db: Db,
+  input: { id: string; thumb: string },
+): Promise<LinkPreview | null> {
+  const row = await getRow(db);
+  if (!row) return null;
+  const mempelai = `${row.brideName} & ${row.groomName}`;
+  const base = row.publicBaseUrl.replace(/\/+$/, "");
+  return {
+    title: `Foto photobooth · ${mempelai}`,
+    description:
+      "Kenangan dari photobooth pernikahan kami. Buka untuk melihat dan mengunduh fotonya.",
+    image: `${base}${input.thumb}`,
+    url: `${base}/foto/${input.id}`,
+    siteName: mempelai,
+  };
+}

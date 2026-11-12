@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   MAX_LARGE_SIDE,
+  MEDIA_JPEG_FILE,
   type Media,
   type MediaVariant,
   mediaUrl,
@@ -179,5 +180,51 @@ export async function readVariant(
     return await readFile(join(dir, id, `${variant}.webp`));
   } catch {
     return null;
+  }
+}
+
+/**
+ * Salinan JPEG untuk foto yang diunduh/dibagikan tamu (`photo.jpg`, lihat MEDIA_JPEG_FILE).
+ * Kualitas 95 tanpa pengurangan warna (4:4:4), jadi selisihnya dengan aslinya tidak terlihat.
+ * Ditulis lewat berkas sementara lalu di-rename, agar permintaan yang bersamaan tidak pernah
+ * membaca berkas setengah jadi.
+ */
+export async function saveJpegCopy(dir: string, id: string, input: Buffer): Promise<Buffer> {
+  const data = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS })
+    .rotate()
+    .resize({
+      width: MAX_LARGE_SIDE,
+      height: MAX_LARGE_SIDE,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: 95, chromaSubsampling: "4:4:4", mozjpeg: true })
+    .toBuffer();
+  const tmp = join(dir, id, `${MEDIA_JPEG_FILE}.${randomUUID()}.tmp`);
+  await writeFile(tmp, data);
+  await rename(tmp, join(dir, id, MEDIA_JPEG_FILE));
+  return data;
+}
+
+/**
+ * Isi salinan JPEG, atau null bila gambarnya tidak ada. Foto lama yang belum punya salinan dibuat
+ * sekali dari varian `large` (near-lossless) lalu disimpan.
+ */
+export async function readJpeg(dir: string, id: string): Promise<Buffer | null> {
+  try {
+    return await readFile(join(dir, id, MEDIA_JPEG_FILE));
+  } catch {
+    const large = await readVariant(dir, id, "large");
+    if (!large) return null;
+    return saveJpegCopy(dir, id, large);
+  }
+}
+
+/** Memastikan salinan JPEG ada (dibuat dari `large` bila belum) tanpa membaca isinya. */
+export async function ensureJpeg(dir: string, id: string): Promise<void> {
+  try {
+    await access(join(dir, id, MEDIA_JPEG_FILE));
+  } catch {
+    await readJpeg(dir, id);
   }
 }

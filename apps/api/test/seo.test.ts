@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import type { Media, SeoResponse } from "@wedding/shared";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { guests } from "../src/db/schema.js";
+import { boothPhotos, guests } from "../src/db/schema.js";
 import { adminClient, createTestContext, insertAdmin, login, ORIGIN, resetDb } from "./helpers.js";
 
 const INDEX = `<!doctype html><html><head><title>Hasri & Ramli</title></head><body><div id="root"></div></body></html>`;
@@ -159,5 +159,38 @@ describe("halaman tamu dengan tag Open Graph", () => {
     const html = await (await app.request("/u/ABC234")).text();
     expect(html).not.toContain("Bpk. Budi");
     expect(html).toContain('<div id="root">');
+  });
+});
+
+describe("halaman foto photobooth dengan tag Open Graph", () => {
+  const ID = "0190f4c2-6b1e-7a3c-9d2e-1f2a3b4c5d6e";
+
+  it("pratinjau tautan berisi foto itu; id tidak dikenal tanpa pratinjau", async () => {
+    await saveSettings();
+    const photo = await uploadPhoto();
+    await ctx.db.insert(boothPhotos).values({
+      id: ID,
+      mediaId: photo.id,
+      frame: "poster",
+      takenAt: new Date("2027-05-21T05:12:00.000Z"),
+    });
+
+    const res = await app.request(`/foto/${ID}`);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("<title>Foto photobooth · Hasri &amp; Ramli</title>");
+    expect(html).toContain(
+      `property="og:image" content="https://contoh.com/media/${photo.id}/thumb.webp"`,
+    );
+    expect(html).toContain(`property="og:url" content="https://contoh.com/foto/${ID}"`);
+    expect(res.headers.get("x-robots-tag")).toContain("noindex");
+
+    for (const path of ["/foto/0190f4c2-6b1e-7a3c-9d2e-1f2a3b4c5d00", "/foto/bukan-uuid"]) {
+      const other = await app.request(path);
+      expect(other.status).toBe(200);
+      const body = await other.text();
+      expect(body).not.toContain("og:image");
+      expect(body).toContain('<div id="root">');
+    }
   });
 });

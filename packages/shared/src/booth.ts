@@ -60,12 +60,15 @@ export type BoothUpload = z.infer<typeof boothUploadSchema>;
 export const boothUploadResponseSchema = z.object({ id: z.uuid(), duplicate: z.boolean() });
 export type BoothUploadResponse = z.infer<typeof boothUploadResponseSchema>;
 
+/** Gambar foto booth: varian biasa ditambah salinan JPEG untuk diunduh dan dibagikan tamu. */
+export const boothMediaSchema = mediaRefSchema.extend({ jpeg: z.string() });
+
 export const boothPhotoSchema = z.object({
   id: z.uuid(),
   frame: boothFrameSchema,
   takenAt: z.string(),
   deviceName: z.string().nullable(),
-  media: mediaRefSchema,
+  media: boothMediaSchema,
 });
 export type BoothPhoto = z.infer<typeof boothPhotoSchema>;
 
@@ -83,6 +86,6 @@ export type BoothPhotoQuery = z.input<typeof boothPhotoQuerySchema>;
 
 /** Halaman foto tamu (`/foto/<id>`, dari QR di cetakan): satu foto saja, tanpa login. */
 export const guestPhotoResponseSchema = z.object({
-  photo: z.object({ id: z.uuid(), takenAt: z.string(), media: mediaRefSchema }),
+  photo: z.object({ id: z.uuid(), takenAt: z.string(), media: boothMediaSchema }),
 });
 export type GuestPhotoResponse = z.infer<typeof guestPhotoResponseSchema>;

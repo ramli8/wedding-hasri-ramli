@@ -176,7 +176,7 @@ function ViewDialog({
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             <Button variant="outline" asChild>
-              <a href={photo.media.large} download={`photobooth-${photo.id}.webp`}>
+              <a href={photo.media.jpeg} download={`photobooth-${photo.id}.jpg`}>
                 <Download aria-hidden />
                 Unduh
               </a>

@@ -11,7 +11,7 @@ import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
 import { mediaPublicRoutes } from "./routes/media.js";
 import { publicRoutes } from "./routes/public.js";
-import { shareRoutes } from "./routes/share.js";
+import { photoShareRoutes, shareRoutes } from "./routes/share.js";
 import { createInvitationCache } from "./services/layout.js";
 
 /** Rute unggahan berkas (multipart) yang memasang bodyLimit-nya sendiri. */
@@ -33,7 +33,7 @@ const jsonLimit = bodyLimit({
 // baru disebar (±8 permintaan per tamu). 1200/menit (20/detik terus-menerus) tetap menahan banjir
 // dari satu mesin; pembatasan yang lebih halus dilakukan aturan rate limiting Cloudflare.
 export const PUBLIC_REQUESTS_PER_MINUTE = 1200;
-const LIMITED_PREFIXES = ["/api/v1/public/", "/api/v1/auth/", "/api/v1/device/", "/u/"];
+const LIMITED_PREFIXES = ["/api/v1/public/", "/api/v1/auth/", "/api/v1/device/", "/u/", "/foto/"];
 
 /**
  * Rute tamu (`/api/v1/public/`, `/u/`) boleh memakai paling banyak sekian koneksi database
@@ -43,7 +43,7 @@ const LIMITED_PREFIXES = ["/api/v1/public/", "/api/v1/auth/", "/api/v1/device/",
  */
 const GUEST_CONCURRENCY = 6;
 const GUEST_QUEUE_MAX = 5_000;
-const GUEST_PREFIXES = ["/api/v1/public/", "/u/"];
+const GUEST_PREFIXES = ["/api/v1/public/", "/u/", "/foto/"];
 
 function concurrencyGate(max: number, queueMax: number) {
   let running = 0;
@@ -115,6 +115,7 @@ export function createApp(deps: AppDeps) {
       .route("/api", api)
       .route("/media", mediaPublicRoutes(deps))
       .route("/u", shareRoutes(deps))
+      .route("/foto", photoShareRoutes(deps))
       .onError(errorHandler(deps.logger))
       .notFound(notFoundHandler)
   );

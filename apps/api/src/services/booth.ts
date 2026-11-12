@@ -8,6 +8,8 @@ import {
   type BoothUploadResponse,
   type boothConfigSchema,
   type GuestPhotoResponse,
+  MEDIA_JPEG_FILE,
+  mediaJpegUrl,
   mediaUrl,
 } from "@wedding/shared";
 import { count, desc, eq } from "drizzle-orm";
@@ -16,7 +18,7 @@ import type { Db } from "../db/client.js";
 import { boothConfig, boothPhotoDeletions, boothPhotos, devices, media } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { zipFilesStream } from "./export.js";
-import { discardMedia, saveMedia } from "./media.js";
+import { discardMedia, ensureJpeg, saveJpegCopy, saveMedia } from "./media.js";
 import { getSettings } from "./settings.js";
 
 /** Pengaturan booth; tanpa baris pengaturan semua bingkai bawaan aktif dan tanpa QR. */
@@ -69,6 +71,7 @@ export async function getGuestPhoto(
         height: row.height,
         large: mediaUrl(row.mediaId, "large"),
         thumb: mediaUrl(row.mediaId, "thumb"),
+        jpeg: mediaJpegUrl(row.mediaId),
       },
     },
   };
@@ -109,6 +112,13 @@ export async function saveBoothPhoto(
     buffer,
     originalName: `photobooth-${meta.takenAt.slice(0, 19).replace(/[:T]/g, "-")}.jpg`,
   });
+  try {
+    // Dibuat sekarang agar tamu yang memindai QR tidak menunggu konversi saat acara.
+    await saveJpegCopy(dir, saved.id, buffer);
+  } catch (err) {
+    await discardMedia(db, dir, saved.id);
+    throw err;
+  }
   const inserted = await db
     .insert(boothPhotos)
     .values({
@@ -163,20 +173,23 @@ export async function listBoothPhotos(
         height: row.height,
         large: mediaUrl(row.mediaId, "large"),
         thumb: mediaUrl(row.mediaId, "thumb"),
+        jpeg: mediaJpegUrl(row.mediaId),
       },
     })),
   };
 }
 
 /**
- * ZIP semua foto booth (varian `large`, resolusi asli), urut waktu. Nama berkas memuat waktu WIB
- * agar mudah dicari, mis. `photobooth-2027-05-21_19-12-03-<id8>.webp`.
+ * ZIP semua foto booth (salinan JPEG resolusi asli, sama dengan unduhan tamu), urut waktu. Nama
+ * berkas memuat waktu WIB agar mudah dicari, mis. `photobooth-2027-05-21_19-12-03-<id8>.jpg`.
+ * Foto lama yang belum punya salinan JPEG dibuatkan dulu.
  */
 export async function boothPhotosZip(db: Db, dir: string): Promise<ReadableStream<Uint8Array>> {
   const rows = await db
     .select({ id: boothPhotos.id, mediaId: boothPhotos.mediaId, takenAt: boothPhotos.takenAt })
     .from(boothPhotos)
     .orderBy(boothPhotos.takenAt, boothPhotos.id);
+  for (const row of rows) await ensureJpeg(dir, row.mediaId);
   return zipFilesStream(
     rows.map((row) => {
       const wib = new Date(row.takenAt.getTime() + 7 * 60 * 60 * 1000)
@@ -185,8 +198,8 @@ export async function boothPhotosZip(db: Db, dir: string): Promise<ReadableStrea
         .replace("T", "_")
         .replace(/:/g, "-");
       return {
-        name: `photobooth-${wib}-${row.id.slice(-8)}.webp`,
-        source: join(dir, row.mediaId, "large.webp"),
+        name: `photobooth-${wib}-${row.id.slice(-8)}.jpg`,
+        source: join(dir, row.mediaId, MEDIA_JPEG_FILE),
       };
     }),
   );

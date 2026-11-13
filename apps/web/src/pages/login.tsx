@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2, ScanLine } from "lucide-react";
+import { Camera, Eye, EyeOff, Loader2, ScanLine } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
@@ -107,15 +107,20 @@ function LoginForm() {
           </CardContent>
         </Card>
 
-        {/* Penjaga pintu tidak punya akun: scanner dipasangkan dengan kode dari admin. */}
+        {/* Penjaga pintu dan photobooth tidak punya akun: perangkat dipasangkan dengan kode dari admin. */}
         <div className="grid gap-2">
           <Button variant="outline" asChild className="h-11 w-full bg-background md:h-10">
             <Link to="/scan">
               <ScanLine aria-hidden /> Masuk ke scanner pintu
             </Link>
           </Button>
+          <Button variant="outline" asChild className="h-11 w-full bg-background md:h-10">
+            <Link to="/booth">
+              <Camera aria-hidden /> Masuk ke photobooth
+            </Link>
+          </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Untuk penjaga pintu, memakai kode pairing dari admin.
+            Untuk penjaga pintu dan photobooth, memakai kode pairing dari admin.
           </p>
         </div>
       </div>

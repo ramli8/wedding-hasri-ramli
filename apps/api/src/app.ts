@@ -9,9 +9,11 @@ import { authRoutes } from "./routes/auth.js";
 import { boothRoutes } from "./routes/booth.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
+import { manifestRoutes } from "./routes/manifest.js";
 import { mediaPublicRoutes } from "./routes/media.js";
 import { publicRoutes } from "./routes/public.js";
 import { photoShareRoutes, shareRoutes } from "./routes/share.js";
+import { siteIconRoutes } from "./routes/site-icon.js";
 import { createInvitationCache } from "./services/layout.js";
 
 /** Rute unggahan berkas (multipart) yang memasang bodyLimit-nya sendiri. */
@@ -114,6 +116,8 @@ export function createApp(deps: AppDeps) {
       })
       .route("/api", api)
       .route("/media", mediaPublicRoutes(deps))
+      .route("/site-icon", siteIconRoutes(deps))
+      .route("/manifest.webmanifest", manifestRoutes(deps))
       .route("/u", shareRoutes(deps))
       .route("/foto", photoShareRoutes(deps))
       .onError(errorHandler(deps.logger))

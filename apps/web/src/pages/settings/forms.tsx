@@ -1,98 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
-import { MIN_PASSWORD_LENGTH, type Settings } from "@wedding/shared";
+import { MIN_PASSWORD_LENGTH } from "@wedding/shared";
 import { Download, Eye, EyeOff } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
 import { Field } from "@/components/kit/field";
 import { Input } from "@/components/ui/input";
-import { adminApi, downloads } from "../../lib/admin-api.js";
+import { downloads } from "../../lib/admin-api.js";
 import { api } from "../../lib/api.js";
-import { isoToWibInput, wibInputToIso } from "../../lib/datetime.js";
-import { useRefresh } from "../../lib/queries.js";
-
-export function WeddingForm({ initial }: { initial: Settings | null }) {
-  const refresh = useRefresh();
-  const [groomName, setGroomName] = useState(initial?.groomName ?? "");
-  const [brideName, setBrideName] = useState(initial?.brideName ?? "");
-  const [publicBaseUrl, setPublicBaseUrl] = useState(initial?.publicBaseUrl ?? "");
-  // Tujuan hitung mundur di undangan (WIB). Kosong: tanggal acara pertama.
-  const [countdownAt, setCountdownAt] = useState(isoToWibInput(initial?.countdownAt));
-
-  // "Tersimpan" ditampilkan toast global (MutationCache di main.tsx).
-  const save = useMutation({
-    mutationFn: adminApi.settings.save,
-    onSuccess: () => refresh("settings"),
-  });
-
-  function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    save.mutate({ groomName, brideName, publicBaseUrl, countdownAt: wibInputToIso(countdownAt) });
-  }
-
-  return (
-    <div>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {!initial && (
-          <Alert>
-            Isi dulu data ini. Alamat situs dipakai untuk membuat link undangan tiap tamu.
-          </Alert>
-        )}
-        <Field label="Mempelai pria">
-          {(id) => (
-            <Input
-              id={id}
-              required
-              value={groomName}
-              onChange={(e) => setGroomName(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Mempelai wanita">
-          {(id) => (
-            <Input
-              id={id}
-              required
-              value={brideName}
-              onChange={(e) => setBrideName(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field
-          label="Alamat situs"
-          hint="Contoh: https://hasriramli.com. Link tamu menjadi alamat ini + /u/KODE."
-        >
-          {(id) => (
-            <Input
-              id={id}
-              type="url"
-              required
-              placeholder="https://"
-              value={publicBaseUrl}
-              onChange={(e) => setPublicBaseUrl(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label="Hitung mundur ke (WIB)">
-          {(id) => (
-            <Input
-              id={id}
-              type="datetime-local"
-              value={countdownAt}
-              onChange={(e) => setCountdownAt(e.target.value)}
-            />
-          )}
-        </Field>
-        {save.error && <Alert tone="error">{save.error.message}</Alert>}
-        <div>
-          <Button type="submit" disabled={save.isPending}>
-            {save.isPending ? "Menyimpan…" : "Simpan"}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
 
 /** Kolom kata sandi dengan tombol mata 44px, sama seperti halaman masuk. */
 function PasswordInput({
@@ -119,7 +34,7 @@ function PasswordInput({
         minLength={minLength}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pe-11"
+        className="h-11 pe-11 text-base md:h-9 md:text-sm"
       />
       <button
         type="button"
@@ -138,107 +53,98 @@ export function PasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const change = useMutation({
     mutationFn: api.changePassword,
-    meta: { toast: "Kata sandi diganti" },
+    meta: { toast: "Kata sandi diganti; perangkat lain dikeluarkan" },
     onSuccess: () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setSubmitted(false);
     },
   });
 
-  const mismatch = confirmPassword !== "" && confirmPassword !== newPassword;
+  const errors = {
+    current: !currentPassword ? "Isi kata sandi saat ini" : null,
+    next:
+      newPassword.length < MIN_PASSWORD_LENGTH ? `Minimal ${MIN_PASSWORD_LENGTH} karakter` : null,
+    confirm: confirmPassword !== newPassword ? "Belum sama dengan kata sandi baru" : null,
+  };
+  const valid = !errors.current && !errors.next && !errors.confirm;
+  const shown = (error: string | null) => (submitted ? error : null);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (newPassword !== confirmPassword) return;
-    change.mutate({ currentPassword, newPassword });
+    setSubmitted(true);
+    if (valid) change.mutate({ currentPassword, newPassword });
   }
 
   return (
-    <div>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground">
-          Perangkat lain yang sedang masuk akan dikeluarkan.
-        </p>
-        <Field label="Kata sandi saat ini">
-          {(id) => (
-            <PasswordInput
-              id={id}
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={setCurrentPassword}
-            />
-          )}
-        </Field>
-        <Field label="Kata sandi baru" hint={`Minimal ${MIN_PASSWORD_LENGTH} karakter.`}>
-          {(id) => (
-            <PasswordInput
-              id={id}
-              autoComplete="new-password"
-              minLength={MIN_PASSWORD_LENGTH}
-              value={newPassword}
-              onChange={setNewPassword}
-            />
-          )}
-        </Field>
-        <Field
-          label="Ulangi kata sandi baru"
-          error={mismatch ? "Belum sama dengan kata sandi baru." : null}
-        >
-          {(id) => (
-            <PasswordInput
-              id={id}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-            />
-          )}
-        </Field>
-        {change.error && <Alert tone="error">{change.error.message}</Alert>}
-        <div>
-          <Button
-            type="submit"
-            disabled={change.isPending || !confirmPassword || confirmPassword !== newPassword}
-          >
-            {change.isPending ? "Menyimpan…" : "Ganti kata sandi"}
-          </Button>
-        </div>
-      </form>
-    </div>
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <Field label="Kata sandi saat ini" error={shown(errors.current)}>
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={setCurrentPassword}
+          />
+        )}
+      </Field>
+      <Field label="Kata sandi baru" error={shown(errors.next)}>
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={setNewPassword}
+          />
+        )}
+      </Field>
+      <Field label="Ulangi kata sandi baru" error={shown(errors.confirm)}>
+        {(id) => (
+          <PasswordInput
+            id={id}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+          />
+        )}
+      </Field>
+      {change.error && <Alert tone="error">{change.error.message}</Alert>}
+      <div>
+        <Button type="submit" disabled={change.isPending} className="h-11 md:h-9">
+          {change.isPending ? "Menyimpan…" : "Ganti kata sandi"}
+        </Button>
+      </div>
+    </form>
   );
 }
 
 export function ExportCard() {
+  const links = [
+    { href: downloads.dataJson, label: "Semua data (JSON)" },
+    { href: downloads.mediaZip, label: "Semua foto (ZIP)" },
+    { href: downloads.guestsXlsx, label: "Daftar tamu (Excel)" },
+  ];
   return (
-    <div>
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground">
-          Unduh salinan data Anda kapan saja untuk arsip pribadi. Server juga mencadangkan data dan
-          foto secara otomatis ke penyimpanan awan secara berkala (bila sudah disiapkan pengelola
-          server); unduhan ini pelengkapnya, bukan penggantinya.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <a href={downloads.dataJson} className={buttonVariants({ variant: "outline" })}>
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Salinan untuk arsip pribadi, melengkapi cadangan otomatis server.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className={buttonVariants({ variant: "outline", className: "h-11 md:h-9" })}
+          >
             <Download className="size-4" aria-hidden />
-            Semua data (JSON)
+            {link.label}
           </a>
-          <a href={downloads.mediaZip} className={buttonVariants({ variant: "outline" })}>
-            <Download className="size-4" aria-hidden />
-            Semua foto (ZIP)
-          </a>
-          <a href={downloads.guestsXlsx} className={buttonVariants({ variant: "outline" })}>
-            <Download className="size-4" aria-hidden />
-            Daftar tamu (Excel)
-          </a>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Data JSON memuat semua tabel (tamu, undangan, check-in, hadiah, vendor, dan lainnya) tanpa
-          akun admin dan token perangkat. ZIP foto bisa besar bila fotonya banyak; berkasnya disusun
-          sambil diunduh.
-        </p>
+        ))}
       </div>
     </div>
   );

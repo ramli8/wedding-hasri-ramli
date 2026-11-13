@@ -35,29 +35,9 @@ export default defineConfig({
       // tidak boleh berganti di tengah antrean; penjaga memperbarui secara sadar (lihat scanner).
       registerType: "prompt",
       injectRegister: false,
-      includeAssets: ["apple-touch-icon.png"],
-      manifest: {
-        name: "Hasri & Ramli",
-        short_name: "H&R",
-        description: "Admin dan check-in tamu pernikahan Hasri & Ramli",
-        lang: "id",
-        start_url: "/scan",
-        scope: "/",
-        display: "standalone",
-        orientation: "portrait",
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
-        icons: [
-          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
-          {
-            src: "icon-maskable-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
+      // Manifest disajikan API (/manifest.webmanifest): nama situs dan ikon mengikuti
+      // Pengaturan → Situs. Tautannya ditulis langsung di index.html.
+      manifest: false,
       workbox: {
         // Seluruh aplikasi, font, dan WASM pembaca QR harus ada di cache agar scanner terbuka offline.
         globPatterns: ["**/*.{js,css,html,woff2,wasm,png,svg}"],
@@ -65,7 +45,7 @@ export default defineConfig({
         globIgnores: ["**/*vietnamese*", "**/*latin-ext*"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/media\//, /^\/site-icon\//],
         cleanupOutdatedCaches: true,
       },
     }),
@@ -74,13 +54,23 @@ export default defineConfig({
     port: 5173,
     // Untuk uji di HP lewat Cloudflare Quick Tunnel (cloudflared tunnel --url http://localhost:5173).
     allowedHosts: [".trycloudflare.com"],
-    proxy: { "/api": devProxy, "/media": apiTarget },
+    proxy: {
+      "/api": devProxy,
+      "/media": apiTarget,
+      "/site-icon": apiTarget,
+      "/manifest.webmanifest": apiTarget,
+    },
   },
   preview: {
     port: 4173,
     // CSP yang sama dengan deploy/web.Caddyfile, supaya `pnpm e2e` (build produksi) ikut menguji
     // bahwa aplikasi tetap jalan di bawah kebijakan itu. Ubah keduanya bersamaan.
     headers: { "Content-Security-Policy": CSP },
-    proxy: { "/api": apiTarget, "/media": apiTarget },
+    proxy: {
+      "/api": apiTarget,
+      "/media": apiTarget,
+      "/site-icon": apiTarget,
+      "/manifest.webmanifest": apiTarget,
+    },
   },
 });

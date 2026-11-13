@@ -119,7 +119,15 @@ describe("halaman tamu dengan tag Open Graph", () => {
     const html = await res.text();
     expect(html).toContain("<title>Undangan Hasri &amp; Ramli</title>");
     expect(html).toContain('property="og:description" content="Untuk Bpk. Budi &amp; Keluarga"');
-    expect(html).toContain(`content="https://contoh.com/media/${photo.id}/thumb.webp"`);
+    expect(html).toContain(`content="https://contoh.com/media/${photo.id}/og.jpg"`);
+    expect(html).toContain('property="og:image:width" content="1200"');
+    expect(html).toContain('property="og:image:height" content="630"');
+
+    // Gambar kartu: JPEG 1200 × 630 potongan tengah, dibuat sekali lalu disajikan dari disk.
+    const og = await app.request(`/media/${photo.id}/og.jpg`);
+    expect(og.headers.get("content-type")).toBe("image/jpeg");
+    const meta = await sharp(Buffer.from(await og.arrayBuffer())).metadata();
+    expect(meta).toMatchObject({ format: "jpeg", width: 1200, height: 630 });
     expect(html).toContain('property="og:url" content="https://contoh.com/u/ABC234"');
     expect(html).toContain('<div id="root">');
     expect(res.headers.get("x-robots-tag")).toContain("noindex");
@@ -143,11 +151,13 @@ describe("halaman tamu dengan tag Open Graph", () => {
 
   it("nama tamu berisi pola $ tidak menyalin potongan HTML ke dalam tag", async () => {
     await saveSettings();
+    await api.put("/seo", { title: "Untuk {panggilan}", description: "", imageMediaId: null });
     await ctx.db
       .insert(guests)
       .values({ displayName: "Budi $' $& $`", code: "ABC234", phone: "6281234567890" });
     const html = await (await app.request("/u/ABC234")).text();
-    expect(html).toContain('property="og:description" content="');
+    expect(html).toContain('property="og:title" content="Untuk Budi $');
+    expect(html).not.toContain("og:description");
     expect(html).toContain("Budi $' $&amp; $`");
     expect(html.match(/<div id="root">/g)).toHaveLength(1);
   });
@@ -180,7 +190,7 @@ describe("halaman foto photobooth dengan tag Open Graph", () => {
     const html = await res.text();
     expect(html).toContain("<title>Foto photobooth · Hasri &amp; Ramli</title>");
     expect(html).toContain(
-      `property="og:image" content="https://contoh.com/media/${photo.id}/thumb.webp"`,
+      `property="og:image" content="https://contoh.com/media/${photo.id}/og.jpg"`,
     );
     expect(html).toContain(`property="og:url" content="https://contoh.com/foto/${ID}"`);
     expect(res.headers.get("x-robots-tag")).toContain("noindex");
@@ -192,5 +202,80 @@ describe("halaman foto photobooth dengan tag Open Graph", () => {
       expect(body).not.toContain("og:image");
       expect(body).toContain('<div id="root">');
     }
+  });
+});
+
+describe("logo dan ikon situs", () => {
+  it("tanpa logo dialihkan ke ikon bawaan; dengan logo PNG sesuai ukuran, maskable berlatar", async () => {
+    const fallback = await app.request("/site-icon/icon-192.png");
+    expect(fallback.status).toBe(302);
+    expect(fallback.headers.get("location")).toBe("/icons/icon-192.png");
+    expect((await app.request("/site-icon/bukan.png")).status).toBe(400);
+
+    await saveSettings();
+    const logo = await uploadPhoto();
+    const saved = await api.put("/seo", {
+      title: "",
+      description: "",
+      imageMediaId: null,
+      logoMediaId: logo.id,
+    });
+    expect(((await saved.json()) as SeoResponse).seo.logo?.id).toBe(logo.id);
+
+    for (const [name, size] of [
+      ["favicon-32.png", 32],
+      ["apple-touch-icon.png", 180],
+      ["icon-maskable-512.png", 512],
+    ] as const) {
+      const res = await app.request(`/site-icon/${name}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("image/png");
+      const meta = await sharp(Buffer.from(await res.arrayBuffer())).metadata();
+      expect(meta).toMatchObject({ format: "png", width: size, height: size });
+    }
+
+    // Logo yang sama tidak boleh sekaligus jadi gambar kartu (satu gambar satu pemilik).
+    const clash = await api.put("/seo", {
+      title: "",
+      description: "",
+      imageMediaId: logo.id,
+      logoMediaId: logo.id,
+    });
+    expect(clash.status).toBe(409);
+  });
+});
+
+describe("nama situs", () => {
+  it("bawaan sebelum diatur; dipakai /public/site dan manifest PWA", async () => {
+    const site = async () =>
+      (await (await app.request("/api/v1/public/site")).json()) as {
+        name: string;
+      };
+    expect(await site()).toEqual({ name: "Hasri & Ramli" });
+
+    const saved = await api.put("/settings", {
+      siteName: "  Hasri ♥ Ramli ",
+      groomName: "Ramli",
+      brideName: "Hasri",
+      publicBaseUrl: "https://contoh.com",
+    });
+    expect(saved.status).toBe(200);
+    expect(await site()).toEqual({ name: "Hasri ♥ Ramli" });
+
+    const manifest = await app.request("/manifest.webmanifest");
+    expect(manifest.headers.get("content-type")).toContain("application/manifest+json");
+    expect(await manifest.json()).toMatchObject({
+      name: "Hasri ♥ Ramli",
+      short_name: "Hasri ♥ Ramli",
+      icons: expect.arrayContaining([expect.objectContaining({ src: "/site-icon/icon-192.png" })]),
+    });
+
+    const tooLong = await api.put("/settings", {
+      siteName: "x".repeat(41),
+      groomName: "Ramli",
+      brideName: "Hasri",
+      publicBaseUrl: "https://contoh.com",
+    });
+    expect(tooLong.status).toBe(400);
   });
 });

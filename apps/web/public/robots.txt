@@ -1,0 +1,12 @@
+# Situs undangan pribadi: mesin pencari tidak boleh mengindeks apa pun.
+User-agent: *
+Disallow: /
+
+# Pembuat pratinjau tautan (WhatsApp, Instagram/Facebook, Telegram, X) tetap boleh membaca halaman
+# agar kartu link tampil. Pengindeksan tetap dicegah lewat X-Robots-Tag noindex.
+User-agent: facebookexternalhit
+User-agent: Facebot
+User-agent: WhatsApp
+User-agent: TelegramBot
+User-agent: Twitterbot
+Allow: /

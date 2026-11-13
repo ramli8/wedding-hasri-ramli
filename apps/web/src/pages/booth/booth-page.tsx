@@ -9,6 +9,7 @@ import { Button } from "@/components/kit/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ThemeProvider } from "@/context/theme-provider";
+import { useDocumentTitle } from "@/lib/document-title";
 import { cn } from "@/lib/utils";
 import { useBoothCamera } from "../../lib/booth/camera.js";
 import {
@@ -82,6 +83,7 @@ const PRINT_CSS = `
 `;
 
 export function BoothPage() {
+  useDocumentTitle("Photobooth");
   return (
     <ThemeProvider>
       <Booth />
@@ -397,7 +399,7 @@ function Booth() {
           {photoBaseUrl === "none" && (
             <Alert>
               Alamat situs belum diterima dari server (laptop belum tersambung, atau alamat situs
-              belum diisi di Pengaturan → Pernikahan). QR di cetakan memakai alamat laptop ini dan
+              belum diisi di Pengaturan → Situs). QR di cetakan memakai alamat laptop ini dan
               mungkin tidak bisa dibuka tamu.
             </Alert>
           )}

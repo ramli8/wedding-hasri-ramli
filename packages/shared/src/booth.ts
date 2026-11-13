@@ -36,7 +36,7 @@ export type BoothConfigInput = z.input<typeof boothConfigSchema>;
 export const boothConfigDataSchema = z.object({
   frames: z.array(boothFrameSchema),
   /**
-   * Alamat situs (Pengaturan → Pernikahan) untuk QR foto: `<photoBaseUrl>/foto/<id foto>`. Hanya
+   * Alamat situs (Pengaturan → Situs) untuk QR foto: `<photoBaseUrl>/foto/<id foto>`. Hanya
    * dikirim ke booth; null = booth memakai alamat yang sedang dibukanya.
    */
   photoBaseUrl: z

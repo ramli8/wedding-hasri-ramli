@@ -8,11 +8,13 @@ import { Field } from "@/components/kit/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/context/theme-provider";
+import { useDocumentTitle } from "@/lib/document-title";
 import { api } from "../lib/api.js";
 import { meQuery } from "../lib/queries.js";
 
 /** Halaman masuk admin: satu kartu formulir di tengah layar, tema mengikuti pilihan di admin. */
 export function LoginPage() {
+  useDocumentTitle("Masuk");
   return (
     <ThemeProvider>
       <LoginForm />

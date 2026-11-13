@@ -7,6 +7,7 @@ import {
   myClaimsResponseSchema,
   type RsvpRequest,
   rsvpResponseSchema,
+  siteInfoSchema,
   ticketResponseSchema,
   type WishClaimRequest,
   wishClaimResponseSchema,
@@ -17,6 +18,7 @@ const base = "/v1/public";
 
 /** API tanpa login untuk tamu (halaman /u/KODE). */
 export const publicApi = {
+  site: () => request(`${base}/site`, siteInfoSchema),
   ticket: (code: string) => request(`${base}/ticket/${code}`, ticketResponseSchema),
   // `fresh` melewati cache peramban (max-age 30 detik) agar sisa wishlist terbaru terlihat.
   invitation: (fresh = false) =>

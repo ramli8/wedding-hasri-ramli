@@ -42,13 +42,13 @@ export function ProfileDropdown({ user }: { user: { name: string; email: string 
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/pengaturan/sandi">
+              <Link to="/admin/pengaturan/akun">
                 Kata sandi
                 <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/pengaturan/tampilan">
+              <Link to="/admin/pengaturan">
                 Pengaturan
                 <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
               </Link>

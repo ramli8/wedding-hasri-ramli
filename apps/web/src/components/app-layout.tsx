@@ -1,11 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DirectionProvider } from "@/context/direction-provider";
 import { LayoutProvider } from "@/context/layout-provider";
 import { SearchProvider } from "@/context/search-provider";
 import { ThemeProvider } from "@/context/theme-provider";
 import { getCookie } from "@/lib/cookies";
+import { adminPageTitle, useDocumentTitle } from "@/lib/document-title";
 import { meQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { ConfigDrawer } from "./config-drawer";
@@ -22,6 +23,7 @@ export function AppLayout() {
   const { data } = useSuspenseQuery(meQuery);
   const user = { name: data?.admin.name ?? "?", email: data?.admin.email ?? "" };
   const defaultOpen = getCookie("sidebar_state") !== "false";
+  useDocumentTitle(adminPageTitle(useLocation().pathname));
 
   return (
     <DirectionProvider>

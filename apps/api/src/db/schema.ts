@@ -45,6 +45,8 @@ export const settings = pgTable(
   "settings",
   {
     id: smallint().primaryKey().default(1),
+    // Nama pendek situs (judul tab, nama aplikasi di HP); kosong = DEFAULT_SITE_NAME.
+    siteName: text(),
     groomName: text().notNull(),
     brideName: text().notNull(),
     publicBaseUrl: text().notNull(),
@@ -52,6 +54,8 @@ export const settings = pgTable(
     seoTitle: text(),
     seoDescription: text(),
     seoImageMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
+    // Logo persegi: sumber favicon dan ikon aplikasi (/site-icon/*).
+    logoMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
     // Tujuan hitung mundur di undangan; kosong = tanggal acara pertama.
     countdownAt: timestamp({ withTimezone: true }),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

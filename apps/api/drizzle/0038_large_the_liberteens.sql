@@ -1,0 +1,2 @@
+ALTER TABLE "settings" ADD COLUMN "logo_media_id" uuid;--> statement-breakpoint
+ALTER TABLE "settings" ADD CONSTRAINT "settings_logo_media_id_media_id_fk" FOREIGN KEY ("logo_media_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;

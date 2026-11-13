@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { DatabaseBackup, Heart, KeyRound, Link2, MessageSquareText, Palette } from "lucide-react";
+import { DatabaseBackup, Globe, MessageSquareText, UserRound } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Select,
@@ -11,16 +11,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/admin/pengaturan", title: "Pernikahan", icon: <Heart size={18} /> },
+  { href: "/admin/pengaturan", title: "Situs", icon: <Globe size={18} /> },
   {
     href: "/admin/pengaturan/pesan",
     title: "Pesan WhatsApp",
     icon: <MessageSquareText size={18} />,
   },
-  { href: "/admin/pengaturan/pratinjau", title: "Pratinjau tautan", icon: <Link2 size={18} /> },
-  { href: "/admin/pengaturan/sandi", title: "Kata sandi", icon: <KeyRound size={18} /> },
+  { href: "/admin/pengaturan/akun", title: "Akun", icon: <UserRound size={18} /> },
   { href: "/admin/pengaturan/cadangan", title: "Cadangan", icon: <DatabaseBackup size={18} /> },
-  { href: "/admin/pengaturan/tampilan", title: "Tampilan", icon: <Palette size={18} /> },
 ] as const;
 
 /** SidebarNav shadcn-admin: Select di HP, daftar tombol ghost di layar lebar. */
@@ -77,9 +75,7 @@ export function SettingsLayout() {
     <>
       <div className="space-y-0.5">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Pengaturan</h1>
-        <p className="text-muted-foreground">
-          Data dasar pernikahan, akun Anda, dan tampilan panel.
-        </p>
+        <p className="text-muted-foreground">Situs, pesan WhatsApp, akun, dan cadangan.</p>
       </div>
       <hr className="my-4 lg:my-6" />
       <div className="flex flex-1 flex-col space-y-2 md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12">

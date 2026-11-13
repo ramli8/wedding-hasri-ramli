@@ -47,14 +47,9 @@ import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
 import { MessageSettings } from "./pages/settings/message-settings.js";
-import { SeoSettings } from "./pages/settings/seo-settings.js";
 import { SettingsLayout } from "./pages/settings/settings-layout.js";
-import {
-  AppearanceSettings,
-  BackupSettings,
-  PasswordSettings,
-  WeddingSettings,
-} from "./pages/settings/settings-pages.js";
+import { AccountSettings, BackupSettings } from "./pages/settings/settings-pages.js";
+import { SiteSettings } from "./pages/settings/site-settings.js";
 import { InvitationPage } from "./pages/ticket/invitation-page.js";
 import { VendorsPage } from "./pages/vendors-page.js";
 
@@ -241,7 +236,7 @@ const settingsRoute = createRoute({
   component: SettingsLayout,
 });
 const settingsChildren = [
-  createRoute({ getParentRoute: () => settingsRoute, path: "/", component: WeddingSettings }),
+  createRoute({ getParentRoute: () => settingsRoute, path: "/", component: SiteSettings }),
   createRoute({
     getParentRoute: () => settingsRoute,
     path: "pesan",
@@ -254,14 +249,25 @@ const settingsChildren = [
     }),
     component: MessageSettings,
   }),
-  createRoute({ getParentRoute: () => settingsRoute, path: "pratinjau", component: SeoSettings }),
-  createRoute({ getParentRoute: () => settingsRoute, path: "sandi", component: PasswordSettings }),
+  createRoute({ getParentRoute: () => settingsRoute, path: "akun", component: AccountSettings }),
   createRoute({ getParentRoute: () => settingsRoute, path: "cadangan", component: BackupSettings }),
+  // Alamat lama (sebelum menu digabung) tetap berfungsi.
   createRoute({
     getParentRoute: () => settingsRoute,
-    path: "tampilan",
-    component: AppearanceSettings,
+    path: "pratinjau",
+    beforeLoad: () => {
+      throw redirect({ to: "/admin/pengaturan" });
+    },
   }),
+  ...["sandi", "tampilan"].map((path) =>
+    createRoute({
+      getParentRoute: () => settingsRoute,
+      path,
+      beforeLoad: () => {
+        throw redirect({ to: "/admin/pengaturan/akun" });
+      },
+    }),
+  ),
 ];
 
 const errorRoutes = [

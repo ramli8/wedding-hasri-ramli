@@ -26,8 +26,11 @@ export function ImageField({
   value,
   onChange,
   recommendation,
+  specs,
 }: {
   label: string;
+  /** Spesifikasi berkas yang dianjurkan, satu baris per butir (menggantikan teks bawaan). */
+  specs?: readonly string[];
   /** Saran ukuran dan rasio untuk tempat foto ini ditampilkan, mis. "Potret 4:5, 1600 × 2000 px". */
   recommendation?: string;
   value: MediaRef | null;
@@ -97,10 +100,18 @@ export function ImageField({
               </Button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            JPEG, PNG, atau WebP, maksimal {MAX_UPLOAD_MB} MB. Resolusi dan detail foto
-            dipertahankan.
-          </p>
+          {specs ? (
+            <ul className="grid list-disc gap-0.5 ps-4 text-xs text-muted-foreground">
+              {specs.map((spec) => (
+                <li key={spec}>{spec}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, atau WebP, maksimal {MAX_UPLOAD_MB} MB. Resolusi dan detail foto
+              dipertahankan.
+            </p>
+          )}
           {recommendation && (
             <p className="max-w-prose text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Disarankan:</span> {recommendation}

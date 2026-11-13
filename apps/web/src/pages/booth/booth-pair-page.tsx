@@ -8,6 +8,7 @@ import { Field } from "@/components/kit/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/context/theme-provider";
+import { useDocumentTitle } from "@/lib/document-title";
 import { pairBooth, requestPersistentStorage } from "../../lib/booth/db.js";
 import { syncBooth } from "../../lib/booth/uploader.js";
 import { deviceApi } from "../../lib/scan/device-api.js";
@@ -22,6 +23,7 @@ function formatCode(raw: string) {
 
 /** Memasangkan laptop photobooth dengan kode pairing dari menu Perangkat (sekali, saat online). */
 export function BoothPairPage() {
+  useDocumentTitle("Pasang photobooth");
   const navigate = useNavigate();
   const [code, setCode] = useState(() =>
     formatCode(new URLSearchParams(window.location.search).get("kode") ?? ""),

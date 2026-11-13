@@ -1,10 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  DEFAULT_SEO_DESCRIPTION,
-  DEFAULT_SEO_TITLE,
-  renderSeoText,
-  type Settings,
-} from "@wedding/shared";
+import { DEFAULT_SEO_TITLE, renderSeoText, type Settings } from "@wedding/shared";
 import { CheckCheck } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { seoQuery, settingsQuery } from "../lib/queries.js";
@@ -14,7 +9,7 @@ type App = "whatsapp" | "instagram";
 /**
  * Perkiraan tampilan pesan undangan di WhatsApp dan Instagram: gelembung chat, format teks
  * (`*tebal*` hanya berlaku di WhatsApp), dan kartu pratinjau link yang diambil dari
- * Pengaturan → Pratinjau tautan. Warna sengaja tetap (meniru aplikasinya), tidak ikut tema admin.
+ * Pengaturan → Situs. Warna sengaja tetap (meniru aplikasinya), tidak ikut tema admin.
  */
 export function MessagePreview({ text, guestName }: { text: string; guestName: string }) {
   const [app, setApp] = useState<App>("whatsapp");
@@ -54,7 +49,7 @@ export function MessagePreview({ text, guestName }: { text: string; guestName: s
 
       <p className="text-xs text-muted-foreground">
         Perkiraan tampilan; di HP bisa sedikit berbeda. Kartu link (gambar dan judul) diatur di
-        Pengaturan → Pratinjau tautan dan baru muncul setelah situs online.
+        Pengaturan → Situs dan baru muncul setelah situs online.
         {app === "instagram" &&
           " Instagram tidak mengenal format *tebal*, jadi tanda bintang tampil apa adanya."}
       </p>
@@ -81,7 +76,7 @@ function linkCard(
   }
   return {
     title: renderSeoText(seo?.title || DEFAULT_SEO_TITLE, values),
-    description: renderSeoText(seo?.description || DEFAULT_SEO_DESCRIPTION, values),
+    description: seo?.description ? renderSeoText(seo.description, values) : "",
     image: seo?.image?.thumb ?? null,
     host,
   };
@@ -144,7 +139,11 @@ function WhatsAppChat({ text, card }: { text: string; card: Card }) {
             <CardImage image={card.image} className="aspect-[1.91/1] w-full" />
             <div className="grid gap-0.5 px-2.5 py-2">
               <p className="line-clamp-2 text-[13px] leading-snug font-semibold">{card.title}</p>
-              <p className="line-clamp-2 text-xs leading-snug text-black/60">{card.description}</p>
+              {card.description && (
+                <p className="line-clamp-2 text-xs leading-snug text-black/60">
+                  {card.description}
+                </p>
+              )}
               <p className="text-xs text-black/50">{card.host}</p>
             </div>
           </div>

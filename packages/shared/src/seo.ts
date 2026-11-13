@@ -2,8 +2,8 @@ import { z } from "zod";
 import { mediaRefSchema } from "./media.js";
 
 /** Panjang yang masih tampil utuh di pratinjau tautan WhatsApp, Instagram, dan mesin pencari. */
-export const SEO_TITLE_MAX = 70;
-export const SEO_DESCRIPTION_MAX = 200;
+export const SEO_TITLE_MAX = 60;
+export const SEO_DESCRIPTION_MAX = 155;
 
 /** Kata yang diganti per tamu saat tautan dibuka: `{panggilan}` jadi nama undangan tamu itu. */
 export const SEO_VARIABLES = [
@@ -18,6 +18,11 @@ export const seoInputSchema = z.object({
     .trim()
     .max(SEO_DESCRIPTION_MAX, `Deskripsi maksimal ${SEO_DESCRIPTION_MAX} karakter`),
   imageMediaId: z.uuid().nullable(),
+  /** Logo persegi; dipakai untuk favicon dan ikon aplikasi. */
+  logoMediaId: z
+    .uuid()
+    .nullish()
+    .transform((value) => value ?? null),
 });
 export type SeoInput = z.input<typeof seoInputSchema>;
 
@@ -25,6 +30,7 @@ export const seoSchema = z.object({
   title: z.string(),
   description: z.string(),
   image: mediaRefSchema.nullable(),
+  logo: mediaRefSchema.nullable(),
 });
 export type Seo = z.infer<typeof seoSchema>;
 

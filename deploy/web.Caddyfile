@@ -18,6 +18,8 @@
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options DENY
+		# Situs pribadi (nama tamu, alamat, foto): jangan diindeks mesin pencari.
+		X-Robots-Tag "noindex, nofollow"
 	}
 
 	handle /api/* {
@@ -26,6 +28,16 @@
 
 	# Gambar unggahan: API memberi Cache-Control immutable karena id-nya tidak pernah berubah isinya.
 	handle /media/* {
+		reverse_proxy api:3000
+	}
+
+	# Favicon dan ikon aplikasi dari logo yang diunggah (tanpa logo: dialihkan ke /icons/* statis).
+	handle /site-icon/* {
+		reverse_proxy api:3000
+	}
+
+	# Manifest PWA: nama situs dan ikon dari Pengaturan → Situs.
+	handle /manifest.webmanifest {
 		reverse_proxy api:3000
 	}
 

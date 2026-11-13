@@ -1,40 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
 import { IconThemeDark } from "@/assets/custom/icon-theme-dark";
 import { IconThemeLight } from "@/assets/custom/icon-theme-light";
 import { IconThemeSystem } from "@/assets/custom/icon-theme-system";
-import { Alert } from "@/components/kit/alert";
 import { useTheme } from "@/context/theme-provider";
 import { cn } from "@/lib/utils";
-import { settingsQuery } from "../../lib/queries.js";
-import { ExportCard, PasswordForm, WeddingForm } from "./forms.js";
+import { ExportCard, PasswordForm } from "./forms.js";
 import { ContentSection } from "./settings-layout.js";
 
-export function WeddingSettings() {
-  const settings = useQuery(settingsQuery);
+export function AccountSettings() {
   return (
-    <ContentSection title="Pernikahan" desc="Nama mempelai dan alamat situs untuk link undangan.">
-      {settings.isPending ? (
-        <p className="text-muted-foreground">Memuat…</p>
-      ) : settings.isError ? (
-        <Alert tone="error">{settings.error.message}</Alert>
-      ) : (
-        <WeddingForm initial={settings.data} />
-      )}
-    </ContentSection>
-  );
-}
-
-export function PasswordSettings() {
-  return (
-    <ContentSection title="Kata sandi" desc="Ganti kata sandi akun admin Anda.">
-      <PasswordForm />
+    <ContentSection title="Akun" desc="Kata sandi dan tema panel admin.">
+      <div className="flex flex-col gap-10">
+        <section className="grid gap-4">
+          <h4 className="text-sm font-semibold">Kata sandi</h4>
+          <PasswordForm />
+        </section>
+        <section className="grid gap-4">
+          <h4 className="text-sm font-semibold">Tema</h4>
+          <ThemePicker />
+        </section>
+      </div>
     </ContentSection>
   );
 }
 
 export function BackupSettings() {
   return (
-    <ContentSection title="Cadangan & ekspor" desc="Unduh salinan data untuk arsip pribadi.">
+    <ContentSection title="Cadangan" desc="Unduh salinan data dan foto.">
       <ExportCard />
     </ContentSection>
   );
@@ -46,39 +37,30 @@ const THEMES = [
   { value: "system", label: "Sistem", Icon: IconThemeSystem },
 ] as const;
 
-/** Halaman Appearance shadcn-admin: kartu pratinjau tema. */
-export function AppearanceSettings() {
+/** Kartu pratinjau tema (Appearance shadcn-admin); tersimpan di peramban ini. */
+function ThemePicker() {
   const { theme, setTheme } = useTheme();
   return (
-    <ContentSection
-      title="Tampilan"
-      desc="Atur tampilan panel. Bisa otomatis mengikuti siang dan malam."
-    >
-      <div className="space-y-2">
-        <p className="text-sm leading-none font-medium">Tema</p>
-        <p className="text-sm text-muted-foreground">Pilih tema untuk panel admin.</p>
-        <div className="flex flex-wrap gap-6 pt-2">
-          {THEMES.map(({ value, label, Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTheme(value)}
-              aria-pressed={theme === value}
-              className="text-center"
-            >
-              <div
-                className={cn(
-                  "w-36 items-center overflow-hidden rounded-md border-2 p-1 hover:border-accent",
-                  theme === value ? "border-primary" : "border-muted",
-                )}
-              >
-                <Icon />
-              </div>
-              <span className="mt-2 block text-sm font-normal">{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </ContentSection>
+    <div className="flex flex-wrap gap-4">
+      {THEMES.map(({ value, label, Icon }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setTheme(value)}
+          aria-pressed={theme === value}
+          className="text-center"
+        >
+          <div
+            className={cn(
+              "w-28 items-center overflow-hidden rounded-md border-2 p-1 hover:border-accent sm:w-36",
+              theme === value ? "border-primary" : "border-muted",
+            )}
+          >
+            <Icon />
+          </div>
+          <span className="mt-2 block text-sm font-normal">{label}</span>
+        </button>
+      ))}
+    </div>
   );
 }

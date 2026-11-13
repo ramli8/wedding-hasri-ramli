@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/context/theme-provider";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDocumentTitle } from "@/lib/document-title";
 import { cn } from "@/lib/utils";
 import { applyUpdate, usePwaState } from "../../lib/pwa.js";
 import {
@@ -58,6 +59,7 @@ type OkOutcome = Extract<Outcome, { status: "ok" }>;
 
 /** Scanner memakai tema (terang/gelap) yang sama dengan panel admin. */
 export function ScannerPage() {
+  useDocumentTitle("Scanner");
   return (
     <ThemeProvider>
       <Scanner />

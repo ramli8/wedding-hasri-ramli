@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Situs pribadi: jangan diindeks mesin pencari (juga robots.txt dan X-Robots-Tag). -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- Ikon dari logo di Pengaturan → Situs; tanpa logo API mengalihkan ke /icons/* bawaan. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/site-icon/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/site-icon/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/site-icon/apple-touch-icon.png" />
+    <!-- Nama aplikasi dan ikon dari Pengaturan → Situs (disajikan API). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Hasri & Ramli</title>
   </head>
   <body>

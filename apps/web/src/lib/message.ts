@@ -24,7 +24,7 @@ export function sessionLabel(event: Event, group: Group | null | undefined) {
   return session ? formatSessionTime(session.startsAt, session.endsAt) : FREE_TIME_LABEL;
 }
 
-/** "Hasri Wiji Aqsari & Mohamad Rizal Ramli" dari Pengaturan → Pernikahan. */
+/** "Hasri Wiji Aqsari & Mohamad Rizal Ramli" dari Pengaturan → Situs. */
 export function coupleNames(settings: Settings | null | undefined) {
   return settings ? `${settings.brideName} & ${settings.groomName}` : "";
 }

@@ -267,6 +267,20 @@
       "when": 1794537095772,
       "tag": "0037_vendor_hapus_kolom_lama",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794539074294,
+      "tag": "0038_large_the_liberteens",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794539697049,
+      "tag": "0039_sloppy_red_ghost",
+      "breakpoints": true
     }
   ]
 }

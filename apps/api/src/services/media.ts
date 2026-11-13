@@ -4,9 +4,14 @@ import { join } from "node:path";
 import {
   MAX_LARGE_SIDE,
   MEDIA_JPEG_FILE,
+  MEDIA_OG_FILE,
   type Media,
   type MediaVariant,
   mediaUrl,
+  OG_HEIGHT,
+  OG_WIDTH,
+  SITE_ICONS,
+  type SiteIconName,
   THUMB_SIDE,
 } from "@wedding/shared";
 import { and, desc, eq, lt, sql } from "drizzle-orm";
@@ -30,6 +35,7 @@ export const MEDIA_USERS: { table: string; column: string }[] = [
   { table: "wishlist_items", column: "photo_media_id" },
   { table: "invitation_cover", column: "photo_media_id" },
   { table: "settings", column: "seo_image_media_id" },
+  { table: "settings", column: "logo_media_id" },
   { table: "booth_photos", column: "media_id" },
   { table: "vendor_payments", column: "proof_media_id" },
 ];
@@ -228,4 +234,66 @@ export async function ensureJpeg(dir: string, id: string): Promise<void> {
   } catch {
     await readJpeg(dir, id);
   }
+}
+
+/** Menulis berkas turunan lewat berkas sementara lalu rename (tidak pernah terbaca setengah jadi). */
+async function writeDerived(dir: string, id: string, file: string, data: Buffer) {
+  const tmp = join(dir, id, `${file}.${randomUUID()}.tmp`);
+  await writeFile(tmp, data);
+  await rename(tmp, join(dir, id, file));
+}
+
+/** Membaca berkas turunan; bila belum ada, dibuat sekali dari varian `large` lalu disimpan. */
+async function readDerived(
+  dir: string,
+  id: string,
+  file: string,
+  make: (large: Buffer) => Promise<Buffer>,
+): Promise<Buffer | null> {
+  try {
+    return await readFile(join(dir, id, file));
+  } catch {
+    const large = await readVariant(dir, id, "large");
+    if (!large) return null;
+    const data = await make(large);
+    await writeDerived(dir, id, file, data);
+    return data;
+  }
+}
+
+/** Gambar kartu tautan: JPEG 1200 × 630, potongan tengah (lihat MEDIA_OG_FILE). */
+export function readOgImage(dir: string, id: string): Promise<Buffer | null> {
+  return readDerived(dir, id, MEDIA_OG_FILE, (large) =>
+    sharp(large, { limitInputPixels: MAX_INPUT_PIXELS })
+      .resize({ width: OG_WIDTH, height: OG_HEIGHT, fit: "cover", position: "centre" })
+      .flatten({ background: "#ffffff" })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toBuffer(),
+  );
+}
+
+/** Satu ikon situs dari logo (lihat SITE_ICONS), PNG, disimpan di samping gambarnya. */
+export function readSiteIcon(dir: string, id: string, name: SiteIconName): Promise<Buffer | null> {
+  const { size, mode } = SITE_ICONS[name];
+  return readDerived(dir, id, `icon-${name}`, async (large) => {
+    const transparent = { r: 255, g: 255, b: 255, alpha: 0 };
+    // Ikon maskable: logo di 80% tengah, sisanya latar, agar tidak terpotong lingkaran Android.
+    const inner = mode === "maskable" ? Math.round(size * 0.8) : size;
+    const logo = await sharp(large, { limitInputPixels: MAX_INPUT_PIXELS })
+      .resize({ width: inner, height: inner, fit: "contain", background: transparent })
+      .png()
+      .toBuffer();
+    const canvas = sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: mode === "transparent" ? transparent : { r: 255, g: 255, b: 255, alpha: 1 },
+      },
+    });
+    return canvas
+      .composite([{ input: logo, gravity: "centre" }])
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+  });
 }

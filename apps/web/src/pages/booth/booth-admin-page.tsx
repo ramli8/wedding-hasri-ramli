@@ -45,7 +45,7 @@ function FramesCard() {
           satu bingkai aktif, tamu memilih sendiri di layar booth. Booth mengambil pilihan ini saat
           tersambung internet. QR di pojok kanan bawah berbeda di setiap foto dan membuka halaman
           berisi foto itu saja (dengan tombol Unduh) di situs ini, memakai alamat situs di
-          Pengaturan → Pernikahan.
+          Pengaturan → Situs.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">

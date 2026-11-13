@@ -1,3 +1,4 @@
+import { OG_HEIGHT, OG_WIDTH } from "@wedding/shared";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { FailureLimiter } from "../auth/rate-limit.js";
@@ -20,21 +21,28 @@ export function renderHead(preview: LinkPreview): string {
     `<meta property="${property}" content="${escapeHtml(content)}" />`;
   const lines = [
     `<title>${escapeHtml(preview.title)}</title>`,
-    `<meta name="description" content="${escapeHtml(preview.description)}" />`,
     // Halaman ini pribadi per tamu, jadi jangan diindeks mesin pencari.
     `<meta name="robots" content="noindex, nofollow" />`,
     tag("og:type", "website"),
     tag("og:site_name", preview.siteName),
     tag("og:title", preview.title),
-    tag("og:description", preview.description),
     tag("og:url", preview.url),
     `<meta name="twitter:card" content="${preview.image ? "summary_large_image" : "summary"}" />`,
     `<meta name="twitter:title" content="${escapeHtml(preview.title)}" />`,
-    `<meta name="twitter:description" content="${escapeHtml(preview.description)}" />`,
   ];
+  if (preview.description) {
+    lines.push(
+      `<meta name="description" content="${escapeHtml(preview.description)}" />`,
+      tag("og:description", preview.description),
+      `<meta name="twitter:description" content="${escapeHtml(preview.description)}" />`,
+    );
+  }
   if (preview.image) {
     lines.push(
       tag("og:image", preview.image),
+      tag("og:image:type", "image/jpeg"),
+      tag("og:image:width", String(OG_WIDTH)),
+      tag("og:image:height", String(OG_HEIGHT)),
       `<meta name="twitter:image" content="${escapeHtml(preview.image)}" />`,
     );
   }
@@ -126,7 +134,7 @@ export function photoShareRoutes(deps: AppDeps) {
       if (!id.success) return null;
       const photo = await getGuestPhoto(deps.db, id.data);
       if (typeof photo === "string") return null;
-      return buildPhotoPreview(deps.db, { id: id.data, thumb: photo.photo.media.thumb });
+      return buildPhotoPreview(deps.db, { id: id.data, mediaId: photo.photo.media.id });
     }),
   );
 }

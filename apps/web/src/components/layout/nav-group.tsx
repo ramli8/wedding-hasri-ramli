@@ -145,7 +145,7 @@ function checkIsActive(
   mainNav = false
 ) {
   const path = href.split('?')[0] ?? href
-  // Menu yang alamatnya menjadi awalan menu lain (Beranda, Pengaturan → Pernikahan) hanya aktif
+  // Menu yang alamatnya menjadi awalan menu lain (Beranda, Pengaturan → Situs) hanya aktif
   // bila alamatnya persis sama; selain itu "Pernikahan" ikut tersorot di "Pesan undangan".
   const isUrl = (url: string) =>
     EXACT_ONLY.has(url) ? path === url : path === url || path.startsWith(`${url}/`)

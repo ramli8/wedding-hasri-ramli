@@ -4,6 +4,7 @@ import {
   guestbookPostRequestSchema,
   guestCodeSchema,
   rsvpRequestSchema,
+  type SiteInfo,
   wishClaimRequestSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
@@ -22,6 +23,7 @@ import {
   postGuestbook,
   submitRsvp,
 } from "../services/public.js";
+import { getSiteName } from "../services/settings.js";
 import { myClaims, setClaim } from "../services/wish-claims.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -64,6 +66,11 @@ export function publicRoutes(
 
   return (
     new Hono<AppEnv>()
+      // Nama situs untuk judul tab halaman tamu dan scanner.
+      .get("/site", async (c) => {
+        c.header("cache-control", "public, max-age=60");
+        return c.json({ name: await getSiteName(db) } satisfies SiteInfo);
+      })
       // Isi undangan (mempelai, cerita) tidak memuat data tamu, jadi tidak memerlukan kode.
       .get("/invitation", async (c) => {
         c.header("cache-control", "public, max-age=30");

@@ -9,6 +9,7 @@ import { Field } from "@/components/kit/field";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/context/theme-provider";
+import { useDocumentTitle } from "@/lib/document-title";
 import { getMeta, releaseDevice, repairDevice } from "../../lib/scan/db.js";
 import { deviceApi } from "../../lib/scan/device-api.js";
 import { syncEngine } from "../../lib/scan/sync.js";
@@ -32,6 +33,7 @@ function codeFromUrl() {
 }
 
 export function PairPage() {
+  useDocumentTitle("Pasang scanner");
   const navigate = useNavigate();
   const auth = useLiveQuery(() => getMeta("auth"), []);
 

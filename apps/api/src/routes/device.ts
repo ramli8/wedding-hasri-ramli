@@ -27,11 +27,7 @@ export function deviceRoutes({ db, config }: AppDeps) {
       const result = await pairDevice(db, code, kind);
       if (!result) {
         limiter.recordFailure(ip);
-        throw new AppError(
-          401,
-          "UNAUTHENTICATED",
-          "Kode pairing salah, sudah dipakai, atau kedaluwarsa",
-        );
+        throw new AppError(401, "UNAUTHENTICATED", "Kode pairing salah atau sudah dipakai");
       }
       return c.json(result);
     },

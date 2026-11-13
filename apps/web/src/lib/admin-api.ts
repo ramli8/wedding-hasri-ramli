@@ -3,8 +3,15 @@ import {
   adminGuestbookListResponseSchema,
   adminGuestbookResponseSchema,
   type BoothConfigInput,
+  type BuwuhAddressListInput,
+  type BuwuhCatalogInput,
+  type BuwuhInput,
   boothConfigResponseSchema,
   boothPhotoListResponseSchema,
+  buwuhAddressListResponseSchema,
+  buwuhCatalogResponseSchema,
+  buwuhListResponseSchema,
+  buwuhResponseSchema,
   type CoupleProfileInput,
   type CoupleRole,
   type CoverInput,
@@ -48,6 +55,7 @@ import {
   logResponseSchema,
   type MarkSentRequest,
   mediaResponseSchema,
+  pairingCardsResponseSchema,
   type ReceivedGiftInput,
   type ReceivedGiftKind,
   type ResolveRequest,
@@ -192,6 +200,9 @@ export const adminApi = {
     list: () => request(`${base}/devices`, deviceListResponseSchema),
     create: (name: string, kind: DeviceKind) =>
       request(`${base}/devices`, createDeviceResponseSchema, withBody("POST", { name, kind })),
+    /** Kartu pasang dengan kode tersimpan (tidak membuat kode baru). */
+    cards: (ids: string[]) =>
+      request(`${base}/devices/cards`, pairingCardsResponseSchema, withBody("POST", { ids })),
     /** Kode pairing baru untuk perangkat yang belum dipasang. */
     newPairingCode: (id: string) =>
       request(
@@ -411,6 +422,21 @@ export const adminApi = {
     remove: (id: string) => request(`${base}/guestbook/${id}`, okSchema, withBody("DELETE")),
   },
 
+  buwuh: {
+    list: () => request(`${base}/buwuh`, buwuhListResponseSchema),
+    create: (input: BuwuhInput) =>
+      request(`${base}/buwuh`, buwuhResponseSchema, withBody("POST", input)),
+    update: (id: string, input: BuwuhInput) =>
+      request(`${base}/buwuh/${id}`, buwuhResponseSchema, withBody("PUT", input)),
+    remove: (id: string) => request(`${base}/buwuh/${id}`, okSchema, withBody("DELETE")),
+    catalog: () => request(`${base}/buwuh/catalog`, buwuhCatalogResponseSchema),
+    saveCatalog: (input: BuwuhCatalogInput) =>
+      request(`${base}/buwuh/catalog`, buwuhCatalogResponseSchema, withBody("PUT", input)),
+    addresses: () => request(`${base}/buwuh/addresses`, buwuhAddressListResponseSchema),
+    saveAddresses: (input: BuwuhAddressListInput) =>
+      request(`${base}/buwuh/addresses`, buwuhAddressListResponseSchema, withBody("PUT", input)),
+  },
+
   booth: {
     config: () => request(`${base}/booth/config`, boothConfigResponseSchema),
     saveConfig: (input: BoothConfigInput) =>
@@ -444,6 +470,7 @@ export const downloads = {
   mediaZip: `/api${base}/export/media.zip`,
   boothPhotosZip: `/api${base}/booth/photos.zip`,
   vendorsXlsx: `/api${base}/vendors/export.xlsx`,
+  buwuhXlsx: `/api${base}/buwuh/export.xlsx`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
   receivedGiftsXlsx: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();

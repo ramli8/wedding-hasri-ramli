@@ -117,7 +117,11 @@ export const requireSyncVersion: MiddlewareHandler<AppEnv> = async (c, next) => 
 };
 
 /** Token perangkat di header `Authorization: Bearer ...`. */
-const KIND_LABEL: Record<DeviceKind, string> = { scanner: "scanner", booth: "photobooth" };
+const KIND_LABEL: Record<DeviceKind, string> = {
+  scanner: "scanner",
+  booth: "photobooth",
+  buwuh: "meja buwuh",
+};
 
 /** Token perangkat; `kind` membatasi jenisnya (booth tidak boleh menarik data tamu, dan sebaliknya). */
 export const requireDevice =

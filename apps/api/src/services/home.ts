@@ -1,8 +1,9 @@
 import type { HomeResponse } from "@wedding/shared";
 import { and, count, eq, isNull, min, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { events, guestbook, guests } from "../db/schema.js";
+import { devices, events, guestbook, guests } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
+import { listBuwuh } from "./buwuh.js";
 import { buildDashboard } from "./checkin-admin.js";
 import { listRsvps } from "./engage.js";
 import { getCouple } from "./invitation.js";
@@ -45,6 +46,13 @@ export async function getHome(db: Db): Promise<HomeResponse> {
     .from(guestbook)
     .where(and(isNull(guestbook.reply), eq(guestbook.isHidden, false)));
   const couple = await getCouple(db);
+  const [deviceCounts] = await db
+    .select({
+      active: sql<number>`count(*) filter (where ${devices.status} = 'active')::int`,
+      online: sql<number>`count(*) filter (where ${devices.status} = 'active' and ${devices.lastSeenAt} > now() - interval '2 minutes')::int`,
+      pending: sql<number>`count(*) filter (where ${devices.status} = 'pending')::int`,
+    })
+    .from(devices);
 
   return {
     eventDate: first?.at?.toISOString() ?? null,
@@ -89,6 +97,8 @@ export async function getHome(db: Db): Promise<HomeResponse> {
         .slice(0, 5),
     },
     gifts: await receivedGiftSummary(db),
+    buwuh: (await listBuwuh(db)).summary,
+    devices: deviceCounts ?? { active: 0, online: 0, pending: 0 },
     guestbookUnreplied: unreplied?.n ?? 0,
     coupleFilled: !!couple.groom && !!couple.bride,
   };

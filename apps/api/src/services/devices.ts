@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import type { Device, DeviceKind, PairResponse } from "@wedding/shared";
 import { DEVICE_PAIR_PAGE, PAIRING_CODE_LENGTH } from "@wedding/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { checkinEvents, devices } from "../db/schema.js";
@@ -11,7 +11,6 @@ export type DeviceRow = typeof devices.$inferSelect;
 
 // Alfabet yang sama dengan kode tamu (tanpa I, O, 0, 1).
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const PAIRING_TTL_MS = 24 * 60 * 60 * 1000;
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -24,8 +23,7 @@ export function generatePairingCode(): string {
 /** "K7M29QXA" → "K7M2-9QXA" */
 export const formatPairingCode = (code: string) => `${code.slice(0, 4)}-${code.slice(4)}`;
 
-export function toDevice(row: DeviceRow, now = new Date()): Device {
-  const pairing = row.pairingExpiresAt && row.pairingExpiresAt > now ? row.pairingExpiresAt : null;
+export function toDevice(row: DeviceRow): Device {
   return {
     id: row.id,
     name: row.name,
@@ -37,18 +35,21 @@ export function toDevice(row: DeviceRow, now = new Date()): Device {
     lastSyncAt: row.lastSyncAt?.toISOString() ?? null,
     pendingOutbox: row.pendingOutbox,
     createdAt: row.createdAt.toISOString(),
-    pairingExpiresAt: row.status === "pending" ? (pairing?.toISOString() ?? null) : null,
+    // Kode pairing tidak lagi kedaluwarsa (lihat createDevice); isi kolom lama diabaikan.
+    pairingExpiresAt: null,
   };
 }
 
 export async function listDevices(db: Db): Promise<Device[]> {
   const rows = await db.select().from(devices);
-  const now = new Date();
-  return rows
-    .map((row) => toDevice(row, now))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return rows.map((row) => toDevice(row)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+/**
+ * Membuat perangkat beserta kode pairing. Kode tidak kedaluwarsa: berlaku sampai dipakai sekali,
+ * diganti, atau perangkatnya dicabut. Dengan begitu perangkat cadangan bisa disiapkan jauh hari dan
+ * dipasang siapa saja di hari-H tanpa perlu membuka admin. Tebakan kode tetap dibatasi per IP.
+ */
 export async function createDevice(db: Db, name: string, kind: DeviceKind = "scanner") {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generatePairingCode();
@@ -59,7 +60,7 @@ export async function createDevice(db: Db, name: string, kind: DeviceKind = "sca
           name,
           kind,
           pairingCodeHash: sha256(code),
-          pairingExpiresAt: new Date(Date.now() + PAIRING_TTL_MS),
+          pairingCode: formatPairingCode(code),
         })
         .returning();
       if (!row) throw new Error("Gagal membuat perangkat");
@@ -73,7 +74,7 @@ export async function createDevice(db: Db, name: string, kind: DeviceKind = "sca
 }
 
 /**
- * Kode pairing baru untuk perangkat yang belum dipasang (mis. kode lama kedaluwarsa atau hilang).
+ * Kode pairing baru untuk perangkat yang belum dipasang (mis. kode lama hilang).
  * Kode lama langsung tidak berlaku karena hash-nya diganti.
  */
 export async function renewPairingCode(db: Db, id: string) {
@@ -100,7 +101,8 @@ export async function renewPairingCode(db: Db, id: string) {
         .update(devices)
         .set({
           pairingCodeHash: sha256(code),
-          pairingExpiresAt: new Date(Date.now() + PAIRING_TTL_MS),
+          pairingCode: formatPairingCode(code),
+          pairingExpiresAt: null,
         })
         .where(and(eq(devices.id, id), eq(devices.status, "pending")))
         .returning();
@@ -120,7 +122,8 @@ export async function renewPairingCode(db: Db, id: string) {
 export async function revokeDevice(db: Db, id: string): Promise<Device> {
   const [row] = await db
     .update(devices)
-    .set({ status: "revoked", pairingCodeHash: null, pairingExpiresAt: null })
+    // Hash dibiarkan: kode perangkat yang dicabut ditolak dengan pesan yang jelas.
+    .set({ status: "revoked", pairingExpiresAt: null })
     .where(eq(devices.id, id))
     .returning();
   if (!row) throw new AppError(404, "NOT_FOUND", "Perangkat tidak ditemukan");
@@ -149,6 +152,7 @@ export async function deleteDevice(db: Db, id: string): Promise<void> {
 const KIND_PAGE: Record<DeviceKind, string> = {
   scanner: `HP penjaga pintu: buka ${DEVICE_PAIR_PAGE.scanner}`,
   booth: `laptop photobooth: buka ${DEVICE_PAIR_PAGE.booth}`,
+  buwuh: `HP meja buwuh: buka ${DEVICE_PAIR_PAGE.buwuh}`,
 };
 
 /**
@@ -169,8 +173,21 @@ export async function pairDevice(
       .where(eq(devices.pairingCodeHash, sha256(code)))
       .for("update")
       .limit(1);
-    const expired = !pending?.pairingExpiresAt || pending.pairingExpiresAt <= new Date();
-    if (pending?.status !== "pending" || expired) return [];
+    if (!pending) return [];
+    if (pending.status === "active") {
+      throw new AppError(
+        409,
+        "CONFLICT",
+        `Kode ini sudah dipakai untuk memasang “${pending.name}”. Satu kode hanya untuk satu perangkat; minta admin membuat perangkat baru.`,
+      );
+    }
+    if (pending.status === "revoked") {
+      throw new AppError(
+        409,
+        "CONFLICT",
+        `Perangkat “${pending.name}” sudah dicabut admin, jadi kodenya tidak bisa dipakai lagi.`,
+      );
+    }
     if (pending.kind !== kind) {
       throw new AppError(
         409,
@@ -183,8 +200,8 @@ export async function pairDevice(
       .set({
         status: "active",
         tokenHash: sha256(token),
-        // kode hangus: tidak bisa dipakai di perangkat lain
-        pairingCodeHash: null,
+        // Kode tetap tersimpan (cetak ulang kartu, pesan "sudah dipakai"), tetapi tidak bisa
+        // memasang lagi karena status tidak lagi pending.
         pairingExpiresAt: null,
         lastSeenAt: new Date(),
       })
@@ -192,6 +209,43 @@ export async function pairDevice(
       .returning();
   });
   return row ? { token, deviceId: row.id, deviceName: row.name } : null;
+}
+
+export type PairingCard = {
+  id: string;
+  name: string;
+  kind: DeviceKind;
+  status: Device["status"];
+  /** null: perangkat lama yang terpasang sebelum kode disimpan; kodenya tidak bisa ditampilkan. */
+  code: string | null;
+};
+
+/**
+ * Kartu pasang untuk perangkat terpilih, memakai kode yang tersimpan (tidak membuat kode baru).
+ * Perangkat pending yang belum punya kode tersimpan (dibuat sebelum fitur ini) diberi kode baru.
+ */
+export async function pairingCards(db: Db, ids: string[]): Promise<PairingCard[]> {
+  if (ids.length === 0) return [];
+  const rows = await db.select().from(devices).where(inArray(devices.id, ids));
+  const cards: PairingCard[] = [];
+  for (const row of rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
+    if (row.status === "revoked") continue;
+    let code = row.pairingCode;
+    if (!code && row.status === "pending") code = (await renewPairingCode(db, row.id)).pairingCode;
+    cards.push({
+      id: row.id,
+      name: row.name,
+      kind: row.kind as DeviceKind,
+      status: row.status as Device["status"],
+      code,
+    });
+  }
+  return cards;
+}
+
+/** Menandai perangkat masih hidup (untuk "Perangkat online" di Beranda). */
+export async function touchDevice(db: Db, id: string): Promise<void> {
+  await db.update(devices).set({ lastSeenAt: new Date() }).where(eq(devices.id, id));
 }
 
 export async function authenticateDevice(db: Db, token: string): Promise<DeviceRow> {

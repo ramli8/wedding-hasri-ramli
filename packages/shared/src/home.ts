@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buwuhSummarySchema } from "./buwuh.js";
 import { receivedGiftSummarySchema } from "./received-gifts.js";
 import { dueStateSchemaValues, vendorSummarySchema } from "./vendors.js";
 
@@ -46,6 +47,10 @@ export const homeResponseSchema = z.object({
     ),
   }),
   gifts: receivedGiftSummarySchema,
+  /** Perangkat hari-H: terpasang, terlihat aktif 2 menit terakhir, dan yang belum dipasang. */
+  devices: z.object({ active: z.number(), online: z.number(), pending: z.number() }),
+  /** Rekap meja buwuh: total uang, banyak pemberi, dan total per barang. */
+  buwuh: buwuhSummarySchema,
   guestbookUnreplied: z.number(),
   /** Profil mempelai sudah diisi (keduanya). */
   coupleFilled: z.boolean(),

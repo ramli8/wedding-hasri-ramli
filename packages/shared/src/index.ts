@@ -1,5 +1,6 @@
 export * from "./auth.js";
 export * from "./booth.js";
+export * from "./buwuh.js";
 export * from "./checkin.js";
 export * from "./checkin-admin.js";
 export * from "./contact.js";

@@ -6,16 +6,18 @@ export const PAIRING_CODE_LENGTH = 8;
 
 /**
  * Jenis perangkat, dipilih admin saat membuat kode pairing; kode hanya bisa dipasang sebagai jenis
- * itu (scanner di /scan/pasang, booth di /booth/pasang). HP scanner hanya boleh memakai /sync (data tamu),
- * laptop photobooth hanya /booth, sehingga token booth di area umum tidak bisa mengambil daftar tamu.
+ * itu (scanner di /scan/pasang, booth di /booth/pasang, meja buwuh di /buwuh/pasang). HP scanner hanya
+ * boleh memakai /sync (data tamu), laptop photobooth hanya /booth, HP meja buwuh hanya /buwuh, sehingga
+ * token booth atau meja buwuh di area umum tidak bisa mengambil daftar tamu.
  */
-export const deviceKindSchema = z.enum(["scanner", "booth"]);
+export const deviceKindSchema = z.enum(["scanner", "booth", "buwuh"]);
 export type DeviceKind = z.infer<typeof deviceKindSchema>;
 
 /** Halaman tempat kode pairing tiap jenis perangkat diketik. */
 export const DEVICE_PAIR_PAGE: Record<DeviceKind, string> = {
   scanner: "/scan/pasang",
   booth: "/booth/pasang",
+  buwuh: "/buwuh/pasang",
 };
 
 export const pairRequestSchema = z.object({

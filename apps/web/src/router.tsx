@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { AppLayout } from "./components/app-layout.js";
 import { getBoothMeta } from "./lib/booth/db.js";
+import { getBuwuhMeta } from "./lib/buwuh/db.js";
 import { meQuery } from "./lib/queries.js";
 import { getMeta } from "./lib/scan/db.js";
 import { BoothAdminPage } from "./pages/booth/booth-admin-page.js";
@@ -15,6 +16,9 @@ import { BoothPage } from "./pages/booth/booth-page.js";
 import { BoothPairPage } from "./pages/booth/booth-pair-page.js";
 import { BoothPhotosPage } from "./pages/booth/booth-photos-page.js";
 import { GuestPhotoPage } from "./pages/booth/guest-photo-page.js";
+import { BuwuhAdminPage } from "./pages/buwuh/buwuh-admin-page.js";
+import { BuwuhPage } from "./pages/buwuh/buwuh-page.js";
+import { BuwuhPairPage } from "./pages/buwuh/buwuh-pair-page.js";
 import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
 import {
@@ -147,6 +151,12 @@ const receivedGiftsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/hadiah",
   component: ReceivedGiftsPage,
+});
+
+const buwuhAdminRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/buwuh",
+  component: BuwuhAdminPage,
 });
 
 const rsvpRoute = createRoute({
@@ -308,8 +318,13 @@ const guestPhotoRoute = createRoute({
 });
 
 // Aplikasi penjaga pintu: tidak memakai login admin, melainkan token perangkat (lihat /scan/pasang).
+// Aplikasi yang dipasang di layar utama selalu dibuka di /scan (start_url manifest), jadi HP meja
+// buwuh dan laptop booth yang sudah terpasang diarahkan ke halamannya sendiri.
 const requirePairedDevice = async () => {
-  if (!(await getMeta("auth"))) throw redirect({ to: "/scan/pasang" });
+  if (await getMeta("auth")) return;
+  if (await getBuwuhMeta("auth")) throw redirect({ to: "/buwuh" });
+  if (await getBoothMeta("auth")) throw redirect({ to: "/booth" });
+  throw redirect({ to: "/scan/pasang" });
 };
 
 const scanRoute = createRoute({
@@ -348,6 +363,22 @@ const boothPairRoute = createRoute({
   component: BoothPairPage,
 });
 
+// HP meja buwuh (penerima sumbangan di hari-H): token perangkat sendiri, tanpa data tamu.
+const buwuhRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/buwuh",
+  beforeLoad: async () => {
+    if (!(await getBuwuhMeta("auth"))) throw redirect({ to: "/buwuh/pasang" });
+  },
+  component: BuwuhPage,
+});
+
+const buwuhPairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/buwuh/pasang",
+  component: BuwuhPairPage,
+});
+
 const boothPhotosRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/photobooth/foto",
@@ -371,6 +402,8 @@ const routeTree = rootRoute.addChildren([
   readinessRoute,
   boothRoute,
   boothPairRoute,
+  buwuhRoute,
+  buwuhPairRoute,
   appRoute.addChildren([
     adminIndexRoute,
     guideRoute,
@@ -381,6 +414,7 @@ const routeTree = rootRoute.addChildren([
     eventsRoute,
     rsvpRoute,
     receivedGiftsRoute,
+    buwuhAdminRoute,
     vendorsRoute,
     invitationRoute.addChildren([
       invitationIndexRoute,

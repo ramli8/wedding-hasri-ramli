@@ -36,7 +36,7 @@ export function CommandMenu() {
         <ScrollArea type="hover" className="h-72 pe-1">
           <CommandEmpty>Tidak ada hasil.</CommandEmpty>
           {navGroups.map((group) => (
-            <CommandGroup key={group.title} heading={group.title}>
+            <CommandGroup key={group.title} heading={group.title || "Umum"}>
               {group.items.map((navItem) => {
                 if (navItem.url)
                   return (

@@ -9,6 +9,7 @@ import {
   index,
   inet,
   integer,
+  jsonb,
   pgSequence,
   pgTable,
   primaryKey,
@@ -222,10 +223,15 @@ export const devices = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     name: text().notNull(),
     pairingCodeHash: text().unique("devices_pairing_code_hash_unique"),
+    // Kode pairing apa adanya ("K7M2-9QXA"), agar kartu pasang bisa dicetak ulang kapan saja. Hash
+    // tetap disimpan setelah kode dipakai, supaya pemakaian ulang ditolak dengan pesan "sudah
+    // dipakai". Kode hanya bisa memasang perangkat yang berstatus pending.
+    pairingCode: text(),
     pairingExpiresAt: timestamp({ withTimezone: true }),
     tokenHash: text().unique("devices_token_hash_unique"),
     status: text().notNull().default("pending"),
-    // Ditentukan saat pairing: HP scanner hanya boleh /sync, laptop booth hanya /booth.
+    // Ditentukan saat pairing: HP scanner hanya boleh /sync, laptop booth hanya /booth, HP meja buwuh
+    // hanya /buwuh.
     kind: text().notNull().default("scanner"),
     appVersion: text(),
     protocolVersion: integer(),
@@ -236,7 +242,7 @@ export const devices = pgTable(
   },
   (table) => [
     check("devices_status_valid", sql`${table.status} in ('pending', 'active', 'revoked')`),
-    check("devices_kind_valid", sql`${table.kind} in ('scanner', 'booth')`),
+    check("devices_kind_valid", sql`${table.kind} in ('scanner', 'booth', 'buwuh')`),
   ],
 );
 
@@ -610,3 +616,51 @@ export const boothPhotoDeletions = pgTable("booth_photo_deletions", {
   id: uuid().primaryKey(),
   deletedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+// Catatan meja buwuh (nyumbang): satu pemberi per baris, berupa uang dan/atau barang. `id` dibuat
+// HP meja sehingga kirim ulang tidak menggandakan; `version` dinaikkan HP setiap kali petugas
+// mengubah atau menghapus, dan server hanya menerima versi yang lebih baru. Setelah admin mengubah
+// (`edited_at` terisi), kiriman HP untuk catatan itu diabaikan. Hapus = `deleted_at` (bukan baris
+// hilang) agar kiriman HP yang terlambat tidak memunculkannya lagi.
+export const buwuhEntries = pgTable(
+  "buwuh_entries",
+  {
+    id: uuid().primaryKey(),
+    name: text().notNull(),
+    address: text(),
+    amount: bigint({ mode: "number" }).notNull().default(0),
+    // [{ name, quantity, unit }], lihat buwuhItemSchema.
+    items: jsonb().$type<{ name: string; quantity: number; unit: string }[]>().notNull(),
+    note: text(),
+    deviceId: uuid().references(() => devices.id, { onDelete: "set null" }),
+    adminId: uuid().references(() => admins.id, { onDelete: "set null" }),
+    version: integer().notNull().default(1),
+    recordedAt: timestamp({ withTimezone: true }).notNull(),
+    editedAt: timestamp({ withTimezone: true }),
+    deletedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("buwuh_entries_amount_valid", sql`${table.amount} >= 0`),
+    // Satu pemberi memberi uang ATAU barang, tidak keduanya (baris terhapus boleh kosong).
+    check(
+      "buwuh_entries_satu_jenis",
+      sql`${table.deletedAt} is not null or ((${table.amount} > 0) <> (jsonb_array_length(${table.items}) > 0))`,
+    ),
+    index("buwuh_entries_recorded_idx").on(table.recordedAt),
+  ],
+);
+
+// Pengaturan meja buwuh (satu baris): daftar barang (belum ada baris = DEFAULT_BUWUH_CATALOG) dan
+// daftar alamat pilihan yang tampil sebagai tombol di HP meja.
+export const buwuhConfig = pgTable(
+  "buwuh_config",
+  {
+    id: smallint().primaryKey().default(1),
+    catalog: jsonb().$type<{ name: string; unit: string }[]>().notNull(),
+    addresses: jsonb().$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("buwuh_config_singleton", sql`${table.id} = 1`)],
+);

@@ -15,7 +15,7 @@ export const deviceSchema = z.object({
   lastSyncAt: z.string().nullable(),
   pendingOutbox: z.number(),
   createdAt: z.string(),
-  /** Hanya ada selama kode pairing belum dipakai dan belum kedaluwarsa. */
+  /** Selalu null: kode pairing tidak lagi kedaluwarsa. Dipertahankan agar klien lama tetap sah. */
   pairingExpiresAt: z.string().nullable(),
 });
 export type Device = z.infer<typeof deviceSchema>;
@@ -32,6 +32,19 @@ export const createDeviceResponseSchema = z.object({
   /** Kode pairing, ditampilkan sekali saja: "K7M2-9QXA". */
   pairingCode: z.string(),
 });
+
+/** Kartu pasang yang dicetak dari halaman Perangkat (kode tersimpan, tidak dibuat ulang). */
+export const pairingCardsRequestSchema = z.object({ ids: z.array(z.uuid()).min(1).max(100) });
+export const pairingCardSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  kind: deviceKindSchema,
+  status: deviceStatusSchema,
+  /** null: perangkat lama yang terpasang sebelum kode disimpan. */
+  code: z.string().nullable(),
+});
+export type PairingCardData = z.infer<typeof pairingCardSchema>;
+export const pairingCardsResponseSchema = z.object({ items: z.array(pairingCardSchema) });
 
 export const deviceListResponseSchema = z.object({ items: z.array(deviceSchema) });
 export const deviceResponseSchema = z.object({ device: deviceSchema });

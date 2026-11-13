@@ -1,7 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DEVICE_PAIR_PAGE, type Device, type DeviceKind } from "@wedding/shared";
-import { Ban, Camera, Copy, KeyRound, Link2, Plus, ScanLine, Trash2 } from "lucide-react";
+import {
+  Ban,
+  Camera,
+  Copy,
+  HandCoins,
+  KeyRound,
+  Link2,
+  Plus,
+  Printer,
+  ScanLine,
+  Trash2,
+} from "lucide-react";
 import QRCode from "qrcode";
 import { type FormEvent, useEffect, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
@@ -21,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { adminApi } from "../lib/admin-api.js";
 import { devicesQuery, useRefresh } from "../lib/queries.js";
 import { formatAgo } from "../lib/scan/format.js";
+import { type PairingCard, PairingCardsPreview, PrintCardsDialog } from "./devices-print.js";
 
 const STATUS = {
   pending: { label: "Belum dipasang", variant: "outline" },
@@ -47,9 +59,22 @@ const KIND: Record<
     hint: "Laptop booth foto; tidak bisa membuka data tamu.",
     example: "Laptop Booth",
   },
+  buwuh: {
+    label: "Meja buwuh",
+    icon: HandCoins,
+    page: DEVICE_PAIR_PAGE.buwuh,
+    hint: "HP meja penerima sumbangan; tidak bisa membuka data tamu.",
+    example: "HP Meja Buwuh",
+  },
 };
 
-type PairingCode = { name: string; kind: DeviceKind; code: string; expires: string | null };
+const KIND_DEVICE: Record<DeviceKind, string> = {
+  scanner: "HP penjaga",
+  booth: "laptop photobooth",
+  buwuh: "HP meja buwuh",
+};
+
+type PairingCode = { name: string; kind: DeviceKind; code: string };
 
 export function DevicesPage() {
   const refresh = useRefresh();
@@ -58,8 +83,10 @@ export function DevicesPage() {
   const [code, setCode] = useState<PairingCode | null>(null);
   const [revoking, setRevoking] = useState<Device | null>(null);
   const [deleting, setDeleting] = useState<Device | null>(null);
+  const [printPicking, setPrintPicking] = useState(false);
+  const [cards, setCards] = useState<PairingCard[] | null>(null);
 
-  // Kode lama hilang atau kedaluwarsa: buat kode baru untuk perangkat yang belum dipasang.
+  // Kode lama hilang: buat kode baru untuk perangkat yang belum dipasang.
   const renew = useMutation({
     mutationFn: (id: string) => adminApi.devices.newPairingCode(id),
     meta: { toast: "Kode baru dibuat" },
@@ -69,7 +96,6 @@ export function DevicesPage() {
         name: data.device.name,
         kind: data.device.kind,
         code: data.pairingCode,
-        expires: data.device.pairingExpiresAt,
       });
     },
   });
@@ -105,11 +131,6 @@ export function DevicesPage() {
         return (
           <div>
             <Badge variant={STATUS[device.status].variant}>{STATUS[device.status].label}</Badge>
-            {device.pairingExpiresAt && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                kode berlaku sampai {new Date(device.pairingExpiresAt).toLocaleString("id-ID")}
-              </p>
-            )}
           </div>
         );
       },
@@ -180,12 +201,18 @@ export function DevicesPage() {
     <>
       <PageHeader
         title="Perangkat"
-        description="HP scanner di pintu dan laptop photobooth. Tiap perangkat dipasangkan dengan kode sekali pakai sesuai jenisnya dan bisa dicabut kapan saja."
+        description="HP scanner di pintu, laptop photobooth, dan HP meja buwuh. Tiap perangkat dipasangkan dengan kode sekali pakai sesuai jenisnya dan bisa dicabut kapan saja."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            Tambah perangkat
-            <Plus aria-hidden />
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setPrintPicking(true)}>
+              <Printer aria-hidden />
+              Cetak kartu pasang
+            </Button>
+            <Button onClick={() => setCreating(true)}>
+              Tambah perangkat
+              <Plus aria-hidden />
+            </Button>
+          </>
         }
       />
 
@@ -200,7 +227,7 @@ export function DevicesPage() {
         emptyText={
           devices.isPending
             ? "Memuat…"
-            : "Belum ada perangkat. Tambahkan satu per HP scanner atau laptop photobooth."
+            : "Belum ada perangkat. Tambahkan satu per HP scanner, laptop photobooth, atau HP meja buwuh."
         }
         filters={[
           {
@@ -209,6 +236,7 @@ export function DevicesPage() {
             options: [
               { label: KIND.scanner.label, value: "scanner" },
               { label: KIND.booth.label, value: "booth" },
+              { label: KIND.buwuh.label, value: "buwuh" },
             ],
           },
           {
@@ -231,7 +259,24 @@ export function DevicesPage() {
           setCode(result);
         }}
       />
-      <CodeDialog code={code} onClose={() => setCode(null)} />
+      <CodeDialog
+        code={code}
+        onClose={() => setCode(null)}
+        onPrint={(card) => {
+          setCode(null);
+          setCards([card]);
+        }}
+      />
+      <PrintCardsDialog
+        open={printPicking}
+        devices={devices.data ?? []}
+        onClose={() => setPrintPicking(false)}
+        onReady={(made) => {
+          setPrintPicking(false);
+          setCards(made);
+        }}
+      />
+      {cards && <PairingCardsPreview cards={cards} onClose={() => setCards(null)} />}
       <RevokeDialog device={revoking} onClose={() => setRevoking(null)} />
       <DeleteDialog device={deleting} onClose={() => setDeleting(null)} />
     </>
@@ -258,7 +303,6 @@ function CreateDialog({
         name: data.device.name,
         kind: data.device.kind,
         code: data.pairingCode,
-        expires: data.device.pairingExpiresAt,
       });
       setName("");
       setKind("scanner");
@@ -278,7 +322,7 @@ function CreateDialog({
           <RadioGroup
             value={kind}
             onValueChange={(value) => setKind(value as DeviceKind)}
-            className="grid gap-2 sm:grid-cols-2"
+            className="grid gap-2"
           >
             {(Object.keys(KIND) as DeviceKind[]).map((value) => {
               const item = KIND[value];
@@ -341,15 +385,31 @@ async function copy(text: string, what: string) {
   }
 }
 
-function CodeDialog({ code, onClose }: { code: PairingCode | null; onClose: () => void }) {
+function CodeDialog({
+  code,
+  onClose,
+  onPrint,
+}: {
+  code: PairingCode | null;
+  onClose: () => void;
+  onPrint: (card: PairingCard) => void;
+}) {
   return (
     <Dialog open={code !== null} onClose={onClose} title={`Pasangkan ${code?.name ?? ""}`}>
-      {code && <CodeBody code={code} onClose={onClose} />}
+      {code && <CodeBody code={code} onClose={onClose} onPrint={() => onPrint(code)} />}
     </Dialog>
   );
 }
 
-function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void }) {
+function CodeBody({
+  code,
+  onClose,
+  onPrint,
+}: {
+  code: PairingCode;
+  onClose: () => void;
+  onPrint: () => void;
+}) {
   const url = pairingUrl(code);
   const [image, setImage] = useState<string | null>(null);
 
@@ -371,8 +431,7 @@ function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void })
           {window.location.origin}
           {KIND[code.kind].page}
         </b>{" "}
-        di {code.kind === "booth" ? "laptop photobooth" : "HP penjaga"} dan ketik kodenya. Lakukan
-        saat internet masih menyala.
+        di {KIND_DEVICE[code.kind]} dan ketik kodenya. Lakukan saat internet masih menyala.
       </p>
       <div className="flex justify-center">
         {image ? (
@@ -404,13 +463,16 @@ function CodeBody({ code, onClose }: { code: PairingCode; onClose: () => void })
         </Button>
       </div>
       <Alert>
-        Kode ini hanya tampil sekarang
-        {code.expires ? `, berlaku sampai ${new Date(code.expires).toLocaleString("id-ID")}` : ""},
-        dan hangus setelah dipakai. Kalau hilang, pilih “Buat kode baru” di menu perangkat ini.
+        Kode berlaku tanpa batas waktu sampai dipakai sekali. Kartunya bisa dicetak ulang kapan saja
+        lewat “Cetak kartu pasang”.
       </Alert>
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <DialogActions>
+        <Button variant="outline" onClick={onPrint}>
+          <Printer aria-hidden />
+          Cetak kartu
+        </Button>
         <Button onClick={onClose}>Selesai</Button>
-      </div>
+      </DialogActions>
     </div>
   );
 }

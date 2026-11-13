@@ -1,0 +1,1 @@
+ALTER TABLE "buwuh_config" ADD COLUMN "addresses" jsonb DEFAULT '[]'::jsonb NOT NULL;

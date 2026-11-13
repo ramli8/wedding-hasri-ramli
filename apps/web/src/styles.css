@@ -3,6 +3,7 @@
 @import "@fontsource-variable/inter";
 @import "./guest.css";
 @import "./booth.css";
+@import "./buwuh.css";
 
 @custom-variant dark (&:is(.dark *));
 /* Layar pendek (HP mendatar): hasil scan dan prompt rombongan memakai versi ringkas. */
@@ -291,5 +292,13 @@
   }
   to {
     width: 0;
+  }
+}
+
+/* Kartu pasang perangkat (halaman Perangkat → Cetak kartu pasang): saat dicetak hanya kartu yang
+   tampil, aplikasi di belakangnya disembunyikan. */
+@media print {
+  body:has(> [data-print-cards]) > :not([data-print-cards]) {
+    display: none;
   }
 }

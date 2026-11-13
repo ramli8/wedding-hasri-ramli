@@ -72,6 +72,7 @@ export function useRefresh() {
     ...keys: (
       | "settings"
       | "booth"
+      | "buwuh"
       | "seo"
       | "events"
       | "groups"
@@ -174,4 +175,21 @@ export const homeQuery = queryOptions({
   queryFn: () => adminApi.home(),
   refetchInterval: 30_000,
   retry: false,
+});
+
+export const buwuhQuery = queryOptions({
+  queryKey: ["buwuh", "list"],
+  queryFn: () => adminApi.buwuh.list(),
+  // Catatan masuk dari HP meja selama acara berlangsung.
+  refetchInterval: 20_000,
+});
+
+export const buwuhCatalogQuery = queryOptions({
+  queryKey: ["buwuh", "catalog"],
+  queryFn: () => adminApi.buwuh.catalog(),
+});
+
+export const buwuhAddressesQuery = queryOptions({
+  queryKey: ["buwuh", "addresses"],
+  queryFn: () => adminApi.buwuh.addresses(),
 });

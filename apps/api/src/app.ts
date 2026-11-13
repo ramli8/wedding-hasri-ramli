@@ -7,6 +7,7 @@ import { clientIp, requestLogger } from "./http/middleware.js";
 import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
 import { boothRoutes } from "./routes/booth.js";
+import { buwuhRoutes } from "./routes/buwuh.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
 import { manifestRoutes } from "./routes/manifest.js";
@@ -76,7 +77,8 @@ export function createApp(deps: AppDeps) {
     .route("/public", publicRoutes(deps, invitation))
     .route("/device", deviceRoutes(deps))
     .route("/sync", syncRoutes(deps))
-    .route("/booth", boothRoutes(deps));
+    .route("/booth", boothRoutes(deps))
+    .route("/buwuh", buwuhRoutes(deps));
 
   const api = new Hono<AppEnv>().route("/", healthRoutes(deps)).route("/v1", v1);
 

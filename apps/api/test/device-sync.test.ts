@@ -160,7 +160,7 @@ describe("pairing perangkat", () => {
     const body = await read<{ pairingCode: string; device: Device }>(created);
     expect(body.pairingCode).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
     expect(body.device).toMatchObject({ name: "HP Baru", status: "pending" });
-    expect(body.device.pairingExpiresAt).not.toBeNull();
+    expect(body.device.pairingExpiresAt).toBeNull();
 
     const list = await read<{ items: Device[] }>(await api.get("/devices"));
     expect(JSON.stringify(list)).not.toContain(body.pairingCode);
@@ -175,7 +175,12 @@ describe("pairing perangkat", () => {
     expect(first.status).toBe(200);
     expect(await read(first)).toMatchObject({ deviceName: "HP Baru", deviceId: created.device.id });
 
-    expect((await pairRequest(app, created.pairingCode)).status).toBe(401);
+    // Dipakai lagi (mis. di HP lain): ditolak dengan pesan "sudah dipakai", bukan "kode salah".
+    const again = await pairRequest(app, created.pairingCode);
+    expect(again.status).toBe(409);
+    expect(await read(again)).toMatchObject({
+      error: { message: expect.stringContaining("sudah dipakai") },
+    });
 
     const list = await read<{ items: Device[] }>(await api.get("/devices"));
     const device = list.items.find((d) => d.id === created.device.id);
@@ -188,16 +193,17 @@ describe("pairing perangkat", () => {
     expect(res.status).toBe(200);
   });
 
-  it("menolak kode yang kedaluwarsa dan kode yang salah", async () => {
+  it("kode tidak kedaluwarsa (juga kode lama yang dulu diberi batas waktu), kode salah ditolak", async () => {
     const created = await read<{ pairingCode: string; device: Device }>(
-      await api.post("/devices", { name: "Lama" }),
+      await api.post("/devices", { name: "Cadangan" }),
     );
+    // Data dari versi sebelumnya: batas waktu sudah lewat, tetapi kini tidak dicek lagi.
     await ctx.db
       .update(devices)
       .set({ pairingExpiresAt: new Date(Date.now() - 1000) })
       .where(eq(devices.id, created.device.id));
-    expect((await pairRequest(app, created.pairingCode)).status).toBe(401);
     expect((await pairRequest(app, "AAAA-AAAA")).status).toBe(401);
+    expect((await pairRequest(app, created.pairingCode)).status).toBe(200);
   });
 
   it("membatasi percobaan kode salah per IP", async () => {
@@ -226,7 +232,35 @@ describe("pairing perangkat", () => {
       await api.post("/devices", { name: "Belum dipasang" }),
     );
     await api.post(`/devices/${pending.device.id}/revoke`);
-    expect((await pairRequest(app, pending.pairingCode)).status).toBe(401);
+    const revokedPair = await pairRequest(app, pending.pairingCode);
+    expect(revokedPair.status).toBe(409);
+    expect(await read(revokedPair)).toMatchObject({
+      error: { message: expect.stringContaining("dicabut") },
+    });
+  });
+});
+
+describe("kartu pasang", () => {
+  it("memakai kode tersimpan, juga untuk perangkat yang sudah terpasang, dan melewati yang dicabut", async () => {
+    const a = await read<{ pairingCode: string; device: Device }>(
+      await api.post("/devices", { name: "HP Cadangan A" }),
+    );
+    const b = await read<{ pairingCode: string; device: Device }>(
+      await api.post("/devices", { name: "HP Cadangan B" }),
+    );
+    expect((await pairRequest(app, b.pairingCode)).status).toBe(200);
+    const c = await read<{ device: Device }>(await api.post("/devices", { name: "HP Dicabut" }));
+    await api.post(`/devices/${c.device.id}/revoke`);
+
+    const res = await api.post("/devices/cards", { ids: [a.device.id, b.device.id, c.device.id] });
+    expect(res.status).toBe(200);
+    const { items } = await read<{ items: { id: string; code: string; status: string }[] }>(res);
+    expect(items).toEqual([
+      expect.objectContaining({ id: a.device.id, code: a.pairingCode, status: "pending" }),
+      expect.objectContaining({ id: b.device.id, code: b.pairingCode, status: "active" }),
+    ]);
+    // Mencetak tidak mengganti kode: kode A tetap bisa dipakai.
+    expect((await pairRequest(app, a.pairingCode)).status).toBe(200);
   });
 });
 
@@ -235,19 +269,13 @@ describe("kode pairing baru", () => {
     const created = await read<{ pairingCode: string; device: Device }>(
       await api.post("/devices", { name: "HP Cadangan" }),
     );
-    // Kode lama sudah kedaluwarsa; kode baru memperpanjang masa berlakunya.
-    await ctx.db
-      .update(devices)
-      .set({ pairingExpiresAt: new Date(Date.now() - 1000) })
-      .where(eq(devices.id, created.device.id));
-
     const renewed = await api.post(`/devices/${created.device.id}/pairing-code`);
     expect(renewed.status).toBe(200);
     const body = await read<{ pairingCode: string; device: Device }>(renewed);
     expect(body.pairingCode).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
     expect(body.pairingCode).not.toBe(created.pairingCode);
     expect(body.device).toMatchObject({ id: created.device.id, status: "pending" });
-    expect(body.device.pairingExpiresAt).not.toBeNull();
+    expect(body.device.pairingExpiresAt).toBeNull();
 
     expect((await pairRequest(app, created.pairingCode)).status).toBe(401);
     expect((await pairRequest(app, body.pairingCode)).status).toBe(200);

@@ -3,6 +3,7 @@ import {
   createDeviceRequestSchema,
   dashboardQuerySchema,
   logQuerySchema,
+  pairingCardsRequestSchema,
   resolveRequestSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
@@ -21,6 +22,7 @@ import {
   createDevice,
   deleteDevice,
   listDevices,
+  pairingCards,
   renewPairingCode,
   revokeDevice,
 } from "../services/devices.js";
@@ -34,6 +36,9 @@ export function deviceAdminRoutes({ db }: AppDeps) {
       const { name, kind } = c.req.valid("json");
       return c.json(await createDevice(db, name, kind), 201);
     })
+    .post("/cards", validate("json", pairingCardsRequestSchema), async (c) =>
+      c.json({ items: await pairingCards(db, c.req.valid("json").ids) }),
+    )
     .post("/:id/pairing-code", validate("param", idParam), async (c) => {
       return c.json(await renewPairingCode(db, c.req.valid("param").id));
     })

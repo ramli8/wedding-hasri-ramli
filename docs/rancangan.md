@@ -289,7 +289,7 @@ Semua di bawah `/api/v1`. JSON. Validasi Zod dari `packages/shared`. Error serag
 - *(fase 6)* `/vendors`, `/gifts`
 
 **Perangkat** (`Authorization: Bearer <device token>`, hanya jalur ini yang bisa diakses):
-- `POST /device/pair` `{ code, name }` → `{ token }` (kode sekali pakai, kedaluwarsa 24 jam)
+- `POST /device/pair` `{ code, name }` → `{ token }` (kode sekali pakai, tanpa batas waktu sejak 13 Nov 2026, lihat §14)
 - `GET /sync/snapshot?since_rev=N` → `{ server_time, rev, event, groups, sessions, guests[], deleted_guest_ids[], checkins[] }`. `since_rev=0` = unduh penuh (±1000 tamu ≈ puluhan KB gzip).
 - `POST /sync/push` `{ device_time, pending_outbox, guests?[], events[] }` → hasil per event `{ id, status: accepted|duplicate|invalid|noop }`.
 
@@ -488,7 +488,7 @@ Selisih antara rancangan di atas dan yang benar-benar dibangun di fase 1:
 - Scan **langsung mencatat** check-in 1 orang untuk tamu biasa. Untuk tamu rombongan, layar meminta jumlah orang dulu dan check-in baru dicatat setelah diisi. Penjaga mengubah jumlah atau membatalkan dalam 2 menit, dari layar hasil atau panel "Terakhir masuk". Setelah itu hanya admin.
 - Hasil layar penuh berlatar lembut: hijau (masuk), amber (sudah masuk, dengan jam dan perangkat), merah (tidak valid), biru langit dengan ikon kilau untuk VIP. Menutup sendiri setelah 1,5 detik (masuk), 3,5 detik (sudah masuk, tidak valid), atau 6 detik (VIP). Tampilan kini kartu admin di latar bertint; VIP berlatar biru langit (lihat `docs/design.md`). Getar dan nada berbeda per hasil, bisa dimatikan.
 - Laptop adalah perangkat terdaftar biasa (UI yang sama). Kolom cari difokuskan otomatis di perangkat dengan keyboard sehingga scanner USB (yang mengetik seperti keyboard) langsung bekerja.
-- Pairing: admin membuat perangkat dan mendapat kode 8 karakter (berlaku 24 jam, sekali pakai, hanya tampil sekali). Token perangkat disimpan di IndexedDB, bukan cookie. Perangkat yang dicabut baru tahu setelah online.
+- Pairing: admin membuat perangkat dan mendapat kode 8 karakter (sekali pakai, hanya tampil sekali; sejak 13 Nov 2026 tanpa batas waktu, lihat §14 "Kode pairing tanpa batas waktu"). Token perangkat disimpan di IndexedDB, bukan cookie. Perangkat yang dicabut baru tahu setelah online.
 
 **Protokol** (`SYNC_PROTOCOL_VERSION = 2`, `MIN_SUPPORTED = 2`; naik dari 1 saat kuota diganti rombongan, lihat di bawah): header `x-sync-version` wajib; versi terlalu lama dijawab `426 APP_OUTDATED`; perangkat dicabut dijawab `401 DEVICE_REVOKED`. Rute: `POST /device/pair`, `GET /sync/snapshot?sinceRev&sinceSeq`, `POST /sync/push`; admin: `/admin/devices`, `/admin/checkins/{dashboard,review,resolve,log,:id/undo,:id/pax}`. Snapshot tidak memuat HP atau Instagram.
 
@@ -598,6 +598,34 @@ Menggantikan sebagian "Jatuh tempo pembayaran vendor" dan "Ucapan terima kasih" 
 
 - **Hadiah:** formulir tanpa tanggal (server mengisi hari ini WIB; ubah mempertahankan tanggal lama), satu kolom nama pemberi yang sekaligus mencari tamu (nama kelompok sebagai pembeda), tombol pecahan +5rb s.d. +100rb untuk menghitung isi amplop, kolom Instagram pemberi (`received_gifts.instagram`; tamu tertaut memakai Instagram tamu). Status terima kasih jadi tombol satu klik di baris. Kirim terima kasih meniru Tamu: tombol **Kirim** per pemberi (pesan bisa disunting, WhatsApp / salin & buka DM Instagram / salin, sakelar sudah dibalas) dan **Kirim beruntun**. Pesan bawaan pindah dari localStorage ke tabel tunggal `thanks_template`, diatur di Pengaturan → Pesan → Terima kasih.
 - **Vendor:** satu kolom `price` (penawaran selama kandidat, harga sepakat setelah dipesan) menggantikan `reference_price` dan `contract_amount`; `due_amount` dihapus, `due_on` jadi satu batas pelunasan yang diisi sekali. Pembayaran punya `kind` (`dp` / `cicilan` / `pelunasan`; Pelunasan mengisi sisa) dan foto bukti opsional (`proof_media_id`, terdaftar di `MEDIA_USERS`). Info hari-H: `arrival_time`, `pic_name`, `pic_phone`. Tampilan: papan kartu per kategori (kategori tanpa kandidat disembunyikan) dengan lembar Bandingkan untuk memilih, tab Hari-H urut jam datang, ekspor Excel (lembar Vendor dan Pembayaran). Anggaran per kategori dan penanggung biaya sengaja tidak dibuat.
+
+### Meja buwuh (13 Nov 2026)
+
+Tamu desa (umumnya orang tua) menyumbang uang dan/atau barang (buwuh, nyumbang, gawan). Catatannya dipakai untuk membalas saat pemberi punya hajat, jadi harus bisa dicari per nama/alamat dan diekspor.
+
+- **Perangkat jenis ketiga `buwuh`** (selain `scanner` dan `booth`): dipasangkan dengan kode sekali pakai di `/buwuh/pasang`, hanya boleh memakai `/api/v1/buwuh/*` (`GET /config` = daftar barang, `POST /push`). Tidak pernah menerima data tamu.
+- **Satu pemberi = uang ATAU barang**, tidak pernah keduanya (kebiasaan di desa mempelai). Dijaga di skema shared, server (check `buwuh_entries_satu_jenis`, migrasi 0041) dan UI.
+- **Halaman isi sendiri `/buwuh`** (seperti `/scan` dan `/booth`, khusus mengisi), bergaya kasir dan memakai warna admin (token shadcn, ikut terang/gelap). Saat pertama dibuka HP memilih **Uang** atau **Barang** (penjaga uang dan penjaga barang dibedakan); pilihan disimpan di HP dan bisa diganti dari menu. Uang: delapan tombol pecahan besar dua kolom (100rb, 50rb, 20rb, 10rb, 5rb, 2rb, 1rb, 500) berwarna dominan uang TE 2022 (1rb hijau kebiruan agar beda dari 20rb, 500 perak) dan satu tombol Kosongkan; tanpa papan angka karena isi amplop selalu kelipatan pecahan. Barang: baris dengan tombol − jumlah + besar (− sampai 0 = hapus), ketuk angka untuk pecahan atau ganti satuan, "Barang lain" untuk di luar daftar. Lalu Lanjut → lembar nama + alamat (tombol alamat tersering di HP itu) → Simpan. Riwayat bergaya buku buwuh (nomor urut, cari, ketuk untuk ubah/hapus) dengan total uang di HP itu. Ide "ganti petugas/mulai hitungan baru" ditolak pemilik.
+- **Lembar nama:** nama diketik langsung (tanpa tombol sapaan; pemilik menolaknya). Alamat dipilih dari tombol **daftar alamat yang diatur admin** (`buwuh_config.addresses`, migrasi 0042, menu Buwuh → Atur daftar alamat; ikut `GET /buwuh/config`), alamat lain lewat "Lainnya"; selama daftar kosong dipakai alamat tersering di HP itu. Lembar naik di atas keyboard (visualViewport) dan Simpan menempel di dasarnya.
+- **Ubah di HP dibatasi 10 menit** setelah mencatat (`BUWUH_EDIT_WINDOW_MS`, tombol Ubah dengan sisa menit di Riwayat); sesudahnya lewat admin. Catatan yang ditolak server selalu boleh diperbaiki. Batas ini hanya di HP, tidak dicek server (kiriman offline bisa terlambat).
+- **Barang bawaan:** Gula (kg), Beras (kg), Mi kuning kecil, Mi kuning besar, Bihun (bungkus); admin bisa mengubahnya.
+- **Offline:** Dexie terpisah `wedding-buwuh`; id catatan uuid v7 dari HP, `version` naik setiap ubah/hapus, HP mengirim yang `version > syncedVersion`. Server menerima hanya versi lebih baru, hanya dari HP pemilik, dan tidak bila admin sudah mengubahnya (`edited_at`); hapus = `deleted_at` agar kiriman terlambat tidak memunculkannya lagi. Tidak menyentuh `SYNC_PROTOCOL_VERSION` scanner.
+- **Tabel:** `buwuh_entries` (barang di kolom `items` jsonb `[{name, quantity, unit}]`) dan `buwuh_config` (satu baris, daftar barang; tanpa baris = `DEFAULT_BUWUH_CATALOG`).
+- **Admin `/admin/buwuh`** (menu Keuangan → Buwuh): rekap total uang dan total per barang, tabel, ubah/hapus, atur daftar barang, ekspor Excel (lembar Buwuh dan Rekap). Atas permintaan pemilik, admin tidak punya tombol tambah: pencatatan hanya di halaman `/buwuh`.
+- Sengaja tidak dibuat: perkiraan nilai rupiah barang, cetak struk, satu HP bergantian scanner/meja, alamat terpecah RT/dusun/desa.
+
+### Kode pairing tanpa batas waktu (13 Nov 2026)
+
+Menggantikan "berlaku 24 jam". Kode pairing kini berlaku sampai dipakai sekali, diganti ("Buat kode baru"), atau perangkatnya dicabut. Alasan pemilik: perangkat cadangan (scanner, booth, meja buwuh) disiapkan jauh hari supaya di hari-H siapa pun bisa langsung memasang tanpa perlu mempelai membuka admin. Kolom `pairing_expires_at` dibiarkan (tanpa migrasi) tetapi tidak diisi atau dicek; `pairingExpiresAt` di API selalu null. Tebakan kode tetap dibatasi 10 kali salah per IP per 15 menit, dan ruang kodenya 32^8.
+
+### Kartu pasang perangkat (13 Nov 2026)
+
+Halaman Perangkat punya tombol **Cetak kartu pasang**: pilih perangkat (yang belum dipasang tercentang; yang sudah dipasang boleh ikut dicetak sebagai arsip), lalu pratinjau kartu A4 (dua per halaman) berisi nama perangkat, jenis, QR tautan pasang, kode besar, alamat, dan lima langkah pemasangan per jenis. Kode **disimpan** (`devices.pairing_code`, migrasi 0043, tidak ikut ekspor data) sehingga kartu bisa dicetak ulang kapan saja tanpa membuat kode baru (`POST /admin/devices/cards`). Hash kode tetap disimpan setelah dipakai/dicabut, jadi memakai kode itu lagi di perangkat lain ditolak 409 dengan pesan "sudah dipakai untuk memasang …" atau "sudah dicabut". Kartu perangkat terpasang diberi cap "Sudah dipakai"; perangkat yang terpasang sebelum perubahan ini tidak punya kode tersimpan (kartu tanpa kode). Tombol **Cetak / PDF** membuka dialog cetak browser; saat dicetak hanya kartu yang tampil. QR memakai alamat situs dari Pengaturan → Situs bila diisi.
+
+### Sidebar dan Beranda ditata ulang (13 Nov 2026)
+
+- **Sidebar** mengikuti alur kerja: Beranda (tanpa judul grup) · **Tamu** (Acara, Kelompok, Tamu, RSVP, Ucapan) · **Undangan** (Isi undangan) · **Hari-H** (Check-in, Buwuh, Photobooth, Perangkat: semua yang memakai perangkat terpasang) · **Keuangan** (Hadiah, Vendor) · **Lainnya** (Pengaturan, Panduan).
+- **Beranda** satu halaman tanpa tab: Mulai cepat (selama panduan belum selesai), Perlu dikerjakan, lalu tiga kotak Tamu & RSVP / Hari-H / Keuangan. Urutan kotak mengikuti tahap (`phaseOf`): persiapan Tamu dulu, hari-H kotak Hari-H naik ke atas dengan tanda "Langsung" dan data diperbarui tiap 10 detik, sesudah acara Keuangan dulu. API beranda ditambah ringkasan buwuh dan jumlah perangkat (aktif, terlihat 2 menit terakhir, belum dipasang).
 
 ### Pengaturan dirapikan, logo, kartu link, noindex (13 Nov 2026)
 

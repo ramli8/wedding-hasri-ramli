@@ -1,6 +1,6 @@
 import type { HomeResponse } from "@wedding/shared";
 import { describe, expect, it } from "vitest";
-import { buildTasks, daysUntil } from "../pages/home-page.js";
+import { buildTasks, daysUntil, phaseOf } from "../pages/home-page.js";
 
 const base: HomeResponse = {
   eventDate: "2027-05-21T03:00:00.000Z",
@@ -20,6 +20,8 @@ const base: HomeResponse = {
     due: [],
   },
   gifts: { count: 0, amplopTotal: 0, transferTotal: 0, barangCount: 0, notThanked: 0 },
+  buwuh: { count: 0, amountTotal: 0, goods: [] },
+  devices: { active: 0, online: 0, pending: 0 },
   guestbookUnreplied: 0,
   coupleFilled: true,
 };
@@ -84,5 +86,16 @@ describe("buildTasks", () => {
         (t) => t.key,
       ),
     ).toEqual(["no-guests", "couple"]);
+  });
+});
+
+describe("phaseOf", () => {
+  it("persiapan sebelum hari acara, hari-h pada tanggal WIB acara, selesai sesudahnya", () => {
+    const event = "2027-05-21T03:00:00.000Z"; // 10.00 WIB
+    expect(phaseOf(event, Date.parse("2027-05-20T16:59:00Z"))).toBe("persiapan"); // 23.59 WIB
+    expect(phaseOf(event, Date.parse("2027-05-20T17:00:00Z"))).toBe("hari-h"); // 00.00 WIB
+    expect(phaseOf(event, Date.parse("2027-05-21T16:59:00Z"))).toBe("hari-h");
+    expect(phaseOf(event, Date.parse("2027-05-21T17:00:00Z"))).toBe("selesai");
+    expect(phaseOf(null)).toBe("persiapan");
   });
 });

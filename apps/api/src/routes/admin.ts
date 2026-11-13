@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppDeps, AppEnv } from "../http/env.js";
 import { originCheck, requireAdmin } from "../http/middleware.js";
 import { boothAdminRoutes } from "./booth.js";
+import { buwuhAdminRoutes } from "./buwuh.js";
 import { checkinAdminRoutes, deviceAdminRoutes } from "./checkin-admin.js";
 import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
@@ -28,6 +29,7 @@ export function adminRoutes(deps: AppDeps, onChange: () => void = () => {}) {
       })
       .route("/export", exportRoutes(deps))
       .route("/booth", boothAdminRoutes(deps))
+      .route("/buwuh", buwuhAdminRoutes(deps))
       .route("/home", homeRoutes(deps))
       .route("/settings", settingsRoutes(deps))
       .route("/seo", seoRoutes(deps))

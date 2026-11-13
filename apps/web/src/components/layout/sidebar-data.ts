@@ -5,8 +5,10 @@ import {
   CalendarDays,
   Camera,
   Gift,
+  HandCoins,
   Home,
   type LucideIcon,
+  MessageSquareHeart,
   ScanLine,
   Settings,
   Smartphone,
@@ -32,17 +34,24 @@ export type NavCollapsible = {
 export type NavItem = NavLink | NavCollapsible;
 export type NavGroup = { title: string; items: NavItem[] };
 
-/** Menu admin dikelompokkan seperti sidebarData shadcn-admin (Umum, Halaman, Lainnya). */
+/**
+ * Menu admin, diurutkan mengikuti alur kerja: data tamu (Acara → Kelompok → Tamu, lalu RSVP dan
+ * Ucapan), isi undangan, alat hari-H (semua yang memakai perangkat terpasang), keuangan, lainnya.
+ * Grup tanpa judul tampil paling atas tanpa label.
+ */
 export const navGroups: NavGroup[] = [
   {
-    title: "Umum",
+    title: "",
+    items: [{ title: "Beranda", url: "/admin", icon: Home }],
+  },
+  {
+    title: "Tamu",
     items: [
-      { title: "Beranda", url: "/admin", icon: Home },
-      { title: "Panduan", url: "/admin/panduan", icon: BookOpen },
-      { title: "Tamu", url: "/admin/tamu", icon: Users },
-      { title: "Kelompok", url: "/admin/kelompok", icon: Tags },
       { title: "Acara", url: "/admin/acara", icon: CalendarDays },
+      { title: "Kelompok", url: "/admin/kelompok", icon: Tags },
+      { title: "Tamu", url: "/admin/tamu", icon: Users },
       { title: "RSVP", url: "/admin/rsvp", icon: CalendarCheck },
+      { title: "Ucapan", url: "/admin/undangan/ucapan", icon: MessageSquareHeart },
     ],
   },
   {
@@ -59,7 +68,6 @@ export const navGroups: NavGroup[] = [
           { title: "FAQ", url: "/admin/undangan/faq" },
           { title: "Wishlist", url: "/admin/undangan/wishlist" },
           { title: "Susunan", url: "/admin/undangan/susunan" },
-          { title: "Ucapan", url: "/admin/undangan/ucapan" },
         ],
       },
     ],
@@ -68,15 +76,16 @@ export const navGroups: NavGroup[] = [
     title: "Hari-H",
     items: [
       { title: "Check-in", url: "/admin/checkin", icon: ScanLine },
-      { title: "Perangkat", url: "/admin/perangkat", icon: Smartphone },
+      { title: "Buwuh", url: "/admin/buwuh", icon: HandCoins },
       {
         title: "Photobooth",
         icon: Camera,
         items: [
-          { title: "Bingkai", url: "/admin/photobooth" },
           { title: "Foto", url: "/admin/photobooth/foto" },
+          { title: "Bingkai", url: "/admin/photobooth" },
         ],
       },
+      { title: "Perangkat", url: "/admin/perangkat", icon: Smartphone },
     ],
   },
   {
@@ -99,6 +108,7 @@ export const navGroups: NavGroup[] = [
           { title: "Cadangan", url: "/admin/pengaturan/cadangan" },
         ],
       },
+      { title: "Panduan", url: "/admin/panduan", icon: BookOpen },
     ],
   },
 ];

@@ -281,7 +281,8 @@ Pakai **HP A** dan **HP B**. Semua dibuka lewat ALAMAT-HP.
   **Scanner pintu**, **Nama perangkat**
   `HP Gerbang A`, tekan **Buat kode pairing**.
   **Harusnya**: muncul dialog **Pasangkan HP Gerbang A** berisi QR, **kode pairing** besar (mis.
-  `K7M2-9QXA`), tombol **Salin kode** / **Salin tautan**, dan jam kedaluwarsa kode. Setelah
+  `K7M2-9QXA`), tombol **Salin kode** / **Salin tautan**, dan pesan bahwa kode berlaku tanpa batas
+  waktu sampai dipakai sekali. Setelah
   **Selesai**, status HP Gerbang A di daftar **Belum dipasang**.
   > QR di dialog berisi alamat yang sedang dibuka di laptop. Bila laptop membuka admin lewat
   > `localhost:5173`, QR itu tidak bisa dibuka di HP: pakai cara ketik kode di 9.2. Bila admin dibuka

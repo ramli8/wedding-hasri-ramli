@@ -10,7 +10,7 @@ import * as schema from "../db/schema.js";
 const EXCLUDED_TABLES = new Set(["admins", "admin_sessions"]);
 /** Kolom rahasia yang dibuang dari tabel lain. */
 const SECRET_COLUMNS: Record<string, string[]> = {
-  devices: ["pairingCodeHash", "tokenHash"],
+  devices: ["pairingCodeHash", "pairingCode", "tokenHash"],
 };
 
 export const EXPORT_FORMAT = "wedding-export-v1";

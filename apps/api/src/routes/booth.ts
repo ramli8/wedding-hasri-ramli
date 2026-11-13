@@ -20,6 +20,7 @@ import {
   saveBoothConfig,
   saveBoothPhoto,
 } from "../services/booth.js";
+import { touchDevice } from "../services/devices.js";
 
 const MAX_MB = BOOTH_MAX_UPLOAD_BYTES / (1024 * 1024);
 const tooLarge = () => new AppError(400, "VALIDATION_ERROR", `Ukuran foto maksimal ${MAX_MB} MB`);
@@ -32,7 +33,11 @@ export function boothRoutes(deps: AppDeps) {
   const { db, config } = deps;
   return new Hono<AppEnv>()
     .use("*", requireDevice(deps, "booth"))
-    .get("/config", async (c) => c.json({ config: await getBoothDeviceConfig(db) }))
+    .get("/config", async (c) => {
+      // Booth meminta config tiap 15 detik: sekaligus tanda hidup untuk Beranda.
+      await touchDevice(db, c.get("device").id);
+      return c.json({ config: await getBoothDeviceConfig(db) });
+    })
     .post(
       "/photos",
       bodyLimit({

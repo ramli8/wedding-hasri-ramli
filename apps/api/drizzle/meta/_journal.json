@@ -281,6 +281,34 @@
       "when": 1794539697049,
       "tag": "0039_sloppy_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794553491845,
+      "tag": "0040_meja_buwuh",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794555280601,
+      "tag": "0041_buwuh_satu_jenis",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794557202418,
+      "tag": "0042_buwuh_alamat",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794558287254,
+      "tag": "0043_kode_pairing_tersimpan",
+      "breakpoints": true
     }
   ]
 }

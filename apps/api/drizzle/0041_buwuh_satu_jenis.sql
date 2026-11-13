@@ -1,0 +1,1 @@
+ALTER TABLE "buwuh_entries" ADD CONSTRAINT "buwuh_entries_satu_jenis" CHECK ("buwuh_entries"."deleted_at" is not null or (("buwuh_entries"."amount" > 0) <> (jsonb_array_length("buwuh_entries"."items") > 0)));

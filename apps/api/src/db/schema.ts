@@ -98,6 +98,17 @@ export const reminderTemplates = pgTable("reminder_templates", {
   body: text().notNull(),
 });
 
+// Pesan WhatsApp ucapan terima kasih untuk pemberi hadiah (satu baris). Tidak ada baris = memakai
+// DEFAULT_THANKS_TEMPLATE.
+export const thanksTemplate = pgTable(
+  "thanks_template",
+  {
+    id: smallint().primaryKey().default(1),
+    body: text().notNull(),
+  },
+  (table) => [check("thanks_template_singleton", sql`${table.id} = 1`)],
+);
+
 export const guestGroups = pgTable("guest_groups", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull().unique("guest_groups_name_unique"),
@@ -474,6 +485,8 @@ export const receivedGifts = pgTable(
     giverName: text().notNull(),
     // HP pemberi yang bukan tamu terdaftar (tujuan ucapan terima kasih), sudah dinormalisasi.
     phone: text(),
+    // Instagram pemberi yang bukan tamu terdaftar (ucapan terima kasih lewat DM), sudah dinormalisasi.
+    instagram: text(),
     kind: text().notNull(),
     amount: bigint({ mode: "number" }),
     itemDescription: text(),

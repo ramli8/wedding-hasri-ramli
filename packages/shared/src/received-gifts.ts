@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalPhoneField } from "./guests.js";
+import { instagramField, optionalPhoneField } from "./guests.js";
 
 const optionalText = (max: number, label: string) =>
   z
@@ -35,6 +35,8 @@ export const receivedGiftInputSchema = z
     giverName: z.string().trim().max(120, "Nama pemberi maksimal 120 karakter").default(""),
     /** Nomor HP pemberi untuk ucapan terima kasih, bila pemberi bukan tamu terdaftar. */
     giverPhone: optionalPhoneField,
+    /** Instagram pemberi untuk ucapan terima kasih lewat DM, bila pemberi bukan tamu terdaftar. */
+    giverInstagram: instagramField,
     kind: receivedGiftKindSchema,
     amount: z
       .number()
@@ -81,6 +83,16 @@ export const DEFAULT_THANKS_TEMPLATE = [
   "{mempelai}",
 ].join("\n");
 
+/** Isi pesan terima kasih; kosong = kembali ke bawaan. */
+export const thanksTemplateInputSchema = z.object({
+  body: z.string().trim().max(4000, "Pesan maksimal 4.000 karakter"),
+});
+export type ThanksTemplateInput = z.input<typeof thanksTemplateInputSchema>;
+
+/** `body` null = belum diubah, memakai DEFAULT_THANKS_TEMPLATE. */
+export const thanksTemplateResponseSchema = z.object({ body: z.string().nullable() });
+export type ThanksTemplateResponse = z.infer<typeof thanksTemplateResponseSchema>;
+
 export const THANKS_TEMPLATE_VARIABLES = [
   { name: "{panggilan}", description: "Nama pemberi" },
   {
@@ -110,6 +122,10 @@ export const receivedGiftSchema = z.object({
   phone: z.string().nullable(),
   /** Nomor HP yang diisi sendiri pada catatan ini (untuk formulir ubah). */
   giverPhone: z.string().nullable(),
+  /** Instagram tamu yang tertaut, atau `giverInstagram` bila tidak ada. Hanya untuk admin. */
+  instagram: z.string().nullable(),
+  /** Instagram yang diisi sendiri pada catatan ini (untuk formulir ubah). */
+  giverInstagram: z.string().nullable(),
   giverName: z.string(),
   kind: receivedGiftKindSchema,
   amount: z.number().nullable(),

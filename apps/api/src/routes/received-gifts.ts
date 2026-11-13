@@ -2,6 +2,8 @@ import {
   receivedGiftInputSchema,
   receivedGiftListQuerySchema,
   receivedGiftThankedSchema,
+  type ThanksTemplateResponse,
+  thanksTemplateInputSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -12,7 +14,9 @@ import {
   deleteReceivedGift,
   exportReceivedGiftsCsv,
   exportReceivedGiftsXlsx,
+  getThanksTemplate,
   listReceivedGifts,
+  saveThanksTemplate,
   setThanked,
   updateReceivedGift,
 } from "../services/received-gifts.js";
@@ -43,6 +47,13 @@ export function receivedGiftRoutes({ db }: AppDeps) {
         return c.body(
           new Uint8Array(await exportReceivedGiftsXlsx(db, c.req.valid("query"))).buffer,
         );
+      })
+      .get("/thanks-template", async (c) =>
+        c.json({ body: await getThanksTemplate(db) } satisfies ThanksTemplateResponse),
+      )
+      .put("/thanks-template", validate("json", thanksTemplateInputSchema), async (c) => {
+        const body = await saveThanksTemplate(db, c.req.valid("json").body);
+        return c.json({ body } satisfies ThanksTemplateResponse);
       })
       .post("/", validate("json", receivedGiftInputSchema), async (c) => {
         const gift = await createReceivedGift(db, c.get("admin").id, c.req.valid("json"));

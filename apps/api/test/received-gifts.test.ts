@@ -305,6 +305,52 @@ describe("hadiah masuk", () => {
     expect(sheet).not.toContain("Rice cooker");
   });
 
+  it("Instagram: dari tamu tertaut, atau diisi sendiri dan dinormalisasi", async () => {
+    const guest = await read<{ guest: { id: string } }>(
+      await api.post("/guests", { displayName: "Sari", instagram: "@Sari.Ok" }),
+    );
+    const linked = await add({ guestId: guest.guest.id, kind: "amplop", amount: 100_000 });
+    expect(linked.gift).toMatchObject({ instagram: "sari.ok", giverInstagram: null });
+
+    const free = await add({
+      giverName: "Dewi",
+      giverInstagram: "https://instagram.com/Dewi_A/",
+      kind: "amplop",
+      amount: 50_000,
+    });
+    expect(free.gift).toMatchObject({ instagram: "dewi_a", giverInstagram: "dewi_a" });
+
+    const bad = await add({
+      giverName: "X",
+      giverInstagram: "bukan valid!",
+      kind: "amplop",
+      amount: 1,
+    });
+    expect(bad.res.status).toBe(400);
+  });
+
+  it("pesan terima kasih: bawaan null, disimpan, kosong kembali ke bawaan", async () => {
+    const get = async () =>
+      read<{ body: string | null }>(await api.get("/received-gifts/thanks-template"));
+    expect(await get()).toEqual({ body: null });
+
+    const saved = await api.put("/received-gifts/thanks-template", {
+      body: "  Terima kasih {panggilan}  ",
+    });
+    expect(saved.status).toBe(200);
+    expect(await read(saved)).toEqual({ body: "Terima kasih {panggilan}" });
+    expect(await get()).toEqual({ body: "Terima kasih {panggilan}" });
+
+    await api.put("/received-gifts/thanks-template", { body: "Ubah lagi" });
+    expect(await get()).toEqual({ body: "Ubah lagi" });
+
+    await api.put("/received-gifts/thanks-template", { body: "   " });
+    expect(await get()).toEqual({ body: null });
+
+    const tooLong = await api.put("/received-gifts/thanks-template", { body: "x".repeat(4001) });
+    expect(tooLong.status).toBe(400);
+  });
+
   it("memerlukan login admin", async () => {
     const anonymous = adminClient(ctx.makeApp(), "");
     expect((await anonymous.get("/received-gifts")).status).toBe(401);

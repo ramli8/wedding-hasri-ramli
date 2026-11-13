@@ -9,7 +9,7 @@ import {
 import { stringify } from "csv-stringify/sync";
 import { and, desc, eq, ilike, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { admins, guests, receivedGifts } from "../db/schema.js";
+import { admins, guests, receivedGifts, thanksTemplate } from "../db/schema.js";
 import { AppError } from "../http/errors.js";
 import { safeCell } from "./guest-import.js";
 import { buildXlsx } from "./xlsx-template.js";
@@ -23,14 +23,17 @@ type Row = {
   gift: typeof receivedGifts.$inferSelect;
   recordedBy: string | null;
   phone: string | null;
+  instagram: string | null;
 };
 
-const toGift = ({ gift, recordedBy, phone }: Row): ReceivedGift => ({
+const toGift = ({ gift, recordedBy, phone, instagram }: Row): ReceivedGift => ({
   id: gift.id,
   guestId: gift.guestId,
   // HP tamu tertaut lebih diutamakan; nomor yang diisi pada catatan dipakai bila tidak ada.
   phone: phone ?? gift.phone,
   giverPhone: gift.phone,
+  instagram: instagram ?? gift.instagram,
+  giverInstagram: gift.instagram,
   giverName: gift.giverName,
   kind: gift.kind as ReceivedGiftKind,
   amount: gift.amount,
@@ -44,7 +47,12 @@ const toGift = ({ gift, recordedBy, phone }: Row): ReceivedGift => ({
 
 const selectGifts = (db: Db) =>
   db
-    .select({ gift: receivedGifts, recordedBy: admins.name, phone: guests.phone })
+    .select({
+      gift: receivedGifts,
+      recordedBy: admins.name,
+      phone: guests.phone,
+      instagram: guests.instagram,
+    })
     .from(receivedGifts)
     .leftJoin(admins, eq(admins.id, receivedGifts.recordedBy))
     .leftJoin(guests, eq(guests.id, receivedGifts.guestId));
@@ -182,6 +190,7 @@ function values(input: ReceivedGiftData, giverName: string) {
     guestId: input.guestId,
     giverName,
     phone: input.giverPhone,
+    instagram: input.giverInstagram,
     kind: input.kind,
     // Barang tidak bernominal; amplop dan transfer tidak memakai nama barang.
     amount: isItem ? null : input.amount,
@@ -228,6 +237,24 @@ export async function setThanked(db: Db, id: string, thanked: boolean): Promise<
     .returning({ id: receivedGifts.id });
   if (!row) throw notFound();
   return getGift(db, id);
+}
+
+export async function getThanksTemplate(db: Db): Promise<string | null> {
+  const [row] = await db.select().from(thanksTemplate).limit(1);
+  return row?.body ?? null;
+}
+
+/** Menyimpan pesan terima kasih; isi kosong menghapus baris sehingga kembali ke bawaan. */
+export async function saveThanksTemplate(db: Db, body: string): Promise<string | null> {
+  if (!body) {
+    await db.delete(thanksTemplate);
+    return null;
+  }
+  await db
+    .insert(thanksTemplate)
+    .values({ id: 1, body })
+    .onConflictDoUpdate({ target: thanksTemplate.id, set: { body } });
+  return body;
 }
 
 export async function deleteReceivedGift(db: Db, id: string): Promise<void> {

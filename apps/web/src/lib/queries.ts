@@ -1,4 +1,5 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { DEFAULT_THANKS_TEMPLATE } from "@wedding/shared";
 import { adminApi, type GuestQuery, type ReceivedGiftFilter } from "./admin-api.js";
 import { api } from "./api.js";
 
@@ -147,6 +148,13 @@ export const wishesQuery = queryOptions({
 export const layoutQuery = queryOptions({
   queryKey: ["invitation", "layout"],
   queryFn: () => adminApi.invitation.layout(),
+});
+
+/** Isi pesan terima kasih yang tersimpan; bawaan bila belum diubah. */
+export const thanksTemplateQuery = queryOptions({
+  queryKey: ["received-gifts", "thanks-template"],
+  queryFn: async () =>
+    (await adminApi.receivedGifts.thanksTemplate()).body ?? DEFAULT_THANKS_TEMPLATE,
 });
 
 export const receivedGiftsQuery = (query: ReceivedGiftFilter) =>

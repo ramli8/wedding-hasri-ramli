@@ -62,6 +62,7 @@ import {
   type StoryInput,
   sectionsResponseSchema,
   seoResponseSchema,
+  thanksTemplateResponseSchema,
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
@@ -375,6 +376,14 @@ export const adminApi = {
         withBody("POST", { thanked }),
       ),
     remove: (id: string) => request(`${base}/received-gifts/${id}`, okSchema, withBody("DELETE")),
+    thanksTemplate: () =>
+      request(`${base}/received-gifts/thanks-template`, thanksTemplateResponseSchema),
+    saveThanksTemplate: (body: string) =>
+      request(
+        `${base}/received-gifts/thanks-template`,
+        thanksTemplateResponseSchema,
+        withBody("PUT", { body }),
+      ),
   },
 
   guestbook: {

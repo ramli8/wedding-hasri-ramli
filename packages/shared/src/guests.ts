@@ -22,7 +22,8 @@ export const optionalPhoneField = z
     return phone;
   });
 
-const instagramField = z
+/** Username Instagram opsional: dinormalisasi, kosong = null, tidak sah = galat. */
+export const instagramField = z
   .string()
   .trim()
   .nullish()

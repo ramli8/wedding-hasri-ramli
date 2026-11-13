@@ -239,6 +239,20 @@
       "when": 1794388324162,
       "tag": "0033_young_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794535525774,
+      "tag": "0034_next_steve_rogers",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794535982225,
+      "tag": "0035_marvelous_wendigo",
+      "breakpoints": true
     }
   ]
 }

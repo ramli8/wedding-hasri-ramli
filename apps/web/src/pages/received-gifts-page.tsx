@@ -9,28 +9,28 @@ import {
 import {
   Check,
   Download,
+  Ellipsis,
   Gift,
   HeartHandshake,
   Link2,
+  ListChecks,
   type LucideIcon,
   Plus,
   Send,
   SquarePen,
   Trash2,
   Wallet,
-  X,
 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useDeferredValue, useState } from "react";
 import { DataTableBulkActions } from "@/components/data-table/bulk-actions";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { selectColumn } from "@/components/data-table/select-column";
 import { Alert } from "@/components/kit/alert";
-import { Button, buttonVariants } from "@/components/kit/button";
+import { Button } from "@/components/kit/button";
 import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
-import { FormSection } from "@/components/kit/form-rows";
 import { FormFooter } from "@/components/kit/invitation-kit";
 import { MoneyInput } from "@/components/kit/money-input";
 import { toast } from "@/components/kit/toast";
@@ -38,18 +38,17 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { adminApi, downloads } from "../lib/admin-api.js";
 import { formatRupiah } from "../lib/format.js";
-import { receivedGiftsQuery, useRefresh } from "../lib/queries.js";
-import { ThanksDialog } from "./received-gifts-thanks-dialog.js";
+import { groupsQuery, receivedGiftsQuery, useRefresh } from "../lib/queries.js";
+import { ThanksQueueDialog, ThanksSendDialog } from "./received-gifts-thanks-dialog.js";
 
 type Editing = { kind: "new" } | { kind: "edit"; gift: ReceivedGift };
 
@@ -58,14 +57,16 @@ function Stat({
   value,
   note,
   icon: Icon,
+  className,
 }: {
   label: string;
   value: string;
   note?: string;
   icon: LucideIcon;
+  className?: string;
 }) {
   return (
-    <Card className="gap-0">
+    <Card className={cn("gap-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{label}</CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
@@ -78,8 +79,6 @@ function Stat({
   );
 }
 
-const todayWib = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-
 const THANKED_OPTIONS = [
   { label: "Belum dibalas", value: "no" },
   { label: "Sudah dibalas", value: "yes" },
@@ -89,7 +88,8 @@ export function ReceivedGiftsPage() {
   const refresh = useRefresh();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<ReceivedGift | null>(null);
-  const [thanking, setThanking] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [queueOpen, setQueueOpen] = useState(false);
 
   const list = useQuery(receivedGiftsQuery({}));
   const items = list.data?.items ?? [];
@@ -107,6 +107,14 @@ export function ReceivedGiftsPage() {
       id: "pemberi",
       accessorFn: (gift) => gift.giverName,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Pemberi" />,
+      // Kotak cari memfilter kolom ini: cocokkan juga nama barang dan catatan.
+      filterFn: (row, _id, value: string) => {
+        const needle = value.toLowerCase();
+        const { giverName, itemDescription, note } = row.original;
+        return [giverName, itemDescription, note].some((text) =>
+          text?.toLowerCase().includes(needle),
+        );
+      },
       cell: ({ row }) => (
         <div className="max-w-64">
           <p className="truncate font-medium">{row.original.giverName}</p>
@@ -138,21 +146,35 @@ export function ReceivedGiftsPage() {
       ),
     },
     {
-      id: "diterima",
-      accessorFn: (gift) => gift.receivedOn,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Diterima" />,
-      cell: ({ row }) => <span className="text-muted-foreground">{row.original.receivedOn}</span>,
-    },
-    {
       id: "terimakasih",
       accessorFn: (gift) => (gift.thankedAt ? "yes" : "no"),
       header: ({ column }) => <DataTableColumnHeader column={column} title="Terima kasih" />,
-      cell: ({ row }) =>
-        row.original.thankedAt ? (
-          <Badge variant="outline">Sudah dibalas</Badge>
+      cell: ({ row }) => {
+        const gift = row.original;
+        const busy = thank.isPending && thank.variables?.id === gift.id;
+        return gift.thankedAt ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            aria-label={`Batalkan tanda dibalas untuk ${gift.giverName}`}
+            onClick={() => thank.mutate({ id: gift.id, thanked: false })}
+            className="text-muted-foreground"
+          >
+            <Check aria-hidden />
+            Sudah dibalas
+          </Button>
         ) : (
-          <Badge variant="secondary">Belum</Badge>
-        ),
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => thank.mutate({ id: gift.id, thanked: true })}
+          >
+            Tandai dibalas
+          </Button>
+        );
+      },
       filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
     },
     {
@@ -160,27 +182,33 @@ export function ReceivedGiftsPage() {
       cell: ({ row }) => {
         const gift = row.original;
         return (
-          <DataTableRowActions
-            actions={[
-              {
-                label: gift.thankedAt ? "Batalkan balasan" : "Tandai dibalas",
-                icon: <Check />,
-                onSelect: () => thank.mutate({ id: gift.id, thanked: !gift.thankedAt }),
-              },
-              {
-                label: "Ubah",
-                icon: <SquarePen />,
-                onSelect: () => setEditing({ kind: "edit", gift }),
-              },
-              "separator",
-              {
-                label: "Hapus",
-                icon: <Trash2 />,
-                destructive: true,
-                onSelect: () => setDeleting(gift),
-              },
-            ]}
-          />
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSendingId(gift.id)}
+              title="Kirim terima kasih"
+            >
+              <Send aria-hidden />
+              <span className="md:max-xl:sr-only">Kirim</span>
+            </Button>
+            <DataTableRowActions
+              actions={[
+                {
+                  label: "Ubah",
+                  icon: <SquarePen />,
+                  onSelect: () => setEditing({ kind: "edit", gift }),
+                },
+                "separator",
+                {
+                  label: "Hapus",
+                  icon: <Trash2 />,
+                  destructive: true,
+                  onSelect: () => setDeleting(gift),
+                },
+              ]}
+            />
+          </div>
         );
       },
       enableSorting: false,
@@ -195,43 +223,32 @@ export function ReceivedGiftsPage() {
         description="Catat amplop, transfer, dan barang yang diterima, lalu tandai bila sudah dibalas ucapan terima kasih."
         actions={
           <>
-            {summary && summary.notThanked > 0 && (
-              <Button variant="outline" onClick={() => setThanking(true)}>
-                <Send aria-hidden />
-                Kirim terima kasih
+            {items.length > 0 && (
+              <Button variant="outline" onClick={() => setQueueOpen(true)}>
+                <ListChecks aria-hidden />
+                Kirim beruntun
               </Button>
             )}
-            <a
-              href={downloads.receivedGiftsXlsx({})}
-              className={buttonVariants({ variant: "outline" })}
-            >
-              <Download aria-hidden />
-              Ekspor Excel
-            </a>
             <Button onClick={() => setEditing({ kind: "new" })}>
               Catat hadiah
               <Plus aria-hidden />
             </Button>
+            <MoreMenu />
           </>
         }
       />
 
       {summary && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <Stat
             icon={Wallet}
             label="Total uang"
             value={formatRupiah(summary.amplopTotal + summary.transferTotal)}
-            note={`${summary.count - summary.barangCount} pemberian · amplop ${formatRupiah(summary.amplopTotal)} · transfer ${formatRupiah(summary.transferTotal)}`}
+            note={`Amplop ${formatRupiah(summary.amplopTotal)} · Transfer ${formatRupiah(summary.transferTotal)}`}
+            className="max-sm:col-span-2"
           />
-          <Stat icon={Gift} label="Barang" value={String(summary.barangCount)} note="dicatat" />
-          <Stat
-            icon={HeartHandshake}
-            label="Belum dibalas"
-            value={String(summary.notThanked)}
-            note="ucapan terima kasih"
-          />
-          <Stat icon={Gift} label="Total catatan" value={String(summary.count)} />
+          <Stat icon={Gift} label="Barang" value={String(summary.barangCount)} />
+          <Stat icon={HeartHandshake} label="Belum dibalas" value={String(summary.notThanked)} />
         </div>
       )}
 
@@ -285,7 +302,6 @@ export function ReceivedGiftsPage() {
       <Dialog
         open={editing !== null}
         onClose={() => setEditing(null)}
-        wide
         title={editing?.kind === "edit" ? "Ubah catatan hadiah" : "Catat hadiah"}
       >
         {editing && (
@@ -295,44 +311,63 @@ export function ReceivedGiftsPage() {
           />
         )}
       </Dialog>
-      <ThanksDialog open={thanking} onClose={() => setThanking(false)} />
+      <ThanksQueueDialog open={queueOpen} onClose={() => setQueueOpen(false)} />
+      <ThanksSendDialog giftId={sendingId} onClose={() => setSendingId(null)} />
       <DeleteDialog gift={deleting} onClose={() => setDeleting(null)} />
     </>
   );
 }
 
-/** Urutan tombol Jenis: yang paling sering dicatat di hari H dulu. */
+/** Pecahan uang kertas rupiah untuk tombol tambah nominal. */
+const BANKNOTES = [5_000, 10_000, 20_000, 50_000, 100_000] as const;
+
+/** Label pendek tombol Jenis di formulir. */
 const KIND_SHORT_LABEL: Record<ReceivedGiftKind, string> = {
   amplop: "Amplop",
   transfer: "Transfer",
   barang: "Barang",
 };
 
+/** Aksi yang jarang dipakai dikumpulkan di satu menu agar header ringkas di HP. */
+function MoreMenu() {
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon" aria-label="Lainnya">
+          <Ellipsis aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem asChild>
+          <a href={downloads.receivedGiftsXlsx({})}>
+            <Download />
+            Ekspor Excel
+          </a>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => void }) {
   const refresh = useRefresh();
+  const [kind, setKind] = useState<ReceivedGiftKind>(gift?.kind ?? "amplop");
   const [guestId, setGuestId] = useState<string | null>(gift?.guestId ?? null);
   const [giverName, setGiverName] = useState(gift?.giverName ?? "");
   const [giverPhone, setGiverPhone] = useState(gift?.giverPhone ?? "");
-  const [kind, setKind] = useState<ReceivedGiftKind>(gift?.kind ?? "amplop");
+  const [giverInstagram, setGiverInstagram] = useState(gift?.giverInstagram ?? "");
   const [amount, setAmount] = useState<number | null>(gift?.amount ?? null);
   const [item, setItem] = useState(gift?.itemDescription ?? "");
   const [note, setNote] = useState(gift?.note ?? "");
-  const [receivedOn, setReceivedOn] = useState(gift?.receivedOn ?? todayWib());
-  const [guestSearch, setGuestSearch] = useState("");
-
-  const guests = useQuery({
-    queryKey: ["guests", "picker", guestSearch],
-    queryFn: () => adminApi.guests.list({ q: guestSearch, pageSize: 6 }),
-    enabled: guestSearch.trim().length >= 2,
-  });
+  const [submitted, setSubmitted] = useState(false);
 
   const isItem = kind === "barang";
-  // Alasan tombol Simpan belum aktif, ditampilkan di atas tombol agar admin tahu apa yang kurang.
-  const missing = [
-    !giverName.trim() && !guestId && "nama pemberi (atau pilih tamu)",
-    isItem ? !item.trim() && "nama barang" : !(amount && amount > 0) && "nominal",
-  ].filter((reason): reason is string => Boolean(reason));
-  const valid = missing.length === 0;
+  const errors = {
+    giverName: !giverName.trim() && !guestId ? "Nama pemberi wajib diisi" : null,
+    amount: !isItem && !(amount && amount > 0) ? "Nominal wajib diisi" : null,
+    item: isItem && !item.trim() ? "Nama barang wajib diisi" : null,
+  };
+  const valid = !errors.giverName && !errors.amount && !errors.item;
 
   const save = useMutation({
     mutationFn: () => {
@@ -340,11 +375,14 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
         guestId,
         giverName,
         giverPhone: guestId ? (gift?.giverPhone ?? null) : giverPhone,
+        giverInstagram: guestId ? (gift?.giverInstagram ?? null) : giverInstagram,
         kind,
         amount: isItem ? null : amount,
         itemDescription: isItem ? item : null,
         note,
-        receivedOn,
+        // Tanggal tidak diisi admin: catatan baru memakai hari ini (WIB, di server), catatan lama
+        // mempertahankan tanggal aslinya.
+        receivedOn: gift?.receivedOn ?? null,
       };
       return gift
         ? adminApi.receivedGifts.update(gift.id, input)
@@ -365,179 +403,221 @@ function GiftForm({ gift, onDone }: { gift: ReceivedGift | null; onDone: () => v
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
+    setSubmitted(true);
     if (!valid) return;
     save.mutate();
   }
 
+  const shown = (error: string | null) => (submitted ? error : null);
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <FormSection title="Pemberi">
-        {guestId ? (
-          <div className="grid gap-2">
-            <p className="text-sm leading-none font-medium">Tamu undangan</p>
-            <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-              <p className="flex min-w-0 items-center gap-2 text-sm">
-                <Link2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="truncate">
-                  Tertaut ke <strong>{giverName || "tamu terdaftar"}</strong>
-                </span>
-              </p>
-              <Button size="sm" variant="ghost" onClick={() => setGuestId(null)}>
-                Lepas
-                <X aria-hidden />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Field
-            label="Cari tamu undangan"
-            hint="Pilih tamu agar ucapan terima kasih langsung ke nomornya. Tidak ada? Tulis nama di bawah."
-          >
-            {(id) => (
-              <Command shouldFilter={false} className="rounded-lg border">
-                <CommandInput
-                  id={id}
-                  autoFocus
-                  placeholder="Ketik nama tamu…"
-                  value={guestSearch}
-                  onValueChange={setGuestSearch}
-                />
-                {guestSearch.trim().length >= 2 && (
-                  <CommandList className="max-h-44">
-                    {guests.isFetching ? (
-                      <p className="p-4 text-center text-sm text-muted-foreground">Mencari…</p>
-                    ) : (
-                      <>
-                        <CommandEmpty>Tidak ada tamu yang cocok.</CommandEmpty>
-                        <CommandGroup>
-                          {guests.data?.items.map((guest) => (
-                            <CommandItem
-                              key={guest.id}
-                              value={guest.id}
-                              onSelect={() => {
-                                setGuestId(guest.id);
-                                setGiverName(guest.displayName);
-                                setGuestSearch("");
-                              }}
-                            >
-                              {guest.displayName}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </>
-                    )}
-                  </CommandList>
-                )}
-              </Command>
-            )}
-          </Field>
-        )}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label={guestId ? "Nama pemberi" : "Atau tulis nama pemberi"}
-            hint={guestId ? "Terisi dari nama tamu; boleh diubah." : "Mis. “Keluarga Pak Hadi”."}
-          >
-            {(id) => (
-              <Input
-                id={id}
-                value={giverName}
-                maxLength={120}
-                autoComplete="off"
-                onChange={(e) => setGiverName(e.target.value)}
-              />
-            )}
-          </Field>
-          {!guestId && (
-            <Field
-              label="Nomor HP pemberi"
-              hint="Opsional. Dipakai untuk kirim ucapan terima kasih lewat WhatsApp."
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <fieldset className="grid gap-2">
+        <legend className="mb-2 text-sm leading-none font-medium">Jenis</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {RECEIVED_GIFT_KINDS.map((value) => (
+            <Button
+              key={value}
+              variant={kind === value ? "default" : "outline"}
+              aria-pressed={kind === value}
+              onClick={() => setKind(value)}
+              className="h-11 md:h-10"
             >
-              {(id) => (
-                <Input
-                  id={id}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="off"
-                  placeholder="08…"
-                  maxLength={30}
-                  value={giverPhone}
-                  onChange={(e) => setGiverPhone(e.target.value)}
-                />
-              )}
-            </Field>
-          )}
+              {KIND_SHORT_LABEL[value]}
+            </Button>
+          ))}
         </div>
-      </FormSection>
+      </fieldset>
 
-      <FormSection title="Hadiah">
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm leading-none font-medium">Jenis</legend>
-          <div className="grid grid-cols-3 gap-2">
-            {RECEIVED_GIFT_KINDS.map((value) => (
-              <Button
-                key={value}
-                variant={kind === value ? "default" : "outline"}
-                aria-pressed={kind === value}
-                onClick={() => setKind(value)}
-              >
-                {KIND_SHORT_LABEL[value]}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+      <GiverField
+        name={giverName}
+        guestId={guestId}
+        error={shown(errors.giverName)}
+        onType={(value) => {
+          setGiverName(value);
+          setGuestId(null);
+        }}
+        onPick={(guest) => {
+          setGiverName(guest.displayName);
+          setGuestId(guest.id);
+        }}
+      />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {isItem ? (
-            <Field label="Nama barang" required>
-              {(id) => (
-                <Input
-                  id={id}
-                  maxLength={200}
-                  value={item}
-                  onChange={(e) => setItem(e.target.value)}
-                />
-              )}
-            </Field>
-          ) : (
-            <Field label="Nominal" required>
-              {(id) => (
-                <MoneyInput
-                  id={id}
-                  placeholder="500.000"
-                  value={amount}
-                  onValueChange={setAmount}
-                />
-              )}
-            </Field>
-          )}
-          <Field label="Tanggal diterima">
-            {(id) => (
-              <Input
-                id={id}
-                type="date"
-                required
-                value={receivedOn}
-                onChange={(e) => setReceivedOn(e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-
-        <Field label="Catatan" hint="Opsional, mis. bank pengirim atau titipan siapa.">
+      {isItem ? (
+        <Field label="Nama barang" required error={shown(errors.item)}>
           {(id) => (
-            <Input id={id} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+            <Input
+              id={id}
+              maxLength={200}
+              autoComplete="off"
+              value={item}
+              onChange={(e) => setItem(e.target.value)}
+              className="h-11 text-base md:h-9 md:text-sm"
+            />
           )}
         </Field>
-      </FormSection>
+      ) : (
+        <Field label="Nominal" required error={shown(errors.amount)}>
+          {(id) => (
+            <div className="grid gap-2">
+              <MoneyInput id={id} placeholder="500.000" value={amount} onValueChange={setAmount} />
+              {/* Menghitung isi amplop lembar demi lembar: setiap ketukan menambah satu pecahan. */}
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {BANKNOTES.map((note) => (
+                  <Button
+                    key={note}
+                    variant="outline"
+                    onClick={() => setAmount((current) => (current ?? 0) + note)}
+                    className="h-11 md:h-9"
+                  >
+                    +{note / 1000}rb
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  disabled={!amount}
+                  onClick={() => setAmount(null)}
+                  className="h-11 text-muted-foreground md:h-9"
+                >
+                  Nol-kan
+                </Button>
+              </div>
+            </div>
+          )}
+        </Field>
+      )}
+
+      {!guestId && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="No. HP">
+            {(id) => (
+              <Input
+                id={id}
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                placeholder="08…"
+                maxLength={30}
+                value={giverPhone}
+                onChange={(e) => setGiverPhone(e.target.value)}
+                className="h-11 text-base md:h-9 md:text-sm"
+              />
+            )}
+          </Field>
+          <Field label="Instagram">
+            {(id) => (
+              <Input
+                id={id}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="@username"
+                maxLength={100}
+                value={giverInstagram}
+                onChange={(e) => setGiverInstagram(e.target.value)}
+                className="h-11 text-base md:h-9 md:text-sm"
+              />
+            )}
+          </Field>
+        </div>
+      )}
+
+      <Field label="Catatan">
+        {(id) => (
+          <Input
+            id={id}
+            maxLength={500}
+            autoComplete="off"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="h-11 text-base md:h-9 md:text-sm"
+          />
+        )}
+      </Field>
 
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
-      {!valid && (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          Lengkapi dulu: {missing.join(", ")}.
-        </p>
-      )}
-      <FormFooter onCancel={onDone} pending={save.isPending} disabled={!valid} />
+      <FormFooter onCancel={onDone} pending={save.isPending} />
     </form>
+  );
+}
+
+type GuestOption = { id: string; displayName: string; groupId: string | null };
+
+/**
+ * Satu kolom nama pemberi. Saat mengetik muncul tamu undangan yang cocok; memilihnya menautkan
+ * catatan ke tamu itu (ucapan terima kasih memakai nomornya). Tanpa memilih, nama diketik bebas.
+ */
+function GiverField({
+  name,
+  guestId,
+  error,
+  onType,
+  onPick,
+}: {
+  name: string;
+  guestId: string | null;
+  error: string | null;
+  onType: (value: string) => void;
+  onPick: (guest: GuestOption) => void;
+}) {
+  const query = useDeferredValue(name.trim());
+  const searching = !guestId && query.length >= 2;
+  const guests = useQuery({
+    queryKey: ["guests", "picker", query],
+    queryFn: () => adminApi.guests.list({ q: query, pageSize: 5 }),
+    enabled: searching,
+  });
+  const matches = searching ? (guests.data?.items ?? []) : [];
+  // Nama kelompok membedakan tamu yang namanya sama.
+  const groups = useQuery({ ...groupsQuery, enabled: searching });
+  const groupName = (groupId: string | null) =>
+    groups.data?.find((group) => group.id === groupId)?.name;
+
+  return (
+    <Field label="Nama pemberi" required error={error}>
+      {(id) => (
+        <div className="grid gap-2">
+          <div className="relative">
+            <Input
+              id={id}
+              value={name}
+              maxLength={120}
+              autoComplete="off"
+              autoFocus
+              placeholder="Ketik nama…"
+              onChange={(e) => onType(e.target.value)}
+              className={cn("h-11 text-base md:h-9 md:text-sm", guestId && "pe-24")}
+            />
+            {guestId && (
+              <Badge variant="secondary" className="absolute end-2 top-1/2 -translate-y-1/2">
+                <Link2 aria-hidden />
+                Tamu
+              </Badge>
+            )}
+          </div>
+          {matches.length > 0 && (
+            <ul className="overflow-hidden rounded-md border" aria-label="Tamu undangan yang cocok">
+              {matches.map((guest) => (
+                <li key={guest.id} className="border-b last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => onPick(guest)}
+                    className="flex min-h-11 w-full items-center justify-between gap-3 px-3 text-start text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                  >
+                    <span className="truncate">{guest.displayName}</span>
+                    {groupName(guest.groupId) && (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {groupName(guest.groupId)}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }
 

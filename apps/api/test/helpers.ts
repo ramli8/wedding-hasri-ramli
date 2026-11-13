@@ -35,7 +35,7 @@ export function createTestContext(overrides: Record<string, string> = {}) {
 
 export async function resetDb(db: ReturnType<typeof createDb>["db"]) {
   await db.execute(
-    sql`truncate table admins, settings, events, guest_groups, guests, devices, rsvps, guestbook, media, couple_profiles, story_items, gallery_items, gift_accounts, faq_items, wishlist_items, wishlist_claims, invitation_cover, invitation_sections, received_gifts, vendor_payments, vendors, vendor_categories, booth_config, booth_photos, booth_photo_deletions restart identity cascade`,
+    sql`truncate table admins, settings, events, guest_groups, guests, devices, rsvps, guestbook, media, couple_profiles, story_items, gallery_items, gift_accounts, faq_items, wishlist_items, wishlist_claims, invitation_cover, invitation_sections, received_gifts, vendor_payments, vendors, vendor_categories, booth_config, booth_photos, booth_photo_deletions, thanks_template restart identity cascade`,
   );
 }
 

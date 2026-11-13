@@ -63,7 +63,7 @@ describe("beranda admin", () => {
         await api.post("/vendors", {
           categoryId: cat.id,
           name: "Dapur Bunda",
-          contractAmount: 10_000_000,
+          price: 10_000_000,
           dueOn: "2020-01-01",
         }),
       )
@@ -82,6 +82,7 @@ describe("beranda admin", () => {
       expect.objectContaining({
         name: "Dapur Bunda",
         categoryName: "Katering",
+        remaining: 10_000_000,
         state: "terlambat",
       }),
     ]);

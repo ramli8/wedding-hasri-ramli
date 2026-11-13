@@ -202,7 +202,7 @@ export function HomePage() {
     : [];
   const vendorBars = data
     ? [
-        { name: "Kontrak", total: data.vendors.summary.contractTotal },
+        { name: "Harga", total: data.vendors.summary.contractTotal },
         { name: "Dibayar", total: data.vendors.summary.paidTotal },
         { name: "Sisa", total: data.vendors.summary.remaining },
       ]
@@ -369,14 +369,14 @@ export function HomePage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Stat
                 icon={Store}
-                label="Vendor terpilih"
+                label="Vendor dipesan"
                 value={`${data.vendors.summary.selectedCount} / ${data.vendors.summary.categoryCount}`}
                 note="kategori"
                 to="/admin/vendor"
               />
               <Stat
                 icon={Receipt}
-                label="Total kontrak"
+                label="Total dipesan"
                 value={formatRupiah(data.vendors.summary.contractTotal)}
                 to="/admin/vendor"
               />
@@ -397,7 +397,9 @@ export function HomePage() {
               <Card className="col-span-1 lg:col-span-4">
                 <CardHeader>
                   <CardTitle>Pembayaran vendor</CardTitle>
-                  <CardDescription>Kontrak, yang sudah dibayar, dan sisanya.</CardDescription>
+                  <CardDescription>
+                    Harga vendor dipesan, yang sudah dibayar, dan sisanya.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="ps-2">
                   <BarsChart data={vendorBars} money />
@@ -405,9 +407,9 @@ export function HomePage() {
               </Card>
               <Card className="col-span-1 lg:col-span-3">
                 <CardHeader>
-                  <CardTitle>Jatuh tempo</CardTitle>
+                  <CardTitle>Batas pelunasan</CardTitle>
                   <CardDescription>
-                    Vendor terpilih yang segera atau sudah terlambat.
+                    Vendor dipesan yang segera atau sudah lewat batas pelunasan.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -424,8 +426,8 @@ export function HomePage() {
                             </p>
                           </div>
                           <div className="text-end">
-                            {vendor.dueAmount !== null && (
-                              <p className="font-medium">{formatRupiah(vendor.dueAmount)}</p>
+                            {vendor.remaining !== null && (
+                              <p className="font-medium">{formatRupiah(vendor.remaining)}</p>
                             )}
                             <Badge
                               variant={vendor.state === "terlambat" ? "destructive" : "secondary"}

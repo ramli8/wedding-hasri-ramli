@@ -522,14 +522,18 @@ export const vendors = pgTable(
       .notNull()
       .references(() => vendorCategories.id),
     name: text().notNull(),
+    // Penawaran selama kandidat, harga sepakat setelah dipesan.
+    price: bigint({ mode: "number" }),
     contactPerson: text(),
     phone: text(),
     instagram: text(),
     address: text(),
-    referencePrice: bigint({ mode: "number" }),
-    contractAmount: bigint({ mode: "number" }),
+    // Batas pelunasan.
     dueOn: date({ mode: "string" }),
-    dueAmount: bigint({ mode: "number" }),
+    // Hari-H: jam datang ("HH:MM", WIB) dan penanggung jawab di lokasi.
+    arrivalTime: text(),
+    picName: text(),
+    picPhone: text(),
     isSelected: boolean().notNull().default(false),
     note: text(),
     deletedAt: timestamp({ withTimezone: true }),
@@ -539,12 +543,7 @@ export const vendors = pgTable(
     uniqueIndex("one_selected_vendor_per_category")
       .on(table.categoryId)
       .where(sql`${table.isSelected} and ${table.deletedAt} is null`),
-    check(
-      "vendors_amounts_valid",
-      sql`(${table.referencePrice} is null or ${table.referencePrice} > 0)
-        and (${table.contractAmount} is null or ${table.contractAmount} > 0)
-        and (${table.dueAmount} is null or ${table.dueAmount} > 0)`,
-    ),
+    check("vendors_price_valid", sql`${table.price} is null or ${table.price} > 0`),
   ],
 );
 
@@ -555,9 +554,12 @@ export const vendorPayments = pgTable(
     vendorId: uuid()
       .notNull()
       .references(() => vendors.id, { onDelete: "cascade" }),
+    // dp | cicilan | pelunasan
+    kind: text().notNull().default("cicilan"),
     paidOn: date({ mode: "string" }).notNull(),
     amount: bigint({ mode: "number" }).notNull(),
     note: text(),
+    proofMediaId: uuid().references(() => media.id, { onDelete: "set null" }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("vendor_payments_amount_valid", sql`${table.amount} > 0`)],

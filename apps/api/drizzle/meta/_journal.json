@@ -253,6 +253,20 @@
       "when": 1794535982225,
       "tag": "0035_marvelous_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794537085993,
+      "tag": "0036_vendor_kolom_baru",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794537095772,
+      "tag": "0037_vendor_hapus_kolom_lama",
+      "breakpoints": true
     }
   ]
 }

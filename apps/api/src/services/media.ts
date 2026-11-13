@@ -31,6 +31,7 @@ export const MEDIA_USERS: { table: string; column: string }[] = [
   { table: "invitation_cover", column: "photo_media_id" },
   { table: "settings", column: "seo_image_media_id" },
   { table: "booth_photos", column: "media_id" },
+  { table: "vendor_payments", column: "proof_media_id" },
 ];
 
 const toMedia = (row: typeof media.$inferSelect): Media => ({

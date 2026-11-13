@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeInstagram, normalizePhone } from "./contact.js";
+import { mediaRefSchema } from "./media.js";
 
 const optionalText = (max: number, label: string) =>
   z
@@ -52,23 +53,29 @@ export type VendorCategory = z.infer<typeof vendorCategorySchema>;
 
 // --- Vendor ---------------------------------------------------------------------------------------
 
+const phoneField = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((value, ctx) => {
+    if (!value) return null;
+    const phone = normalizePhone(value);
+    if (!phone) {
+      ctx.addIssue({ code: "custom", message: "Nomor HP tidak valid" });
+      return z.NEVER;
+    }
+    return phone;
+  });
+
 export const vendorInputSchema = z.object({
   categoryId: z.uuid("Pilih kategori"),
   name: z.string().trim().min(1, "Nama vendor wajib diisi").max(120, "Nama maksimal 120 karakter"),
-  contactPerson: optionalText(120, "Nama kontak"),
-  phone: z
-    .string()
-    .trim()
-    .nullish()
-    .transform((value, ctx) => {
-      if (!value) return null;
-      const phone = normalizePhone(value);
-      if (!phone) {
-        ctx.addIssue({ code: "custom", message: "Nomor HP tidak valid" });
-        return z.NEVER;
-      }
-      return phone;
-    }),
+  /**
+   * Harga dari vendor: penawaran selama masih kandidat, harga sepakat setelah dipesan. Dasar
+   * perbandingan kandidat dan status pembayaran.
+   */
+  price: optionalMoney("Harga"),
+  phone: phoneField,
   instagram: z
     .string()
     .trim()
@@ -82,18 +89,24 @@ export const vendorInputSchema = z.object({
       }
       return username;
     }),
+  contactPerson: optionalText(120, "Nama kontak"),
   address: optionalText(300, "Alamat"),
-  /** Harga penawaran awal, untuk membandingkan kandidat. */
-  referencePrice: optionalMoney("Harga acuan"),
-  /** Nilai yang disepakati; dasar status pembayaran. */
-  contractAmount: optionalMoney("Nilai kontrak"),
-  /** Jatuh tempo pembayaran berikutnya (YYYY-MM-DD); diperbarui admin setelah tiap pembayaran. */
+  /** Batas pelunasan (YYYY-MM-DD); cukup diisi sekali, penanda jatuh tempo hilang saat lunas. */
   dueOn: z.iso
     .date()
     .nullish()
     .transform((value) => value ?? null),
-  /** Nominal yang jatuh tempo itu, opsional. */
-  dueAmount: optionalMoney("Nominal jatuh tempo"),
+  /** Hari-H: jam datang/persiapan vendor ("HH:MM", WIB). */
+  arrivalTime: z
+    .string()
+    .trim()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Jam tidak valid")
+    .nullish()
+    .or(z.literal(""))
+    .transform((value) => value || null),
+  /** Hari-H: penanggung jawab vendor di lokasi. */
+  picName: optionalText(120, "Nama PIC"),
+  picPhone: phoneField,
   note: optionalText(1000, "Catatan"),
 });
 export type VendorInput = z.input<typeof vendorInputSchema>;
@@ -107,7 +120,7 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   lunas: "Lunas",
 };
 
-/** Berapa hari ke depan sebuah jatuh tempo dianggap "segera". */
+/** Berapa hari ke depan sebuah batas pelunasan dianggap "segera". */
 export const DUE_SOON_DAYS = 14;
 
 export const DUE_STATES = ["terlambat", "segera"] as const;
@@ -116,7 +129,7 @@ export const dueStateSchemaValues = DUE_STATES;
 export type DueState = (typeof DUE_STATES)[number];
 
 /**
- * Keadaan jatuh tempo: hanya untuk vendor terpilih yang belum lunas dan punya tanggal. `today`
+ * Keadaan batas pelunasan: hanya untuk vendor dipesan yang belum lunas dan punya tanggal. `today`
  * dan `dueOn` berupa YYYY-MM-DD, jadi membandingkan teksnya sudah urut menurut tanggal.
  */
 export function dueState(
@@ -130,19 +143,31 @@ export function dueState(
   return input.dueOn <= limit.toISOString().slice(0, 10) ? "segera" : null;
 }
 
-/** Status dari total pembayaran terhadap nilai kontrak; null bila belum ada nilai kontrak. */
-export function paymentStatus(
-  contractAmount: number | null,
-  paidTotal: number,
-): PaymentStatus | null {
-  if (contractAmount === null) return null;
-  if (paidTotal >= contractAmount) return "lunas";
+/** Status dari total pembayaran terhadap harga; null bila harga belum diisi. */
+export function paymentStatus(price: number | null, paidTotal: number): PaymentStatus | null {
+  if (price === null) return null;
+  if (paidTotal >= price) return "lunas";
   return paidTotal > 0 ? "sebagian" : "belum";
 }
 
 // --- Pembayaran -----------------------------------------------------------------------------------
 
+export const VENDOR_PAYMENT_KINDS = ["dp", "cicilan", "pelunasan"] as const;
+export const vendorPaymentKindSchema = z.enum(VENDOR_PAYMENT_KINDS);
+export type VendorPaymentKind = z.infer<typeof vendorPaymentKindSchema>;
+export const VENDOR_PAYMENT_KIND_LABEL: Record<VendorPaymentKind, string> = {
+  dp: "DP",
+  cicilan: "Cicilan",
+  pelunasan: "Pelunasan",
+};
+
+/** Jenis pembayaran yang paling mungkin berikutnya: DP dulu, lalu cicilan. */
+export function nextPaymentKind(paymentCount: number): VendorPaymentKind {
+  return paymentCount === 0 ? "dp" : "cicilan";
+}
+
 export const vendorPaymentInputSchema = z.object({
+  kind: vendorPaymentKindSchema.default("cicilan"),
   /** Tanggal bayar (YYYY-MM-DD); kosong = hari ini (WIB). */
   paidOn: z.iso
     .date()
@@ -150,15 +175,22 @@ export const vendorPaymentInputSchema = z.object({
     .transform((value) => value ?? null),
   amount: money("Nominal"),
   note: optionalText(300, "Catatan"),
+  /** Foto bukti bayar (kuitansi atau bukti transfer), opsional. */
+  proofMediaId: z
+    .uuid()
+    .nullish()
+    .transform((value) => value ?? null),
 });
 export type VendorPaymentInput = z.input<typeof vendorPaymentInputSchema>;
 export type VendorPaymentData = z.output<typeof vendorPaymentInputSchema>;
 
 export const vendorPaymentSchema = z.object({
   id: z.uuid(),
+  kind: vendorPaymentKindSchema,
   paidOn: z.string(),
   amount: z.number(),
   note: z.string().nullable(),
+  proof: mediaRefSchema.nullable(),
 });
 export type VendorPayment = z.infer<typeof vendorPaymentSchema>;
 
@@ -166,35 +198,39 @@ export const vendorSchema = z.object({
   id: z.uuid(),
   categoryId: z.uuid(),
   name: z.string(),
-  contactPerson: z.string().nullable(),
+  price: z.number().nullable(),
   phone: z.string().nullable(),
   instagram: z.string().nullable(),
+  contactPerson: z.string().nullable(),
   address: z.string().nullable(),
-  referencePrice: z.number().nullable(),
-  contractAmount: z.number().nullable(),
+  /** Dipesan (satu per kategori); selain itu masih kandidat. */
   isSelected: z.boolean(),
+  dueOn: z.string().nullable(),
+  arrivalTime: z.string().nullable(),
+  picName: z.string().nullable(),
+  picPhone: z.string().nullable(),
   note: z.string().nullable(),
   payments: z.array(vendorPaymentSchema),
   paidTotal: z.number(),
-  /** Null bila belum ada nilai kontrak. */
+  /** Sisa harga yang belum dibayar (tidak negatif); null bila harga belum diisi. */
+  remaining: z.number().nullable(),
+  /** Null bila harga belum diisi. */
   paymentStatus: z.enum(PAYMENT_STATUSES).nullable(),
-  dueOn: z.string().nullable(),
-  dueAmount: z.number().nullable(),
-  /** Terlambat / segera jatuh tempo; dihitung server, kosong bila tidak relevan. */
+  /** Terlambat / segera lewat batas pelunasan; dihitung server, kosong bila tidak relevan. */
   dueState: z.enum(DUE_STATES).nullable(),
 });
 export type Vendor = z.infer<typeof vendorSchema>;
 
 export const vendorSummarySchema = z.object({
-  /** Vendor terpilih dan jumlah kategori. */
+  /** Kategori yang sudah punya vendor dipesan, dan jumlah kategori. */
   selectedCount: z.number(),
   categoryCount: z.number(),
-  /** Jumlah nilai kontrak vendor terpilih. */
+  /** Jumlah harga vendor dipesan. */
   contractTotal: z.number(),
-  /** Pembayaran ke vendor terpilih, dan sisanya (tidak negatif). */
+  /** Pembayaran ke vendor dipesan, dan sisanya (tidak negatif). */
   paidTotal: z.number(),
   remaining: z.number(),
-  /** Vendor terpilih yang pembayarannya terlambat atau segera jatuh tempo. */
+  /** Vendor dipesan yang terlambat atau segera lewat batas pelunasan. */
   overdueCount: z.number(),
   dueSoonCount: z.number(),
 });

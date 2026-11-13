@@ -32,14 +32,15 @@ export const homeResponseSchema = z.object({
     .nullable(),
   vendors: z.object({
     summary: vendorSummarySchema,
-    /** Vendor terpilih yang terlambat atau segera jatuh tempo, paling mendesak dulu. */
+    /** Vendor dipesan yang terlambat atau segera lewat batas pelunasan, paling mendesak dulu. */
     due: z.array(
       z.object({
         id: z.uuid(),
         name: z.string(),
         categoryName: z.string(),
         dueOn: z.string(),
-        dueAmount: z.number().nullable(),
+        /** Sisa yang belum dibayar. */
+        remaining: z.number().nullable(),
         state: z.enum(dueStateSchemaValues),
       }),
     ),

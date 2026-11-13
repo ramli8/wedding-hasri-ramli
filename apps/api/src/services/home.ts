@@ -79,7 +79,7 @@ export async function getHome(db: Db): Promise<HomeResponse> {
                   name: v.name,
                   categoryName: categoryName.get(v.categoryId) ?? "",
                   dueOn: v.dueOn,
-                  dueAmount: v.dueAmount,
+                  remaining: v.remaining,
                   state: v.dueState,
                 },
               ]

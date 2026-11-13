@@ -1,5 +1,7 @@
 import { dueState, type Vendor, type VendorCategory, type VendorOverview } from "@wedding/shared";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { media } from "../src/db/schema.js";
 import { adminClient, createTestContext, loggedInClient } from "./helpers.js";
 
 const ctx = createTestContext();
@@ -70,16 +72,16 @@ describe("vendor", () => {
       name: "  Bunga Indah ",
       phone: "0812-3456-7890",
       instagram: "@Bunga.Indah",
-      referencePrice: 15_000_000,
+      price: 15_000_000,
     });
     expect(v).toMatchObject({
       name: "Bunga Indah",
       instagram: "bunga.indah",
-      referencePrice: 15_000_000,
-      contractAmount: null,
+      price: 15_000_000,
       isSelected: false,
-      paymentStatus: null,
+      paymentStatus: "belum",
       paidTotal: 0,
+      remaining: 15_000_000,
     });
     expect(v.phone).toMatch(/^\+?62812/);
 
@@ -87,8 +89,10 @@ describe("vendor", () => {
       (await api.post("/vendors", { categoryId: cat.id, name: "X", ...extra })).status;
     expect(await bad({ name: " " })).toBe(400);
     expect(await bad({ phone: "abc" })).toBe(400);
-    expect(await bad({ referencePrice: 0 })).toBe(400);
-    expect(await bad({ contractAmount: 1.5 })).toBe(400);
+    expect(await bad({ price: 0 })).toBe(400);
+    expect(await bad({ price: 1.5 })).toBe(400);
+    expect(await bad({ arrivalTime: "25:00" })).toBe(400);
+    expect(await bad({ picPhone: "abc" })).toBe(400);
     expect(await bad({ categoryId: "00000000-0000-4000-8000-000000000000" })).toBe(400);
     expect((await adminClient(ctx.makeApp(), "").get("/vendors")).status).toBe(401);
   });
@@ -158,7 +162,7 @@ describe("pembayaran vendor", () => {
 
   it("menghitung status belum, sebagian, lunas dari total pembayaran terhadap kontrak", async () => {
     const cat = await category("Katering");
-    const v = await vendor(cat.id, { contractAmount: 10_000_000 });
+    const v = await vendor(cat.id, { price: 10_000_000 });
     expect(v.paymentStatus).toBe("belum");
 
     const dp = await pay(v.id, { amount: 3_000_000, paidOn: "2027-01-10", note: "DP" });
@@ -174,7 +178,7 @@ describe("pembayaran vendor", () => {
 
   it("mengubah dan menghapus pembayaran, dan menolak nominal tidak wajar atau vendor lain", async () => {
     const cat = await category("Katering");
-    const v = await vendor(cat.id, { contractAmount: 5_000_000 });
+    const v = await vendor(cat.id, { price: 5_000_000 });
     const other = await vendor(cat.id, { name: "Lain" });
     const created = (await read<{ vendor: Vendor }>(await pay(v.id, { amount: 1_000_000 }))).vendor;
     const paymentId = created.payments[0]?.id ?? "";
@@ -200,9 +204,9 @@ describe("pembayaran vendor", () => {
   it("ringkasan hanya menghitung vendor terpilih; sisa tidak pernah negatif", async () => {
     const cat = await category("Katering");
     const other = await category("Dekorasi");
-    const a = await vendor(cat.id, { name: "A", contractAmount: 10_000_000 });
-    const b = await vendor(cat.id, { name: "B", contractAmount: 8_000_000 });
-    const x = await vendor(other.id, { name: "X", contractAmount: 4_000_000 });
+    const a = await vendor(cat.id, { name: "A", price: 10_000_000 });
+    const b = await vendor(cat.id, { name: "B", price: 8_000_000 });
+    const x = await vendor(other.id, { name: "X", price: 4_000_000 });
     await pay(a.id, { amount: 2_000_000 });
     await pay(b.id, { amount: 500_000 });
     await pay(x.id, { amount: 5_000_000 }); // dibayar melebihi kontrak
@@ -223,7 +227,7 @@ describe("pembayaran vendor", () => {
 
   it("pembayaran vendor yang dihapus tidak ikut tampil dan vendor tidak bisa dibayar lagi", async () => {
     const cat = await category("Katering");
-    const v = await vendor(cat.id, { contractAmount: 1_000_000 });
+    const v = await vendor(cat.id, { price: 1_000_000 });
     await pay(v.id, { amount: 100_000 });
     await api.delete(`/vendors/${v.id}`);
     expect((await overview()).vendors).toEqual([]);
@@ -254,22 +258,21 @@ describe("jatuh tempo pembayaran", () => {
     const foto = await category("Fotografi");
     const late = await vendor(cat.id, {
       name: "Telat",
-      contractAmount: 5_000_000,
+      price: 5_000_000,
       dueOn: day(-3),
-      dueAmount: 2_000_000,
     });
     const soon = await vendor(dekor.id, {
       name: "Segera",
-      contractAmount: 5_000_000,
+      price: 5_000_000,
       dueOn: day(7),
     });
-    const far = await vendor(foto.id, { name: "Jauh", contractAmount: 5_000_000, dueOn: day(60) });
+    const far = await vendor(foto.id, { name: "Jauh", price: 5_000_000, dueOn: day(60) });
     const candidate = await vendor(cat.id, {
       name: "Kandidat",
-      contractAmount: 1_000_000,
+      price: 1_000_000,
       dueOn: day(-10),
     });
-    expect(late).toMatchObject({ dueOn: day(-3), dueAmount: 2_000_000, dueState: null });
+    expect(late).toMatchObject({ dueOn: day(-3), dueState: null });
 
     for (const v of [late, soon, far]) await select(v.id);
     const { vendors, summary } = await overview();
@@ -285,22 +288,88 @@ describe("jatuh tempo pembayaran", () => {
     expect(after.summary.overdueCount).toBe(0);
   });
 
-  it("memperbarui tanggal lewat ubah vendor, dan menolak tanggal atau nominal tidak wajar", async () => {
+  it("memperbarui tanggal dan info hari-H lewat ubah vendor, dan menolak tanggal tidak wajar", async () => {
     const cat = await category("Katering");
-    const v = await vendor(cat.id, { contractAmount: 1_000_000 });
+    const v = await vendor(cat.id, { price: 1_000_000 });
     const put = (extra: Record<string, unknown>) =>
       api.put(`/vendors/${v.id}`, { categoryId: cat.id, name: "Vendor", ...extra });
-    const ok = await put({ dueOn: "2027-06-01", dueAmount: 500_000 });
+    const ok = await put({
+      dueOn: "2027-06-01",
+      arrivalTime: "06:30",
+      picName: "Mas Andi",
+      picPhone: "0813-2222-3333",
+    });
     expect((await read<{ vendor: Vendor }>(ok)).vendor).toMatchObject({
       dueOn: "2027-06-01",
-      dueAmount: 500_000,
+      arrivalTime: "06:30",
+      picName: "Mas Andi",
+      picPhone: "6281322223333",
     });
     expect((await put({ dueOn: "besok" })).status).toBe(400);
-    expect((await put({ dueOn: "2027-06-01", dueAmount: 0 })).status).toBe(400);
-    const cleared = await put({});
+    const cleared = await put({ arrivalTime: "" });
     expect((await read<{ vendor: Vendor }>(cleared)).vendor).toMatchObject({
       dueOn: null,
-      dueAmount: null,
+      arrivalTime: null,
+      picName: null,
+      picPhone: null,
     });
+  });
+});
+
+describe("jenis dan bukti pembayaran", () => {
+  async function fakeMedia() {
+    const [row] = await ctx.db
+      .insert(media)
+      .values({ width: 10, height: 10, bytes: 100 })
+      .returning({ id: media.id });
+    return row?.id ?? "";
+  }
+
+  it("menyimpan jenis (bawaan cicilan) dan foto bukti; foto lama dibuang saat diganti", async () => {
+    const cat = await category("Katering");
+    const v = await vendor(cat.id, { price: 10_000_000 });
+    const proof = await fakeMedia();
+
+    const dp = await api.post(`/vendors/${v.id}/payments`, {
+      kind: "dp",
+      amount: 3_000_000,
+      proofMediaId: proof,
+    });
+    const payment = (await read<{ vendor: Vendor }>(dp)).vendor.payments[0];
+    expect(payment).toMatchObject({ kind: "dp", proof: { id: proof } });
+    expect(payment?.proof?.thumb).toBe(`/media/${proof}/thumb.webp`);
+
+    const next = await api.post(`/vendors/${v.id}/payments`, { amount: 1_000_000 });
+    expect((await read<{ vendor: Vendor }>(next)).vendor.payments.map((p) => p.kind)).toContain(
+      "cicilan",
+    );
+    expect((await api.post(`/vendors/${v.id}/payments`, { kind: "lunas", amount: 1 })).status).toBe(
+      400,
+    );
+    // Satu gambar satu pemilik: bukti yang sama tidak bisa dipakai pembayaran lain.
+    expect(
+      (await api.post(`/vendors/${v.id}/payments`, { amount: 1, proofMediaId: proof })).status,
+    ).toBe(409);
+
+    const replacement = await fakeMedia();
+    await api.put(`/vendors/${v.id}/payments/${payment?.id}`, {
+      kind: "dp",
+      amount: 3_000_000,
+      proofMediaId: replacement,
+    });
+    expect(await ctx.db.select().from(media).where(eq(media.id, proof))).toEqual([]);
+
+    await api.delete(`/vendors/${v.id}/payments/${payment?.id}`);
+    expect(await ctx.db.select().from(media).where(eq(media.id, replacement))).toEqual([]);
+  });
+
+  it("ekspor Excel berisi lembar Vendor dan Pembayaran", async () => {
+    const cat = await category("Katering");
+    const v = await vendor(cat.id, { name: "Dapur Bunda", price: 10_000_000 });
+    await api.post(`/vendors/${v.id}/payments`, { kind: "dp", amount: 2_000_000 });
+    const res = await api.get("/vendors/export.xlsx");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("spreadsheetml");
+    expect((await res.arrayBuffer()).byteLength).toBeGreaterThan(500);
   });
 });

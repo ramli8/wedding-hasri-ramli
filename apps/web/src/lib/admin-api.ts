@@ -62,10 +62,10 @@ import {
   type StoryInput,
   sectionsResponseSchema,
   seoResponseSchema,
-  thanksTemplateResponseSchema,
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
+  thanksTemplateResponseSchema,
   type VendorInput,
   type VendorPaymentInput,
   vendorCategoryResponseSchema,
@@ -443,6 +443,7 @@ export const downloads = {
   dataJson: `/api${base}/export/data.json`,
   mediaZip: `/api${base}/export/media.zip`,
   boothPhotosZip: `/api${base}/booth/photos.zip`,
+  vendorsXlsx: `/api${base}/vendors/export.xlsx`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
   receivedGiftsXlsx: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();

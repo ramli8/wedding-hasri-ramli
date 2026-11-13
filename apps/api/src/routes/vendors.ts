@@ -16,6 +16,7 @@ import {
   deleteCategory,
   deletePayment,
   deleteVendor,
+  exportVendorsXlsx,
   getOverview,
   renameCategory,
   setSelected,
@@ -27,10 +28,20 @@ const idParam = z.object({ id: z.uuid() });
 const paymentParam = z.object({ id: z.uuid(), paymentId: z.uuid() });
 
 /** Vendor pernikahan: kategori, kandidat, vendor terpilih, dan pembayaran (admin). */
-export function vendorRoutes({ db }: AppDeps) {
+export function vendorRoutes({ db, config }: AppDeps) {
   return (
     new Hono<AppEnv>()
       .get("/", async (c) => c.json(await getOverview(db)))
+      .get("/export.xlsx", async (c) => {
+        const today = new Date().toISOString().slice(0, 10);
+        c.header(
+          "content-type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        c.header("content-disposition", `attachment; filename="vendor-${today}.xlsx"`);
+        c.header("cache-control", "no-store");
+        return c.body(new Uint8Array(await exportVendorsXlsx(db)).buffer);
+      })
 
       // Rute kategori didaftarkan sebelum "/:id".
       .post("/categories", validate("json", vendorCategoryInputSchema), async (c) => {
@@ -96,12 +107,14 @@ export function vendorRoutes({ db }: AppDeps) {
         validate("json", vendorPaymentInputSchema),
         async (c) => {
           const { id, paymentId } = c.req.valid("param");
-          return c.json({ vendor: await updatePayment(db, id, paymentId, c.req.valid("json")) });
+          return c.json({
+            vendor: await updatePayment(db, config.mediaDir, id, paymentId, c.req.valid("json")),
+          });
         },
       )
       .delete("/:id/payments/:paymentId", validate("param", paymentParam), async (c) => {
         const { id, paymentId } = c.req.valid("param");
-        return c.json({ vendor: await deletePayment(db, id, paymentId) });
+        return c.json({ vendor: await deletePayment(db, config.mediaDir, id, paymentId) });
       })
   );
 }

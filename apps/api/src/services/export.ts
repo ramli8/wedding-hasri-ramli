@@ -11,6 +11,9 @@ const EXCLUDED_TABLES = new Set(["admins", "admin_sessions"]);
 /** Kolom rahasia yang dibuang dari tabel lain. */
 const SECRET_COLUMNS: Record<string, string[]> = {
   devices: ["pairingCodeHash", "pairingCode", "tokenHash"],
+  panitia_members: ["token"],
+  rundown_config: ["token"],
+  vip_config: ["token"],
 };
 
 export const EXPORT_FORMAT = "wedding-export-v1";
@@ -46,7 +49,8 @@ export async function mediaZipStream(dir: string): Promise<ReadableStream<Uint8A
   let ids: string[] = [];
   try {
     ids = (await readdir(dir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
+      // Folder `voice` berisi pesan suara (bukan foto), punya ZIP sendiri di menu Ucapan.
+      .filter((entry) => entry.isDirectory() && entry.name !== "voice")
       .map((entry) => entry.name)
       .sort();
   } catch {

@@ -172,6 +172,8 @@ export const guests = pgTable(
     instagram: text(),
     groupId: uuid().references(() => guestGroups.id),
     isRombongan: boolean().notNull().default(false),
+    // Tamu penting: keluarga mendapat kabar saat ia check-in (tidak dikirim ke HP scanner).
+    isVip: boolean().notNull().default(false),
     usherNote: text(),
     source: text().notNull().default("admin"),
     rev: bigint({ mode: "number" }).notNull().default(sql`nextval('guest_rev_seq')`),
@@ -231,7 +233,7 @@ export const devices = pgTable(
     tokenHash: text().unique("devices_token_hash_unique"),
     status: text().notNull().default("pending"),
     // Ditentukan saat pairing: HP scanner hanya boleh /sync, laptop booth hanya /booth, HP meja buwuh
-    // hanya /buwuh.
+    // hanya /buwuh, layar (TV/proyektor) hanya /layar.
     kind: text().notNull().default("scanner"),
     appVersion: text(),
     protocolVersion: integer(),
@@ -242,7 +244,7 @@ export const devices = pgTable(
   },
   (table) => [
     check("devices_status_valid", sql`${table.status} in ('pending', 'active', 'revoked')`),
-    check("devices_kind_valid", sql`${table.kind} in ('scanner', 'booth', 'buwuh')`),
+    check("devices_kind_valid", sql`${table.kind} in ('scanner', 'booth', 'buwuh', 'layar')`),
   ],
 );
 
@@ -663,4 +665,172 @@ export const buwuhConfig = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [check("buwuh_config_singleton", sql`${table.id} = 1`)],
+);
+
+// Mahar, seserahan, dan hantaran: barang, penanggung jawab, harga, dan statusnya.
+export const seserahanItems = pgTable(
+  "seserahan_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    category: text().notNull(),
+    name: text().notNull(),
+    pic: text(),
+    price: bigint({ mode: "number" }),
+    status: text().notNull().default("rencana"),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "seserahan_items_category_valid",
+      sql`${table.category} in ('mahar', 'seserahan', 'hantaran')`,
+    ),
+    check(
+      "seserahan_items_status_valid",
+      sql`${table.status} in ('rencana', 'dibeli', 'dikemas', 'diserahkan')`,
+    ),
+    check("seserahan_items_price_valid", sql`${table.price} is null or ${table.price} >= 0`),
+  ],
+);
+
+// Anggota panitia keluarga (tanpa akun). `token` adalah bagian rahasia tautan /tugas/<token>.
+export const panitiaMembers = pgTable("panitia_members", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  phone: text(),
+  token: text().notNull().unique("panitia_members_token_unique"),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+// Tugas persiapan; satu tugas satu penanggung jawab (boleh belum ditentukan).
+export const panitiaTasks = pgTable(
+  "panitia_tasks",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    title: text().notNull(),
+    memberId: uuid().references(() => panitiaMembers.id, { onDelete: "set null" }),
+    dueOn: date({ mode: "string" }),
+    note: text(),
+    doneAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("panitia_tasks_member_idx").on(table.memberId)],
+);
+
+// Rundown hari-H per acara. Jam "HH:MM" (WIB) di tanggal acaranya, seperti jam datang vendor.
+export const rundownItems = pgTable(
+  "rundown_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    eventId: uuid()
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    time: text().notNull(),
+    durationMin: integer(),
+    title: text().notNull(),
+    pic: text(),
+    vendorId: uuid().references(() => vendors.id, { onDelete: "set null" }),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("rundown_items_time_valid", sql`${table.time} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`),
+    index("rundown_items_event_idx").on(table.eventId, table.time),
+  ],
+);
+
+// Pengaturan rundown (satu baris): token tautan baca-saja untuk MC dan panitia.
+export const rundownConfig = pgTable(
+  "rundown_config",
+  {
+    id: smallint().primaryKey().default(1),
+    token: text().notNull(),
+  },
+  (table) => [check("rundown_config_singleton", sql`${table.id} = 1`)],
+);
+
+// Pengaturan Kabar VIP (satu baris): token tautan /vip/<token> untuk HP keluarga.
+export const vipConfig = pgTable(
+  "vip_config",
+  {
+    id: smallint().primaryKey().default(1),
+    token: text().notNull(),
+  },
+  (table) => [check("vip_config_singleton", sql`${table.id} = 1`)],
+);
+
+// Pengaturan layar (satu baris): porsi makanan yang sudah siap, diisi admin dari kabar dapur; layar
+// mode Dapur membandingkannya dengan banyak orang yang sudah datang.
+export const layarConfig = pgTable(
+  "layar_config",
+  {
+    id: smallint().primaryKey().default(1),
+    portionsReady: integer().notNull().default(0),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("layar_config_singleton", sql`${table.id} = 1`),
+    check("layar_config_portions_valid", sql`${table.portionsReady} >= 0`),
+  ],
+);
+
+// Doorprize: hadiah undian untuk tamu yang sudah check-in.
+export const doorprizePrizes = pgTable(
+  "doorprize_prizes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    quantity: integer().notNull().default(1),
+    sortOrder: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("doorprize_prizes_quantity_valid", sql`${table.quantity} >= 1`)],
+);
+
+// Hasil undian. Satu tamu paling banyak satu baris (unik), termasuk yang dicoret (`forfeited_at`),
+// jadi tamu yang sudah menang atau tidak maju tidak ikut diundi lagi.
+export const doorprizeWinners = pgTable(
+  "doorprize_winners",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    prizeId: uuid()
+      .notNull()
+      .references(() => doorprizePrizes.id, { onDelete: "cascade" }),
+    guestId: uuid()
+      .notNull()
+      .references(() => guests.id, { onDelete: "cascade" }),
+    drawnAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    forfeitedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("doorprize_winners_guest_unique").on(table.guestId),
+    index("doorprize_winners_prize_idx").on(table.prizeId),
+  ],
+);
+
+// Pesan suara tamu (maks. 60 detik). Berkasnya di MEDIA_DIR/voice/<id>.<ext>; hanya admin yang
+// mendengarkan.
+export const voiceMessages = pgTable(
+  "voice_messages",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    guestId: uuid()
+      .notNull()
+      .references(() => guests.id, { onDelete: "cascade" }),
+    durationMs: integer().notNull(),
+    mimeType: text().notNull(),
+    sizeBytes: integer().notNull(),
+    hidden: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("voice_messages_guest_idx").on(table.guestId),
+    check(
+      "voice_messages_mime_valid",
+      sql`${table.mimeType} in ('audio/webm', 'audio/ogg', 'audio/mp4')`,
+    ),
+  ],
 );

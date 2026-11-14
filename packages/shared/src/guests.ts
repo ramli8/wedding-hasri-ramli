@@ -46,6 +46,8 @@ export const guestInputSchema = z
     groupId: z.uuid({ error: "Pilih kelompok" }),
     /** Rombongan: penjaga mengisi jumlah orang saat check-in. Selain itu, otomatis 1 orang. */
     isRombongan: z.boolean().default(false),
+    /** Tamu penting: keluarga mendapat kabar saat ia check-in (halaman Kabar VIP). */
+    isVip: z.boolean().default(false),
     usherNote: optionalText,
     // Acara yang diundang tidak diisi per tamu: selalu mengikuti acara kelompoknya.
   })
@@ -73,6 +75,7 @@ export const guestSchema = z.object({
   instagram: z.string().nullable(),
   groupId: z.uuid().nullable(),
   isRombongan: z.boolean(),
+  isVip: z.boolean(),
   usherNote: z.string().nullable(),
   source: z.enum(["admin", "import", "walkin"]),
   events: z.array(guestEventSchema),

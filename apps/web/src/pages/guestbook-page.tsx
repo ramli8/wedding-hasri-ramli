@@ -16,12 +16,29 @@ import { getDisplayNameInitials } from "@/lib/utils";
 import { adminApi } from "../lib/admin-api.js";
 import { formatDateTime } from "../lib/datetime.js";
 import { guestbookQuery, useRefresh } from "../lib/queries.js";
+import { VoiceMessages } from "./voice-messages.js";
 
 type Visibility = "" | "shown" | "hidden";
 
 const PAGE_SIZE = 20;
 
+/** Menu Ucapan: tulisan dari buku tamu undangan dan pesan suara (hanya untuk pengantin). */
 export function GuestbookPage() {
+  const [kind, setKind] = useState<"tulisan" | "suara">("tulisan");
+  return (
+    <>
+      <Tabs value={kind} onValueChange={(value) => setKind(value as typeof kind)}>
+        <TabsList>
+          <TabsTrigger value="tulisan">Tulisan</TabsTrigger>
+          <TabsTrigger value="suara">Pesan suara</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      {kind === "tulisan" ? <WrittenGuestbook /> : <VoiceMessages />}
+    </>
+  );
+}
+
+function WrittenGuestbook() {
   const [visibility, setVisibility] = useState<Visibility>("");
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<AdminGuestbookEntry | null>(null);

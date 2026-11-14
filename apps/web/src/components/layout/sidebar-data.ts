@@ -2,13 +2,17 @@ import {
   BookHeart,
   BookOpen,
   CalendarCheck,
+  CalendarClock,
   CalendarDays,
   Camera,
   Gift,
   HandCoins,
   Home,
+  ListChecks,
   type LucideIcon,
   MessageSquareHeart,
+  Package,
+  PartyPopper,
   ScanLine,
   Settings,
   Smartphone,
@@ -45,6 +49,14 @@ export const navGroups: NavGroup[] = [
     items: [{ title: "Beranda", url: "/admin", icon: Home }],
   },
   {
+    title: "Persiapan",
+    items: [
+      { title: "Rundown", url: "/admin/rundown", icon: CalendarClock },
+      { title: "Tugas panitia", url: "/admin/panitia", icon: ListChecks },
+      { title: "Seserahan", url: "/admin/seserahan", icon: Package },
+    ],
+  },
+  {
     title: "Tamu",
     items: [
       { title: "Acara", url: "/admin/acara", icon: CalendarDays },
@@ -77,6 +89,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: "Check-in", url: "/admin/checkin", icon: ScanLine },
       { title: "Buwuh", url: "/admin/buwuh", icon: HandCoins },
+      { title: "Doorprize", url: "/admin/doorprize", icon: PartyPopper },
       {
         title: "Photobooth",
         icon: Camera,

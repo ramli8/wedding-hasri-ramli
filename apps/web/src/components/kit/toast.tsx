@@ -12,8 +12,8 @@ const emit = () => {
   for (const listener of listeners) listener();
 };
 
-/** Pesan singkat di bawah layar, mis. "Tersimpan". Hilang sendiri setelah 2,5 detik. */
-export function toast(message: string, tone: Toast["tone"] = "success") {
+/** Pesan singkat di bawah layar, mis. "Tersimpan". Hilang sendiri setelah 2,5 detik (bawaan). */
+export function toast(message: string, tone: Toast["tone"] = "success", showMs = SHOW_MS) {
   const item = { id: nextId++, message, tone, at: Date.now() };
   // Satu pesan saja yang tampil: simpan beruntun tidak menumpuk.
   toasts = [item];
@@ -21,7 +21,7 @@ export function toast(message: string, tone: Toast["tone"] = "success") {
   setTimeout(() => {
     toasts = toasts.filter((t) => t.id !== item.id);
     emit();
-  }, SHOW_MS);
+  }, showMs);
 }
 
 const subscribe = (listener: () => void) => {

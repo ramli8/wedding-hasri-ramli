@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { ISSUE } from "./content.js";
 import { OUTLINE, Photo, PRIMARY, Scene, WRAP } from "./parts.js";
+import { PesanSuara } from "./pesan-suara.js";
 
 function GiftRow({ gift }: { gift: (typeof ISSUE.gifts)[number] }) {
   const [copied, setCopied] = useState(false);
@@ -108,7 +109,7 @@ export function InfoPenonton() {
 }
 
 /** Ulasan penonton: buku ucapan. Pesan tampil sebagai kutipan ulasan dengan nama bergaya kredit. */
-export function Ulasan() {
+export function Ulasan({ code }: { code: string }) {
   const [letters, setLetters] = useState<
     { id: string; name: string; when: string; text: string }[]
   >(ISSUE.letters.map((letter) => ({ ...letter, id: letter.name })));
@@ -135,47 +136,50 @@ export function Ulasan() {
   return (
     <Scene id="ulasan" label="Ucapan & doa" title="Kata para penonton" tone="sand">
       <div className="grid gap-14 md:grid-cols-[20rem_1fr] md:gap-16">
-        <form onSubmit={submit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="ulasan-nama" className="tag text-dim">
-              Nama
-            </label>
-            <input
-              id="ulasan-nama"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={60}
-              placeholder={ISSUE.guest.name}
-              className="h-11 w-full text-base"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="ulasan-isi" className="tag text-dim">
-              Ucapan
-            </label>
-            <textarea
-              id="ulasan-isi"
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                setSent(false);
-              }}
-              rows={4}
-              maxLength={400}
-              required
-              className="w-full resize-none text-base"
-            />
-            <p className="tag text-dim">{text.length}/400</p>
-          </div>
-          {sent && (
-            <p role="status" className="text-xl text-ember italic">
-              Terima kasih, ucapan Anda sudah kami simpan.
-            </p>
-          )}
-          <button type="submit" disabled={!text.trim()} className={`${PRIMARY} self-start`}>
-            Kirim ucapan
-          </button>
-        </form>
+        <div className="flex flex-col gap-10">
+          <form onSubmit={submit} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="ulasan-nama" className="tag text-dim">
+                Nama
+              </label>
+              <input
+                id="ulasan-nama"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={60}
+                placeholder={ISSUE.guest.name}
+                className="h-11 w-full text-base"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="ulasan-isi" className="tag text-dim">
+                Ucapan
+              </label>
+              <textarea
+                id="ulasan-isi"
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setSent(false);
+                }}
+                rows={4}
+                maxLength={400}
+                required
+                className="w-full resize-none text-base"
+              />
+              <p className="tag text-dim">{text.length}/400</p>
+            </div>
+            {sent && (
+              <p role="status" className="text-xl text-ember italic">
+                Terima kasih, ucapan Anda sudah kami simpan.
+              </p>
+            )}
+            <button type="submit" disabled={!text.trim()} className={`${PRIMARY} self-start`}>
+              Kirim ucapan
+            </button>
+          </form>
+          <PesanSuara code={code} />
+        </div>
         <ul className="flex flex-col border-t border-umber/25">
           {letters.map((letter) => (
             <li key={letter.id} className="flex flex-col gap-3 border-b border-umber/25 py-6">

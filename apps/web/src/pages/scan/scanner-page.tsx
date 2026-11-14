@@ -39,6 +39,7 @@ import {
   doorSummary,
   handleScan,
   isCheckedIn,
+  isVipView,
   type Outcome,
   type RecentCheckin,
   undoCheckin,
@@ -90,7 +91,7 @@ function Scanner() {
       if (result.status !== "need_pax") {
         // Tamu VIP yang berhasil masuk punya bunyi dan getar sendiri.
         const kind: FeedbackKind =
-          result.status === "ok" && result.view.group?.isVip ? "vip" : result.status;
+          result.status === "ok" && isVipView(result.view) ? "vip" : result.status;
         feedback(kind, sound);
       }
       setOutcome(result);

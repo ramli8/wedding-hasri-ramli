@@ -6,11 +6,12 @@ export const PAIRING_CODE_LENGTH = 8;
 
 /**
  * Jenis perangkat, dipilih admin saat membuat kode pairing; kode hanya bisa dipasang sebagai jenis
- * itu (scanner di /scan/pasang, booth di /booth/pasang, meja buwuh di /buwuh/pasang). HP scanner hanya
- * boleh memakai /sync (data tamu), laptop photobooth hanya /booth, HP meja buwuh hanya /buwuh, sehingga
- * token booth atau meja buwuh di area umum tidak bisa mengambil daftar tamu.
+ * itu (scanner di /scan/pasang, booth di /booth/pasang, meja buwuh di /buwuh/pasang, layar di
+ * /layar/pasang). HP scanner hanya boleh memakai /sync (data tamu), laptop photobooth hanya /booth, HP
+ * meja buwuh hanya /buwuh, layar sapa/dapur hanya /layar (nama tamu yang baru datang, tanpa kontak),
+ * sehingga token perangkat di area umum tidak bisa mengambil daftar tamu.
  */
-export const deviceKindSchema = z.enum(["scanner", "booth", "buwuh"]);
+export const deviceKindSchema = z.enum(["scanner", "booth", "buwuh", "layar"]);
 export type DeviceKind = z.infer<typeof deviceKindSchema>;
 
 /** Halaman tempat kode pairing tiap jenis perangkat diketik. */
@@ -18,6 +19,7 @@ export const DEVICE_PAIR_PAGE: Record<DeviceKind, string> = {
   scanner: "/scan/pasang",
   booth: "/booth/pasang",
   buwuh: "/buwuh/pasang",
+  layar: "/layar/pasang",
 };
 
 export const pairRequestSchema = z.object({
@@ -53,6 +55,8 @@ export const snapshotGuestSchema = z.object({
   displayName: z.string(),
   groupId: z.uuid().nullable(),
   isRombongan: z.boolean(),
+  /** Tamu VIP perorangan (selain kelompok VIP). Opsional: data lama di perangkat belum punya. */
+  isVip: z.boolean().optional(),
   usherNote: z.string().nullable(),
   source: z.enum(["admin", "import", "walkin"]),
   /** false: dihapus atau tidak lagi diundang ke acara ini, jadi buang dari perangkat. */

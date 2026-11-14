@@ -8,6 +8,7 @@ import {
   HandCoins,
   KeyRound,
   Link2,
+  Monitor,
   Plus,
   Printer,
   ScanLine,
@@ -66,12 +67,20 @@ const KIND: Record<
     hint: "HP meja penerima sumbangan; tidak bisa membuka data tamu.",
     example: "HP Meja Buwuh",
   },
+  layar: {
+    label: "Layar sapa/dapur",
+    icon: Monitor,
+    page: DEVICE_PAIR_PAGE.layar,
+    hint: "TV atau proyektor: sapaan tamu yang datang, atau hitungan porsi untuk dapur.",
+    example: "TV Pelaminan",
+  },
 };
 
 const KIND_DEVICE: Record<DeviceKind, string> = {
   scanner: "HP penjaga",
   booth: "laptop photobooth",
   buwuh: "HP meja buwuh",
+  layar: "layar",
 };
 
 type PairingCode = { name: string; kind: DeviceKind; code: string };
@@ -201,7 +210,7 @@ export function DevicesPage() {
     <>
       <PageHeader
         title="Perangkat"
-        description="HP scanner di pintu, laptop photobooth, dan HP meja buwuh. Tiap perangkat dipasangkan dengan kode sekali pakai sesuai jenisnya dan bisa dicabut kapan saja."
+        description="HP scanner di pintu, laptop photobooth, HP meja buwuh, dan layar sapa/dapur. Tiap perangkat dipasangkan dengan kode sekali pakai sesuai jenisnya dan bisa dicabut kapan saja."
         actions={
           <>
             <Button variant="outline" onClick={() => setPrintPicking(true)}>
@@ -227,7 +236,7 @@ export function DevicesPage() {
         emptyText={
           devices.isPending
             ? "Memuat…"
-            : "Belum ada perangkat. Tambahkan satu per HP scanner, laptop photobooth, atau HP meja buwuh."
+            : "Belum ada perangkat. Tambahkan satu per HP scanner, laptop photobooth, HP meja buwuh, atau layar."
         }
         filters={[
           {
@@ -237,6 +246,7 @@ export function DevicesPage() {
               { label: KIND.scanner.label, value: "scanner" },
               { label: KIND.booth.label, value: "booth" },
               { label: KIND.buwuh.label, value: "buwuh" },
+              { label: KIND.layar.label, value: "layar" },
             ],
           },
           {

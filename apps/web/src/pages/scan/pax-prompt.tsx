@@ -3,7 +3,7 @@ import { Info, Minus, Plus, Sparkles, Users } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/kit/alert";
 import { Button } from "@/components/kit/button";
-import type { GuestView } from "../../lib/scan/actions.js";
+import { type GuestView, isVipView } from "../../lib/scan/actions.js";
 
 const DEFAULT_PAX = 2;
 /** Jumlah yang paling sering muncul: satu ketukan mengisi, lalu tekan Catat masuk. */
@@ -53,17 +53,19 @@ export function PaxPrompt({
           <h2 className="text-4xl leading-[1.1] font-bold tracking-tight break-words [overflow-wrap:anywhere] sm:text-5xl short:text-3xl">
             {view.guest.displayName}
           </h2>
-          {view.group && (
+          {(view.group || isVipView(view)) && (
             <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-              {view.group.isVip && (
+              {isVipView(view) && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0b1a3d] px-4 py-1.5 text-sm font-bold text-white">
                   <Sparkles className="size-4" aria-hidden />
                   VIP
                 </span>
               )}
-              <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
-                {view.group.name}
-              </span>
+              {view.group && (
+                <span className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
+                  {view.group.name}
+                </span>
+              )}
             </div>
           )}
         </div>

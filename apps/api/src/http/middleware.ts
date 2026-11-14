@@ -121,6 +121,7 @@ const KIND_LABEL: Record<DeviceKind, string> = {
   scanner: "scanner",
   booth: "photobooth",
   buwuh: "meja buwuh",
+  layar: "layar",
 };
 
 /** Token perangkat; `kind` membatasi jenisnya (booth tidak boleh menarik data tamu, dan sebaliknya). */

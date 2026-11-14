@@ -9,6 +9,7 @@ import {
 import { AppLayout } from "./components/app-layout.js";
 import { getBoothMeta } from "./lib/booth/db.js";
 import { getBuwuhMeta } from "./lib/buwuh/db.js";
+import { getLayarAuth } from "./lib/layar.js";
 import { meQuery } from "./lib/queries.js";
 import { getMeta } from "./lib/scan/db.js";
 import { BoothAdminPage } from "./pages/booth/booth-admin-page.js";
@@ -21,6 +22,7 @@ import { BuwuhPage } from "./pages/buwuh/buwuh-page.js";
 import { BuwuhPairPage } from "./pages/buwuh/buwuh-pair-page.js";
 import { CheckinPage } from "./pages/checkin-page.js";
 import { DevicesPage } from "./pages/devices-page.js";
+import { DoorprizePage } from "./pages/doorprize-page.js";
 import {
   CrashPage,
   ForbiddenPage,
@@ -44,18 +46,26 @@ import { InvitationLayout } from "./pages/invitation/invitation-layout.js";
 import { LayoutPage } from "./pages/invitation/layout-page.js";
 import { StoryPage } from "./pages/invitation/story-page.js";
 import { WishlistPage } from "./pages/invitation/wishlist-page.js";
+import { LayarPage } from "./pages/layar/layar-page.js";
+import { LayarPairPage } from "./pages/layar/layar-pair-page.js";
 import { LoginPage } from "./pages/login.js";
+import { MyTasksPage } from "./pages/my-tasks-page.js";
+import { PanitiaPage } from "./pages/panitia-page.js";
+import { PublicRundownPage } from "./pages/public-rundown-page.js";
 import { ReceivedGiftsPage } from "./pages/received-gifts-page.js";
 import { RsvpPage } from "./pages/rsvp-page.js";
+import { RundownPage } from "./pages/rundown-page.js";
 import { PairPage } from "./pages/scan/pair-page.js";
 import { ReadinessPage } from "./pages/scan/readiness-page.js";
 import { ScannerPage } from "./pages/scan/scanner-page.js";
+import { SeserahanPage } from "./pages/seserahan-page.js";
 import { MessageSettings } from "./pages/settings/message-settings.js";
 import { SettingsLayout } from "./pages/settings/settings-layout.js";
 import { AccountSettings, BackupSettings } from "./pages/settings/settings-pages.js";
 import { SiteSettings } from "./pages/settings/site-settings.js";
 import { InvitationPage } from "./pages/ticket/invitation-page.js";
 import { VendorsPage } from "./pages/vendors-page.js";
+import { VipPage } from "./pages/vip-page.js";
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -151,6 +161,51 @@ const receivedGiftsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/hadiah",
   component: ReceivedGiftsPage,
+});
+
+const panitiaRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/panitia",
+  component: PanitiaPage,
+});
+
+const doorprizeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/doorprize",
+  component: DoorprizePage,
+});
+
+const rundownRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/rundown",
+  component: RundownPage,
+});
+
+// Rundown baca-saja untuk MC dan panitia: tautan rahasia tanpa login.
+const publicRundownRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/rundown/$token",
+  component: PublicRundownPage,
+});
+
+// Kabar VIP untuk HP keluarga: tautan rahasia tanpa login.
+const vipRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/vip/$token",
+  component: VipPage,
+});
+
+// Tugas anggota panitia: tautan pribadi tanpa login.
+const myTasksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tugas/$token",
+  component: MyTasksPage,
+});
+
+const seserahanRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/admin/seserahan",
+  component: SeserahanPage,
 });
 
 const buwuhAdminRoute = createRoute({
@@ -324,6 +379,7 @@ const requirePairedDevice = async () => {
   if (await getMeta("auth")) return;
   if (await getBuwuhMeta("auth")) throw redirect({ to: "/buwuh" });
   if (await getBoothMeta("auth")) throw redirect({ to: "/booth" });
+  if (getLayarAuth()) throw redirect({ to: "/layar" });
   throw redirect({ to: "/scan/pasang" });
 };
 
@@ -379,6 +435,22 @@ const buwuhPairRoute = createRoute({
   component: BuwuhPairPage,
 });
 
+// Layar sapa/dapur (TV/proyektor): token perangkat sendiri, hanya nama tamu yang baru datang.
+const layarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/layar",
+  beforeLoad: () => {
+    if (!getLayarAuth()) throw redirect({ to: "/layar/pasang" });
+  },
+  component: LayarPage,
+});
+
+const layarPairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/layar/pasang",
+  component: LayarPairPage,
+});
+
 const boothPhotosRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/admin/photobooth/foto",
@@ -397,6 +469,11 @@ const routeTree = rootRoute.addChildren([
   ticketRoute,
   guestInvitationRoute,
   guestPhotoRoute,
+  myTasksRoute,
+  publicRundownRoute,
+  vipRoute,
+  layarRoute,
+  layarPairRoute,
   scanRoute,
   pairRoute,
   readinessRoute,
@@ -415,6 +492,10 @@ const routeTree = rootRoute.addChildren([
     rsvpRoute,
     receivedGiftsRoute,
     buwuhAdminRoute,
+    seserahanRoute,
+    panitiaRoute,
+    rundownRoute,
+    doorprizeRoute,
     vendorsRoute,
     invitationRoute.addChildren([
       invitationIndexRoute,

@@ -4,6 +4,7 @@ import { originCheck, requireAdmin } from "../http/middleware.js";
 import { boothAdminRoutes } from "./booth.js";
 import { buwuhAdminRoutes } from "./buwuh.js";
 import { checkinAdminRoutes, deviceAdminRoutes } from "./checkin-admin.js";
+import { doorprizeRoutes } from "./doorprize.js";
 import { guestbookAdminRoutes, rsvpAdminRoutes } from "./engage.js";
 import { eventRoutes } from "./events.js";
 import { exportRoutes } from "./export.js";
@@ -11,11 +12,17 @@ import { groupRoutes } from "./groups.js";
 import { guestRoutes } from "./guests.js";
 import { homeRoutes } from "./home.js";
 import { invitationAdminRoutes } from "./invitation.js";
+import { layarAdminRoutes } from "./layar.js";
 import { mediaAdminRoutes } from "./media.js";
+import { panitiaAdminRoutes } from "./panitia.js";
 import { receivedGiftRoutes } from "./received-gifts.js";
+import { rundownAdminRoutes } from "./rundown.js";
 import { seoRoutes } from "./seo.js";
+import { seserahanRoutes } from "./seserahan.js";
 import { settingsRoutes } from "./settings.js";
 import { vendorRoutes } from "./vendors.js";
+import { vipAdminRoutes } from "./vip.js";
+import { voiceAdminRoutes } from "./voice.js";
 
 /** Semua rute di bawah /api/v1/admin memerlukan sesi admin. */
 export function adminRoutes(deps: AppDeps, onChange: () => void = () => {}) {
@@ -42,6 +49,13 @@ export function adminRoutes(deps: AppDeps, onChange: () => void = () => {}) {
       .route("/media", mediaAdminRoutes(deps))
       .route("/received-gifts", receivedGiftRoutes(deps))
       .route("/vendors", vendorRoutes(deps))
+      .route("/seserahan", seserahanRoutes(deps))
+      .route("/panitia", panitiaAdminRoutes(deps))
+      .route("/rundown", rundownAdminRoutes(deps))
+      .route("/vip", vipAdminRoutes(deps))
+      .route("/layar", layarAdminRoutes(deps))
+      .route("/doorprize", doorprizeRoutes(deps))
+      .route("/voice", voiceAdminRoutes(deps))
       .route("/rsvps", rsvpAdminRoutes(deps))
       .route("/guestbook", guestbookAdminRoutes(deps))
   );

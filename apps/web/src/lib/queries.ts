@@ -73,6 +73,13 @@ export function useRefresh() {
       | "settings"
       | "booth"
       | "buwuh"
+      | "seserahan"
+      | "panitia"
+      | "rundown"
+      | "vip"
+      | "layar"
+      | "doorprize"
+      | "voice"
       | "seo"
       | "events"
       | "groups"
@@ -192,4 +199,45 @@ export const buwuhCatalogQuery = queryOptions({
 export const buwuhAddressesQuery = queryOptions({
   queryKey: ["buwuh", "addresses"],
   queryFn: () => adminApi.buwuh.addresses(),
+});
+
+export const seserahanQuery = queryOptions({
+  queryKey: ["seserahan"],
+  queryFn: () => adminApi.seserahan.list(),
+});
+
+export const panitiaQuery = queryOptions({
+  queryKey: ["panitia"],
+  queryFn: () => adminApi.panitia.get(),
+  // Panitia mencentang tugas dari HP mereka.
+  refetchInterval: 30_000,
+});
+
+export const rundownQuery = queryOptions({
+  queryKey: ["rundown"],
+  queryFn: () => adminApi.rundown.get(),
+});
+
+export const vipQuery = queryOptions({
+  queryKey: ["vip"],
+  queryFn: () => adminApi.vip.get(),
+  // Pemberitahuan tamu VIP datang di semua halaman admin; jarang dicek bila belum ada tamu VIP.
+  refetchInterval: (query) => (query.state.data?.vipCount ? 10_000 : 60_000),
+});
+
+export const layarQuery = queryOptions({
+  queryKey: ["layar"],
+  queryFn: () => adminApi.layar.getPortions(),
+});
+
+export const doorprizeQuery = queryOptions({
+  queryKey: ["doorprize"],
+  queryFn: () => adminApi.doorprize.list(),
+  // Tamu terus masuk selama acara; jumlah peserta undian ikut bertambah.
+  refetchInterval: 30_000,
+});
+
+export const voiceQuery = queryOptions({
+  queryKey: ["voice"],
+  queryFn: () => adminApi.voice.list(),
 });

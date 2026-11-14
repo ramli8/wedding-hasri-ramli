@@ -51,6 +51,7 @@ export function toGuest(row: GuestRow, invitations: GuestEventRow[]): Guest {
     instagram: row.instagram,
     groupId: row.groupId,
     isRombongan: row.isRombongan,
+    isVip: row.isVip,
     usherNote: row.usherNote,
     source: row.source as GuestSource,
     events: invitations
@@ -186,6 +187,7 @@ function guestColumns(input: GuestData) {
     instagram: input.instagram,
     groupId: input.groupId,
     isRombongan: input.isRombongan,
+    isVip: input.isVip,
     usherNote: input.usherNote,
   };
 }

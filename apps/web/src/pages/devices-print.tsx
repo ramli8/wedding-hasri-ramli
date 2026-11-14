@@ -24,6 +24,7 @@ const KIND_TITLE: Record<DeviceKind, string> = {
   scanner: "Scanner pintu",
   booth: "Photobooth",
   buwuh: "Meja buwuh",
+  layar: "Layar sapa/dapur",
 };
 
 /** Langkah memasang per jenis perangkat, ditulis untuk orang yang belum pernah memakainya. */
@@ -48,6 +49,13 @@ const STEPS: Record<DeviceKind, string[]> = {
     "Ketuk Pasangkan.",
     "Untuk mencatat: pilih Uang atau Barang, ketuk jumlahnya, ketuk Lanjut, isi nama dan alamat, lalu Simpan.",
     "Catatan tersimpan di HP dan terkirim sendiri saat ada internet.",
+  ],
+  layar: [
+    "Sambungkan laptop atau TV pintar ke internet, lalu ke TV/proyektor.",
+    "Buka Chrome dan ketik alamat di kartu ini.",
+    "Ketik kodenya, lalu klik Pasangkan.",
+    "Pilih Sapa (ucapan untuk tamu yang datang) atau Dapur (hitungan porsi), lalu Layar penuh.",
+    "Layar ini butuh internet selama dipakai.",
   ],
 };
 

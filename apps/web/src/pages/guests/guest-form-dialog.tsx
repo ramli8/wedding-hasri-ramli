@@ -117,6 +117,7 @@ function GuestForm({
   const [instagram, setInstagram] = useState(guest?.instagram ?? "");
   const [groupId, setGroupId] = useState(guest?.groupId ?? "");
   const [isRombongan, setIsRombongan] = useState(guest?.isRombongan ?? false);
+  const [isVip, setIsVip] = useState(guest?.isVip ?? false);
   const [usherNote, setUsherNote] = useState(guest?.usherNote ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
   // Acara yang diundang selalu mengikuti kelompok; di sini hanya ditampilkan.
@@ -134,6 +135,7 @@ function GuestForm({
     instagram,
     groupId,
     isRombongan,
+    isVip,
     usherNote,
   });
 
@@ -312,6 +314,12 @@ function GuestForm({
           description="Penjaga mengisi jumlah orang saat check-in. Selain itu otomatis 1 orang."
           checked={isRombongan}
           onCheckedChange={setIsRombongan}
+        />
+        <SwitchRow
+          title="Tamu VIP"
+          description="Keluarga mendapat kabar saat tamu ini datang (Kabar VIP)."
+          checked={isVip}
+          onCheckedChange={setIsVip}
         />
       </FormSection>
 

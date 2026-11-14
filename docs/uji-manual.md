@@ -468,6 +468,26 @@ Admin di laptop kini dibuka di `http://localhost:4173/admin`. Agar login dan tom
 - [ ] **13.3** **Pengaturan → Cadangan**: unduh **data** (JSON) dan **foto** (ZIP).
   **Harusnya**: kedua file terunduh dan bisa dibuka.
 
+## Bagian 13b. Persiapan dan hari-H tambahan
+
+- [ ] **13b.1** **Persiapan → Tugas panitia**: tambah anggota dengan nomor WA, beri satu tugas, kirim
+  tautannya. Buka tautan di HP anggota, centang tugas. **Harusnya**: di admin tugas tercentang
+  (paling lama 30 detik).
+- [ ] **13b.2** **Persiapan → Rundown**: isi tiga kegiatan, geser kegiatan kedua +15 menit.
+  **Harusnya**: kegiatan kedua dan ketiga mundur 15 menit; tautan MC menampilkan jam baru.
+- [ ] **13b.3** Tandai satu tamu **Tamu VIP**. Buka **Check-in → Kabar VIP → Buka** di HP kedua, ketuk
+  **Aktifkan suara**. Pindai tamu itu di `/scan`. **Harusnya**: scanner berbunyi VIP, HP keluarga
+  berbunyi/bergetar dalam 10 detik, admin mendapat toast "Tamu VIP datang".
+- [ ] **13b.4** **Perangkat → Tambah perangkat** jenis **Layar sapa/dapur**, pasang di laptop yang
+  tersambung TV (`/layar/pasang`). Pindai dua tamu. **Harusnya**: nama tampil besar bergantian.
+  Pilih **Dapur**, isi **Porsi siap** `300` di Check-in. **Harusnya**: sisa porsi = 300 − orang hadir.
+- [ ] **13b.5** **Hari-H → Doorprize**: tambah hadiah jumlah 2, klik **Undi**. **Harusnya**: layar
+  penuh, nama berputar lalu pemenang dari tamu yang sudah check-in. **Undi ulang (tidak maju)**:
+  nama dicoret, pemenang baru tidak pernah sama.
+- [ ] **13b.6** Di HP tamu buka `/u/KODE/undangan`, bagian Ucapan → **Rekam pesan suara** (izinkan
+  mikrofon), bicara 5 detik, **Berhenti**, **Kirim**. Ulangi di iPhone (Safari).
+  **Harusnya**: di **Ucapan → Pesan suara** keduanya bisa diputar.
+
 ## Bagian 14. Gladi bersih hari-H (H-7, di gedung)
 
 - [ ] **14.1** Di pintu masuk, cek sinyal/Wi-Fi. Jalankan **Uji kesiapan** di semua HP: hijau.

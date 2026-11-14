@@ -15,6 +15,13 @@ export async function getSettings(db: Db): Promise<Settings | null> {
     : null;
 }
 
+/** "Hasri & Ramli" untuk judul halaman; kosong bila nama mempelai belum diisi lengkap. */
+export function coupleName(value: Pick<Settings, "brideName" | "groomName"> | null): string {
+  const bride = value?.brideName.trim() ?? "";
+  const groom = value?.groomName.trim() ?? "";
+  return bride && groom ? `${bride} & ${groom}` : bride || groom;
+}
+
 /** Nama situs yang dipakai (bawaan bila belum diatur). */
 export async function getSiteName(db: Db): Promise<string> {
   const [row] = await db.select({ name: settings.siteName }).from(settings).limit(1);

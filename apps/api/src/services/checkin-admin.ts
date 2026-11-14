@@ -49,6 +49,7 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
       displayName: guests.displayName,
       groupId: guests.groupId,
       source: guests.source,
+      isVip: guests.isVip,
     })
     .from(guests)
     .innerJoin(
@@ -117,7 +118,7 @@ export async function buildDashboard(db: Db, eventId?: string): Promise<Dashboar
           guestId: guest.id,
           displayName: guest.displayName,
           groupName: group?.name ?? null,
-          isVip: group?.isVip ?? false,
+          isVip: guest.isVip || (group?.isVip ?? false),
           pax: state.pax,
           method: state.primary.method,
           deviceName: state.primary.deviceId

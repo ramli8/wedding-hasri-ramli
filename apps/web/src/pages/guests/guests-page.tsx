@@ -13,6 +13,7 @@ import {
   QrCode,
   Send,
   SquarePen,
+  Star,
   Trash2,
   Undo2,
   Upload,
@@ -181,6 +182,12 @@ export function GuestsPage() {
                 >
                   {guest.displayName}
                 </button>
+              )}
+              {guest.isVip && (
+                <Badge variant="secondary" className="gap-1 font-normal">
+                  <Star className="size-3 fill-current text-warning" aria-hidden />
+                  VIP
+                </Badge>
               )}
               {guest.isRombongan && (
                 <Badge variant="secondary" className="font-normal">

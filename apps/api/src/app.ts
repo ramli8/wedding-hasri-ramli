@@ -10,15 +10,23 @@ import { boothRoutes } from "./routes/booth.js";
 import { buwuhRoutes } from "./routes/buwuh.js";
 import { deviceRoutes, syncRoutes } from "./routes/device.js";
 import { healthRoutes } from "./routes/health.js";
+import { layarRoutes } from "./routes/layar.js";
 import { manifestRoutes } from "./routes/manifest.js";
 import { mediaPublicRoutes } from "./routes/media.js";
+import { panitiaPublicRoutes } from "./routes/panitia.js";
 import { publicRoutes } from "./routes/public.js";
+import { rundownPublicRoutes } from "./routes/rundown.js";
 import { photoShareRoutes, shareRoutes } from "./routes/share.js";
 import { siteIconRoutes } from "./routes/site-icon.js";
+import { vipPublicRoutes } from "./routes/vip.js";
 import { createInvitationCache } from "./services/layout.js";
 
 /** Rute unggahan berkas (multipart) yang memasang bodyLimit-nya sendiri. */
-const UPLOAD_PATHS = new Set(["/api/v1/admin/media", "/api/v1/booth/photos"]);
+const UPLOAD_PATHS = new Set([
+  "/api/v1/admin/media",
+  "/api/v1/booth/photos",
+  "/api/v1/public/voice",
+]);
 
 /** CSV impor tamu maksimal 2 MB (dikirim sebagai string JSON), push sinkron jauh di bawahnya. */
 const jsonLimit = bodyLimit({
@@ -74,11 +82,16 @@ export function createApp(deps: AppDeps) {
   const v1 = new Hono<AppEnv>()
     .route("/auth", authRoutes(deps))
     .route("/admin", adminRoutes(deps, invitation.invalidate))
+    // Didaftarkan sebelum "/public" supaya tidak tertangkap rute tamu.
+    .route("/public/tugas", panitiaPublicRoutes(deps))
+    .route("/public/rundown", rundownPublicRoutes(deps))
+    .route("/public/vip", vipPublicRoutes(deps))
     .route("/public", publicRoutes(deps, invitation))
     .route("/device", deviceRoutes(deps))
     .route("/sync", syncRoutes(deps))
     .route("/booth", boothRoutes(deps))
-    .route("/buwuh", buwuhRoutes(deps));
+    .route("/buwuh", buwuhRoutes(deps))
+    .route("/layar", layarRoutes(deps));
 
   const api = new Hono<AppEnv>().route("/", healthRoutes(deps)).route("/v1", v1);
 

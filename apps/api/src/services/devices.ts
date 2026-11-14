@@ -153,6 +153,7 @@ const KIND_PAGE: Record<DeviceKind, string> = {
   scanner: `HP penjaga pintu: buka ${DEVICE_PAIR_PAGE.scanner}`,
   booth: `laptop photobooth: buka ${DEVICE_PAIR_PAGE.booth}`,
   buwuh: `HP meja buwuh: buka ${DEVICE_PAIR_PAGE.buwuh}`,
+  layar: `layar (TV/proyektor): buka ${DEVICE_PAIR_PAGE.layar}`,
 };
 
 /**

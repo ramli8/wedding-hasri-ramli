@@ -17,7 +17,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/kit/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { changePax, type Outcome, undoCheckin } from "../../lib/scan/actions.js";
+import { changePax, isVipView, type Outcome, undoCheckin } from "../../lib/scan/actions.js";
 import { formatClock } from "../../lib/scan/format.js";
 
 // Check-in berhasil cukup sekilas supaya antrean jalan; hasil yang butuh dibaca (sudah masuk, tidak
@@ -87,7 +87,7 @@ export function ResultOverlay({
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
-  const isVip = outcome.status !== "invalid" && outcome.view.group?.isVip === true;
+  const isVip = outcome.status !== "invalid" && isVipView(outcome.view);
   const vipOk = outcome.status === "ok" && isVip;
   const closeMs = AUTO_CLOSE_MS[vipOk ? "vip" : outcome.status];
 

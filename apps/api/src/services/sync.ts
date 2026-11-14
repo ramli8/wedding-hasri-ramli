@@ -116,6 +116,7 @@ export async function buildSnapshot(
     displayName: guest.displayName,
     groupId: guest.groupId,
     isRombongan: guest.isRombongan,
+    isVip: guest.isVip,
     usherNote: guest.usherNote,
     source: guest.source as SnapshotGuest["source"],
     invited: invitedToEvent && guest.deletedAt === null,

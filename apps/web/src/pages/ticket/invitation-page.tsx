@@ -24,7 +24,7 @@ export function InvitationPage() {
       <Cuplikan />
       <TandaKasih />
       <InfoPenonton />
-      <Ulasan />
+      <Ulasan code={code} />
       <Kredit />
     </div>
   );

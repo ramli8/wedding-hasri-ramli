@@ -15,6 +15,10 @@ import { syncEngine, walkinToGuest } from "./sync.js";
 
 export type GuestView = { guest: SnapshotGuest; group: LocalGroup | null };
 
+/** VIP bila tamunya ditandai VIP atau kelompoknya VIP. Data lama di perangkat belum punya `isVip`. */
+export const isVipView = (view: GuestView) =>
+  view.guest.isVip === true || view.group?.isVip === true;
+
 export type Outcome =
   | {
       status: "ok";

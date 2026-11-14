@@ -5,9 +5,12 @@ import {
   guestCodeSchema,
   rsvpRequestSchema,
   type SiteInfo,
+  VOICE_MAX_BYTES,
+  voiceUploadMetaSchema,
   wishClaimRequestSchema,
 } from "@wedding/shared";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { FailureLimiter } from "../auth/rate-limit.js";
 import type { AppDeps, AppEnv } from "../http/env.js";
@@ -24,6 +27,7 @@ import {
   submitRsvp,
 } from "../services/public.js";
 import { getSiteName } from "../services/settings.js";
+import { saveVoice } from "../services/voice.js";
 import { myClaims, setClaim } from "../services/wish-claims.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -126,5 +130,41 @@ export function publicRoutes(
         countWrite(input.code);
         return c.json({ entry: await postGuestbook(db, input) }, 201);
       })
+      // Pesan suara (multipart: code, durationMs, audio). Hanya admin yang bisa mendengarkannya.
+      .post(
+        "/voice",
+        bodyLimit({
+          maxSize: VOICE_MAX_BYTES + 64 * 1024,
+          onError: (c) =>
+            c.json({ error: { code: "VALIDATION_ERROR", message: "Rekaman terlalu besar" } }, 413),
+        }),
+        async (c) => {
+          const body = await c.req.parseBody().catch(() => null);
+          const meta = voiceUploadMetaSchema
+            .extend({ code: guestCodeSchema })
+            .safeParse({ code: body?.code, durationMs: body?.durationMs });
+          if (!meta.success) {
+            throw new AppError(
+              400,
+              "VALIDATION_ERROR",
+              meta.error.issues[0]?.message ?? "Data rekaman tidak valid",
+            );
+          }
+          const file = body?.audio;
+          if (!(file instanceof File) || file.size === 0) {
+            throw new AppError(400, "VALIDATION_ERROR", "Rekaman tidak ada");
+          }
+          if (file.size > VOICE_MAX_BYTES) {
+            throw new AppError(400, "VALIDATION_ERROR", "Rekaman terlalu besar");
+          }
+          const guest = await knownCode(clientIp(c, config.trustProxy), meta.data.code);
+          countWrite(meta.data.code);
+          const result = await saveVoice(db, config.mediaDir, guest.id, {
+            durationMs: meta.data.durationMs,
+            data: Buffer.from(await file.arrayBuffer()),
+          });
+          return c.json(result, 201);
+        },
+      )
   );
 }

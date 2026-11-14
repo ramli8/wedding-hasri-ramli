@@ -20,9 +20,13 @@ import {
   coverResponseSchema,
   createDeviceResponseSchema,
   type DeviceKind,
+  type DoorprizeInput,
   dashboardResponseSchema,
   deviceListResponseSchema,
   deviceResponseSchema,
+  doorprizeDrawResponseSchema,
+  doorprizeListSchema,
+  doorprizeResponseSchema,
   type EventInput,
   eventListResponseSchema,
   eventResponseSchema,
@@ -49,27 +53,41 @@ import {
   homeResponseSchema,
   importCommitResponseSchema,
   importPreviewResponseSchema,
+  type LayarPortionsInput,
   type LiveInput,
+  layarPortionsResponseSchema,
   layoutResponseSchema,
   liveResponseSchema,
   logResponseSchema,
   type MarkSentRequest,
   mediaResponseSchema,
+  type PanitiaMemberInput,
+  type PanitiaTaskInput,
   pairingCardsResponseSchema,
+  panitiaMemberResponseSchema,
+  panitiaResponseSchema,
+  panitiaTaskResponseSchema,
   type ReceivedGiftInput,
   type ReceivedGiftKind,
   type ResolveRequest,
+  type RundownItemInput,
   receivedGiftListResponseSchema,
   receivedGiftResponseSchema,
   reviewListResponseSchema,
   rsvpListResponseSchema,
   rsvpResponseSchema,
+  rundownAdminResponseSchema,
+  rundownItemResponseSchema,
   type Section,
   type SeoInput,
+  type SeserahanInput,
+  type SeserahanStatus,
   type SettingsInput,
   type StoryInput,
   sectionsResponseSchema,
   seoResponseSchema,
+  seserahanListResponseSchema,
+  seserahanResponseSchema,
   settingsResponseSchema,
   storyItemResponseSchema,
   storyListResponseSchema,
@@ -79,6 +97,9 @@ import {
   vendorCategoryResponseSchema,
   vendorOverviewSchema,
   vendorResponseSchema,
+  vipAdminFeedSchema,
+  voiceListSchema,
+  voiceMessageResponseSchema,
   type WishInput,
   wishListResponseSchema,
   wishResponseSchema,
@@ -422,6 +443,108 @@ export const adminApi = {
     remove: (id: string) => request(`${base}/guestbook/${id}`, okSchema, withBody("DELETE")),
   },
 
+  rundown: {
+    get: () => request(`${base}/rundown`, rundownAdminResponseSchema),
+    create: (input: RundownItemInput) =>
+      request(`${base}/rundown/items`, rundownItemResponseSchema, withBody("POST", input)),
+    update: (id: string, input: RundownItemInput) =>
+      request(`${base}/rundown/items/${id}`, rundownItemResponseSchema, withBody("PUT", input)),
+    shift: (id: string, minutes: number) =>
+      request(
+        `${base}/rundown/items/${id}/shift`,
+        z.object({ shifted: z.number() }),
+        withBody("POST", { minutes }),
+      ),
+    remove: (id: string) => request(`${base}/rundown/items/${id}`, okSchema, withBody("DELETE")),
+    resetToken: () =>
+      request(`${base}/rundown/token`, z.object({ token: z.string() }), withBody("POST", {})),
+  },
+
+  doorprize: {
+    list: () => request(`${base}/doorprize`, doorprizeListSchema),
+    create: (input: DoorprizeInput) =>
+      request(`${base}/doorprize/prizes`, doorprizeResponseSchema, withBody("POST", input)),
+    update: (id: string, input: DoorprizeInput) =>
+      request(`${base}/doorprize/prizes/${id}`, doorprizeResponseSchema, withBody("PUT", input)),
+    remove: (id: string) => request(`${base}/doorprize/prizes/${id}`, okSchema, withBody("DELETE")),
+    draw: (id: string) =>
+      request(
+        `${base}/doorprize/prizes/${id}/draw`,
+        doorprizeDrawResponseSchema,
+        withBody("POST", {}),
+      ),
+    redraw: (winnerId: string) =>
+      request(
+        `${base}/doorprize/winners/${winnerId}/redraw`,
+        doorprizeDrawResponseSchema,
+        withBody("POST", {}),
+      ),
+    removeWinner: (winnerId: string) =>
+      request(`${base}/doorprize/winners/${winnerId}`, okSchema, withBody("DELETE")),
+  },
+
+  voice: {
+    list: () => request(`${base}/voice`, voiceListSchema),
+    hide: (id: string, hidden: boolean) =>
+      request(`${base}/voice/${id}/hide`, voiceMessageResponseSchema, withBody("POST", { hidden })),
+    remove: (id: string) => request(`${base}/voice/${id}`, okSchema, withBody("DELETE")),
+  },
+
+  layar: {
+    getPortions: () => request(`${base}/layar`, layarPortionsResponseSchema),
+    savePortions: (input: LayarPortionsInput) =>
+      request(`${base}/layar`, layarPortionsResponseSchema, withBody("PUT", input)),
+  },
+
+  vip: {
+    get: () => request(`${base}/vip`, vipAdminFeedSchema),
+    resetToken: () =>
+      request(`${base}/vip/token`, z.object({ token: z.string() }), withBody("POST", {})),
+  },
+
+  panitia: {
+    get: () => request(`${base}/panitia`, panitiaResponseSchema),
+    createMember: (input: PanitiaMemberInput) =>
+      request(`${base}/panitia/members`, panitiaMemberResponseSchema, withBody("POST", input)),
+    updateMember: (id: string, input: PanitiaMemberInput) =>
+      request(`${base}/panitia/members/${id}`, panitiaMemberResponseSchema, withBody("PUT", input)),
+    resetToken: (id: string) =>
+      request(
+        `${base}/panitia/members/${id}/token`,
+        panitiaMemberResponseSchema,
+        withBody("POST", {}),
+      ),
+    removeMember: (id: string) =>
+      request(`${base}/panitia/members/${id}`, okSchema, withBody("DELETE")),
+    createTask: (input: PanitiaTaskInput) =>
+      request(`${base}/panitia/tasks`, panitiaTaskResponseSchema, withBody("POST", input)),
+    updateTask: (id: string, input: PanitiaTaskInput) =>
+      request(`${base}/panitia/tasks/${id}`, panitiaTaskResponseSchema, withBody("PUT", input)),
+    setDone: (id: string, done: boolean) =>
+      request(
+        `${base}/panitia/tasks/${id}/done`,
+        panitiaTaskResponseSchema,
+        withBody("POST", { done }),
+      ),
+    removeTask: (id: string) =>
+      request(`${base}/panitia/tasks/${id}`, okSchema, withBody("DELETE")),
+  },
+
+  seserahan: {
+    list: () => request(`${base}/seserahan`, seserahanListResponseSchema),
+    create: (input: SeserahanInput) =>
+      request(`${base}/seserahan`, seserahanResponseSchema, withBody("POST", input)),
+    update: (id: string, input: SeserahanInput) =>
+      request(`${base}/seserahan/${id}`, seserahanResponseSchema, withBody("PUT", input)),
+    setStatus: (id: string, status: SeserahanStatus) =>
+      request(
+        `${base}/seserahan/${id}/status`,
+        seserahanResponseSchema,
+        withBody("POST", { status }),
+      ),
+    remove: (id: string) => request(`${base}/seserahan/${id}`, okSchema, withBody("DELETE")),
+  },
+
   buwuh: {
     list: () => request(`${base}/buwuh`, buwuhListResponseSchema),
     create: (input: BuwuhInput) =>
@@ -471,6 +594,9 @@ export const downloads = {
   boothPhotosZip: `/api${base}/booth/photos.zip`,
   vendorsXlsx: `/api${base}/vendors/export.xlsx`,
   buwuhXlsx: `/api${base}/buwuh/export.xlsx`,
+  seserahanXlsx: `/api${base}/seserahan/export.xlsx`,
+  voiceZip: `/api${base}/voice/export.zip`,
+  voiceAudio: (id: string) => `/api${base}/voice/${id}/audio`,
   /** Mengikuti filter yang sedang dipilih di halaman Hadiah. */
   receivedGiftsXlsx: (filter: ReceivedGiftFilter) => {
     const search = new URLSearchParams();

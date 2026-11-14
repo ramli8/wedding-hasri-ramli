@@ -1,6 +1,8 @@
 import {
   type DeviceKind,
   errorResponseSchema,
+  type LayarFeed,
+  layarFeedSchema,
   type PairResponse,
   type PushRequest,
   type PushResponse,
@@ -61,6 +63,9 @@ export const deviceApi = {
       { method: "GET" },
       token,
     ),
+
+  layarFeed: (token: string): Promise<LayarFeed> =>
+    call("/v1/layar/feed", layarFeedSchema, { method: "GET" }, token),
 
   push: (token: string, body: PushRequest): Promise<PushResponse> =>
     call(

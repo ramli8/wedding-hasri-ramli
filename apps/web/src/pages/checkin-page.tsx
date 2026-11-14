@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Dashboard, ReviewItem } from "@wedding/shared";
-import { SquarePen, Undo2 } from "lucide-react";
+import { ChefHat, Copy, ExternalLink, KeyRound, SquarePen, Star, Undo2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -11,13 +11,29 @@ import { Alert } from "@/components/kit/alert";
 import { Button, buttonVariants } from "@/components/kit/button";
 import { Dialog, DialogActions } from "@/components/kit/dialog";
 import { Field } from "@/components/kit/field";
+import { toast } from "@/components/kit/toast";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { adminApi } from "../lib/admin-api.js";
-import { dashboardQuery, logQuery, reviewQuery, useRefresh } from "../lib/queries.js";
+import {
+  dashboardQuery,
+  layarQuery,
+  logQuery,
+  reviewQuery,
+  settingsQuery,
+  useRefresh,
+  vipQuery,
+} from "../lib/queries.js";
 import { formatAgo, formatClock } from "../lib/scan/format.js";
 
 const METHOD = {
@@ -199,6 +215,12 @@ export function CheckinPage() {
       <PageHeader
         title="Check-in"
         description={`${d.event.name}. Disegarkan otomatis tiap 5 detik.`}
+        actions={
+          <>
+            <PortionsButton />
+            <VipLinkMenu />
+          </>
+        }
       />
 
       <section aria-label="Ringkasan" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -565,5 +587,132 @@ function UndoDialog({ row, onClose }: { row: Recent | null; onClose: () => void 
         </>
       )}
     </Dialog>
+  );
+}
+
+/** Tautan "Kabar VIP" untuk HP keluarga: berbunyi saat tamu VIP datang. */
+function VipLinkMenu() {
+  const refresh = useRefresh();
+  const vip = useQuery(vipQuery);
+  const settings = useQuery(settingsQuery);
+  const base = settings.data?.publicBaseUrl?.replace(/\/+$/, "") || window.location.origin;
+  const link = vip.data ? `${base}/vip/${vip.data.token}` : null;
+  const resetToken = useMutation({
+    mutationFn: () => adminApi.vip.resetToken(),
+    meta: { toast: "Tautan baru dibuat; tautan lama tidak berlaku" },
+    onSuccess: () => refresh("vip"),
+  });
+
+  async function copy() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast("Tautan Kabar VIP disalin");
+    } catch {
+      toast("Gagal menyalin; salin manual saja", "error");
+    }
+  }
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" disabled={!link}>
+          <Star aria-hidden />
+          Kabar VIP
+          {vip.data && vip.data.vipCount > 0 && (
+            <span className="text-muted-foreground tabular-nums">
+              {vip.data.arrivedCount}/{vip.data.vipCount}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onSelect={() => void copy()}>
+          <Copy />
+          Salin tautan
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={link ?? "#"} target="_blank" rel="noopener">
+            <ExternalLink />
+            Buka
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => resetToken.mutate()}>
+          <KeyRound />
+          Ganti tautan
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Porsi makanan yang sudah siap (kabar dari dapur), ditampilkan di layar mode Dapur. */
+function PortionsButton() {
+  const portions = useQuery(layarQuery);
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)} disabled={!portions.data}>
+        <ChefHat aria-hidden />
+        Porsi siap
+        <span className="text-muted-foreground tabular-nums">
+          {portions.data?.portionsReady.toLocaleString("id-ID") ?? "–"}
+        </span>
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="Porsi siap">
+        {open && portions.data && (
+          <PortionsForm current={portions.data.portionsReady} onClose={() => setOpen(false)} />
+        )}
+      </Dialog>
+    </>
+  );
+}
+
+function PortionsForm({ current, onClose }: { current: number; onClose: () => void }) {
+  const refresh = useRefresh();
+  const [value, setValue] = useState(String(current));
+  const save = useMutation({
+    mutationFn: (portionsReady: number) => adminApi.layar.savePortions({ portionsReady }),
+    onSuccess: async () => {
+      await refresh("layar");
+      onClose();
+    },
+  });
+  const number = Number(value);
+  const valid = value.trim() !== "" && Number.isInteger(number) && number >= 0;
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (valid) save.mutate(number);
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <Field label="Jumlah porsi">
+        {(id) => (
+          <Input
+            id={id}
+            type="number"
+            min={0}
+            max={100000}
+            required
+            autoFocus
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        )}
+      </Field>
+      {save.error && <Alert tone="error">{save.error.message}</Alert>}
+      <DialogActions>
+        <Button variant="outline" onClick={onClose}>
+          Batal
+        </Button>
+        <Button type="submit" disabled={save.isPending || !valid}>
+          Simpan
+        </Button>
+      </DialogActions>
+    </form>
   );
 }

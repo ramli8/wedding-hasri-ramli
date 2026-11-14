@@ -17,6 +17,7 @@ import { Main } from "./layout/main";
 import { ProfileDropdown } from "./profile-dropdown";
 import { Search } from "./search";
 import { ThemeSwitch } from "./theme-switch";
+import { VipWatcher } from "./vip-watcher";
 
 /** Kerangka AuthenticatedLayout shadcn-admin: providers + SidebarProvider + AppSidebar + SidebarInset (Header, Main). */
 export function AppLayout() {
@@ -49,6 +50,7 @@ export function AppLayout() {
                 </Main>
               </SidebarInset>
               <Toaster />
+              <VipWatcher />
             </SidebarProvider>
           </SearchProvider>
         </LayoutProvider>
